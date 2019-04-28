@@ -2,7 +2,6 @@ package minecraft
 
 import (
 	"github.com/sandertv/go-raknet"
-	"log"
 	"testing"
 	"time"
 )
@@ -12,7 +11,6 @@ func TestListen(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	listener.ErrorLog = log.New()
 	if err := listener.listener.(*raknet.Listener).HijackPong("mco.mineplex.com:19132"); err != nil {
 		panic(err)
 	}
