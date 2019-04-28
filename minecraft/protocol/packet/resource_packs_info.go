@@ -9,10 +9,10 @@ import (
 // ResourcePacksInfo is sent by the server to inform the client on what resource packs the server has. It
 // sends a list of the resource packs it has and basic information on them like the version and description.
 type ResourcePacksInfo struct {
-	// MustAccept specifies if the client must accept the resource packs the server has in order to join the
-	// server. If set to true, the client gets the option to either download the resource packs and join, or
-	// quit entirely.
-	MustAccept bool
+	// TexturePackRequired specifies if the client must accept the texture packs the server has in order to
+	// join the server. If set to true, the client gets the option to either download the resource packs and
+	// join, or quit entirely. Behaviour packs never have to be downloaded.
+	TexturePackRequired bool
 	// HasScripts specifies if any of the resource packs contain scripts in them. If set to true, only clients
 	// that support scripts will be able to download them.
 	HasScripts bool
@@ -20,8 +20,8 @@ type ResourcePacksInfo struct {
 	// All of these behaviour packs will be applied together.
 	BehaviourPacks []ResourcePack
 	// TexturePacks is a list of texture packs that the client needs to download before joining the server.
-	// The order of these texture packs specifies which texture pack is applied first, with the first in the
-	// list being the first to be applied.
+	// The order of these texture packs is not relevant in this packet. It is however important in the
+	// ResourcePackStack packet.
 	TexturePacks []ResourcePack
 }
 
@@ -32,21 +32,21 @@ func (*ResourcePacksInfo) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.MustAccept)
+	_ = binary.Write(buf, binary.LittleEndian, pk.TexturePackRequired)
 	_ = binary.Write(buf, binary.LittleEndian, pk.HasScripts)
 	_ = binary.Write(buf, binary.LittleEndian, int16(len(pk.BehaviourPacks)))
 	for _, pack := range pk.BehaviourPacks {
-		pack.Marshal(buf)
+		writeResourcePackInfoEntry(buf, pack)
 	}
 	_ = binary.Write(buf, binary.LittleEndian, int16(len(pk.TexturePacks)))
 	for _, pack := range pk.TexturePacks {
-		pack.Marshal(buf)
+		writeResourcePackInfoEntry(buf, pack)
 	}
 }
 
 // Unmarshal ...
 func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.MustAccept); err != nil {
+	if err := binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired); err != nil {
 		return err
 	}
 	if err := binary.Read(buf, binary.LittleEndian, &pk.HasScripts); err != nil {
@@ -58,7 +58,7 @@ func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
 	}
 	for i := int16(0); i < length; i++ {
 		pack := &ResourcePack{}
-		if err := pack.Unmarshal(buf); err != nil {
+		if err := resourcePackInfoEntry(buf, pack); err != nil {
 			return err
 		}
 		pk.BehaviourPacks = append(pk.BehaviourPacks, *pack)
@@ -68,12 +68,46 @@ func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
 	}
 	for i := int16(0); i < length; i++ {
 		pack := &ResourcePack{}
-		if err := pack.Unmarshal(buf); err != nil {
+		if err := resourcePackInfoEntry(buf, pack); err != nil {
 			return err
 		}
 		pk.TexturePacks = append(pk.TexturePacks, *pack)
 	}
 	return nil
+}
+
+// writeResourcePackInfoEntry writes a resource pack info entry to the bytes.Buffer passed.
+func writeResourcePackInfoEntry(buf *bytes.Buffer, pack ResourcePack) {
+	_ = protocol.WriteString(buf, pack.UUID)
+	_ = protocol.WriteString(buf, pack.Version)
+	_ = binary.Write(buf, binary.LittleEndian, pack.Size)
+	_ = protocol.WriteString(buf, pack.ContentKey)
+	_ = protocol.WriteString(buf, pack.SubPackName)
+	_ = protocol.WriteString(buf, pack.ContentIdentity)
+	_ = binary.Write(buf, binary.LittleEndian, pack.HasScripts)
+}
+
+// resourcePackInfoEntry reads a resource pack info entry from the bytes.Buffer passed.
+func resourcePackInfoEntry(buf *bytes.Buffer, pack *ResourcePack) error {
+	if err := protocol.String(buf, &pack.UUID); err != nil {
+		return err
+	}
+	if err := protocol.String(buf, &pack.Version); err != nil {
+		return err
+	}
+	if err := binary.Read(buf, binary.LittleEndian, &pack.Size); err != nil {
+		return err
+	}
+	if err := protocol.String(buf, &pack.ContentKey); err != nil {
+		return err
+	}
+	if err := protocol.String(buf, &pack.SubPackName); err != nil {
+		return err
+	}
+	if err := protocol.String(buf, &pack.ContentIdentity); err != nil {
+		return err
+	}
+	return binary.Read(buf, binary.LittleEndian, &pack.HasScripts)
 }
 
 // ResourcePack represents a resource pack sent over network. It holds information about the resource pack
@@ -99,38 +133,4 @@ type ResourcePack struct {
 	// HasScripts specifies if the resource packs has any scripts in it. A client will only download the
 	// resource pack if it supports scripts, which, up to 1.11, only includes Windows 10.
 	HasScripts bool
-}
-
-// Marshal ...
-func (pack ResourcePack) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pack.UUID)
-	_ = protocol.WriteString(buf, pack.Version)
-	_ = binary.Write(buf, binary.LittleEndian, pack.Size)
-	_ = protocol.WriteString(buf, pack.ContentKey)
-	_ = protocol.WriteString(buf, pack.SubPackName)
-	_ = protocol.WriteString(buf, pack.ContentIdentity)
-	_ = binary.Write(buf, binary.LittleEndian, pack.HasScripts)
-}
-
-// Unmarshal ...
-func (pack *ResourcePack) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.String(buf, &pack.UUID); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.Version); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pack.Size); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.ContentKey); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.SubPackName); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.ContentIdentity); err != nil {
-		return err
-	}
-	return binary.Read(buf, binary.LittleEndian, &pack.HasScripts)
 }

@@ -7,4 +7,5 @@ const (
 	IDClientToServerHandshake
 	IDDisconnect
 	IDResourcePacksInfo
+	IDResourcePackStack
 )
