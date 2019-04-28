@@ -19,7 +19,7 @@ type Disconnect struct {
 
 // ID ...
 func (*Disconnect) ID() uint32 {
-	return protocol.IDDisconnect
+	return IDDisconnect
 }
 
 // Marshal ...
@@ -42,4 +42,3 @@ func (pk *Disconnect) Unmarshal(buf *bytes.Buffer) error {
 	}
 	return nil
 }
-

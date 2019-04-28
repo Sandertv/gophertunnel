@@ -3,7 +3,6 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (
@@ -26,7 +25,7 @@ type PlayStatus struct {
 
 // ID ...
 func (*PlayStatus) ID() uint32 {
-	return protocol.IDPlayStatus
+	return IDPlayStatus
 }
 
 // Marshal ...

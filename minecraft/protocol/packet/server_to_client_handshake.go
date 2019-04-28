@@ -16,7 +16,7 @@ type ServerToClientHandshake struct {
 
 // ID ...
 func (*ServerToClientHandshake) ID() uint32 {
-	return protocol.IDServerToClientHandshake
+	return IDServerToClientHandshake
 }
 
 // Marshal ...

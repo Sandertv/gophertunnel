@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // ClientToServerHandshake is sent by the client in response to a ServerToClientHandshake packet sent by the
@@ -14,7 +13,7 @@ type ClientToServerHandshake struct {
 
 // ID ...
 func (*ClientToServerHandshake) ID() uint32 {
-	return protocol.IDClientToServerHandshake
+	return IDClientToServerHandshake
 }
 
 // Marshal ...
@@ -26,4 +25,3 @@ func (*ClientToServerHandshake) Marshal(buf *bytes.Buffer) {
 func (*ClientToServerHandshake) Unmarshal(buf *bytes.Buffer) error {
 	return nil
 }
-

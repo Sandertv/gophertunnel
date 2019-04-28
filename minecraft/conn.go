@@ -65,9 +65,9 @@ func newConn(conn net.Conn) *Conn {
 		close:   make(chan bool, 2),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
-		expectedID: protocol.IDLogin,
+		expectedID: packet.IDLogin,
 		privateKey: key,
-		salt: make([]byte, 16),
+		salt:       make([]byte, 16),
 	}
 	_, _ = rand.Read(c.salt)
 
@@ -298,7 +298,7 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	}
 	header := jwt.Header{
 		Algorithm: "ES384",
-		X5U: pubKey,
+		X5U:       pubKey,
 	}
 	payload := map[string]interface{}{
 		"salt": base64.RawStdEncoding.EncodeToString(conn.salt),
@@ -310,13 +310,13 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	if err != nil {
 		return fmt.Errorf("error creating encoded JWT: %v", err)
 	}
-	if err := conn.WritePacket(&packet.ServerToClientHandshake{ JWT: serverJWT }); err != nil {
+	if err := conn.WritePacket(&packet.ServerToClientHandshake{JWT: serverJWT}); err != nil {
 		return fmt.Errorf("error sending ServerToClientHandshake packet: %v", err)
 	}
 	// Flush immediately as we'll enable encryption after this.
 	_ = conn.Flush()
 	// The next expected packet is a response from the client to the handshake.
-	conn.expectedID = protocol.IDClientToServerHandshake
+	conn.expectedID = packet.IDClientToServerHandshake
 
 	// We first compute the shared secret.
 	clientX, clientY := clientPublicKey.X, clientPublicKey.Y

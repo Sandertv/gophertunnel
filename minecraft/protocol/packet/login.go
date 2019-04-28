@@ -20,7 +20,7 @@ type Login struct {
 
 // ID ...
 func (*Login) ID() uint32 {
-	return protocol.IDLogin
+	return IDLogin
 }
 
 // Marshal ...
