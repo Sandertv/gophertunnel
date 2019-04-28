@@ -8,4 +8,5 @@ const (
 	IDDisconnect
 	IDResourcePacksInfo
 	IDResourcePackStack
+	IDResourcePackClientResponse
 )
