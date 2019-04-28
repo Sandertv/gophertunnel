@@ -35,8 +35,5 @@ func (pk *PlayStatus) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *PlayStatus) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.BigEndian, &pk.Status); err != nil {
-		return err
-	}
-	return nil
+	return binary.Read(buf, binary.BigEndian, &pk.Status)
 }

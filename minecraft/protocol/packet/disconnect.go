@@ -36,9 +36,7 @@ func (pk *Disconnect) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	if !pk.HideDisconnectionScreen {
-		if err := protocol.String(buf, &pk.Message); err != nil {
-			return err
-		}
+		return protocol.String(buf, &pk.Message)
 	}
 	return nil
 }

@@ -26,8 +26,5 @@ func (pk *ServerToClientHandshake) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ServerToClientHandshake) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.String(buf, &pk.JWT); err != nil {
-		return err
-	}
-	return nil
+	return protocol.String(buf, &pk.JWT)
 }

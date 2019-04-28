@@ -34,8 +34,5 @@ func (pk *Login) Unmarshal(buf *bytes.Buffer) error {
 	if err := binary.Read(buf, binary.BigEndian, &pk.ClientProtocol); err != nil {
 		return err
 	}
-	if err := protocol.String(buf, &pk.ConnectionRequest); err != nil {
-		return err
-	}
-	return nil
+	return protocol.String(buf, &pk.ConnectionRequest)
 }
