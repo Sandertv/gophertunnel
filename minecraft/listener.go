@@ -24,7 +24,7 @@ type Listener struct {
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
 // "unixpacket" or "raknet". A Listener is returned which may be used to accept connections.
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
-// available unicast and anycast IP addresses of the local system
+// available unicast and anycast IP addresses of the local system.
 func Listen(network, address string) (*Listener, error) {
 	var listener net.Listener
 	var err error
