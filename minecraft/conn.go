@@ -13,6 +13,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"io"
 	"net"
 	"sync"
 	"time"
@@ -57,6 +58,8 @@ type Conn struct {
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
 
+	packQueue *resourcePackQueue
+
 	close chan bool
 }
 
@@ -69,7 +72,7 @@ func newConn(conn net.Conn) *Conn {
 		encoder: packet.NewEncoder(conn),
 		decoder: packet.NewDecoder(conn),
 		pool:    packet.NewPool(),
-		packets: make(chan []byte, 1),
+		packets: make(chan []byte, 32),
 		close:   make(chan bool, 2),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
@@ -248,6 +251,10 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			return conn.handleLogin(pk)
 		case *packet.ClientToServerHandshake:
 			return conn.handleClientToServerHandshake(pk)
+		case *packet.ResourcePackClientResponse:
+			return conn.handleResourcePackClientResponse(pk)
+		case *packet.ResourcePackChunkRequest:
+			return conn.handleResourcePackChunkRequest(pk)
 
 		// Internal packets destined for the client.
 		case *packet.PlayStatus:
@@ -329,6 +336,108 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 	if err := conn.WritePacket(pk); err != nil {
 		return fmt.Errorf("error sending resource packs info: %v", err)
 	}
+	return nil
+}
+
+// packChunkSize is the size of a single chunk of data from a resource pack: 512 kB or 0.5 MB
+const packChunkSize = 1024 * 512
+
+// handleResourcePackClientResponse handles an incoming resource pack client response packet. The packet is
+// handled differently depending on the response.
+func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClientResponse) error {
+	switch pk.Response {
+	case packet.PackResponseRefused:
+		// Even though this response is never sent, we handle it appropriately in case it is changed to work
+		// correctly again.
+		return conn.Close()
+	case packet.PackResponseSendPacks:
+		packs := pk.PacksToDownload
+		conn.packQueue = &resourcePackQueue{packs: conn.resourcePacks}
+		if err := conn.packQueue.Request(packs); err != nil {
+			return fmt.Errorf("error looking up resource packs to download: %v", err)
+		}
+		// Proceed with the first resource pack download. We run all downloads in sequence rather than in
+		// parallel, as it's less prone to packet loss.
+		if err := conn.nextResourcePackDownload(); err != nil {
+			return err
+		}
+	case packet.PackResponseAllPacksDownloaded:
+		pk := &packet.ResourcePackStack{TexturePackRequired: conn.texturePacksRequired}
+		for _, pack := range conn.resourcePacks {
+			resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version()}
+			// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
+			// list.
+			if pack.HasBehaviours() {
+				pk.BehaviourPacks = append(pk.BehaviourPacks, resourcePack)
+				continue
+			}
+			pk.TexturePacks = append(pk.TexturePacks, resourcePack)
+		}
+		if err := conn.WritePacket(pk); err != nil {
+			return fmt.Errorf("error writing resource pack stack packet: %v", err)
+		}
+	case packet.PackResponseCompleted:
+		// TODO
+	default:
+		return fmt.Errorf("unknown resource pack client response: %v", pk.Response)
+	}
+
+	return nil
+}
+
+// nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info
+// packet with information about it.
+func (conn *Conn) nextResourcePackDownload() error {
+	pk, ok := conn.packQueue.NextPack()
+	if !ok {
+		return fmt.Errorf("no resource packs to download")
+	}
+	if err := conn.WritePacket(pk); err != nil {
+		return fmt.Errorf("error sending resource pack data info packet: %v", err)
+	}
+	// Set the next expected packet to ResourcePackChunkRequest packets.
+	conn.expectedID = packet.IDResourcePackChunkRequest
+	return nil
+}
+
+// handleResourcePackChunkRequest handles a resource pack chunk request, which requests a part of the resource
+// pack to be downloaded.
+func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
+	current := conn.packQueue.currentPack
+	if current.UUID() != pk.UUID {
+		return fmt.Errorf("resource pack chunk request had unexpected UUID: expected %v, but got %v", current.UUID(), pk.UUID)
+	}
+	if conn.packQueue.currentOffset != int64(pk.ChunkIndex)*packChunkSize {
+		return fmt.Errorf("resource pack chunk request had unexpected chunk index: expected %v, but got %v", conn.packQueue.currentOffset/packChunkSize, pk.ChunkIndex)
+	}
+	response := &packet.ResourcePackChunkData{
+		UUID:       pk.UUID,
+		ChunkIndex: pk.ChunkIndex,
+		DataOffset: conn.packQueue.currentOffset,
+		Data:       make([]byte, packChunkSize),
+	}
+	conn.packQueue.currentOffset += packChunkSize
+	// We read the data directly into the response's data.
+	if n, err := current.ReadAt(response.Data, response.DataOffset); err != nil {
+		// If we hit an EOF, we don't need to return an error, as we've simply reached the end of the content
+		// AKA the last chunk.
+		if err != io.EOF {
+			return fmt.Errorf("error reading resource pack chunk: %v", err)
+		}
+		response.Data = response.Data[:n]
+
+		defer func() {
+			if !conn.packQueue.AllDownloaded() {
+				_ = conn.nextResourcePackDownload()
+			} else {
+				conn.expectedID = packet.IDResourcePackClientResponse
+			}
+		}()
+	}
+	if err := conn.WritePacket(response); err != nil {
+		return fmt.Errorf("error writing resource pack chunk data packet: %v", err)
+	}
+
 	return nil
 }
 

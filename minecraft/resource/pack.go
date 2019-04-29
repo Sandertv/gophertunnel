@@ -38,6 +38,20 @@ func Compile(path string) (*Pack, error) {
 	return compile(path)
 }
 
+// MustCompile compiles a resource pack found at the path passed. The resource pack must either be a zip
+// archive (extension does not matter, could be .zip or .mcpack), or a directory containing a resource pack.
+// In the case of a directory, the directory is compiled into an archive and the pack is parsed from that.
+// Compile operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
+// will fail and return an error.
+// Unlike Compile, MustCompile does not return an error and panics if an error occurs instead.
+func MustCompile(path string) *Pack {
+	pack, err := Compile(path)
+	if err != nil {
+		panic(err)
+	}
+	return pack
+}
+
 // Name returns the name of the resource pack.
 func (pack *Pack) Name() string {
 	return pack.manifest.Header.Name
@@ -104,6 +118,22 @@ func (pack *Pack) Checksum() [32]byte {
 // Len returns the total length in bytes of the content of the archive that contained the resource pack.
 func (pack *Pack) Len() int {
 	return pack.content.Len()
+}
+
+// DataChunkCount returns the amount of chunks the data of the resource pack is split into if each chunk has
+// a specific length.
+func (pack *Pack) DataChunkCount(length int) int {
+	count := pack.Len() / length
+	if pack.Len()%length != 0 {
+		count++
+	}
+	return count
+}
+
+// ReadAt reads len(b) bytes from the resource pack's archive data at offset off and copies it into b. The
+// amount of bytes read n is returned.
+func (pack *Pack) ReadAt(b []byte, off int64) (n int, err error) {
+	return pack.content.ReadAt(b, off)
 }
 
 // Manifest returns the manifest found in the manifest.json of the resource pack. It contains information

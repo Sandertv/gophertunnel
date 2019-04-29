@@ -15,6 +15,7 @@ type Listener struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of clients are written to. By
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
+
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
 	resourcePacks []*resource.Pack
@@ -106,6 +107,7 @@ func (listener *Listener) listen() {
 		conn := newConn(netConn)
 		conn.texturePacksRequired = listener.texturePacksRequired
 		conn.resourcePacks = listener.resourcePacks
+
 		go func() {
 			defer func() {
 				_ = netConn.Close()
