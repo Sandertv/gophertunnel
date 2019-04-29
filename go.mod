@@ -4,6 +4,6 @@ go 1.12
 
 require (
 	github.com/google/uuid v1.1.1
-	github.com/sandertv/go-raknet v1.2.1
+	github.com/sandertv/go-raknet v1.2.2
 	golang.org/x/text v0.3.0
 )
