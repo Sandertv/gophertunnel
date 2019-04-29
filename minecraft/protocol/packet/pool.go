@@ -7,10 +7,17 @@ type Pool map[uint32]Packet
 // indexing it with the packet ID.
 func NewPool() Pool {
 	return Pool{
-		IDLogin:                   &Login{},
-		IDPlayStatus:              &PlayStatus{},
-		IDServerToClientHandshake: &ServerToClientHandshake{},
-		IDClientToServerHandshake: &ClientToServerHandshake{},
-		IDDisconnect:              &Disconnect{},
+		IDLogin:                      &Login{},
+		IDPlayStatus:                 &PlayStatus{},
+		IDServerToClientHandshake:    &ServerToClientHandshake{},
+		IDClientToServerHandshake:    &ClientToServerHandshake{},
+		IDDisconnect:                 &Disconnect{},
+		IDResourcePacksInfo:          &ResourcePacksInfo{},
+		IDResourcePackStack:          &ResourcePackStack{},
+		IDResourcePackClientResponse: &ResourcePackClientResponse{},
+		// ...
+		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
+		IDResourcePackChunkData:    &ResourcePackChunkData{},
+		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
 	}
 }
