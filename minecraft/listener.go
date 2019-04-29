@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"log"
 	"net"
 	"os"
@@ -14,6 +15,12 @@ type Listener struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of clients are written to. By
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
+	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
+	// download these resource packs upon joining.
+	resourcePacks []*resource.Pack
+	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
+	// be able to join the server. If they don't accept, they can only leave the server.
+	texturePacksRequired bool
 
 	listener net.Listener
 
@@ -63,6 +70,15 @@ func (listener *Listener) Accept() (net.Conn, error) {
 	return <-listener.incoming, nil
 }
 
+// ResourcePacks sets the resource packs settings of the listener. If texturePacksRequired is set to true,
+// clients must accept all resource packs in order to be able to join the server.
+// A list of resource packs may be supplied to the method, which the client will have to download when it
+// tries to join. These resource packs may be both texture and behaviour packs.
+func (listener *Listener) ResourcePacks(texturePacksRequired bool, packs ...*resource.Pack) {
+	listener.texturePacksRequired = texturePacksRequired
+	listener.resourcePacks = packs
+}
+
 // Addr returns the address of the underlying listener.
 func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
@@ -88,6 +104,8 @@ func (listener *Listener) listen() {
 			return
 		}
 		conn := newConn(netConn)
+		conn.texturePacksRequired = listener.texturePacksRequired
+		conn.resourcePacks = listener.resourcePacks
 		go func() {
 			defer func() {
 				_ = netConn.Close()

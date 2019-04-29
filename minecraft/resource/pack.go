@@ -101,6 +101,11 @@ func (pack *Pack) Checksum() [32]byte {
 	return pack.checksum
 }
 
+// Len returns the total length in bytes of the content of the archive that contained the resource pack.
+func (pack *Pack) Len() int {
+	return pack.content.Len()
+}
+
 // Manifest returns the manifest found in the manifest.json of the resource pack. It contains information
 // about the pack such as its name.
 func (pack *Pack) Manifest() Manifest {

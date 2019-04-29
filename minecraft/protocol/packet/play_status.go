@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	PlayStatusSuccess int32 = iota
+	PlayStatusLoginSuccess int32 = iota
 	PlayStatusLoginFailedClient
 	PlayStatusLoginFailedServer
 	PlayStatusPlayerSpawn

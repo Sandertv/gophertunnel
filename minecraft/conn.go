@@ -12,6 +12,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"net"
 	"sync"
 	"time"
@@ -48,6 +49,13 @@ type Conn struct {
 	// expectedID is the ID of the next packet expected during the login sequence. The value becomes
 	// irrelevant when loggedIn is true.
 	expectedID uint32
+
+	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
+	// download these resource packs upon joining.
+	resourcePacks []*resource.Pack
+	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
+	// be able to join the server. If they don't accept, they can only leave the server.
+	texturePacksRequired bool
 
 	close chan bool
 }
@@ -163,12 +171,13 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // are directly sent.
 func (conn *Conn) Flush() error {
 	conn.sendMutex.Lock()
-	if err := conn.encoder.Encode(conn.bufferedSend); err != nil {
-		return fmt.Errorf("error encoding packet batch: %v", err)
+	if len(conn.bufferedSend) > 0 {
+		if err := conn.encoder.Encode(conn.bufferedSend); err != nil {
+			return fmt.Errorf("error encoding packet batch: %v", err)
+		}
+		// Reset the send slice so that we don't accidentally send the same packets.
+		conn.bufferedSend = nil
 	}
-	// Reset the send slice so that we don't accidentally send the same packets.
-	conn.bufferedSend = nil
-
 	conn.sendMutex.Unlock()
 	return nil
 }
@@ -233,12 +242,12 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			// be a packet such as a movement that was simply sent too early.
 			return nil
 		}
-		// Internal packets destined for the server.
 		switch pk := pk.(type) {
+		// Internal packets destined for the server.
 		case *packet.Login:
 			return conn.handleLogin(pk)
 		case *packet.ClientToServerHandshake:
-			fmt.Println("Encryption enabled")
+			return conn.handleClientToServerHandshake(pk)
 
 		// Internal packets destined for the client.
 		case *packet.PlayStatus:
@@ -253,6 +262,9 @@ func (conn *Conn) handleIncoming(data []byte) error {
 // handleLogin handles an incoming login packet. It verifies an decodes the login request found in the packet
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
+	// The next expected packet is a response from the client to the handshake.
+	conn.expectedID = packet.IDClientToServerHandshake
+
 	if pk.ClientProtocol != protocol.CurrentProtocol {
 		// By default we assume the client is outdated.
 		status := packet.PlayStatusLoginFailedClient
@@ -289,6 +301,69 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	return nil
 }
 
+// handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
+func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake) error {
+	// The next expected packet is a resource pack client response.
+	conn.expectedID = packet.IDResourcePackClientResponse
+
+	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
+		return fmt.Errorf("error sending play status login success: %v", err)
+	}
+	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
+	for _, pack := range conn.resourcePacks {
+		resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
+		if pack.HasScripts() {
+			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
+			pk.HasScripts = true
+			resourcePack.HasScripts = true
+		}
+		// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
+		// list.
+		if pack.HasBehaviours() {
+			pk.BehaviourPacks = append(pk.BehaviourPacks, resourcePack)
+			continue
+		}
+		pk.TexturePacks = append(pk.TexturePacks, resourcePack)
+	}
+	// Finally we send the packet after the play status.
+	if err := conn.WritePacket(pk); err != nil {
+		return fmt.Errorf("error sending resource packs info: %v", err)
+	}
+	return nil
+}
+
+// handlePlayStatus handles an incoming PlayStatus packet. It reacts differently depending on the status
+// found in the packet.
+func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
+	switch pk.Status {
+	case packet.PlayStatusLoginSuccess:
+		// TODO
+	case packet.PlayStatusLoginFailedClient:
+		_ = conn.Close()
+		return fmt.Errorf("client outdated")
+	case packet.PlayStatusLoginFailedServer:
+		_ = conn.Close()
+		return fmt.Errorf("server outdated")
+	case packet.PlayStatusPlayerSpawn:
+		// TODO
+	case packet.PlayStatusLoginFailedInvalidTenant:
+		_ = conn.Close()
+		return fmt.Errorf("invalid edu edition game owner")
+	case packet.PlayStatusLoginFailedVanillaEdu:
+		_ = conn.Close()
+		return fmt.Errorf("cannot join an edu edition game on vanilla")
+	case packet.PlayStatusLoginFailedEduVanilla:
+		_ = conn.Close()
+		return fmt.Errorf("cannot join a vanilla game on edu edition")
+	case packet.PlayStatusLoginFailedServerFull:
+		_ = conn.Close()
+		return fmt.Errorf("server full")
+	default:
+		return fmt.Errorf("unknown play status in PlayStatus packet %v", pk.Status)
+	}
+	return nil
+}
+
 // enableEncryption enables encryption on the server side over the connection. It sends an unencrypted
 // handshake packet to the client and enables encryption after that.
 func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
@@ -315,8 +390,6 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	}
 	// Flush immediately as we'll enable encryption after this.
 	_ = conn.Flush()
-	// The next expected packet is a response from the client to the handshake.
-	conn.expectedID = packet.IDClientToServerHandshake
 
 	// We first compute the shared secret.
 	clientX, clientY := clientPublicKey.X, clientPublicKey.Y
@@ -328,37 +401,5 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	conn.encoder.EnableEncryption(keyBytes)
 	conn.decoder.EnableEncryption(keyBytes)
 
-	return nil
-}
-
-// handlePlayStatus handles an incoming PlayStatus packet. It reacts differently depending on the status
-// found in the packet.
-func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
-	switch pk.Status {
-	case packet.PlayStatusSuccess:
-		// TODO
-	case packet.PlayStatusLoginFailedClient:
-		_ = conn.Close()
-		return fmt.Errorf("client outdated")
-	case packet.PlayStatusLoginFailedServer:
-		_ = conn.Close()
-		return fmt.Errorf("server outdated")
-	case packet.PlayStatusPlayerSpawn:
-		// TODO
-	case packet.PlayStatusLoginFailedInvalidTenant:
-		_ = conn.Close()
-		return fmt.Errorf("invalid edu edition game owner")
-	case packet.PlayStatusLoginFailedVanillaEdu:
-		_ = conn.Close()
-		return fmt.Errorf("cannot join an edu edition game on vanilla")
-	case packet.PlayStatusLoginFailedEduVanilla:
-		_ = conn.Close()
-		return fmt.Errorf("cannot join a vanilla game on edu edition")
-	case packet.PlayStatusLoginFailedServerFull:
-		_ = conn.Close()
-		return fmt.Errorf("server full")
-	default:
-		return fmt.Errorf("unknown play status in PlayStatus packet %v", pk.Status)
-	}
 	return nil
 }
