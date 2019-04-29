@@ -15,4 +15,5 @@ const (
 const (
 	IDResourcePackDataInfo = iota + 0x52
 	IDResourcePackChunkData
+	IDResourcePackChunkRequest
 )
