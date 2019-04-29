@@ -1,0 +1,242 @@
+package resource
+
+import (
+	"archive/zip"
+	"bytes"
+	"crypto/sha256"
+	"encoding/json"
+	"fmt"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strconv"
+)
+
+// Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds
+// methods that may be used to get information about the resource pack.
+type Pack struct {
+	// manifest is the manifest of the resource pack. It contains information about the pack such as the name,
+	// version and description.
+	manifest *Manifest
+
+	// content is a bytes.Reader that contains the full content of the zip file. It is used to send the full
+	// data to a client.
+	content *bytes.Reader
+
+	// checksum is the SHA256 checksum of the full content of the file. It is sent to the client so that it
+	// can 'verify' the download.
+	checksum [32]byte
+}
+
+// Compile compiles a resource pack found at the path passed. The resource pack must either be a zip archive
+// (extension does not matter, could be .zip or .mcpack), or a directory containing a resource pack. In the
+// case of a directory, the directory is compiled into an archive and the pack is parsed from that.
+// Compile operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
+// will fail and return an error.
+func Compile(path string) (*Pack, error) {
+	return compile(path)
+}
+
+// Name returns the name of the resource pack.
+func (pack *Pack) Name() string {
+	return pack.manifest.Header.Name
+}
+
+// UUID returns the UUID of the resource pack.
+func (pack *Pack) UUID() string {
+	return pack.manifest.Header.UUID
+}
+
+// Description returns the description of the resource pack.
+func (pack *Pack) Description() string {
+	return pack.manifest.Header.Description
+}
+
+// Version returns the string version of the resource pack. It is guaranteed to have 3 digits in it, joined
+// by a dot.
+func (pack *Pack) Version() string {
+	return strconv.Itoa(pack.manifest.Header.Version[0]) + "." + strconv.Itoa(pack.manifest.Header.Version[1]) + "." + strconv.Itoa(pack.manifest.Header.Version[2])
+}
+
+// Modules returns all modules that the resource pack exists out of. Resource packs usually have only one
+// module, but may have more depending on their functionality.
+func (pack *Pack) Modules() []Module {
+	return pack.manifest.Modules
+}
+
+// Dependencies returns all dependency resource packs that must be loaded in order for this resource pack to
+// function correctly.
+func (pack *Pack) Dependencies() []Dependency {
+	return pack.manifest.Dependencies
+}
+
+// HasScripts checks if any of the modules of the resource pack have the type 'client_data', meaning they have
+// scripts in them.
+func (pack *Pack) HasScripts() bool {
+	for _, module := range pack.manifest.Modules {
+		if module.Type == "client_data" {
+			// The module has the client_data type, meaning it holds client scripts.
+			return true
+		}
+	}
+	return false
+}
+
+// HasBehaviours checks if any of the modules of the resource pack have either the type 'data' or
+// 'client_data', meaning they contain behaviours (or scripts).
+func (pack *Pack) HasBehaviours() bool {
+	for _, module := range pack.manifest.Modules {
+		if module.Type == "client_data" || module.Type == "data" {
+			// The module has the client_data or data type, meaning it holds behaviours
+			return true
+		}
+	}
+	return false
+}
+
+// Checksum returns the SHA256 checksum made from the full, compressed content of the resource pack archive.
+// It is transmitted as a string over network.
+func (pack *Pack) Checksum() [32]byte {
+	return pack.checksum
+}
+
+// Manifest returns the manifest found in the manifest.json of the resource pack. It contains information
+// about the pack such as its name.
+func (pack *Pack) Manifest() Manifest {
+	return *pack.manifest
+}
+
+// compile compiles the resource pack found in path, either a zip archive or a directory, and returns a
+// resource pack if successful.
+func compile(path string) (*Pack, error) {
+	info, err := os.Stat(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening resource pack path: %v", err)
+	}
+	if info.IsDir() {
+		temp, err := createTempArchive(path)
+		if err != nil {
+			return nil, err
+		}
+		// We set the path to the temp zip archive we just made.
+		path = temp.Name()
+
+		// Make sure we close the temp file and remove it at the end. We don't need to keep it, as we read all
+		// the content in a byte slice.
+		//_ = temp.Close()
+		defer func() {
+			_ = os.Remove(temp.Name())
+		}()
+	}
+	// First we read the manifest to ensure that it exists and is valid.
+	manifest, err := readManifest(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading manifest: %v", err)
+	}
+
+	// Then we read the entire content of the zip archive into a byte slice and compute the SHA256 checksum
+	// and a reader.
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("error reading resource pack file content: %v", err)
+	}
+	checksum := sha256.Sum256(content)
+	contentReader := bytes.NewReader(content)
+
+	return &Pack{manifest: manifest, checksum: checksum, content: contentReader}, nil
+}
+
+// createTempArchive creates a zip archive from the files in the path passed and writes it to a temporary
+// file, which is returned when successful.
+func createTempArchive(path string) (*os.File, error) {
+	// We've got a directory which we need to load. Provided we need to send compressed zip data to the
+	// client, we compile it to a zip archive in a temporary file.
+	temp, err := ioutil.TempFile("", "resource_pack-*.mcpack")
+	if err != nil {
+		return nil, fmt.Errorf("error creating temp zip file: %v", err)
+	}
+	writer := zip.NewWriter(temp)
+	if err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
+		relPath, err := filepath.Rel(path, filePath)
+		if err != nil {
+			return fmt.Errorf("error finding relative path: %v", err)
+		}
+		f, err := writer.Create(relPath)
+		if err != nil {
+			return fmt.Errorf("error creating new zip file: %v", err)
+		}
+		file, err := os.Open(filePath)
+		if err != nil {
+			return fmt.Errorf("error opening resource pack file %v: %v", filePath, err)
+		}
+		data, _ := ioutil.ReadAll(file)
+		// Write the original content into the 'zip file' so that we write compressed data to the file.
+		if _, err := f.Write(data); err != nil {
+			return fmt.Errorf("error writing file data to zip: %v", err)
+		}
+		_ = file.Close()
+		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("error building zip archive: %v", err)
+	}
+	_ = writer.Close()
+	return temp, nil
+}
+
+// packReader wraps around a zip.Reader to provide file finding functionality.
+type packReader struct {
+	*zip.ReadCloser
+}
+
+// find attempts to find a file in a zip reader. If found, it returns an Open()ed reader of the file that may
+// be used to read data from the file.
+func (reader packReader) find(file string) (io.ReadCloser, error) {
+	for _, file := range reader.File {
+		base := filepath.Base(file.Name)
+		if base != "manifest.json" && base != "pack_manifest.json" {
+			continue
+		}
+		fileReader, err := file.Open()
+		if err != nil {
+			return nil, fmt.Errorf("error opening zip file %v: %v", file.Name, err)
+		}
+		return fileReader, nil
+	}
+	return nil, fmt.Errorf("could not find '%v' in zip", file)
+}
+
+// readManifest reads the manifest from the resource pack located at the path passed. If not found in the root
+// of the resource pack, it will also attempt to find it deeper down into the archive.
+func readManifest(path string) (*Manifest, error) {
+	r, err := zip.OpenReader(path)
+	if err != nil {
+		return nil, fmt.Errorf("error opening zip reader: %v", err)
+	}
+	reader := packReader{ReadCloser: r}
+	defer func() {
+		_ = r.Close()
+	}()
+
+	// Try to find the manifest file in the zip.
+	manifestFile, err := reader.find("manifest.json")
+	if err != nil {
+		return nil, fmt.Errorf("error loading manifest: %v", err)
+	}
+	defer func() {
+		_ = manifestFile.Close()
+	}()
+
+	// Read all data from the manifest file so that we can decode it into a Manifest struct.
+	allData, err := ioutil.ReadAll(manifestFile)
+	if err != nil {
+		return nil, fmt.Errorf("error reading from manifest file: %v", err)
+	}
+
+	manifest := &Manifest{}
+	if err := json.Unmarshal(allData, manifest); err != nil {
+		return nil, fmt.Errorf("error decoding manifest JSON: %v", err)
+	}
+
+	return manifest, nil
+}
