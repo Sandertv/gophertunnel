@@ -1,4 +1,4 @@
 github.com/google/uuid v1.1.1/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
-github.com/sandertv/go-raknet v1.2.0 h1:BRhMPniJ3f7eXBiJOqqCAA3KOPGQuZuN5rqNdH+BZF8=
-github.com/sandertv/go-raknet v1.2.0/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
+github.com/sandertv/go-raknet v1.2.1 h1:wsxmoUfPnJ/FtJ0andpi0AZCnkUDCtXsN8IKa50HR9U=
+github.com/sandertv/go-raknet v1.2.1/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
 golang.org/x/text v0.3.0/go.mod h1:NqM8EUOU14njkJ3fqMW+pc6Ldnwhi/IjpwHt7yyuwOQ=

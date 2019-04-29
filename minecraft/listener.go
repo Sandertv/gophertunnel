@@ -111,7 +111,7 @@ func (listener *Listener) listen() {
 
 		go func() {
 			defer func() {
-				_ = netConn.Close()
+				_ = conn.Close()
 			}()
 			for {
 				// We finally arrived at the packet decoding loop. We constantly decode packets that arrive

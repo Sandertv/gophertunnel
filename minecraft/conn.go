@@ -73,7 +73,7 @@ func newConn(conn net.Conn) *Conn {
 		decoder: packet.NewDecoder(conn),
 		pool:    packet.NewPool(),
 		packets: make(chan []byte, 32),
-		close:   make(chan bool, 2),
+		close:   make(chan bool, 1),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
 		expectedID: packet.IDLogin,
@@ -174,6 +174,8 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // are directly sent.
 func (conn *Conn) Flush() error {
 	conn.sendMutex.Lock()
+	defer conn.sendMutex.Unlock()
+
 	if len(conn.bufferedSend) > 0 {
 		if err := conn.encoder.Encode(conn.bufferedSend); err != nil {
 			return fmt.Errorf("error encoding packet batch: %v", err)
@@ -181,13 +183,16 @@ func (conn *Conn) Flush() error {
 		// Reset the send slice so that we don't accidentally send the same packets.
 		conn.bufferedSend = nil
 	}
-	conn.sendMutex.Unlock()
 	return nil
 }
 
 // Close closes the Conn and its underlying connection. Before closing, it also calls Flush() so that any
 // packets currently pending are sent out.
 func (conn *Conn) Close() error {
+	if len(conn.close) != 0 {
+		// The connection was already closed, no need to do anything.
+		return nil
+	}
 	_ = conn.Flush()
 	conn.close <- true
 	return conn.conn.Close()
