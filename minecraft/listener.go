@@ -56,6 +56,7 @@ func Listen(network, address string) (*Listener, error) {
 		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
 		listener: listener,
 		close:    make(chan bool, 2),
+		incoming: make(chan *Conn),
 	}
 
 	// Actually start listening.

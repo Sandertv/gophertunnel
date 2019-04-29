@@ -377,11 +377,13 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			return fmt.Errorf("error writing resource pack stack packet: %v", err)
 		}
 	case packet.PackResponseCompleted:
-		// TODO
+		// This is as far as we can go in terms of covering up the login sequence. The next packet is the
+		// StartGame packet, which includes far too many fields related to the world which we simply cannot
+		// fill out in advance.
+		conn.loggedIn = true
 	default:
 		return fmt.Errorf("unknown resource pack client response: %v", pk.Response)
 	}
-
 	return nil
 }
 
