@@ -1,7 +1,7 @@
 package packet
 
 const (
-	IDLogin = iota + 1
+	IDLogin = iota + 0x01
 	IDPlayStatus
 	IDServerToClientHandshake
 	IDClientToServerHandshake
@@ -9,4 +9,9 @@ const (
 	IDResourcePacksInfo
 	IDResourcePackStack
 	IDResourcePackClientResponse
+)
+
+// ...
+const (
+	IDResourcePackDataInfo = iota + 0x52
 )
