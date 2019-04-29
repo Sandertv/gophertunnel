@@ -11,9 +11,9 @@ import (
 type ResourcePackDataInfo struct {
 	// UUID is the unique ID of the resource pack that the info concerns.
 	UUID string
-	// DataChunkSize is the size in bytes of the chunks in which the total size of the resource pack to be
-	// sent will be divided. A size of 1MB (1024*1024) means that a resource pack of 15.5MB will be split into
-	// 16 data chunks.
+	// DataChunkSize is the maximum size in bytes of the chunks in which the total size of the resource pack
+	// to be sent will be divided. A size of 1MB (1024*1024) means that a resource pack of 15.5MB will be
+	// split into 16 data chunks.
 	DataChunkSize int32
 	// ChunkCount is the total amount of data chunks that the sent resource pack will exist out of. It is the
 	// total size of the resource pack divided by the DataChunkSize field.
