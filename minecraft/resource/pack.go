@@ -45,7 +45,7 @@ func Compile(path string) (*Pack, error) {
 // will fail and return an error.
 // Unlike Compile, MustCompile does not return an error and panics if an error occurs instead.
 func MustCompile(path string) *Pack {
-	pack, err := Compile(path)
+	pack, err := compile(path)
 	if err != nil {
 		panic(err)
 	}
