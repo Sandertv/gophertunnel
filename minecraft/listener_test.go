@@ -1,9 +1,9 @@
 package minecraft
 
 import (
+	"fmt"
 	"github.com/sandertv/go-raknet"
 	"testing"
-	"time"
 )
 
 func TestListen(t *testing.T) {
@@ -14,6 +14,23 @@ func TestListen(t *testing.T) {
 	if err := listener.listener.(*raknet.Listener).HijackPong("mco.mineplex.com:19132"); err != nil {
 		panic(err)
 	}
-	_ = listener
-	time.Sleep(time.Hour)
+	for {
+		conn, err := listener.Accept()
+		if err != nil {
+			return
+		}
+		fmt.Println(conn.RemoteAddr(), "connected.")
+
+		go func() {
+			defer func() {
+				_ = conn.Close()
+				fmt.Println(conn.RemoteAddr(), "disconnected.")
+			}()
+			for {
+				if _, err := conn.(*Conn).ReadPacket(); err != nil {
+					return
+				}
+			}
+		}()
+	}
 }
