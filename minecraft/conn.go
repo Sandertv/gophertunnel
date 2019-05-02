@@ -119,6 +119,9 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // received.
 // The packet received must not be held until the next packet is read using ReadPacket(). If the same type of
 // packet is read, the previous one will be invalidated.
+//
+// If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
+// packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	select {
 	case data := <-conn.packets:
@@ -130,7 +133,9 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 		// Attempt to fetch the packet with the right packet ID from the pool.
 		pk, ok := conn.pool[header.PacketID]
 		if !ok {
-			return nil, fmt.Errorf("unsupported packet 0x%x: payload: %x", header.PacketID, buf.Bytes())
+			// We haven't implemented this packet ID, so we return an unknown packet which could be used by
+			// the reader.
+			pk = &packet.Unknown{PacketID: header.PacketID}
 		}
 		// Unmarshal the bytes into the packet and return the error.
 		return pk, pk.Unmarshal(buf)
