@@ -23,7 +23,7 @@ const (
 // The publicKey passed is used to verify the signature of the claim. If a zero public key is passed (meaning,
 // not a nil pointer, but an empty *ecdsa.PublicKey{}), the key is retrieved from the x5u of the header.
 // The public key passed will be updated for the identityPublicKey found in the claim.
-func Verify(jwt string, publicKey *ecdsa.PublicKey) (hasMojangKey bool, err error) {
+func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangKey bool, err error) {
 	fragments := strings.Split(jwt, ".")
 	if len(fragments) != 3 {
 		return false, fmt.Errorf("expected claim to have 3 sections, but got %v", len(fragments))
@@ -31,6 +31,8 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey) (hasMojangKey bool, err erro
 	for index, f := range fragments {
 		// First base64 decode all of these fragments so we can directly assign them without having to decode
 		// them one by one.
+		// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
+		f = strings.TrimRight(f, "=")
 		b, err := base64.RawURLEncoding.DecodeString(f)
 		if err != nil {
 			return false, fmt.Errorf("error base64 decoding claim: %v", err)
@@ -76,20 +78,22 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey) (hasMojangKey bool, err erro
 			}
 		}
 	}
-	newPublicKeyInterface, ok := jwtData["identityPublicKey"]
-	if !ok {
-		// Each claim must have an identityPublicKey in its payload.
-		return false, fmt.Errorf("JWT claim did not contain an identityPublicKey in the payload")
+	var newPublicKeyData string
+	if needNewKey {
+		newPublicKeyInterface, ok := jwtData["identityPublicKey"]
+		if !ok {
+			// Each claim must have an identityPublicKey in its payload.
+			return false, fmt.Errorf("JWT claim did not contain an identityPublicKey in the payload")
+		}
+		newPublicKeyData, ok = newPublicKeyInterface.(string)
+		if !ok {
+			// The identityPublicKey this claim held wasn't actually a public key, but some other value.
+			return false, fmt.Errorf("JWT claim had an identityPublicKey that was not a string")
+		}
+		if newPublicKeyData == MojangPublicKey {
+			hasMojangKey = true
+		}
 	}
-	newPublicKeyData, ok := newPublicKeyInterface.(string)
-	if !ok {
-		// The identityPublicKey this claim held wasn't actually a public key, but some other value.
-		return false, fmt.Errorf("JWT claim had an identityPublicKey that was not a string")
-	}
-	if newPublicKeyData == MojangPublicKey {
-		hasMojangKey = true
-	}
-
 	// Signature verification.
 	hash := sha512.New384()
 	// The hash is produced using the header and the payload section of the claim.
@@ -103,10 +107,12 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey) (hasMojangKey bool, err erro
 		return false, fmt.Errorf("JWT claim has an incorrect signature")
 	}
 
-	// Finally parse the new identityPublicKey and set it to the public key pointer passed, so that it may
-	// be used to verify the next claim in the chain.
-	if err := ParsePublicKey(newPublicKeyData, publicKey); err != nil {
-		return false, fmt.Errorf("error parsing identityPublicKey: %v", err)
+	if needNewKey {
+		// Finally parse the new identityPublicKey and set it to the public key pointer passed, so that it may
+		// be used to verify the next claim in the chain.
+		if err := ParsePublicKey(newPublicKeyData, publicKey); err != nil {
+			return false, fmt.Errorf("error parsing identityPublicKey: %v", err)
+		}
 	}
 	return hasMojangKey, nil
 }
@@ -118,6 +124,8 @@ func Payload(jwt string) ([]byte, error) {
 	if len(fragments) != 3 {
 		return nil, fmt.Errorf("expected claim to have 3 sections, but got %v", len(fragments))
 	}
+	// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
+	fragments[1] = strings.TrimRight(fragments[1], "=")
 	payload, err := base64.RawURLEncoding.DecodeString(fragments[1])
 	if err != nil {
 		return nil, fmt.Errorf("error base64 decoding payload: %v", err)
@@ -146,9 +154,6 @@ func ParsePublicKey(b64Data string, key *ecdsa.PublicKey) error {
 
 // MarshalPublicKey marshals an ECDSA public key to a base64 encoded binary representation.
 func MarshalPublicKey(key *ecdsa.PublicKey) (b64Data string, err error) {
-	data, err := x509.MarshalPKIXPublicKey(key)
-	if err != nil {
-		return "", fmt.Errorf("error marshaling public key: %v", err)
-	}
+	data, _ := x509.MarshalPKIXPublicKey(key)
 	return base64.RawStdEncoding.EncodeToString(data), nil
 }

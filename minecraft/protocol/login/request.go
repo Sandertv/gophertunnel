@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"reflect"
+	"time"
 )
 
 // Chain holds a chain with claims, each with their own headers, payloads and signatures. Each claim holds
@@ -29,7 +30,8 @@ func init() {
 // Verify verifies the login request string passed. It ensures the claims found in the certificate chain are
 // signed correctly and it looks for the Mojang public key to find out if the player was authenticated.
 func Verify(requestString string) (publicKey *ecdsa.PublicKey, authenticated bool, err error) {
-	chain, err := chain(bytes.NewBuffer([]byte(requestString)))
+	buf := bytes.NewBuffer([]byte(requestString))
+	chain, err := chain(buf)
 	if err != nil {
 		return nil, false, err
 	}
@@ -37,7 +39,7 @@ func Verify(requestString string) (publicKey *ecdsa.PublicKey, authenticated boo
 	for _, claim := range chain {
 		// Verify each of the claims found in the chain using the empty public key above, which will be set
 		// after verifying the first public key.
-		if hasKey, err := jwt.Verify(claim, pubKey); err != nil {
+		if hasKey, err := jwt.Verify(claim, pubKey, true); err != nil {
 			return nil, false, fmt.Errorf("error verifying claim: %v", err)
 		} else {
 			if hasKey == true {
@@ -46,6 +48,14 @@ func Verify(requestString string) (publicKey *ecdsa.PublicKey, authenticated boo
 				authenticated = true
 			}
 		}
+	}
+	var rawLength int32
+	if err := binary.Read(buf, binary.LittleEndian, &rawLength); err != nil {
+		return nil, false, fmt.Errorf("error reading raw token length: %v", err)
+	}
+	rawToken := buf.Next(int(rawLength))
+	if _, err := jwt.Verify(string(rawToken), pubKey, false); err != nil {
+		return nil, false, fmt.Errorf("error verifying client data: %v", err)
 	}
 	return pubKey, authenticated, nil
 }
@@ -105,6 +115,48 @@ func Decode(requestString string) (IdentityData, ClientData, error) {
 	}
 
 	return identityData, clientData, nil
+}
+
+// Encode encodes a login request using the encoded login chain passed and the client data. The request's
+// client data token is signed using the private key passed. It must be the same as the one used to get the
+// login chain.
+func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) string {
+	keyData, _ := jwt.MarshalPublicKey(&key.PublicKey)
+
+	// We first decode the login chain we actually got in a new request.
+	request := &request{}
+	_ = json.Unmarshal([]byte(loginChain), &request)
+
+	// We parse the header of the first claim it has in the chain, which will soon be the second claim.
+	nextHeaderData, _ := jwt.HeaderFrom(request.Chain[0])
+	nextHeader := &jwt.Header{}
+	_ = json.Unmarshal(nextHeaderData, nextHeader)
+
+	// We create a new claim, signed using our own private key here. The identityPublicKey in this claim
+	// contains the x5u from the first claim currently in the chain.
+	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
+		"ceritificateAuthority": true,
+		"exp":                   time.Now().Unix() + int64(time.Hour*6),
+		"identityPublicKey":     nextHeader.X5U,
+		"nbf":                   time.Now().Unix() - int64(time.Hour*6),
+	}, key)
+
+	// We add our own claim at the start of the chain.
+	request.Chain = append(Chain{claim}, request.Chain...)
+
+	loginChainBytes, _ := json.Marshal(request)
+	loginChain = string(loginChainBytes)
+
+	buf := bytes.NewBuffer(nil)
+	_ = binary.Write(buf, binary.LittleEndian, int32(len(loginChain)))
+	_, _ = buf.WriteString(loginChain)
+
+	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
+	// just now it contains client data.
+	token, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, data, key)
+	_ = binary.Write(buf, binary.LittleEndian, int32(len(token)))
+	_, _ = buf.WriteString(token)
+	return buf.String()
 }
 
 // identityDataContainer is used to decode identity data found in a JWT claim into an IdentityData struct.

@@ -11,7 +11,7 @@ import (
 
 // New produces an encoded JWT from the header and payload passed. The signature of the JWT is created using
 // the private key passed.
-func New(header Header, payload map[string]interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
 	// First JSON+base64 encode the header.
 	headerRaw, err := json.Marshal(header)
 	if err != nil {
