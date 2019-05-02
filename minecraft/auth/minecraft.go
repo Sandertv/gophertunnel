@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/ecdsa"
+	"crypto/x509"
 	"encoding/base64"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -14,7 +15,8 @@ import (
 // ECDSA private key of the client. This key will later be used to initialise encryption, and must be saved
 // for when packets need to be decrypted/encrypted.
 func RequestMinecraftChain(token *XSTSToken, key *ecdsa.PrivateKey) (string, error) {
-	pubKeyData := base64.StdEncoding.EncodeToString(append(key.PublicKey.X.Bytes(), key.PublicKey.Y.Bytes()...))
+	data, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
+	pubKeyData := base64.StdEncoding.EncodeToString(data)
 
 	// The body of the requests holds a JSON object with one key in it, the 'identityPublicKey', which holds
 	// the public key data of the private key passed.
@@ -38,6 +40,6 @@ func RequestMinecraftChain(token *XSTSToken, key *ecdsa.PrivateKey) (string, err
 	defer func() {
 		_ = resp.Body.Close()
 	}()
-	data, err := ioutil.ReadAll(resp.Body)
+	data, err = ioutil.ReadAll(resp.Body)
 	return string(data), err
 }
