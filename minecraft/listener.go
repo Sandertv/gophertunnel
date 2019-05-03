@@ -77,6 +77,16 @@ func (listener *Listener) ResourcePacks(texturePacksRequired bool, packs ...*res
 	listener.resourcePacks = packs
 }
 
+// HijackPong hijacks the pong response from a server at an address passed. The listener passed will
+// continuously update its pong data by hijacking the pong data of the server at the address.
+// The hijack will last until the listener is shut down.
+// If the address passed could not be resolved, an error is returned.
+// Calling HijackPong means that any current and future pong data set using listener.PongData is overwritten
+// each update.
+func (listener *Listener) HijackPong(address string) error {
+	return listener.listener.(*raknet.Listener).HijackPong(address)
+}
+
 // Addr returns the address of the underlying listener.
 func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
