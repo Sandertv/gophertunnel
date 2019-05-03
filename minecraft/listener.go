@@ -34,35 +34,31 @@ type Listener struct {
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
 func Listen(network, address string) (*Listener, error) {
-	var listener net.Listener
+	var netListener net.Listener
 	var err error
 	switch network {
 	case "raknet":
 		// Listen specifically for the RakNet network type, as the standard library (obviously) doesn't
 		// implement that.
-		listener, err = raknet.Listen(address)
-		if err != nil {
-			return nil, err
-		}
+		netListener, err = raknet.Listen(address)
 	default:
 		// Otherwise fall back to the standard net.Listen.
-		listener, err = net.Listen(network, address)
-		if err != nil {
-			return nil, err
-		}
+		netListener, err = net.Listen(network, address)
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	mcListener := &Listener{
+	listener := &Listener{
 		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
-		listener: listener,
+		listener: netListener,
 		close:    make(chan bool, 2),
 		incoming: make(chan *Conn),
 	}
 
 	// Actually start listening.
-	go mcListener.listen()
-
-	return mcListener, nil
+	go listener.listen()
+	return listener, nil
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
@@ -105,7 +101,7 @@ func (listener *Listener) listen() {
 			// close too.
 			return
 		}
-		conn := newConn(netConn)
+		conn := newConn(netConn, nil)
 		conn.texturePacksRequired = listener.texturePacksRequired
 		conn.resourcePacks = listener.resourcePacks
 

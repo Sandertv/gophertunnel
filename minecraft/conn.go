@@ -7,6 +7,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -15,6 +17,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"io"
 	"net"
+	"strings"
 	"sync"
 	"time"
 )
@@ -26,6 +29,9 @@ type Conn struct {
 	pool    packet.Pool
 	encoder *packet.Encoder
 	decoder *packet.Decoder
+
+	identityData login.IdentityData
+	clientData   login.ClientData
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -47,9 +53,9 @@ type Conn struct {
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
-	// expectedID is the ID of the next packet expected during the login sequence. The value becomes
-	// irrelevant when loggedIn is true.
-	expectedID uint32
+	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
+	// logged in.
+	expectedIDs []uint32
 
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -60,25 +66,32 @@ type Conn struct {
 
 	packQueue *resourcePackQueue
 
-	close chan bool
+	connected chan bool
+	close     chan bool
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
 // Minecraft packets to that net.Conn.
-func newConn(conn net.Conn) *Conn {
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+// newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
+// key is generated.
+func newConn(conn net.Conn, key *ecdsa.PrivateKey) *Conn {
+	if key == nil {
+		// If not key is passed, we generate one in this function and use it instead.
+		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	}
 	c := &Conn{
-		conn:    conn,
-		encoder: packet.NewEncoder(conn),
-		decoder: packet.NewDecoder(conn),
-		pool:    packet.NewPool(),
-		packets: make(chan []byte, 32),
-		close:   make(chan bool, 1),
+		conn:      conn,
+		encoder:   packet.NewEncoder(conn),
+		decoder:   packet.NewDecoder(conn),
+		pool:      packet.NewPool(),
+		packets:   make(chan []byte, 32),
+		connected: make(chan bool),
+		close:     make(chan bool, 1),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
-		expectedID: packet.IDLogin,
-		privateKey: key,
-		salt:       make([]byte, 16),
+		expectedIDs: []uint32{packet.IDLogin},
+		privateKey:  key,
+		salt:        make([]byte, 16),
 	}
 	_, _ = rand.Read(c.salt)
 
@@ -99,6 +112,19 @@ func newConn(conn net.Conn) *Conn {
 		}
 	}()
 	return c
+}
+
+// IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
+// connected client.
+func (conn *Conn) IdentityData() login.IdentityData {
+	return conn.identityData
+}
+
+// ClientData returns the client data the client connected with. Note that this client data may be changed
+// during the session, so the data should only be used directly after connection, and should be updated after
+// that by the caller.
+func (conn *Conn) ClientData() login.ClientData {
+	return conn.clientData
 }
 
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
@@ -250,7 +276,16 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		if err != nil {
 			return err
 		}
-		if pk.ID() != conn.expectedID {
+		found := false
+		for _, id := range conn.expectedIDs {
+			if id == pk.ID() || pk.ID() == packet.IDDisconnect {
+				// If the packet was expected, we set found to true and handle it. If not, we skip it and
+				// ignore it eventually.
+				found = true
+				break
+			}
+		}
+		if !found {
 			// This is not the packet we expected next in the login sequence. We just ignore it as it might
 			// be a packet such as a movement that was simply sent too early.
 			return nil
@@ -267,10 +302,20 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			return conn.handleResourcePackChunkRequest(pk)
 
 		// Internal packets destined for the client.
+		case *packet.ServerToClientHandshake:
+			return conn.handleServerToClientHandshake(pk)
 		case *packet.PlayStatus:
 			return conn.handlePlayStatus(pk)
+		case *packet.ResourcePacksInfo:
+			return conn.handleResourcePacksInfo(pk)
+		case *packet.ResourcePackDataInfo:
+			fmt.Printf("%+v\n", pk)
+			// TODO: Implement resource pack downloading.
+		case *packet.ResourcePackStack:
+			return conn.handleResourcePackStack(pk)
 		case *packet.Disconnect:
-			return conn.Close()
+			_ = conn.Close()
+			return errors.New(pk.Message)
 		}
 	}
 	return nil
@@ -280,7 +325,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
 	// The next expected packet is a response from the client to the handshake.
-	conn.expectedID = packet.IDClientToServerHandshake
+	conn.expect(packet.IDClientToServerHandshake)
 
 	if pk.ClientProtocol != protocol.CurrentProtocol {
 		// By default we assume the client is outdated.
@@ -300,16 +345,16 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if !authenticated {
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
-	identityData, clientData, err := login.Decode(pk.ConnectionRequest)
+	conn.identityData, conn.clientData, err = login.Decode(pk.ConnectionRequest)
 	if err != nil {
 		return fmt.Errorf("error decoding login request: %v", err)
 	}
 	// First validate the identity data and the client data to ensure we're working with valid data. Mojang
 	// might change this data, or some custom client might fiddle with the data, so we can never be too sure.
-	if err := identityData.Validate(); err != nil {
+	if err := conn.identityData.Validate(); err != nil {
 		return fmt.Errorf("invalid identity data: %v", err)
 	}
-	if err := clientData.Validate(); err != nil {
+	if err := conn.clientData.Validate(); err != nil {
 		return fmt.Errorf("invalid client data: %v", err)
 	}
 	if err := conn.enableEncryption(publicKey); err != nil {
@@ -321,7 +366,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake) error {
 	// The next expected packet is a resource pack client response.
-	conn.expectedID = packet.IDResourcePackClientResponse
+	conn.expect(packet.IDResourcePackClientResponse)
 
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)
@@ -347,6 +392,111 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 		return fmt.Errorf("error sending resource packs info: %v", err)
 	}
 	return nil
+}
+
+// handleServerToClientHandshake handles an incoming ServerToClientHandshake packet. It initialises encryption
+// on the client side of the connection, using the hash and the public key from the server exposed in the
+// packet.
+func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandshake) error {
+	headerData, err := jwt.HeaderFrom(pk.JWT)
+	if err != nil {
+		return fmt.Errorf("error reading ServerToClientHandshake JWT header: %v", err)
+	}
+	header := &jwt.Header{}
+	if err := json.Unmarshal(headerData, header); err != nil {
+		return fmt.Errorf("error parsing ServerToClientHandshake JWT header JSON: %v", err)
+	}
+	if !jwt.AllowedAlg(header.Algorithm) {
+		return fmt.Errorf("ServerToClientHandshake JWT header had unexpected alg: expected %v, got %v", "ES384", header.Algorithm)
+	}
+	// First parse the public pubKey, so that we can use it to verify the entire JWT afterwards. The JWT is self-
+	// signed by the server.
+	pubKey := &ecdsa.PublicKey{}
+	if err := jwt.ParsePublicKey(header.X5U, pubKey); err != nil {
+		return fmt.Errorf("error parsing ServerToClientHandshake header x5u public pubKey: %v", err)
+	}
+	if _, err := jwt.Verify(pk.JWT, pubKey, false); err != nil {
+		return fmt.Errorf("error verifying ServerToClientHandshake JWT: %v", err)
+	}
+	// We already know the JWT is valid as we verified it, so no need to error check.
+	body, _ := jwt.Payload(pk.JWT)
+	m := make(map[string]string)
+	if err := json.Unmarshal(body, &m); err != nil {
+		return fmt.Errorf("error parsing ServerToClientHandshake JWT payload JSON: %v", err)
+	}
+	b64Salt, ok := m["salt"]
+	if !ok {
+		return fmt.Errorf("ServerToClientHandshake JWT payload contained no 'salt'")
+	}
+	// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
+	b64Salt = strings.TrimRight(b64Salt, "=")
+	salt, err := base64.RawStdEncoding.DecodeString(b64Salt)
+	if err != nil {
+		return fmt.Errorf("error base64 decoding ServerToClientHandshake salt: %v", err)
+	}
+
+	x, _ := pubKey.Curve.ScalarMult(pubKey.X, pubKey.Y, conn.privateKey.D.Bytes())
+	sharedSecret := x.Bytes()
+	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
+
+	// Finally we enable encryption for the encoder and decoder using the secret pubKey bytes we produced.
+	conn.encoder.EnableEncryption(keyBytes)
+	conn.decoder.EnableEncryption(keyBytes)
+
+	// We write a ClientToServerHandshake packet (which has no payload) as a response.
+	return conn.WritePacket(&packet.ClientToServerHandshake{})
+}
+
+// handleResourcePacksInfo handles a ResourcePacksInfo packet sent by the server. The client responds by
+// sending the packs it needs downloaded.
+func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
+	packsToDownload := make([]string, 0, len(pk.TexturePacks)+len(pk.BehaviourPacks))
+	for _, pack := range pk.TexturePacks {
+		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
+	}
+	for _, pack := range pk.BehaviourPacks {
+		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
+	}
+	if len(packsToDownload) != 0 {
+		conn.expect(packet.IDResourcePackDataInfo)
+		return conn.WritePacket(&packet.ResourcePackClientResponse{
+			Response:        packet.PackResponseSendPacks,
+			PacksToDownload: packsToDownload,
+		})
+	}
+	conn.expect(packet.IDResourcePackStack)
+	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+}
+
+// handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
+// that resource packs are applied in.
+func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
+	// We currently don't apply resource packs in any way, so instead we just check if all resource packs in
+	// the stacks are also downloaded.
+	for _, pack := range pk.TexturePacks {
+		if !conn.hasPack(pack.UUID, pack.Version, false) {
+			return fmt.Errorf("texture pack {uuid=%v, version=%v} not downloaded", pack.UUID, pack.Version)
+		}
+	}
+	for _, pack := range pk.BehaviourPacks {
+		if !conn.hasPack(pack.UUID, pack.Version, true) {
+			return fmt.Errorf("behaviour pack {uuid=%v, version=%v} not downloaded", pack.UUID, pack.Version)
+		}
+	}
+	conn.loggedIn = true
+	conn.connected <- true
+	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
+}
+
+// hasPack checks if the connection has a resource pack downloaded with the UUID and version passed, provided
+// the pack either has or does not have behaviours in it.
+func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool {
+	for _, pack := range conn.resourcePacks {
+		if pack.UUID() == uuid && pack.Version() == version && pack.HasBehaviours() == hasBehaviours {
+			return true
+		}
+	}
+	return false
 }
 
 // packChunkSize is the size of a single chunk of data from a resource pack: 512 kB or 0.5 MB
@@ -408,7 +558,7 @@ func (conn *Conn) nextResourcePackDownload() error {
 		return fmt.Errorf("error sending resource pack data info packet: %v", err)
 	}
 	// Set the next expected packet to ResourcePackChunkRequest packets.
-	conn.expectedID = packet.IDResourcePackChunkRequest
+	conn.expect(packet.IDResourcePackChunkRequest)
 	return nil
 }
 
@@ -442,7 +592,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 			if !conn.packQueue.AllDownloaded() {
 				_ = conn.nextResourcePackDownload()
 			} else {
-				conn.expectedID = packet.IDResourcePackClientResponse
+				conn.expect(packet.IDResourcePackClientResponse)
 			}
 		}()
 	}
@@ -458,7 +608,8 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	switch pk.Status {
 	case packet.PlayStatusLoginSuccess:
-		// TODO
+		// The next packet we expect is the ResourcePacksInfo packet.
+		conn.expect(packet.IDResourcePacksInfo)
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
 		return fmt.Errorf("client outdated")
@@ -497,7 +648,7 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 		X5U:       pubKey,
 	}
 	payload := map[string]interface{}{
-		"salt": base64.RawStdEncoding.EncodeToString(conn.salt),
+		"salt": base64.StdEncoding.EncodeToString(conn.salt),
 	}
 
 	// We produce an encoded JWT using the header and payload above, then we send the JWT in a ServerToClient-
@@ -513,8 +664,7 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	_ = conn.Flush()
 
 	// We first compute the shared secret.
-	clientX, clientY := clientPublicKey.X, clientPublicKey.Y
-	x, _ := clientPublicKey.Curve.ScalarMult(clientX, clientY, conn.privateKey.D.Bytes())
+	x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
 	sharedSecret := x.Bytes()
 	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
@@ -523,4 +673,9 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	conn.decoder.EnableEncryption(keyBytes)
 
 	return nil
+}
+
+// expect sets the packet IDs that are next expected to arrive.
+func (conn *Conn) expect(packetIDs ...uint32) {
+	conn.expectedIDs = packetIDs
 }
