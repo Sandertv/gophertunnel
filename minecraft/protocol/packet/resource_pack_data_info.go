@@ -41,17 +41,11 @@ func (pk *ResourcePackDataInfo) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackDataInfo) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.String(buf, &pk.UUID); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.DataChunkSize); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.ChunkCount); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.Size); err != nil {
-		return err
-	}
-	return protocol.String(buf, &pk.Hash)
+	return ChainErr(
+		protocol.String(buf, &pk.UUID),
+		binary.Read(buf, binary.LittleEndian, &pk.DataChunkSize),
+		binary.Read(buf, binary.LittleEndian, &pk.ChunkCount),
+		binary.Read(buf, binary.LittleEndian, &pk.Size),
+		protocol.String(buf, &pk.Hash),
+	)
 }

@@ -40,11 +40,11 @@ func (pk *ResourcePackClientResponse) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackClientResponse) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.Response); err != nil {
-		return err
-	}
 	var length int16
-	if err := binary.Read(buf, binary.LittleEndian, &length); err != nil {
+	if err := ChainErr(
+		binary.Read(buf, binary.LittleEndian, &pk.Response),
+		binary.Read(buf, binary.LittleEndian, &length),
+	); err != nil {
 		return err
 	}
 	for i := int16(0); i < length; i++ {

@@ -46,11 +46,11 @@ func (pk *ResourcePackStack) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackStack) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired); err != nil {
-		return err
-	}
 	var length uint32
-	if err := protocol.Varuint32(buf, &length); err != nil {
+	if err := ChainErr(
+		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
+		protocol.Varuint32(buf, &length),
+	); err != nil {
 		return err
 	}
 	for i := uint32(0); i < length; i++ {
@@ -82,11 +82,9 @@ func writeResourcePackStackEntry(buf *bytes.Buffer, pack ResourcePack) {
 
 // resourcePackStackEntry reads a resource pack stack entry from the bytes.Buffer passed.
 func resourcePackStackEntry(buf *bytes.Buffer, pack *ResourcePack) error {
-	if err := protocol.String(buf, &pack.UUID); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.Version); err != nil {
-		return err
-	}
-	return protocol.String(buf, &pack.SubPackName)
+	return ChainErr(
+		protocol.String(buf, &pack.UUID),
+		protocol.String(buf, &pack.Version),
+		protocol.String(buf, &pack.SubPackName),
+	)
 }

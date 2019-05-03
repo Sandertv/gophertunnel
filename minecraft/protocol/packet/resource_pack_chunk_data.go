@@ -39,17 +39,13 @@ func (pk *ResourcePackChunkData) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackChunkData) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.String(buf, &pk.UUID); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.DataOffset); err != nil {
-		return err
-	}
 	var length int32
-	if err := binary.Read(buf, binary.LittleEndian, &length); err != nil {
+	if err := ChainErr(
+		protocol.String(buf, &pk.UUID),
+		binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex),
+		binary.Read(buf, binary.LittleEndian, &pk.DataOffset),
+		binary.Read(buf, binary.LittleEndian, &length),
+	); err != nil {
 		return err
 	}
 	pk.Data = buf.Next(int(length))

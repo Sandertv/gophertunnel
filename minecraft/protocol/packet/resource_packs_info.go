@@ -46,14 +46,12 @@ func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pk.HasScripts); err != nil {
-		return err
-	}
 	var length int16
-	if err := binary.Read(buf, binary.LittleEndian, &length); err != nil {
+	if err := ChainErr(
+		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
+		binary.Read(buf, binary.LittleEndian, &pk.HasScripts),
+		binary.Read(buf, binary.LittleEndian, &length),
+	); err != nil {
 		return err
 	}
 	for i := int16(0); i < length; i++ {
@@ -89,25 +87,15 @@ func writeResourcePackInfoEntry(buf *bytes.Buffer, pack ResourcePack) {
 
 // resourcePackInfoEntry reads a resource pack info entry from the bytes.Buffer passed.
 func resourcePackInfoEntry(buf *bytes.Buffer, pack *ResourcePack) error {
-	if err := protocol.String(buf, &pack.UUID); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.Version); err != nil {
-		return err
-	}
-	if err := binary.Read(buf, binary.LittleEndian, &pack.Size); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.ContentKey); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.SubPackName); err != nil {
-		return err
-	}
-	if err := protocol.String(buf, &pack.ContentIdentity); err != nil {
-		return err
-	}
-	return binary.Read(buf, binary.LittleEndian, &pack.HasScripts)
+	return ChainErr(
+		protocol.String(buf, &pack.UUID),
+		protocol.String(buf, &pack.Version),
+		binary.Read(buf, binary.LittleEndian, &pack.Size),
+		protocol.String(buf, &pack.ContentKey),
+		protocol.String(buf, &pack.SubPackName),
+		protocol.String(buf, &pack.ContentIdentity),
+		binary.Read(buf, binary.LittleEndian, &pack.HasScripts),
+	)
 }
 
 // ResourcePack represents a resource pack sent over network. It holds information about the resource pack
