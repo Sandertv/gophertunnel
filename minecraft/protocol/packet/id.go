@@ -9,6 +9,9 @@ const (
 	IDResourcePacksInfo
 	IDResourcePackStack
 	IDResourcePackClientResponse
+	IDText
+	IDSetTime
+	IDStartGame
 )
 
 // ...

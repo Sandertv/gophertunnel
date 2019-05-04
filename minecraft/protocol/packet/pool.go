@@ -16,6 +16,8 @@ func NewPool() Pool {
 		IDResourcePackStack:          &ResourcePackStack{},
 		IDResourcePackClientResponse: &ResourcePackClientResponse{},
 		// ...
+		IDStartGame: &StartGame{},
+		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
