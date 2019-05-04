@@ -26,3 +26,8 @@ const (
 	IDResourcePackChunkData
 	IDResourcePackChunkRequest
 )
+
+// ...
+const (
+	IDSetLocalPlayerAsInitialised = iota + 0x71
+)
