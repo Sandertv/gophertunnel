@@ -125,7 +125,7 @@ func authChain(credentials opt.Creds, key *ecdsa.PrivateKey) (string, error) {
 func defaultClientData(address string) login.ClientData {
 	rand2.Seed(time.Now().Unix())
 	return login.ClientData{
-		ClientRandomID:   rand2.Int63n(math.MaxInt64),
+		ClientRandomID:   rand2.Int63(),
 		DeviceOS:         device.Win10,
 		GameVersion:      protocol.CurrentVersion,
 		DeviceID:         uuid.Must(uuid.NewRandom()).String(),
