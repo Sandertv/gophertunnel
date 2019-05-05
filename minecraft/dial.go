@@ -16,7 +16,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"log"
-	"math"
 	rand2 "math/rand"
 	"net"
 	"time"
