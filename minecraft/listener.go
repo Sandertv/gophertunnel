@@ -16,12 +16,12 @@ type Listener struct {
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
 
-	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
+	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
-	resourcePacks []*resource.Pack
-	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
+	ResourcePacks []*resource.Pack
+	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
-	texturePacksRequired bool
+	TexturePacksRequired bool
 
 	listener net.Listener
 
@@ -68,15 +68,6 @@ func (listener *Listener) Accept() (net.Conn, error) {
 	return <-listener.incoming, nil
 }
 
-// ResourcePacks sets the resource packs settings of the listener. If texturePacksRequired is set to true,
-// clients must accept all resource packs in order to be able to join the server.
-// A list of resource packs may be supplied to the method, which the client will have to download when it
-// tries to join. These resource packs may be both texture and behaviour packs.
-func (listener *Listener) ResourcePacks(texturePacksRequired bool, packs ...*resource.Pack) {
-	listener.texturePacksRequired = texturePacksRequired
-	listener.resourcePacks = packs
-}
-
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
 // continuously update its pong data by hijacking the pong data of the server at the address.
 // The hijack will last until the listener is shut down.
@@ -112,8 +103,8 @@ func (listener *Listener) listen() {
 			return
 		}
 		conn := newConn(netConn, nil)
-		conn.texturePacksRequired = listener.texturePacksRequired
-		conn.resourcePacks = listener.resourcePacks
+		conn.texturePacksRequired = listener.TexturePacksRequired
+		conn.resourcePacks = listener.ResourcePacks
 
 		go func() {
 			defer func() {
