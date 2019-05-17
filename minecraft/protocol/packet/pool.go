@@ -25,6 +25,7 @@ func NewPool() Pool {
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
+		IDTransfer:                 &Transfer{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
