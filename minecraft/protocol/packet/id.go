@@ -30,5 +30,13 @@ const (
 
 // ...
 const (
+	IDModalFormRequest = iota + 0x64
+	IDModalFormResponse
+	// IDServerSettingsRequest
+	// IDServerSettingsResponse
+)
+
+// ...
+const (
 	IDSetLocalPlayerAsInitialised = iota + 0x71
 )

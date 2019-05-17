@@ -27,6 +27,9 @@ func NewPool() Pool {
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
 		IDTransfer:                 &Transfer{},
 		// ...
+		IDModalFormRequest:  &ModalFormRequest{},
+		IDModalFormResponse: &ModalFormResponse{},
+		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
 }
