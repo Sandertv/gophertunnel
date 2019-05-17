@@ -10,7 +10,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"github.com/sandertv/gophertunnel/minecraft/opt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/device"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -21,13 +20,39 @@ import (
 	"time"
 )
 
+// Dialer allows specifying specific settings for connection to a Minecraft server.
+// The zero value of Dialer is used for the package level Dial function.
+type Dialer struct {
+	// ClientData is the client data used to login to the server with. It includes fields such as the skin,
+	// locale and UUIDs unique to the client. If empty, a default is sent produced using defaultClientData().
+	ClientData login.ClientData
+
+	// Email is the email used to login to the XBOX Live account. If empty, no attempt will be made to login,
+	// and an unauthenticated login request will be sent.
+	Email string
+	// Password is the password used to login to the XBOX Live account. If Email is non-empty, a login attempt
+	// will be made using this password.
+	Password string
+}
+
 // Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
 // "tcp4", "tcp6", "unix", "unixpacket" or "raknet". A Conn is returned which may be used to receive packets
 // from and send packets to.
-// A list of optional options that may be passed may be found in the minecraft/opt package. It includes
-// options such as the credentials to login to XBOX Live.
-func Dial(network string, address string, opts ...opt.Opt) (conn *Conn, err error) {
+//
+// A zero value of a Dialer struct is used to initiate the connection. A custom Dialer may be used to specify
+// additional behaviour.
+func Dial(network string, address string) (conn *Conn, err error) {
+	return Dialer{}.Dial(network, address)
+}
+
+// Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
+// "tcp4", "tcp6", "unix", "unixpacket" or "raknet". A Conn is returned which may be used to receive packets
+// from and send packets to.
+// Specific fields in the Dialer specify additional behaviour during the connection, such as authenticating
+// to XBOX Live and custom client data.
+func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error) {
 	var netConn net.Conn
+
 	switch network {
 	case "raknet":
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
@@ -42,18 +67,20 @@ func Dial(network string, address string, opts ...opt.Opt) (conn *Conn, err erro
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 
-	options := opt.Map(opts)
 	var chainData string
-	if v, ok := options["credentials"]; ok {
-		chainData, err = authChain(v.(opt.Creds), key)
+	if dialer.Email != "" {
+		chainData, err = authChain(dialer.Email, dialer.Password, key)
 		if err != nil {
 			return nil, err
 		}
 	}
 	conn = newConn(netConn, key)
 	conn.clientData = defaultClientData(address)
-	if v, ok := options["client_data"]; ok {
-		conn.clientData = v.(login.ClientData)
+
+	var emptyClientData login.ClientData
+	if dialer.ClientData != emptyClientData {
+		// If a custom client data struct was set, we change the default.
+		conn.clientData = dialer.ClientData
 	}
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 
@@ -100,9 +127,9 @@ func listenConn(conn *Conn) {
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
-func authChain(credentials opt.Creds, key *ecdsa.PrivateKey) (string, error) {
+func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	// Obtain the Live token, and using that the XSTS token.
-	liveToken, err := auth.RequestLiveToken(credentials.Login, credentials.Password)
+	liveToken, err := auth.RequestLiveToken(email, password)
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live token: %v", err)
 	}
