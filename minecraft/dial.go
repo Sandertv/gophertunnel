@@ -17,12 +17,17 @@ import (
 	"log"
 	rand2 "math/rand"
 	"net"
+	"os"
 	"time"
 )
 
 // Dialer allows specifying specific settings for connection to a Minecraft server.
 // The zero value of Dialer is used for the package level Dial function.
 type Dialer struct {
+	// ErrorLog is a log.Logger that errors that occur during packet handling of servers are written to. By
+	// default, ErrorLog is set to one equal to the global logger.
+	ErrorLog *log.Logger
+
 	// ClientData is the client data used to login to the server with. It includes fields such as the skin,
 	// locale and UUIDs unique to the client. If empty, a default is sent produced using defaultClientData().
 	ClientData login.ClientData
@@ -80,6 +85,9 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 			return nil, err
 		}
 	}
+	if dialer.ErrorLog == nil {
+		dialer.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
+	}
 	conn = newConn(netConn, key)
 	conn.clientData = defaultClientData(address)
 	conn.packetFunc = dialer.PacketFunc
@@ -91,7 +99,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 
-	go listenConn(conn)
+	go listenConn(conn, dialer.ErrorLog)
 
 	request := login.Encode(chainData, conn.clientData, key)
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
@@ -109,7 +117,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 }
 
 // listenConn listens on the connection until it is closed on another goroutine.
-func listenConn(conn *Conn) {
+func listenConn(conn *Conn, logger *log.Logger) {
 	defer func() {
 		_ = conn.Close()
 	}()
@@ -119,13 +127,13 @@ func listenConn(conn *Conn) {
 		packets, err := conn.decoder.Decode()
 		if err != nil {
 			if !raknet.ErrConnectionClosed(err) {
-				log.Printf("error reading from client connection: %v\n", err)
+				logger.Printf("error reading from client connection: %v\n", err)
 			}
 			return
 		}
 		for _, data := range packets {
 			if err := conn.handleIncoming(data); err != nil {
-				log.Printf("%v", err)
+				logger.Printf("error handling packet: %v", err)
 				return
 			}
 		}
