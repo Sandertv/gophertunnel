@@ -33,6 +33,12 @@ type Dialer struct {
 	// Password is the password used to login to the XBOX Live account. If Email is non-empty, a login attempt
 	// will be made using this password.
 	Password string
+
+	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
+	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
+	// Login packet. The function is called with the header of the packet and its raw payload, the address
+	// from which the packet originated, and the destination address.
+	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
@@ -76,6 +82,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 	conn = newConn(netConn, key)
 	conn.clientData = defaultClientData(address)
+	conn.packetFunc = dialer.PacketFunc
 
 	var emptyClientData login.ClientData
 	if dialer.ClientData != emptyClientData {

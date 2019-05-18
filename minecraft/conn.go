@@ -66,6 +66,10 @@ type Conn struct {
 
 	packQueue *resourcePackQueue
 
+	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
+	// to this connection will call this function.
+	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
 	connected chan bool
 	close     chan bool
 }
@@ -135,7 +139,14 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	if err := header.Write(buffer); err != nil {
 		return fmt.Errorf("error writing packet header: %v", err)
 	}
+	// Record the length of the header so we can filter it out for the packet func.
+	headerLen := buffer.Len()
+
 	pk.Marshal(buffer)
+	if conn.packetFunc != nil {
+		// The packet func was set, so we call it.
+		conn.packetFunc(*header, buffer.Bytes()[headerLen:], conn.LocalAddr(), conn.RemoteAddr())
+	}
 	_, err := conn.Write(buffer.Bytes())
 	return err
 }
@@ -155,6 +166,10 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 		header := &packet.Header{}
 		if err := header.Read(buf); err != nil {
 			return nil, fmt.Errorf("error reading packet header: %v", err)
+		}
+		if conn.packetFunc != nil {
+			// The packet func was set, so we call it.
+			conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
 		}
 		// Attempt to fetch the packet with the right packet ID from the pool.
 		pk, ok := conn.pool[header.PacketID]
@@ -311,6 +326,8 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		case *packet.ResourcePackDataInfo:
 			fmt.Printf("%+v\n", pk)
 			// TODO: Implement resource pack downloading.
+		case *packet.ResourcePackChunkData:
+
 		case *packet.ResourcePackStack:
 			return conn.handleResourcePackStack(pk)
 		case *packet.Disconnect:
