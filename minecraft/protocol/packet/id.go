@@ -16,6 +16,11 @@ const (
 
 // ...
 const (
+	IDFullChunkData = iota + 0x3a
+)
+
+// ...
+const (
 	IDRequestChunkRadius = iota + 0x45
 	IDChunkRadiusUpdated
 )
