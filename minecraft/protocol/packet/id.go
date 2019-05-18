@@ -32,8 +32,8 @@ const (
 const (
 	IDModalFormRequest = iota + 0x64
 	IDModalFormResponse
-	// IDServerSettingsRequest
-	// IDServerSettingsResponse
+	IDServerSettingsRequest
+	IDServerSettingsResponse
 )
 
 // ...
