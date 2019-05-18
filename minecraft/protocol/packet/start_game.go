@@ -210,6 +210,9 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
+	if pk.GameRules == nil {
+		pk.GameRules = make(map[string]interface{})
+	}
 	var blockCount uint32
 	if err := ChainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
