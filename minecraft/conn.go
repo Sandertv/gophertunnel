@@ -192,6 +192,13 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	}
 }
 
+// ResourcePacks returns a slice of all resource packs the connection holds. For a Conn obtained using a
+// Listener, this holds all resource packs set to the Listener. For a Conn obtained using Dial, the resource
+// packs include all packs sent by the server connected to.
+func (conn *Conn) ResourcePacks() []*resource.Pack {
+	return conn.resourcePacks
+}
+
 // Write writes a slice of serialised packet data to the Conn. The data is buffered until the next 20th of a
 // tick, after which it is flushed to the connection. Write returns the amount of bytes written n.
 func (conn *Conn) Write(b []byte) (n int, err error) {
