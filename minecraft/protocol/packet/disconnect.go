@@ -13,7 +13,7 @@ type Disconnect struct {
 	// disconnected, meaning it will be sent directly to the main menu.
 	HideDisconnectionScreen bool
 	// Message is an optional message to show when disconnected. This message is only written if the
-	// HIdeDisconnectionScreen field is set to true.
+	// HideDisconnectionScreen field is set to true.
 	Message string
 }
 

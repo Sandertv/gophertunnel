@@ -8,6 +8,7 @@ import (
 // Packet represents a packet that may be sent over a Minecraft network connection. The packet needs to hold
 // a method to encode itself to binary and decode itself from binary.
 type Packet interface {
+	// ID returns the ID of the packet. All of these identifiers of packets may be found in id.go.
 	ID() uint32
 	// Marshal encodes the packet to its binary representation into buf.
 	Marshal(buf *bytes.Buffer)
