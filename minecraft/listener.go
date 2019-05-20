@@ -102,7 +102,7 @@ func (listener *Listener) listen() {
 			// close too.
 			return
 		}
-		conn := newConn(netConn, nil)
+		conn := newConn(netConn, nil, listener.ErrorLog)
 		conn.texturePacksRequired = listener.TexturePacksRequired
 		conn.resourcePacks = listener.ResourcePacks
 
@@ -123,7 +123,7 @@ func (listener *Listener) listen() {
 				for _, data := range packets {
 					loggedInBefore := conn.loggedIn
 					if err := conn.handleIncoming(data); err != nil {
-						listener.ErrorLog.Printf("%v", err)
+						listener.ErrorLog.Printf("error: %v", err)
 						return
 					}
 					if !loggedInBefore && conn.loggedIn {

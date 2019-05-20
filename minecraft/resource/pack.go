@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 )
 
@@ -50,6 +51,25 @@ func MustCompile(path string) *Pack {
 		panic(err)
 	}
 	return pack
+}
+
+// FromBytes parses an archived resource pack written to a raw byte slice passed. The data must be a valid
+// zip archive and contain a pack manifest in order for the function to succeed.
+// FromBytes saves the data to a temporary archive.
+func FromBytes(data []byte) (*Pack, error) {
+	tempFile, err := ioutil.TempFile("", "resource_pack_archive-*.mcpack")
+	if err != nil {
+		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
+	}
+	_, _ = tempFile.Write(data)
+	if err := tempFile.Close(); err != nil {
+		return nil, fmt.Errorf("error closing temp zip archive: %v", err)
+	}
+	pack, parseErr := Compile(tempFile.Name())
+	if err := os.Remove(tempFile.Name()); err != nil {
+		return nil, fmt.Errorf("error removing temp zip archive: %v", err)
+	}
+	return pack, parseErr
 }
 
 // Name returns the name of the resource pack.
@@ -267,10 +287,13 @@ func readManifest(path string) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading from manifest file: %v", err)
 	}
+	// Some JSON implementations (Mojang's) allow comments in JSON. We strip these out first.
+	expr := regexp.MustCompile(`//.*`)
+	allData = expr.ReplaceAll(allData, []byte{})
 
 	manifest := &Manifest{}
 	if err := json.Unmarshal(allData, manifest); err != nil {
-		return nil, fmt.Errorf("error decoding manifest JSON: %v", err)
+		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
 	}
 
 	return manifest, nil

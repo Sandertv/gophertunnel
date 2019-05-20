@@ -16,6 +16,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"io"
+	"log"
 	"net"
 	"strings"
 	"sync"
@@ -25,7 +26,9 @@ import (
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
 type Conn struct {
-	conn    net.Conn
+	conn net.Conn
+	log  *log.Logger
+
 	pool    packet.Pool
 	encoder *packet.Encoder
 	decoder *packet.Decoder
@@ -78,7 +81,7 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(conn net.Conn, key *ecdsa.PrivateKey) *Conn {
+func newConn(conn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	if key == nil {
 		// If not key is passed, we generate one in this function and use it instead.
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
@@ -96,6 +99,7 @@ func newConn(conn net.Conn, key *ecdsa.PrivateKey) *Conn {
 		expectedIDs: []uint32{packet.IDLogin},
 		privateKey:  key,
 		salt:        make([]byte, 16),
+		log:         log,
 	}
 	_, _ = rand.Read(c.salt)
 
@@ -315,6 +319,8 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			return conn.handleResourcePackClientResponse(pk)
 		case *packet.ResourcePackChunkRequest:
 			return conn.handleResourcePackChunkRequest(pk)
+		case *packet.RequestChunkRadius:
+			// TODO
 
 		// Internal packets destined for the client.
 		case *packet.ServerToClientHandshake:
@@ -324,12 +330,14 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		case *packet.ResourcePacksInfo:
 			return conn.handleResourcePacksInfo(pk)
 		case *packet.ResourcePackDataInfo:
-			fmt.Printf("%+v\n", pk)
-			// TODO: Implement resource pack downloading.
+			return conn.handleResourcePackDataInfo(pk)
 		case *packet.ResourcePackChunkData:
-
+			return conn.handleResourcePackChunkData(pk)
 		case *packet.ResourcePackStack:
 			return conn.handleResourcePackStack(pk)
+		case *packet.StartGame:
+			// TODO
+
 		case *packet.Disconnect:
 			_ = conn.Close()
 			return errors.New(pk.Message)
@@ -467,15 +475,27 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 // handleResourcePacksInfo handles a ResourcePacksInfo packet sent by the server. The client responds by
 // sending the packs it needs downloaded.
 func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
+	// First create a new resource pack queue with the information in the packet so we can download them
+	// properly later.
+	conn.packQueue = &resourcePackQueue{
+		packAmount:       len(pk.TexturePacks) + len(pk.BehaviourPacks),
+		downloadingPacks: make(map[string]downloadingPack),
+		awaitingPacks:    make(map[string]*downloadingPack),
+	}
+
 	packsToDownload := make([]string, 0, len(pk.TexturePacks)+len(pk.BehaviourPacks))
 	for _, pack := range pk.TexturePacks {
+		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
+		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
 	}
 	for _, pack := range pk.BehaviourPacks {
+		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
+		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
 	}
 	if len(packsToDownload) != 0 {
-		conn.expect(packet.IDResourcePackDataInfo)
+		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData)
 		return conn.WritePacket(&packet.ResourcePackClientResponse{
 			Response:        packet.PackResponseSendPacks,
 			PacksToDownload: packsToDownload,
@@ -500,7 +520,6 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 			return fmt.Errorf("behaviour pack {uuid=%v, version=%v} not downloaded", pack.UUID, pack.Version)
 		}
 	}
-	conn.loggedIn = true
 	conn.connected <- true
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
@@ -576,6 +595,81 @@ func (conn *Conn) nextResourcePackDownload() error {
 	}
 	// Set the next expected packet to ResourcePackChunkRequest packets.
 	conn.expect(packet.IDResourcePackChunkRequest)
+	return nil
+}
+
+// handleResourcePackDataInfo handles a resource pack data info packet, which initiates the downloading of the
+// pack by the client.
+func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) error {
+	uuid := pk.UUID
+	chunkCount := pk.ChunkCount
+	downloadingPack, ok := conn.packQueue.downloadingPacks[uuid]
+	if !ok {
+		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
+		// sent in the ResourcePacksInfo packet.
+		return fmt.Errorf("unknown pack to download with UUID %v", uuid)
+	}
+	if downloadingPack.size != pk.Size {
+		// Size mismatch: The ResourcePacksInfo packet had a size for the pack that did not match with the
+		// size sent here.
+		return fmt.Errorf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet", uuid)
+	}
+
+	// Remove the resource pack from the downloading packs and add it to the awaiting packets.
+	delete(conn.packQueue.downloadingPacks, uuid)
+	conn.packQueue.awaitingPacks[uuid] = &downloadingPack
+
+	downloadingPack.chunkSize = pk.DataChunkSize
+	go func() {
+		for i := int32(0); i < chunkCount; i++ {
+			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
+				UUID:       uuid,
+				ChunkIndex: i,
+			})
+			// Write the fragment to the full buffer of the downloading resource pack.
+			_, _ = downloadingPack.buf.Write(<-downloadingPack.newFrag)
+		}
+		if downloadingPack.buf.Len() != int(downloadingPack.size) {
+			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())
+			return
+		}
+		// First parse the resource pack from the total byte buffer we obtained.
+		pack, err := resource.FromBytes(downloadingPack.buf.Bytes())
+		if err != nil {
+			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", uuid, err)
+			return
+		}
+		conn.packQueue.packAmount--
+		// Finally we add the resource to the resource packs slice.
+		conn.resourcePacks = append(conn.resourcePacks, pack)
+		if conn.packQueue.packAmount == 0 {
+			conn.expect(packet.IDResourcePackStack)
+			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+		}
+	}()
+	return nil
+}
+
+// handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
+// pack that is being downloaded.
+func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) error {
+	downloadingPack, ok := conn.packQueue.awaitingPacks[pk.UUID]
+	if !ok {
+		// We haven't received a ResourcePackDataInfo packet from the server, so we can't use this data to
+		// download a resource pack.
+		return fmt.Errorf("resource pack chunk data for resource pack that was not being downloaded")
+	}
+	lastData := downloadingPack.buf.Len()+int(downloadingPack.chunkSize) >= int(downloadingPack.size)
+	if !lastData && int32(len(pk.Data)) != downloadingPack.chunkSize {
+		// The chunk data didn't have the full size and wasn't the last data to be sent for the resource pack,
+		// meaning we got too little data.
+		return fmt.Errorf("resource pack chunk data had a length of %v, but expected %v", len(pk.Data), downloadingPack.chunkSize)
+	}
+	if pk.ChunkIndex != downloadingPack.expectedIndex {
+		return fmt.Errorf("resource pack chunk data had chunk index %v, but expected %v", pk.ChunkIndex, downloadingPack.expectedIndex)
+	}
+	downloadingPack.expectedIndex++
+	downloadingPack.newFrag <- pk.Data
 	return nil
 }
 

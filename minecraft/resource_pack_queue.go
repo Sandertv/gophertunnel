@@ -1,6 +1,7 @@
 package minecraft
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
@@ -13,6 +14,19 @@ type resourcePackQueue struct {
 	packsToDownload map[string]*resource.Pack
 	currentPack     *resource.Pack
 	currentOffset   int64
+
+	packAmount       int
+	downloadingPacks map[string]downloadingPack
+	awaitingPacks    map[string]*downloadingPack
+}
+
+// downloadingPack is a resource pack that is being downloaded by a client connection.
+type downloadingPack struct {
+	buf           *bytes.Buffer
+	chunkSize     int32
+	size          int64
+	expectedIndex int32
+	newFrag       chan []byte
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. If not,

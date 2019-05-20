@@ -88,7 +88,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	if dialer.ErrorLog == nil {
 		dialer.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
-	conn = newConn(netConn, key)
+	conn = newConn(netConn, key, dialer.ErrorLog)
 	conn.clientData = defaultClientData(address)
 	conn.packetFunc = dialer.PacketFunc
 
@@ -133,7 +133,7 @@ func listenConn(conn *Conn, logger *log.Logger) {
 		}
 		for _, data := range packets {
 			if err := conn.handleIncoming(data); err != nil {
-				logger.Printf("error handling packet: %v", err)
+				logger.Printf("error: %v", err)
 				return
 			}
 		}
