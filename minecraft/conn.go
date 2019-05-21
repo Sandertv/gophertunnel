@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
@@ -35,6 +36,9 @@ type Conn struct {
 
 	identityData login.IdentityData
 	clientData   login.ClientData
+	gameData     GameData
+
+	serverName string
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -66,12 +70,15 @@ type Conn struct {
 	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
-
-	packQueue *resourcePackQueue
+	packQueue            *resourcePackQueue
 
 	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	// initialChunkRadius is the initial chunk radius of the connection. It may be lower if the server has a
+	// lower maximum, and the chunk radius may be changed at any point during the game.
+	initialChunkRadius int32
 
 	connected chan bool
 	close     chan bool
@@ -133,6 +140,13 @@ func (conn *Conn) IdentityData() login.IdentityData {
 // that by the caller.
 func (conn *Conn) ClientData() login.ClientData {
 	return conn.clientData
+}
+
+// GameData returns specific game data set to the connection for the player to be initialised with. If the
+// Conn is obtained using Listen, this game data may be set to the Listener. If obtained using Dial, the data
+// is obtained from the server.
+func (conn *Conn) GameData() GameData {
+	return conn.gameData
 }
 
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
@@ -327,7 +341,9 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		case *packet.ResourcePackChunkRequest:
 			return conn.handleResourcePackChunkRequest(pk)
 		case *packet.RequestChunkRadius:
-			// TODO
+			return conn.handleRequestChunkRadius(pk)
+		case *packet.SetLocalPlayerAsInitialised:
+			return conn.handleSetLocalPlayerAsInitialised(pk)
 
 		// Internal packets destined for the client.
 		case *packet.ServerToClientHandshake:
@@ -343,8 +359,9 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		case *packet.ResourcePackStack:
 			return conn.handleResourcePackStack(pk)
 		case *packet.StartGame:
-			// TODO
-
+			return conn.handleStartGame(pk)
+		case *packet.ChunkRadiusUpdated:
+			return conn.handleChunkRadiusUpdated(pk)
 		case *packet.Disconnect:
 			_ = conn.Close()
 			return errors.New(pk.Message)
@@ -581,10 +598,29 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			return fmt.Errorf("error writing resource pack stack packet: %v", err)
 		}
 	case packet.PackResponseCompleted:
-		// This is as far as we can go in terms of covering up the login sequence. The next packet is the
-		// StartGame packet, which includes far too many fields related to the world which we simply cannot
-		// fill out in advance.
-		conn.loggedIn = true
+		data := conn.gameData
+		_ = conn.WritePacket(&packet.StartGame{
+			EntityUniqueID:           int64(data.EntityRuntimeID),
+			EntityRuntimeID:          data.EntityRuntimeID,
+			PlayerGameMode:           data.PlayerGameMode,
+			PlayerPosition:           data.PlayerPosition,
+			Pitch:                    data.Pitch,
+			Yaw:                      data.Yaw,
+			Dimension:                data.Dimension,
+			WorldSpawn:               data.WorldSpawn,
+			GameRules:                data.GameRules,
+			Time:                     data.Time,
+			Blocks:                   data.Blocks,
+			AchievementsDisabled:     true,
+			Generator:                1,
+			EducationFeaturesEnabled: true,
+			MultiPlayerGame:          true,
+			MultiPlayerCorrelationID: uuid.Must(uuid.NewRandom()).String(),
+			CommandsEnabled:          true,
+			WorldName:                conn.serverName,
+			LANBroadcastEnabled:      true,
+		})
+		conn.expect(packet.IDRequestChunkRadius)
 	default:
 		return fmt.Errorf("unknown resource pack client response: %v", pk.Response)
 	}
@@ -609,29 +645,29 @@ func (conn *Conn) nextResourcePackDownload() error {
 // handleResourcePackDataInfo handles a resource pack data info packet, which initiates the downloading of the
 // pack by the client.
 func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) error {
-	uuid := pk.UUID
+	id := pk.UUID
 	chunkCount := pk.ChunkCount
-	downloadingPack, ok := conn.packQueue.downloadingPacks[uuid]
+	downloadingPack, ok := conn.packQueue.downloadingPacks[id]
 	if !ok {
 		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
 		// sent in the ResourcePacksInfo packet.
-		return fmt.Errorf("unknown pack to download with UUID %v", uuid)
+		return fmt.Errorf("unknown pack to download with UUID %v", id)
 	}
 	if downloadingPack.size != pk.Size {
 		// Size mismatch: The ResourcePacksInfo packet had a size for the pack that did not match with the
 		// size sent here.
-		return fmt.Errorf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet", uuid)
+		return fmt.Errorf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet", id)
 	}
 
 	// Remove the resource pack from the downloading packs and add it to the awaiting packets.
-	delete(conn.packQueue.downloadingPacks, uuid)
-	conn.packQueue.awaitingPacks[uuid] = &downloadingPack
+	delete(conn.packQueue.downloadingPacks, id)
+	conn.packQueue.awaitingPacks[id] = &downloadingPack
 
 	downloadingPack.chunkSize = pk.DataChunkSize
 	go func() {
 		for i := int32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
-				UUID:       uuid,
+				UUID:       id,
 				ChunkIndex: i,
 			})
 			// Write the fragment to the full buffer of the downloading resource pack.
@@ -644,7 +680,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		// First parse the resource pack from the total byte buffer we obtained.
 		pack, err := resource.FromBytes(downloadingPack.buf.Bytes())
 		if err != nil {
-			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", uuid, err)
+			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", id, err)
 			return
 		}
 		conn.packQueue.packAmount--
@@ -722,6 +758,59 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	return nil
 }
 
+// handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
+// world, and it obtains most of its dedicated properties.
+func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
+	conn.gameData = GameData{
+		EntityRuntimeID: pk.EntityRuntimeID,
+		PlayerGameMode:  pk.PlayerGameMode,
+		Pitch:           pk.Pitch,
+		Yaw:             pk.Yaw,
+		Dimension:       pk.Dimension,
+		WorldSpawn:      pk.WorldSpawn,
+		GameRules:       pk.GameRules,
+		Time:            pk.Time,
+		Blocks:          pk.Blocks,
+	}
+	conn.expect(packet.IDChunkRadiusUpdated)
+	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: conn.initialChunkRadius})
+}
+
+// handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
+// of the connection, and spawns the player.
+func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error {
+	if pk.ChunkRadius < conn.initialChunkRadius {
+		// Only adjust the initial chunk radius if it is lower than the maximum, which has been set to the
+		// initial chunk radius by the listener.
+		conn.initialChunkRadius = pk.ChunkRadius
+	}
+	conn.expect(packet.IDSetLocalPlayerAsInitialised)
+	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: conn.initialChunkRadius})
+	return conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
+}
+
+// handleChunkRadiusUpdated handles an incoming ChunkRadiusUpdated packet, which updates the initial chunk
+// radius of the connection.
+func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error {
+	if pk.ChunkRadius < conn.initialChunkRadius {
+		// We only set this radius if the packet's chunk radius is lower than our requested one.
+		conn.initialChunkRadius = pk.ChunkRadius
+	}
+	conn.expect(packet.IDPlayStatus)
+	return nil
+}
+
+// handleSetLocalPlayerAsInitialised handles an incoming SetLocalPlayerAsInitialised packet. It is the final
+// packet in the spawning sequence and it marks the point where a server sided connection is considered
+// logged in.
+func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsInitialised) error {
+	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
+		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
+	}
+	conn.loggedIn = true
+	return nil
+}
+
 // handlePlayStatus handles an incoming PlayStatus packet. It reacts differently depending on the status
 // found in the packet.
 func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
@@ -736,7 +825,10 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		_ = conn.Close()
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
-		// TODO
+		// We've spawned and can send the last packet in the spawn sequence.
+		conn.connected <- true
+		conn.loggedIn = true
+		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()
 		return fmt.Errorf("invalid edu edition game owner")

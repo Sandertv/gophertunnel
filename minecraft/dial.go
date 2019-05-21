@@ -44,6 +44,12 @@ type Dialer struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	// InitialChunkRadius is the initial requested chunk radius of the connection. The client will obtain this
+	// chunk radius or lower, if the server decides it to be. The chunk radius may be changed at any point
+	// during the game later on.
+	// If InitialChunkRadius is left 0, a default chunk radius of 8 is set.
+	InitialChunkRadius int
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
@@ -88,9 +94,13 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	if dialer.ErrorLog == nil {
 		dialer.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
+	if dialer.InitialChunkRadius == 0 {
+		dialer.InitialChunkRadius = 8
+	}
 	conn = newConn(netConn, key, dialer.ErrorLog)
 	conn.clientData = defaultClientData(address)
 	conn.packetFunc = dialer.PacketFunc
+	conn.initialChunkRadius = int32(dialer.InitialChunkRadius)
 
 	var emptyClientData login.ClientData
 	if dialer.ClientData != emptyClientData {
