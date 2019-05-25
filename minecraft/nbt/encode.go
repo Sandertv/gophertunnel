@@ -173,7 +173,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 	case reflect.String:
 		s := val.String()
 		if !utf8.ValidString(s) {
-			return InvalidStringError{Off: e.r.off, String: s, Err: errors.New("string does not exist out of utf8 only")}
+			return InvalidStringError{Off: e.w.off, String: s, Err: errors.New("string does not exist out of utf8 only")}
 		}
 		return e.Variant.WriteString(e.w, s)
 
