@@ -135,6 +135,9 @@ func (e varLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 
 // WriteString ...
 func (e varLittleEndian) WriteString(w *offsetWriter, x string) error {
+	if len(x) > math.MaxInt16 {
+		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
+	}
 	ux := uint32(len(x))
 	for ux >= 0x80 {
 		if err := w.WriteByte(byte(ux) | 0x80); err != nil {
@@ -232,6 +235,9 @@ func (e varLittleEndian) String(r *offsetReader) (string, error) {
 		if b&0x80 == 0 {
 			break
 		}
+	}
+	if length > math.MaxInt16 {
+		return "", InvalidStringError{Off: r.off, Err: errors.New("string length exceeds maximum length prefix")}
 	}
 	data, err := consumeN(int(length), r)
 	if err != nil {
