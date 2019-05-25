@@ -12,6 +12,8 @@ const (
 	IDText
 	IDSetTime
 	IDStartGame
+	IDAddPlayer
+	IDAddEntity
 )
 
 // ...
