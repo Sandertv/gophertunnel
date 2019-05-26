@@ -20,6 +20,7 @@ const (
 	IDTakeItemEntity
 	IDMoveEntityAbsolute
 	IDMovePlayer
+	IDRiderJump
 )
 
 // ...
