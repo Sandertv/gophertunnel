@@ -19,6 +19,7 @@ const (
 	_
 	IDTakeItemEntity
 	IDMoveEntityAbsolute
+	IDMovePlayer
 )
 
 // ...
