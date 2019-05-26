@@ -18,6 +18,7 @@ const (
 	IDAddItemEntity
 	_
 	IDTakeItemEntity
+	IDMoveEntityAbsolute
 )
 
 // ...
