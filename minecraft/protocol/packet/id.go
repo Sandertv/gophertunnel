@@ -14,6 +14,7 @@ const (
 	IDStartGame
 	IDAddPlayer
 	IDAddEntity
+	IDRemoveEntity
 )
 
 // ...

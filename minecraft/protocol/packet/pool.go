@@ -20,6 +20,7 @@ func NewPool() Pool {
 		IDStartGame:                  &StartGame{},
 		AddPlayer:                    &AddPlayer{},
 		IDAddEntity:                  &AddEntity{},
+		IDRemoveEntity:               &RemoveEntity{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
