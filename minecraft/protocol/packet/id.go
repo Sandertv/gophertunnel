@@ -22,6 +22,7 @@ const (
 	IDMovePlayer
 	IDRiderJump
 	IDUpdateBlock
+	IDAddPainting
 )
 
 // ...

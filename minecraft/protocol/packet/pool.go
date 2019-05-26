@@ -28,6 +28,7 @@ func NewPool() Pool {
 		IDMovePlayer:         &MovePlayer{},
 		IDRiderJump:          &RiderJump{},
 		IDUpdateBlock:        &UpdateBlock{},
+		IDAddPainting:        &AddPainting{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
