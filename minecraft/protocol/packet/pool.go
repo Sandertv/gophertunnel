@@ -22,6 +22,8 @@ func NewPool() Pool {
 		IDAddEntity:                  &AddEntity{},
 		IDRemoveEntity:               &RemoveEntity{},
 		IDAddItemEntity:              &AddItemEntity{},
+		// ---
+		IDTakeItemEntity: &TakeItemEntity{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

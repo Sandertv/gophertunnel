@@ -16,6 +16,8 @@ const (
 	IDAddEntity
 	IDRemoveEntity
 	IDAddItemEntity
+	_
+	IDTakeItemEntity
 )
 
 // ...
