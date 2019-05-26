@@ -8,8 +8,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// AddPlayer is sent by the server to the client to make a player entity show up client-side. It is the only
-// entity that cannot be sent using the AddEntity packet.
+// AddPlayer is sent by the server to the client to make a player entity show up client-side. It is one of the
+// few entities that cannot be sent using the AddEntity packet.
 type AddPlayer struct {
 	// UUID is the UUID of the player. It is the same UUID that the client sent in the Login packet at the
 	// start of the session. A player with this UUID must exist in the player list (built up using the
@@ -107,6 +107,9 @@ func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *AddPlayer) Unmarshal(buf *bytes.Buffer) error {
+	if pk.EntityMetadata == nil {
+		pk.EntityMetadata = map[uint32]interface{}{}
+	}
 	return ChainErr(
 		protocol.UUID(buf, &pk.UUID),
 		protocol.String(buf, &pk.Username),

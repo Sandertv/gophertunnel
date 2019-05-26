@@ -15,6 +15,7 @@ const (
 	IDAddPlayer
 	IDAddEntity
 	IDRemoveEntity
+	IDAddItemEntity
 )
 
 // ...
