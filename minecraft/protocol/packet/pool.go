@@ -32,6 +32,7 @@ func NewPool() Pool {
 		IDExplode:            &Explode{},
 		// ---
 		IDLevelEvent: &LevelEvent{},
+		IDBlockEvent: &BlockEvent{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

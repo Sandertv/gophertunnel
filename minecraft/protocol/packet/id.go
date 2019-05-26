@@ -26,6 +26,7 @@ const (
 	IDExplode
 	_
 	IDLevelEvent
+	IDBlockEvent
 )
 
 // ...
