@@ -84,7 +84,8 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 }
 
 // WriteEntityMetadata writes an entity metadata list x to buffer dst. The types held by the map must be one
-// of byte, int16, int32, float32, string, ItemStack, BlockPos, int64 or mgl32.Vec3.
+// of byte, int16, int32, float32, string, ItemStack, BlockPos, int64 or mgl32.Vec3. The function will panic
+// if a different type is encountered.
 func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 	if x == nil {
 		return WriteVaruint32(dst, 0)
@@ -126,7 +127,7 @@ func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 			typeErr = WriteVaruint32(dst, EntityDataVec3)
 			valueErr = WriteVec3(dst, v)
 		default:
-			return fmt.Errorf("invalid entity metadata value type %T", value)
+			panic(fmt.Sprintf("invalid entity metadata value type %T", value))
 		}
 		if typeErr != nil {
 			return typeErr

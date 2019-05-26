@@ -56,6 +56,9 @@ func GameRules(src *bytes.Buffer, x *map[string]interface{}) error {
 // values must be either 'bool', 'float32' or 'uint32'. If one of the values has a different type, the
 // function will panic.
 func WriteGameRules(dst *bytes.Buffer, x map[string]interface{}) error {
+	if x == nil {
+		return WriteVaruint32(dst, 0)
+	}
 	// The game rules are always prefixed with a varuint32 indicating the amount.
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
 		return err
