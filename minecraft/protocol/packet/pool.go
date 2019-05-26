@@ -18,7 +18,7 @@ func NewPool() Pool {
 		IDText:                       &Text{},
 		IDSetTime:                    &SetTime{},
 		IDStartGame:                  &StartGame{},
-		AddPlayer:                    &AddPlayer{},
+		IDAddPlayer:                  &AddPlayer{},
 		IDAddEntity:                  &AddEntity{},
 		IDRemoveEntity:               &RemoveEntity{},
 		IDAddItemEntity:              &AddItemEntity{},

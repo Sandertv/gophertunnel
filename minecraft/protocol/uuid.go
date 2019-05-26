@@ -18,7 +18,8 @@ func UUID(src *bytes.Buffer, id *uuid.UUID) error {
 
 // WriteUUID writes a little endian UUID id to buffer dst.
 func WriteUUID(dst *bytes.Buffer, id uuid.UUID) error {
-	_, err := dst.Write(reverseUUIDBytes(id[:])[:])
+	b := reverseUUIDBytes(id[:])
+	_, err := dst.Write(b[:])
 	return err
 }
 
