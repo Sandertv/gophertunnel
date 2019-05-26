@@ -24,6 +24,8 @@ const (
 	IDUpdateBlock
 	IDAddPainting
 	IDExplode
+	_
+	IDLevelEvent
 )
 
 // ...
