@@ -27,6 +27,7 @@ func NewPool() Pool {
 		IDMoveEntityAbsolute: &MoveEntityAbsolute{},
 		IDMovePlayer:         &MovePlayer{},
 		IDRiderJump:          &RiderJump{},
+		IDUpdateBlock:        &UpdateBlock{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

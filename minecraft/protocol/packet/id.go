@@ -21,6 +21,7 @@ const (
 	IDMoveEntityAbsolute
 	IDMovePlayer
 	IDRiderJump
+	IDUpdateBlock
 )
 
 // ...

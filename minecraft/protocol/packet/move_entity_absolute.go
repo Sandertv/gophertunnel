@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MoveFlagOnGround = iota + 1
+	MoveFlagOnGround = 1 << iota
 	MoveFlagTeleport
 )
 
@@ -18,8 +18,9 @@ type MoveEntityAbsolute struct {
 	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
-	// Flag is a flag that specifies details of the movement. It is one of the flags above.
-	Flag byte
+	// Flags is a combination of flags that specify details of the movement. It is a combination of the flags
+	// above.
+	Flags byte
 	// Position is the position to spawn the entity on. If the entity is on a distance that the player cannot
 	// see it, the entity will still show up if the player moves closer.
 	Position mgl32.Vec3
@@ -36,7 +37,7 @@ func (*MoveEntityAbsolute) ID() uint32 {
 // Marshal ...
 func (pk *MoveEntityAbsolute) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Flag)
+	_ = binary.Write(buf, binary.LittleEndian, pk.Flags)
 	_ = protocol.WriteVec3(buf, pk.Position)
 	_ = protocol.WriteRotation(buf, pk.Rotation)
 }
@@ -45,7 +46,7 @@ func (pk *MoveEntityAbsolute) Marshal(buf *bytes.Buffer) {
 func (pk *MoveEntityAbsolute) Unmarshal(buf *bytes.Buffer) error {
 	return ChainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.Flag),
+		binary.Read(buf, binary.LittleEndian, &pk.Flags),
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Rotation(buf, &pk.Rotation),
 	)
