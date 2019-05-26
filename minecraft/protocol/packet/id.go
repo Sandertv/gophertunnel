@@ -23,6 +23,7 @@ const (
 	IDRiderJump
 	IDUpdateBlock
 	IDAddPainting
+	IDExplode
 )
 
 // ...
