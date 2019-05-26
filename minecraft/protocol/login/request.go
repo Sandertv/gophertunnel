@@ -135,10 +135,10 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) string {
 	// We create a new claim, signed using our own private key here. The identityPublicKey in this claim
 	// contains the x5u from the first claim currently in the chain.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
-		"ceritificateAuthority": true,
-		"exp":                   time.Now().Unix() + int64(time.Hour*6),
-		"identityPublicKey":     nextHeader.X5U,
-		"nbf":                   time.Now().Unix() - int64(time.Hour*6),
+		"certificateAuthority": true,
+		"exp":                  time.Now().Unix() + int64(time.Hour*6),
+		"identityPublicKey":    nextHeader.X5U,
+		"nbf":                  time.Now().Unix() - int64(time.Hour*6),
 	}, key)
 
 	// We add our own claim at the start of the chain.

@@ -256,7 +256,7 @@ func xstsToken(c *http.Client, userToken, deviceToken, titleToken string, key *e
 		"Properties": map[string]interface{}{
 			// DeviceToken is not required for Minecraft auth. The key may simply not be present.
 			"DeviceToken": deviceToken,
-			// TitleToken is also not required for Miencraft auth. The key may simply not be present.
+			// TitleToken is also not required for Minecraft auth. The key may simply not be present.
 			"TitleToken": titleToken,
 			"UserTokens": []string{userToken},
 			"SandboxId":  "RETAIL",
