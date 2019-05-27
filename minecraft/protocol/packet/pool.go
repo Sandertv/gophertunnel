@@ -1,5 +1,9 @@
 package packet
 
+import (
+	"reflect"
+)
+
 // Pool is a map holding packets indexed by a packet ID.
 type Pool map[uint32]Packet
 
@@ -50,5 +54,18 @@ func NewPool() Pool {
 		IDServerSettingsResponse: &ServerSettingsResponse{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
+	}
+}
+
+// PacketsByName is a map holding a function to create a new packet for each packet registered in Pool. These
+// functions are indexed using the exact packet name they return.
+var PacketsByName = map[string]func() Packet{}
+
+func init() {
+	for _, packet := range NewPool() {
+		pk := packet
+		PacketsByName[reflect.TypeOf(pk).Elem().Name()] = func() Packet {
+			return reflect.New(reflect.TypeOf(pk).Elem()).Interface().(Packet)
+		}
 	}
 }
