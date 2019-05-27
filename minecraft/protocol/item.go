@@ -50,25 +50,27 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 	}
 	// This legacy NBT length was, before 1.9, the length of the NBT to follow, but this is no longer the
 	// case. It is now always -1.
-	if legacyNBTLength != -1 {
+	if legacyNBTLength != -1 && legacyNBTLength != 0 {
 		return fmt.Errorf("expected legacy NBT length to be -1, got %v", legacyNBTLength)
 	}
-
-	var nbtCount byte
-	if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
-		return err
-	}
-	if nbtCount != 1 {
-		// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
-		// be more than one.
-		return fmt.Errorf("expected NBT count to be 1, got %v", nbtCount)
-	}
-	decoder := nbt.NewDecoder(src)
-	for i := byte(0); i < nbtCount; i++ {
-		if err := decoder.Decode(&x.NBTData); err != nil {
-			return fmt.Errorf("error decoding item NBT: %v", err)
+	if legacyNBTLength != 0 {
+		var nbtCount byte
+		if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
+			return err
+		}
+		if nbtCount != 1 {
+			// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
+			// be more than one.
+			return fmt.Errorf("expected NBT count to be 1, got %v", nbtCount)
+		}
+		decoder := nbt.NewDecoder(src)
+		for i := byte(0); i < nbtCount; i++ {
+			if err := decoder.Decode(&x.NBTData); err != nil {
+				return fmt.Errorf("error decoding item NBT: %v", err)
+			}
 		}
 	}
+
 	var length uint32
 	if err := Varuint32(src, &length); err != nil {
 		return err
@@ -116,9 +118,11 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 	if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
 		return err
 	}
-	if _, err := nbt.Marshal(x.NBTData); err != nil {
+	b, err := nbt.Marshal(x.NBTData)
+	if err != nil {
 		return fmt.Errorf("error writing NBT: %v", err)
 	}
+	_, _ = dst.Write(b)
 	if err := WriteVaruint32(dst, uint32(len(x.CanBePlacedOn))); err != nil {
 		return err
 	}
