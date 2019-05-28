@@ -57,39 +57,40 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 		return false, fmt.Errorf("disallowed header algorithm %v: expected one of %v", header.Algorithm, allowedAlgorithms)
 	}
 
+	type jwtPayload struct {
+		Exp               int64  `json:"exp"`
+		Nbf               int64  `json:"nbf"`
+		Iat               int64  `json:"iat"`
+		IdentityPublicKey string `json:"identityPublicKey"`
+	}
+
 	// Payload validation.
-	jwtData := make(map[string]interface{})
+	jwtData := jwtPayload{}
 	if err := json.Unmarshal([]byte(rawPayload), &jwtData); err != nil {
 		return false, fmt.Errorf("error decoding payload: %v", err)
 	}
+	// Account for one hour of clock drift.
 	now := time.Now()
-	for key, value := range jwtData {
-		switch key {
-		case "exp":
-			if time.Unix(int64(value.(float64)), 0).Before(now) {
-				// The expiration time was before 'now', meaning the token was no longer usable.
-				return false, fmt.Errorf("JWT claim expired: token is no longer usable")
-			}
-		case "nbf", "iat":
-			if now.Before(time.Unix(int64(value.(float64)), 0)) {
-				// The 'not before' or 'issued at' times were after now, meaning we shouldn't have possibly
-				// been able to receive the token yet.
-				return false, fmt.Errorf("JWT claim used too early: token is not yet usable")
-			}
+	if jwtData.Exp != 0 {
+		if time.Unix(jwtData.Exp, 0).Before(now) {
+			// The expiration time was before 'now', meaning the token was no longer usable.
+			return false, fmt.Errorf("JWT claim expired: token is no longer usable")
 		}
+	}
+	now = now.Add(time.Hour)
+	if now.Before(time.Unix(jwtData.Nbf, 0)) {
+		// The 'not before' or 'issued at' times were after now, meaning we shouldn't have possibly
+		// been able to receive the token yet.
+		return false, fmt.Errorf("JWT claim used too early: token is not yet usable")
+	}
+	if now.Before(time.Unix(jwtData.Iat, 0)) {
+		// The 'not before' or 'issued at' times were after now, meaning we shouldn't have possibly
+		// been able to receive the token yet.
+		return false, fmt.Errorf("JWT claim used too early: token is not yet usable")
 	}
 	var newPublicKeyData string
 	if needNewKey {
-		newPublicKeyInterface, ok := jwtData["identityPublicKey"]
-		if !ok {
-			// Each claim must have an identityPublicKey in its payload.
-			return false, fmt.Errorf("JWT claim did not contain an identityPublicKey in the payload")
-		}
-		newPublicKeyData, ok = newPublicKeyInterface.(string)
-		if !ok {
-			// The identityPublicKey this claim held wasn't actually a public key, but some other value.
-			return false, fmt.Errorf("JWT claim had an identityPublicKey that was not a string")
-		}
+		newPublicKeyData = jwtData.IdentityPublicKey
 		if newPublicKeyData == MojangPublicKey {
 			hasMojangKey = true
 		}
