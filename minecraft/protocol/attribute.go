@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"bytes"
-	"fmt"
 )
 
 // Attribute is an entity attribute, that holds specific data such as the health of the entity. Each attribute
@@ -27,25 +26,25 @@ type Attribute struct {
 func Attributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
 		if err := Float32(src, &attribute.Min); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Max); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Value); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Default); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := String(src, &attribute.Name); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		(*attributes)[i] = attribute
 	}
@@ -55,23 +54,23 @@ func Attributes(src *bytes.Buffer, attributes *[]Attribute) error {
 // WriteAttributes writes a slice of Attributes x to buffer dst.
 func WriteAttributes(dst *bytes.Buffer, x []Attribute) error {
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for _, attribute := range x {
 		if err := WriteFloat32(dst, attribute.Min); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Max); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Value); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Default); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteString(dst, attribute.Name); err != nil {
-			return err
+			return wrap(err)
 		}
 	}
 	return nil
@@ -82,22 +81,22 @@ func WriteAttributes(dst *bytes.Buffer, x []Attribute) error {
 func InitialAttributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
 		if err := String(src, &attribute.Name); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Min); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Value); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err := Float32(src, &attribute.Max); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		(*attributes)[i] = attribute
 	}
@@ -108,20 +107,20 @@ func InitialAttributes(src *bytes.Buffer, attributes *[]Attribute) error {
 // writing the attributes of a new entity. (AddEntity packet)
 func WriteInitialAttributes(dst *bytes.Buffer, x []Attribute) error {
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for _, attribute := range x {
 		if err := WriteString(dst, attribute.Name); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Min); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Value); err != nil {
-			return err
+			return wrap(err)
 		}
 		if err := WriteFloat32(dst, attribute.Max); err != nil {
-			return err
+			return wrap(err)
 		}
 	}
 	return nil

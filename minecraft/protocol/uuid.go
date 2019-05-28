@@ -20,7 +20,10 @@ func UUID(src *bytes.Buffer, id *uuid.UUID) error {
 func WriteUUID(dst *bytes.Buffer, id uuid.UUID) error {
 	b := reverseUUIDBytes(id[:])
 	_, err := dst.Write(b[:])
-	return err
+	if err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // reverseUUIDBytes reverses the 16 bytes that a UUID exists out of, so that it is written in little endian.

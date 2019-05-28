@@ -9,7 +9,7 @@ import (
 func Varint64(src *bytes.Buffer, x *int64) error {
 	var ux uint64
 	if err := Varuint64(src, &ux); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*x = int64(ux >> 1)
 	if ux&1 != 0 {
@@ -24,7 +24,7 @@ func Varuint64(src *bytes.Buffer, x *uint64) error {
 	for i := uint(0); i < 70; i += 7 {
 		b, err := src.ReadByte()
 		if err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		v |= uint64(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -39,7 +39,7 @@ func Varuint64(src *bytes.Buffer, x *uint64) error {
 func Varint32(src *bytes.Buffer, x *int32) error {
 	var ux uint32
 	if err := Varuint32(src, &ux); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*x = int32(ux >> 1)
 	if ux&1 != 0 {
@@ -54,7 +54,7 @@ func Varuint32(src *bytes.Buffer, x *uint32) error {
 	for i := uint(0); i < 35; i += 7 {
 		b, err := src.ReadByte()
 		if err != nil {
-			return err
+			return wrap(err)
 		}
 		v |= uint32(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -77,10 +77,15 @@ func WriteVarint64(dst *bytes.Buffer, x int64) error {
 // WriteVaruint64 writes a uint64 to the destination buffer passed with a size of 1-10 bytes.
 func WriteVaruint64(dst *bytes.Buffer, x uint64) error {
 	for x >= 0x80 {
-		_ = dst.WriteByte(byte(x) | 0x80)
+		if err := dst.WriteByte(byte(x) | 0x80); err != nil {
+			return wrap(err)
+		}
 		x >>= 7
 	}
-	return dst.WriteByte(byte(x))
+	if err := dst.WriteByte(byte(x)); err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // WriteVarint32 writes an int32 to the destination buffer passed with a size of 1-5 bytes.
@@ -95,8 +100,13 @@ func WriteVarint32(dst *bytes.Buffer, x int32) error {
 // WriteVaruint32 writes a uint32 to the destination buffer passed with a size of 1-5 bytes.
 func WriteVaruint32(dst *bytes.Buffer, x uint32) error {
 	for x >= 0x80 {
-		_ = dst.WriteByte(byte(x) | 0x80)
+		if err := dst.WriteByte(byte(x) | 0x80); err != nil {
+			return wrap(err)
+		}
 		x >>= 7
 	}
-	return dst.WriteByte(byte(x))
+	if err := dst.WriteByte(byte(x)); err != nil {
+		return wrap(err)
+	}
+	return nil
 }

@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"bytes"
-	"fmt"
 )
 
 // BlockPos is the position of a block. It is composed of three integers, and is typically written as either
@@ -27,13 +26,13 @@ func (pos BlockPos) Z() int32 {
 // BlockPosition reads a BlockPos from Buffer src and stores it to the BlockPos pointer passed.
 func BlockPosition(src *bytes.Buffer, x *BlockPos) error {
 	if err := Varint32(src, &(*x)[0]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := Varint32(src, &(*x)[1]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := Varint32(src, &(*x)[2]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	return nil
 }
@@ -41,27 +40,30 @@ func BlockPosition(src *bytes.Buffer, x *BlockPos) error {
 // WriteBlockPosition writes a BlockPos x to Buffer dst, composed of 3 varint32s.
 func WriteBlockPosition(dst *bytes.Buffer, x BlockPos) error {
 	if err := WriteVarint32(dst, x[0]); err != nil {
-		return err
+		return wrap(err)
 	}
 	if err := WriteVarint32(dst, x[1]); err != nil {
-		return err
+		return wrap(err)
 	}
-	return WriteVarint32(dst, x[2])
+	if err := WriteVarint32(dst, x[2]); err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // UBlockPosition reads an unsigned BlockPos from Buffer src and stores it to the BlockPos pointer passed. The
 // difference between this and BlockPosition is that the Y coordinate is read as a varuint32.
 func UBlockPosition(src *bytes.Buffer, x *BlockPos) error {
 	if err := Varint32(src, &(*x)[0]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	var v uint32
 	if err := Varuint32(src, &v); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	(*x)[1] = int32(v)
 	if err := Varint32(src, &(*x)[2]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	return nil
 }
@@ -70,10 +72,13 @@ func UBlockPosition(src *bytes.Buffer, x *BlockPos) error {
 // varint32.
 func WriteUBlockPosition(dst *bytes.Buffer, x BlockPos) error {
 	if err := WriteVarint32(dst, x[0]); err != nil {
-		return err
+		return wrap(err)
 	}
 	if err := WriteVaruint32(dst, uint32(x[1])); err != nil {
-		return err
+		return wrap(err)
 	}
-	return WriteVarint32(dst, x[2])
+	if err := WriteVarint32(dst, x[2]); err != nil {
+		return wrap(err)
+	}
+	return nil
 }

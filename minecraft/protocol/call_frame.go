@@ -25,3 +25,8 @@ func callFrame() string {
 	}
 	return fmt.Sprintf("%v/%v", frame.Function, frame.Line)
 }
+
+// wrap wraps a callframe around an error and returns the new error.
+func wrap(e error) error {
+	return fmt.Errorf("%v: %v", callFrame(), e)
+}

@@ -3,7 +3,6 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"math"
 )
@@ -12,7 +11,7 @@ import (
 func Float32(src *bytes.Buffer, x *float32) error {
 	var bits uint32
 	if err := binary.Read(src, binary.LittleEndian, &bits); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*x = math.Float32frombits(bits)
 	return nil
@@ -20,28 +19,37 @@ func Float32(src *bytes.Buffer, x *float32) error {
 
 // WriteFloat32 writes a float32 to Buffer dst, by first converting it to a uint32.
 func WriteFloat32(dst *bytes.Buffer, x float32) error {
-	return binary.Write(dst, binary.LittleEndian, math.Float32bits(x))
+	if err := binary.Write(dst, binary.LittleEndian, math.Float32bits(x)); err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // Vec3 reads an mgl32.Vec3 (float32 vector) from Buffer src, setting the result to the pointer to an
 // mgl32.Vec3 passed.
 func Vec3(src *bytes.Buffer, x *mgl32.Vec3) error {
 	if err := Float32(src, &(*x)[0]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := Float32(src, &(*x)[1]); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
-	return Float32(src, &(*x)[2])
+	if err := Float32(src, &(*x)[2]); err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // WriteVec3 writes an mgl32.Vec3 (float32 vector) to Buffer dst, writing each of the float32s separately.
 func WriteVec3(dst *bytes.Buffer, x mgl32.Vec3) error {
 	if err := WriteFloat32(dst, x[0]); err != nil {
-		return err
+		return wrap(err)
 	}
 	if err := WriteFloat32(dst, x[1]); err != nil {
-		return err
+		return wrap(err)
 	}
-	return WriteFloat32(dst, x[2])
+	if err := WriteFloat32(dst, x[2]); err != nil {
+		return wrap(err)
+	}
+	return nil
 }

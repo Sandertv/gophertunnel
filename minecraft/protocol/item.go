@@ -31,7 +31,7 @@ type ItemStack struct {
 func Item(src *bytes.Buffer, x *ItemStack) error {
 	x.NBTData = make(map[string]interface{})
 	if err := Varint32(src, &x.NetworkID); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
@@ -40,20 +40,20 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 	}
 	var auxValue int32
 	if err := Varint32(src, &auxValue); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	x.MetadataValue = int16(auxValue >> 8)
 	x.Count = int16(auxValue & 0xff)
 
 	var legacyNBTLength int16
 	if err := binary.Read(src, binary.LittleEndian, &legacyNBTLength); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if legacyNBTLength != 0 {
 		if legacyNBTLength == -1 {
 			var nbtCount byte
 			if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
-				return fmt.Errorf("%v: %v", callFrame(), err)
+				return wrap(err)
 			}
 			if nbtCount != 1 {
 				// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
@@ -79,27 +79,29 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 
 	var length int32
 	if err := Varint32(src, &length); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	x.CanBePlacedOn = make([]string, length)
 	for i := int32(0); i < length; i++ {
 		if err := String(src, &x.CanBePlacedOn[i]); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 	}
 	if err := Varint32(src, &length); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	x.CanBreak = make([]string, length)
 	for i := int32(0); i < length; i++ {
 		if err := String(src, &x.CanBreak[i]); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 	}
 	const shieldID = 513
 	if x.NetworkID == shieldID {
 		var blockingTick int64
-		return Varint64(src, &blockingTick)
+		if err := Varint64(src, &blockingTick); err != nil {
+			return wrap(err)
+		}
 	}
 	return nil
 }
@@ -107,48 +109,50 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 // WriteItem writes an item stack x to buffer dst.
 func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 	if err := WriteVarint32(dst, x.NetworkID); err != nil {
-		return err
+		return wrap(err)
 	}
 	if x.NetworkID == 0 {
 		// The item was air, so there's no more data to follow. Return immediately.
 		return nil
 	}
 	if err := WriteVarint32(dst, int32(x.MetadataValue<<8)|int32(x.Count)); err != nil {
-		return err
+		return wrap(err)
 	}
 	// Write a fixed -1, which used to be the NBT length.
 	if err := binary.Write(dst, binary.LittleEndian, int16(-1)); err != nil {
-		return err
+		return wrap(err)
 	}
 	// NBT Count, which is always one in our case.
 	if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
-		return err
+		return wrap(err)
 	}
 	b, err := nbt.Marshal(x.NBTData)
 	if err != nil {
-		return fmt.Errorf("error writing NBT: %v", err)
+		return fmt.Errorf("%v: error writing NBT: %v", callFrame(), err)
 	}
 	_, _ = dst.Write(b)
 	if err := WriteVarint32(dst, int32(len(x.CanBePlacedOn))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for _, block := range x.CanBePlacedOn {
 		if err := WriteString(dst, block); err != nil {
-			return err
+			return wrap(err)
 		}
 	}
 	if err := WriteVarint32(dst, int32(len(x.CanBreak))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for _, block := range x.CanBreak {
 		if err := WriteString(dst, block); err != nil {
-			return err
+			return wrap(err)
 		}
 	}
 	const shieldID = 513
 	if x.NetworkID == shieldID {
 		var blockingTick int64
-		return WriteVarint64(dst, blockingTick)
+		if err := WriteVarint64(dst, blockingTick); err != nil {
+			return wrap(err)
+		}
 	}
 
 	return nil

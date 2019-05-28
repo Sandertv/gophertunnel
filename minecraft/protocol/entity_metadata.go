@@ -25,15 +25,15 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 	var count uint32
 	var err error
 	if err = Varuint32(src, &count); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	for i := uint32(0); i < count; i++ {
 		var key, dataType uint32
 		if err = Varuint32(src, &key); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		if err = Varuint32(src, &dataType); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 		switch dataType {
 		case EntityDataByte:
@@ -77,7 +77,7 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 		}
 		if err != nil {
 			// If the error from reading the entity data property was not nil, we return right away.
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 	}
 	return nil
@@ -91,11 +91,11 @@ func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 		return WriteVaruint32(dst, 0)
 	}
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for key, value := range x {
 		if err := WriteVaruint32(dst, key); err != nil {
-			return err
+			return wrap(err)
 		}
 		var typeErr, valueErr error
 		switch v := value.(type) {
@@ -130,10 +130,10 @@ func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 			panic(fmt.Sprintf("invalid entity metadata value type %T", value))
 		}
 		if typeErr != nil {
-			return typeErr
+			return wrap(typeErr)
 		}
 		if valueErr != nil {
-			return valueErr
+			return wrap(valueErr)
 		}
 	}
 	return nil

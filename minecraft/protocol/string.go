@@ -31,10 +31,10 @@ func String(src *bytes.Buffer, x *string) error {
 // specifying its length.
 func WriteString(dst *bytes.Buffer, x string) error {
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return fmt.Errorf("error writing string length: %v", err)
+		return fmt.Errorf("%v: error writing string length: %v", callFrame(), err)
 	}
 	if _, err := dst.WriteString(x); err != nil {
-		return fmt.Errorf("error writing string: %v", err)
+		return fmt.Errorf("%v: error writing string: %v", callFrame(), err)
 	}
 	return nil
 }

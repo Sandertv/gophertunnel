@@ -3,7 +3,6 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 )
 
 const (
@@ -35,16 +34,16 @@ type EntityLink struct {
 // EntityLinkAction reads a single entity link (action) from buffer src.
 func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
 	if err := Varint64(src, &x.RiddenEntityUniqueID); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := Varint64(src, &x.RiderEntityUniqueID); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := binary.Read(src, binary.LittleEndian, &x.Type); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	if err := binary.Read(src, binary.LittleEndian, &x.Immediate); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	return nil
 }
@@ -53,12 +52,12 @@ func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
 func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return fmt.Errorf("%v: %v", callFrame(), err)
+		return wrap(err)
 	}
 	*x = make([]EntityLink, count)
 	for i := uint32(0); i < count; i++ {
 		if err := EntityLinkAction(src, &(*x)[i]); err != nil {
-			return fmt.Errorf("%v: %v", callFrame(), err)
+			return wrap(err)
 		}
 	}
 	return nil
@@ -67,25 +66,28 @@ func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
 // WriteEntityLinkAction writes a single entity link x to buffer dst.
 func WriteEntityLinkAction(dst *bytes.Buffer, x EntityLink) error {
 	if err := WriteVarint64(dst, x.RiddenEntityUniqueID); err != nil {
-		return err
+		return wrap(err)
 	}
 	if err := WriteVarint64(dst, x.RiderEntityUniqueID); err != nil {
-		return err
+		return wrap(err)
 	}
 	if err := binary.Write(dst, binary.LittleEndian, x.Type); err != nil {
-		return err
+		return wrap(err)
 	}
-	return binary.Write(dst, binary.LittleEndian, x.Immediate)
+	if err := binary.Write(dst, binary.LittleEndian, x.Immediate); err != nil {
+		return wrap(err)
+	}
+	return nil
 }
 
 // WriteEntityLinks writes a list of entity links currently active to buffer dst.
 func WriteEntityLinks(dst *bytes.Buffer, x []EntityLink) error {
 	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return err
+		return wrap(err)
 	}
 	for _, link := range x {
 		if err := WriteEntityLinkAction(dst, link); err != nil {
-			return err
+			return wrap(err)
 		}
 	}
 	return nil
