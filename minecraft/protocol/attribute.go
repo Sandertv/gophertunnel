@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"fmt"
 )
 
 // Attribute is an entity attribute, that holds specific data such as the health of the entity. Each attribute
@@ -26,25 +27,25 @@ type Attribute struct {
 func Attributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
 		if err := Float32(src, &attribute.Min); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Max); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Value); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Default); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := String(src, &attribute.Name); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		(*attributes)[i] = attribute
 	}
@@ -81,22 +82,22 @@ func WriteAttributes(dst *bytes.Buffer, x []Attribute) error {
 func InitialAttributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
 		if err := String(src, &attribute.Name); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Min); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Value); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err := Float32(src, &attribute.Max); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		(*attributes)[i] = attribute
 	}

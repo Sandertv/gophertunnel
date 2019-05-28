@@ -30,7 +30,7 @@ type ItemStack struct {
 // Item reads an item stack from buffer src and stores it into item stack x.
 func Item(src *bytes.Buffer, x *ItemStack) error {
 	if err := Varint32(src, &x.NetworkID); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
@@ -39,55 +39,60 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 	}
 	var auxValue int32
 	if err := Varint32(src, &auxValue); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	x.MetadataValue = int16(auxValue >> 8)
 	x.Count = int16(auxValue & 0xff)
 
 	var legacyNBTLength int16
 	if err := binary.Read(src, binary.LittleEndian, &legacyNBTLength); err != nil {
-		return err
-	}
-	// This legacy NBT length was, before 1.9, the length of the NBT to follow, but this is no longer the
-	// case. It is now always -1.
-	if legacyNBTLength != -1 && legacyNBTLength != 0 {
-		return fmt.Errorf("expected legacy NBT length to be -1, got %v", legacyNBTLength)
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	if legacyNBTLength != 0 {
-		var nbtCount byte
-		if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
-			return err
-		}
-		if nbtCount != 1 {
-			// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
-			// be more than one.
-			return fmt.Errorf("expected NBT count to be 1, got %v", nbtCount)
-		}
-		decoder := nbt.NewDecoder(src)
-		for i := byte(0); i < nbtCount; i++ {
-			if err := decoder.Decode(&x.NBTData); err != nil {
-				return fmt.Errorf("error decoding item NBT: %v", err)
+		if legacyNBTLength == -1 {
+			var nbtCount byte
+			if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
+				return fmt.Errorf("%v: %v", callFrame(), err)
+			}
+			if nbtCount != 1 {
+				// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
+				// be more than one.
+				return fmt.Errorf("%v: expected NBT count to be 1, got %v", callFrame(), nbtCount)
+			}
+			decoder := nbt.NewDecoder(src)
+			for i := byte(0); i < nbtCount; i++ {
+				if err := decoder.Decode(&x.NBTData); err != nil {
+					return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
+				}
+			}
+		} else {
+			if legacyNBTLength < 0 {
+				return fmt.Errorf("%v: invalid NBT length %v", callFrame(), legacyNBTLength)
+			}
+			nbtData := src.Next(int(legacyNBTLength))
+			if err := nbt.UnmarshalVariant(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
+				return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
 			}
 		}
 	}
 
-	var length uint32
-	if err := Varuint32(src, &length); err != nil {
-		return err
+	var length int32
+	if err := Varint32(src, &length); err != nil {
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	x.CanBePlacedOn = make([]string, length)
-	for i := uint32(0); i < length; i++ {
+	for i := int32(0); i < length; i++ {
 		if err := String(src, &x.CanBePlacedOn[i]); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 	}
-	if err := Varuint32(src, &length); err != nil {
-		return err
+	if err := Varint32(src, &length); err != nil {
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	x.CanBreak = make([]string, length)
-	for i := uint32(0); i < length; i++ {
+	for i := int32(0); i < length; i++ {
 		if err := String(src, &x.CanBreak[i]); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 	}
 	const shieldID = 513
@@ -123,7 +128,7 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 		return fmt.Errorf("error writing NBT: %v", err)
 	}
 	_, _ = dst.Write(b)
-	if err := WriteVaruint32(dst, uint32(len(x.CanBePlacedOn))); err != nil {
+	if err := WriteVarint32(dst, int32(len(x.CanBePlacedOn))); err != nil {
 		return err
 	}
 	for _, block := range x.CanBePlacedOn {
@@ -131,7 +136,7 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 			return err
 		}
 	}
-	if err := WriteVaruint32(dst, uint32(len(x.CanBreak))); err != nil {
+	if err := WriteVarint32(dst, int32(len(x.CanBreak))); err != nil {
 		return err
 	}
 	for _, block := range x.CanBreak {

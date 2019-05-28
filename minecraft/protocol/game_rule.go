@@ -12,41 +12,41 @@ func GameRules(src *bytes.Buffer, x *map[string]interface{}) error {
 	var length uint32
 	// The amount of game rules is in a varuint32 before the game rules.
 	if err := Varuint32(src, &length); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	for i := uint32(0); i < length; i++ {
 		// Each of the game rules holds a name and a value type, with the actual value depending on the type
 		// that it is.
 		var name string
 		if err := String(src, &name); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		var valueType uint32
 		if err := Varuint32(src, &valueType); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		switch valueType {
 		case 1:
 			var v bool
 			if err := binary.Read(src, binary.LittleEndian, &v); err != nil {
-				return err
+				return fmt.Errorf("%v: %v", callFrame(), err)
 			}
 			(*x)[name] = v
 		case 2:
 			var v uint32
 			if err := Varuint32(src, &v); err != nil {
-				return err
+				return fmt.Errorf("%v: %v", callFrame(), err)
 			}
 			(*x)[name] = v
 		case 3:
 			var v float32
 			if err := Float32(src, &v); err != nil {
-				return err
+				return fmt.Errorf("%v: %v", callFrame(), err)
 			}
 			(*x)[name] = v
 		default:
 			// We got a game rule type which doesn't exist, so we return an error immediately.
-			return fmt.Errorf("unknown game rule type %v: expected one of 1, 2, or 3", valueType)
+			return fmt.Errorf("%v: unknown game rule type %v: expected one of 1, 2, or 3", callFrame(), valueType)
 		}
 	}
 	return nil

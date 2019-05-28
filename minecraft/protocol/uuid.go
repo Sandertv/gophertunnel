@@ -8,9 +8,9 @@ import (
 
 // UUID reads a little endian UUID from buffer src into UUID id.
 func UUID(src *bytes.Buffer, id *uuid.UUID) error {
-	b := src.Next(16)
-	if len(b) != 16 {
-		return fmt.Errorf("need exactly 16 bytes to decode a UUID")
+	b := make([]byte, 16)
+	if _, err := src.Read(b); err != nil {
+		return fmt.Errorf("%v: need exactly 16 bytes to decode a UUID", callFrame())
 	}
 	*id = uuid.UUID(reverseUUIDBytes(b))
 	return nil

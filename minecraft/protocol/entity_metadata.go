@@ -25,15 +25,15 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 	var count uint32
 	var err error
 	if err = Varuint32(src, &count); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	for i := uint32(0); i < count; i++ {
 		var key, dataType uint32
 		if err = Varuint32(src, &key); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		if err = Varuint32(src, &dataType); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 		switch dataType {
 		case EntityDataByte:
@@ -77,7 +77,7 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 		}
 		if err != nil {
 			// If the error from reading the entity data property was not nil, we return right away.
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 	}
 	return nil

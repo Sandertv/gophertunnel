@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"math"
 )
@@ -11,7 +12,7 @@ import (
 func Float32(src *bytes.Buffer, x *float32) error {
 	var bits uint32
 	if err := binary.Read(src, binary.LittleEndian, &bits); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	*x = math.Float32frombits(bits)
 	return nil
@@ -26,10 +27,10 @@ func WriteFloat32(dst *bytes.Buffer, x float32) error {
 // mgl32.Vec3 passed.
 func Vec3(src *bytes.Buffer, x *mgl32.Vec3) error {
 	if err := Float32(src, &(*x)[0]); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	if err := Float32(src, &(*x)[1]); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	return Float32(src, &(*x)[2])
 }

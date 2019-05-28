@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"unsafe"
 )
 
@@ -11,9 +12,15 @@ import (
 func String(src *bytes.Buffer, x *string) error {
 	var length uint32
 	if err := Varuint32(src, &length); err != nil {
-		return fmt.Errorf("error reading string length: %v", err)
+		return fmt.Errorf("%v: error reading string length: %v", callFrame(), err)
+	}
+	if length > math.MaxInt32 {
+		return fmt.Errorf("%v: string is too long", callFrame())
 	}
 	data := src.Next(int(length))
+	if len(data) != int(length) {
+		return fmt.Errorf("%v: not enough bytes to read string", callFrame())
+	}
 
 	// Use the unsafe package to convert the byte slice to a string without copying.
 	*x = *(*string)(unsafe.Pointer(&data))

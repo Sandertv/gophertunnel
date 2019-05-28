@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 )
 
 const (
@@ -34,27 +35,30 @@ type EntityLink struct {
 // EntityLinkAction reads a single entity link (action) from buffer src.
 func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
 	if err := Varint64(src, &x.RiddenEntityUniqueID); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	if err := Varint64(src, &x.RiderEntityUniqueID); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
+	}
+	if err := binary.Read(src, binary.LittleEndian, &x.Type); err != nil {
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	if err := binary.Read(src, binary.LittleEndian, &x.Immediate); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
-	return binary.Read(src, binary.LittleEndian, &x.Immediate)
+	return nil
 }
 
 // EntityLinks reads a list of entity links from buffer src that are currently active.
 func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
-		return err
+		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
 	*x = make([]EntityLink, count)
 	for i := uint32(0); i < count; i++ {
 		if err := EntityLinkAction(src, &(*x)[i]); err != nil {
-			return err
+			return fmt.Errorf("%v: %v", callFrame(), err)
 		}
 	}
 	return nil
@@ -68,7 +72,7 @@ func WriteEntityLinkAction(dst *bytes.Buffer, x EntityLink) error {
 	if err := WriteVarint64(dst, x.RiderEntityUniqueID); err != nil {
 		return err
 	}
-	if err := binary.Write(dst, binary.LittleEndian, x.Immediate); err != nil {
+	if err := binary.Write(dst, binary.LittleEndian, x.Type); err != nil {
 		return err
 	}
 	return binary.Write(dst, binary.LittleEndian, x.Immediate)
