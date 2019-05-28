@@ -53,9 +53,7 @@ func (pk *AddItemEntity) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *AddItemEntity) Unmarshal(buf *bytes.Buffer) error {
-	if pk.EntityMetadata == nil {
-		pk.EntityMetadata = map[uint32]interface{}{}
-	}
+	pk.EntityMetadata = map[uint32]interface{}{}
 	return ChainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
