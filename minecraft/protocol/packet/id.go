@@ -29,6 +29,7 @@ const (
 	IDBlockEvent
 	IDEntityEvent
 	IDMobEffect
+	IDUpdateAttributes
 )
 
 // ...
