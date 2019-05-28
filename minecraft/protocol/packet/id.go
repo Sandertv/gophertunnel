@@ -27,6 +27,7 @@ const (
 	_
 	IDLevelEvent
 	IDBlockEvent
+	IDEntityEvent
 )
 
 // ...

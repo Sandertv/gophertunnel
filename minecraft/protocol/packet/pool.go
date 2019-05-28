@@ -35,8 +35,9 @@ func NewPool() Pool {
 		IDAddPainting:        &AddPainting{},
 		IDExplode:            &Explode{},
 		// ---
-		IDLevelEvent: &LevelEvent{},
-		IDBlockEvent: &BlockEvent{},
+		IDLevelEvent:  &LevelEvent{},
+		IDBlockEvent:  &BlockEvent{},
+		IDEntityEvent: &EntityEvent{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

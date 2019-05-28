@@ -91,14 +91,14 @@ const (
 // LevelEvent is sent by the server to make a certain event in the level occur. It ranges from particles, to
 // sounds, and other events such as starting rain and block breaking.
 type LevelEvent struct {
-	// EventID is the ID of the event that is being 'called'. It is one of the events found in the constants
+	// EventType is the ID of the event that is being 'called'. It is one of the events found in the constants
 	// above.
-	EventID int32
+	EventType int32
 	// Position is the position of the level event. Practically every event requires this Vec3 set for it, as
 	// particles, sounds and block editing relies on it.
 	Position mgl32.Vec3
 	// EventData is an integer holding additional data of the event. The type of data held depends on the
-	// EventID.
+	// EventType.
 	EventData int32
 }
 
@@ -109,7 +109,7 @@ func (*LevelEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *LevelEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.EventID)
+	_ = protocol.WriteVarint32(buf, pk.EventType)
 	_ = protocol.WriteVec3(buf, pk.Position)
 	_ = protocol.WriteVarint32(buf, pk.EventData)
 }
@@ -117,7 +117,7 @@ func (pk *LevelEvent) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *LevelEvent) Unmarshal(buf *bytes.Buffer) error {
 	return ChainErr(
-		protocol.Varint32(buf, &pk.EventID),
+		protocol.Varint32(buf, &pk.EventType),
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Varint32(buf, &pk.EventData),
 	)
