@@ -164,12 +164,16 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
+read:
 	select {
 	case data := <-conn.packets:
 		buf := bytes.NewBuffer(data)
 		header := &packet.Header{}
 		if err := header.Read(buf); err != nil {
-			return nil, fmt.Errorf("error reading packet header: %v", err)
+			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+			// we return to reading a new packet.
+			conn.log.Printf("error reading packet header: %v", err)
+			goto read
 		}
 		if conn.packetFunc != nil {
 			// The packet func was set, so we call it.
@@ -182,8 +186,14 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			// the reader.
 			pk = &packet.Unknown{PacketID: header.PacketID}
 		}
+		if err := pk.Unmarshal(buf); err != nil {
+			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+			// we return to reading a new packet.
+			conn.log.Printf("error decoding packet 0x%x: %v", header.PacketID, err)
+			goto read
+		}
 		// Unmarshal the bytes into the packet and return the error.
-		return pk, pk.Unmarshal(buf)
+		return pk, nil
 	case <-conn.readDeadline:
 		return nil, fmt.Errorf("error reading packet: read timeout")
 	case <-conn.close:
