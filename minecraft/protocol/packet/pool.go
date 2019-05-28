@@ -38,6 +38,7 @@ func NewPool() Pool {
 		IDLevelEvent:  &LevelEvent{},
 		IDBlockEvent:  &BlockEvent{},
 		IDEntityEvent: &EntityEvent{},
+		IDMobEffect:   &MobEffect{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

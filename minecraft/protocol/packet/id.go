@@ -28,6 +28,7 @@ const (
 	IDLevelEvent
 	IDBlockEvent
 	IDEntityEvent
+	IDMobEffect
 )
 
 // ...
