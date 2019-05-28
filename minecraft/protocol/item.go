@@ -29,6 +29,7 @@ type ItemStack struct {
 
 // Item reads an item stack from buffer src and stores it into item stack x.
 func Item(src *bytes.Buffer, x *ItemStack) error {
+	x.NBTData = make(map[string]interface{})
 	if err := Varint32(src, &x.NetworkID); err != nil {
 		return fmt.Errorf("%v: %v", callFrame(), err)
 	}
