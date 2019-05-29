@@ -33,19 +33,12 @@ type EntityLink struct {
 
 // EntityLinkAction reads a single entity link (action) from buffer src.
 func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
-	if err := Varint64(src, &x.RiddenEntityUniqueID); err != nil {
-		return wrap(err)
-	}
-	if err := Varint64(src, &x.RiderEntityUniqueID); err != nil {
-		return wrap(err)
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Type); err != nil {
-		return wrap(err)
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Immediate); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		Varint64(src, &x.RiddenEntityUniqueID),
+		Varint64(src, &x.RiderEntityUniqueID),
+		binary.Read(src, binary.LittleEndian, &x.Type),
+		binary.Read(src, binary.LittleEndian, &x.Immediate),
+	)
 }
 
 // EntityLinks reads a list of entity links from buffer src that are currently active.
@@ -65,19 +58,12 @@ func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
 
 // WriteEntityLinkAction writes a single entity link x to buffer dst.
 func WriteEntityLinkAction(dst *bytes.Buffer, x EntityLink) error {
-	if err := WriteVarint64(dst, x.RiddenEntityUniqueID); err != nil {
-		return wrap(err)
-	}
-	if err := WriteVarint64(dst, x.RiderEntityUniqueID); err != nil {
-		return wrap(err)
-	}
-	if err := binary.Write(dst, binary.LittleEndian, x.Type); err != nil {
-		return wrap(err)
-	}
-	if err := binary.Write(dst, binary.LittleEndian, x.Immediate); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		WriteVarint64(dst, x.RiddenEntityUniqueID),
+		WriteVarint64(dst, x.RiderEntityUniqueID),
+		binary.Write(dst, binary.LittleEndian, x.Type),
+		binary.Write(dst, binary.LittleEndian, x.Immediate),
+	)
 }
 
 // WriteEntityLinks writes a list of entity links currently active to buffer dst.

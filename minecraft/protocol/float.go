@@ -28,28 +28,18 @@ func WriteFloat32(dst *bytes.Buffer, x float32) error {
 // Vec3 reads an mgl32.Vec3 (float32 vector) from Buffer src, setting the result to the pointer to an
 // mgl32.Vec3 passed.
 func Vec3(src *bytes.Buffer, x *mgl32.Vec3) error {
-	if err := Float32(src, &(*x)[0]); err != nil {
-		return wrap(err)
-	}
-	if err := Float32(src, &(*x)[1]); err != nil {
-		return wrap(err)
-	}
-	if err := Float32(src, &(*x)[2]); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		Float32(src, &(*x)[0]),
+		Float32(src, &(*x)[1]),
+		Float32(src, &(*x)[2]),
+	)
 }
 
 // WriteVec3 writes an mgl32.Vec3 (float32 vector) to Buffer dst, writing each of the float32s separately.
 func WriteVec3(dst *bytes.Buffer, x mgl32.Vec3) error {
-	if err := WriteFloat32(dst, x[0]); err != nil {
-		return wrap(err)
-	}
-	if err := WriteFloat32(dst, x[1]); err != nil {
-		return wrap(err)
-	}
-	if err := WriteFloat32(dst, x[2]); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		WriteFloat32(dst, x[0]),
+		WriteFloat32(dst, x[1]),
+		WriteFloat32(dst, x[2]),
+	)
 }

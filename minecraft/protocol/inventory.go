@@ -50,16 +50,11 @@ func InvAction(src *bytes.Buffer, action *InventoryAction) error {
 			return wrap(err)
 		}
 	}
-	if err := Varuint32(src, &action.InventorySlot); err != nil {
-		return err
-	}
-	if err := Item(src, &action.OldItem); err != nil {
-		return err
-	}
-	if err := Item(src, &action.NewItem); err != nil {
-		return err
-	}
-	return nil
+	return chainErr(
+		Varuint32(src, &action.InventorySlot),
+		Item(src, &action.OldItem),
+		Item(src, &action.NewItem),
+	)
 }
 
 // WriteInvAction writes an inventory action to buffer dst.
@@ -77,16 +72,11 @@ func WriteInvAction(dst *bytes.Buffer, action InventoryAction) error {
 			return wrap(err)
 		}
 	}
-	if err := WriteVaruint32(dst, action.InventorySlot); err != nil {
-		return err
-	}
-	if err := WriteItem(dst, action.OldItem); err != nil {
-		return err
-	}
-	if err := WriteItem(dst, action.NewItem); err != nil {
-		return err
-	}
-	return nil
+	return chainErr(
+		WriteVaruint32(dst, action.InventorySlot),
+		WriteItem(dst, action.OldItem),
+		WriteItem(dst, action.NewItem),
+	)
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.

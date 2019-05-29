@@ -21,7 +21,7 @@ func chainErr(err ...error) error {
 			}
 			hasEOF = true
 		}
-		msg += e.Error() + "\n"
+		msg += wrap(e).Error() + "\n"
 	}
 	if msg == "" {
 		return nil

@@ -31,19 +31,13 @@ func Attributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
-		if err := Float32(src, &attribute.Min); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Max); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Value); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Default); err != nil {
-			return wrap(err)
-		}
-		if err := String(src, &attribute.Name); err != nil {
+		if err := chainErr(
+			Float32(src, &attribute.Min),
+			Float32(src, &attribute.Max),
+			Float32(src, &attribute.Value),
+			Float32(src, &attribute.Default),
+			String(src, &attribute.Name),
+		); err != nil {
 			return wrap(err)
 		}
 		(*attributes)[i] = attribute
@@ -57,19 +51,13 @@ func WriteAttributes(dst *bytes.Buffer, x []Attribute) error {
 		return wrap(err)
 	}
 	for _, attribute := range x {
-		if err := WriteFloat32(dst, attribute.Min); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Max); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Value); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Default); err != nil {
-			return wrap(err)
-		}
-		if err := WriteString(dst, attribute.Name); err != nil {
+		if err := chainErr(
+			WriteFloat32(dst, attribute.Min),
+			WriteFloat32(dst, attribute.Max),
+			WriteFloat32(dst, attribute.Value),
+			WriteFloat32(dst, attribute.Default),
+			WriteString(dst, attribute.Name),
+		); err != nil {
 			return wrap(err)
 		}
 	}
@@ -86,16 +74,12 @@ func InitialAttributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
-		if err := String(src, &attribute.Name); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Min); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Value); err != nil {
-			return wrap(err)
-		}
-		if err := Float32(src, &attribute.Max); err != nil {
+		if err := chainErr(
+			String(src, &attribute.Name),
+			Float32(src, &attribute.Min),
+			Float32(src, &attribute.Value),
+			Float32(src, &attribute.Max),
+		); err != nil {
 			return wrap(err)
 		}
 		(*attributes)[i] = attribute
@@ -110,16 +94,12 @@ func WriteInitialAttributes(dst *bytes.Buffer, x []Attribute) error {
 		return wrap(err)
 	}
 	for _, attribute := range x {
-		if err := WriteString(dst, attribute.Name); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Min); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Value); err != nil {
-			return wrap(err)
-		}
-		if err := WriteFloat32(dst, attribute.Max); err != nil {
+		if err := chainErr(
+			WriteString(dst, attribute.Name),
+			WriteFloat32(dst, attribute.Min),
+			WriteFloat32(dst, attribute.Value),
+			WriteFloat32(dst, attribute.Max),
+		); err != nil {
 			return wrap(err)
 		}
 	}

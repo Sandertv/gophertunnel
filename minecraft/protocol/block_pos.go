@@ -25,13 +25,11 @@ func (pos BlockPos) Z() int32 {
 
 // BlockPosition reads a BlockPos from Buffer src and stores it to the BlockPos pointer passed.
 func BlockPosition(src *bytes.Buffer, x *BlockPos) error {
-	if err := Varint32(src, &(*x)[0]); err != nil {
-		return wrap(err)
-	}
-	if err := Varint32(src, &(*x)[1]); err != nil {
-		return wrap(err)
-	}
-	if err := Varint32(src, &(*x)[2]); err != nil {
+	if err := chainErr(
+		Varint32(src, &(*x)[0]),
+		Varint32(src, &(*x)[1]),
+		Varint32(src, &(*x)[2]),
+	); err != nil {
 		return wrap(err)
 	}
 	return nil
@@ -39,46 +37,34 @@ func BlockPosition(src *bytes.Buffer, x *BlockPos) error {
 
 // WriteBlockPosition writes a BlockPos x to Buffer dst, composed of 3 varint32s.
 func WriteBlockPosition(dst *bytes.Buffer, x BlockPos) error {
-	if err := WriteVarint32(dst, x[0]); err != nil {
-		return wrap(err)
-	}
-	if err := WriteVarint32(dst, x[1]); err != nil {
-		return wrap(err)
-	}
-	if err := WriteVarint32(dst, x[2]); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		WriteVarint32(dst, x[0]),
+		WriteVarint32(dst, x[1]),
+		WriteVarint32(dst, x[2]),
+	)
 }
 
 // UBlockPosition reads an unsigned BlockPos from Buffer src and stores it to the BlockPos pointer passed. The
 // difference between this and BlockPosition is that the Y coordinate is read as a varuint32.
 func UBlockPosition(src *bytes.Buffer, x *BlockPos) error {
-	if err := Varint32(src, &(*x)[0]); err != nil {
-		return wrap(err)
-	}
 	var v uint32
-	if err := Varuint32(src, &v); err != nil {
+	if err := chainErr(
+		Varint32(src, &(*x)[0]),
+		Varuint32(src, &v),
+		Varint32(src, &(*x)[2]),
+	); err != nil {
 		return wrap(err)
 	}
 	(*x)[1] = int32(v)
-	if err := Varint32(src, &(*x)[2]); err != nil {
-		return wrap(err)
-	}
 	return nil
 }
 
 // WriteUBlockPosition writes an unsigned BlockPos x to Buffer dst, composed of a varint32, varuint32 and a
 // varint32.
 func WriteUBlockPosition(dst *bytes.Buffer, x BlockPos) error {
-	if err := WriteVarint32(dst, x[0]); err != nil {
-		return wrap(err)
-	}
-	if err := WriteVaruint32(dst, uint32(x[1])); err != nil {
-		return wrap(err)
-	}
-	if err := WriteVarint32(dst, x[2]); err != nil {
-		return wrap(err)
-	}
-	return nil
+	return chainErr(
+		WriteVarint32(dst, x[0]),
+		WriteVaruint32(dst, uint32(x[1])),
+		WriteVarint32(dst, x[2]),
+	)
 }
