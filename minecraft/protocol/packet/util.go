@@ -5,9 +5,9 @@ import (
 	"strings"
 )
 
-// ChainErr chains together a variadic amount of errors into a single error and returns it. If all errors
+// chainErr chains together a variadic amount of errors into a single error and returns it. If all errors
 // passed are nil, the error returned will also be nil.
-func ChainErr(err ...error) error {
+func chainErr(err ...error) error {
 	var msg string
 	hasEOF := true
 	for _, e := range err {

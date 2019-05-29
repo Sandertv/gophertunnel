@@ -30,7 +30,7 @@ func (pk *UpdateAttributes) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *UpdateAttributes) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		protocol.Attributes(buf, &pk.Attributes),
 	)

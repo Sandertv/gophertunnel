@@ -38,7 +38,7 @@ func (pk *Explode) Marshal(buf *bytes.Buffer) {
 func (pk *Explode) Unmarshal(buf *bytes.Buffer) error {
 	var blockCount uint32
 	var radiusInt32 int32
-	if err := ChainErr(
+	if err := chainErr(
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Varint32(buf, &radiusInt32),
 		protocol.Varuint32(buf, &blockCount),

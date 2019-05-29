@@ -29,7 +29,7 @@ func (pk *ResourcePackChunkRequest) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackChunkRequest) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.String(buf, &pk.UUID),
 		binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex),
 	)

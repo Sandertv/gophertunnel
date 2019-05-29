@@ -108,7 +108,7 @@ func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *AddPlayer) Unmarshal(buf *bytes.Buffer) error {
 	pk.EntityMetadata = map[uint32]interface{}{}
-	return ChainErr(
+	return chainErr(
 		protocol.UUID(buf, &pk.UUID),
 		protocol.String(buf, &pk.Username),
 		protocol.Varint64(buf, &pk.EntityUniqueID),

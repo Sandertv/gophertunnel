@@ -44,7 +44,7 @@ func (pk *MoveEntityAbsolute) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *MoveEntityAbsolute) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		binary.Read(buf, binary.LittleEndian, &pk.Flags),
 		protocol.Vec3(buf, &pk.Position),

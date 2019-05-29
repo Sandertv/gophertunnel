@@ -82,7 +82,7 @@ func (pk *MobEffect) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *MobEffect) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		binary.Read(buf, binary.LittleEndian, &pk.Operation),
 		protocol.Varint32(buf, &pk.EffectType),

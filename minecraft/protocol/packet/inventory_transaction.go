@@ -62,7 +62,7 @@ func (pk *InventoryTransaction) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *InventoryTransaction) Unmarshal(buf *bytes.Buffer) error {
 	var length, transactionType uint32
-	if err := ChainErr(
+	if err := chainErr(
 		protocol.Varuint32(buf, &transactionType),
 		protocol.Varuint32(buf, &length),
 	); err != nil {

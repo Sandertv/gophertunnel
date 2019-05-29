@@ -92,7 +92,7 @@ func (pk *EntityEvent) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *EntityEvent) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		binary.Read(buf, binary.LittleEndian, &pk.EventType),
 		protocol.Varint32(buf, &pk.EventData),

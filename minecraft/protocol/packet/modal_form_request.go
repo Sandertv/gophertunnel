@@ -29,7 +29,7 @@ func (pk *ModalFormRequest) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ModalFormRequest) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint32(buf, &pk.FormID),
 		protocol.String(buf, &pk.FormData),
 	)

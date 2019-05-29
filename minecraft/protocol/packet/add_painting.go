@@ -41,7 +41,7 @@ func (pk *AddPainting) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *AddPainting) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		protocol.UBlockPosition(buf, &pk.Position),

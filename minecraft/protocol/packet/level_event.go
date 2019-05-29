@@ -116,7 +116,7 @@ func (pk *LevelEvent) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *LevelEvent) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varint32(buf, &pk.EventType),
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Varint32(buf, &pk.EventData),

@@ -43,7 +43,7 @@ func (pk *UpdateBlock) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *UpdateBlock) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.UBlockPosition(buf, &pk.Position),
 		protocol.Varuint32(buf, &pk.NewBlockRuntimeID),
 		protocol.Varuint32(buf, &pk.Flags),

@@ -79,7 +79,7 @@ func (pk *MovePlayer) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *MovePlayer) Unmarshal(buf *bytes.Buffer) error {
-	if err := ChainErr(
+	if err := chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Float32(buf, &pk.Pitch),
@@ -92,7 +92,7 @@ func (pk *MovePlayer) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	if pk.Mode == MoveModeTeleport {
-		return ChainErr(
+		return chainErr(
 			binary.Read(buf, binary.LittleEndian, &pk.TeleportCause),
 			binary.Read(buf, binary.LittleEndian, &pk.TeleportItem),
 		)

@@ -32,7 +32,7 @@ func (pk *ServerSettingsResponse) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ServerSettingsResponse) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint32(buf, &pk.FormID),
 		protocol.String(buf, &pk.FormData),
 	)

@@ -29,7 +29,7 @@ func (pk *TakeItemEntity) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *TakeItemEntity) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varuint64(buf, &pk.ItemEntityRuntimeID),
 		protocol.Varuint64(buf, &pk.TakerEntityRuntimeID),
 	)

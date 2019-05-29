@@ -36,7 +36,7 @@ func (pk *BlockEvent) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *BlockEvent) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.UBlockPosition(buf, &pk.Position),
 		protocol.Varint32(buf, &pk.EventType),
 		protocol.Varint32(buf, &pk.EventData),

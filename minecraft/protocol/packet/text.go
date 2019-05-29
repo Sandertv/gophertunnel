@@ -76,7 +76,7 @@ func (pk *Text) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
-	if err := ChainErr(
+	if err := chainErr(
 		binary.Read(buf, binary.LittleEndian, &pk.TextType),
 		binary.Read(buf, binary.LittleEndian, &pk.NeedsTranslation),
 	); err != nil {
@@ -84,7 +84,7 @@ func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
 	}
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		if err := ChainErr(
+		if err := chainErr(
 			protocol.String(buf, &pk.SourceName),
 			protocol.String(buf, &pk.Message),
 		); err != nil {
@@ -96,7 +96,7 @@ func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
 		}
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		var length uint32
-		if err := ChainErr(
+		if err := chainErr(
 			protocol.String(buf, &pk.SourceName),
 			protocol.Varuint32(buf, &length),
 		); err != nil {
@@ -109,7 +109,7 @@ func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
 			}
 		}
 	}
-	return ChainErr(
+	return chainErr(
 		protocol.String(buf, &pk.XUID),
 		protocol.String(buf, &pk.PlatformChatID),
 	)

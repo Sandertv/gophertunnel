@@ -40,7 +40,7 @@ func (pk *ResourcePackChunkData) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *ResourcePackChunkData) Unmarshal(buf *bytes.Buffer) error {
 	var length int32
-	if err := ChainErr(
+	if err := chainErr(
 		protocol.String(buf, &pk.UUID),
 		binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex),
 		binary.Read(buf, binary.LittleEndian, &pk.DataOffset),
