@@ -35,11 +35,12 @@ func NewPool() Pool {
 		IDAddPainting:        &AddPainting{},
 		IDExplode:            &Explode{},
 		// ---
-		IDLevelEvent:       &LevelEvent{},
-		IDBlockEvent:       &BlockEvent{},
-		IDEntityEvent:      &EntityEvent{},
-		IDMobEffect:        &MobEffect{},
-		IDUpdateAttributes: &UpdateAttributes{},
+		IDLevelEvent:           &LevelEvent{},
+		IDBlockEvent:           &BlockEvent{},
+		IDEntityEvent:          &EntityEvent{},
+		IDMobEffect:            &MobEffect{},
+		IDUpdateAttributes:     &UpdateAttributes{},
+		IDInventoryTransaction: &InventoryTransaction{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

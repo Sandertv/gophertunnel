@@ -30,6 +30,7 @@ const (
 	IDEntityEvent
 	IDMobEffect
 	IDUpdateAttributes
+	IDInventoryTransaction
 )
 
 // ...
