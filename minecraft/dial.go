@@ -18,6 +18,7 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -31,6 +32,11 @@ type Dialer struct {
 	// ClientData is the client data used to login to the server with. It includes fields such as the skin,
 	// locale and UUIDs unique to the client. If empty, a default is sent produced using defaultClientData().
 	ClientData login.ClientData
+	// IdentityData is the identity data used to login to the server with. It includes the username, UUID and
+	// XUID of the player.
+	// The IdentityData object is obtained using Minecraft auth if Email and Password are set. If not, the
+	// object provided here is used, or a default one if left empty.
+	IdentityData login.IdentityData
 
 	// Email is the email used to login to the XBOX Live account. If empty, no attempt will be made to login,
 	// and an unauthenticated login request will be sent.
@@ -90,6 +96,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 	conn = newConn(netConn, key, dialer.ErrorLog)
 	conn.clientData = defaultClientData(address)
+	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
 
 	var emptyClientData login.ClientData
@@ -97,11 +104,21 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// If a custom client data struct was set, we change the default.
 		conn.clientData = dialer.ClientData
 	}
+	var emptyIdentityData login.IdentityData
+	if dialer.IdentityData != emptyIdentityData {
+		// If a custom identity data object was set, we change the default.
+		conn.identityData = dialer.IdentityData
+	}
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 
 	go listenConn(conn, dialer.ErrorLog)
 
 	request := login.Encode(chainData, conn.clientData, key)
+	identityData, _, _ := login.Decode(request)
+	// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as we
+	// are not aware of the identity data ourselves yet.
+	conn.identityData = identityData
+
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
 		return nil, err
 	}
@@ -177,5 +194,15 @@ func defaultClientData(address string) login.ClientData {
 		ServerAddress:    address,
 		SkinID:           uuid.Must(uuid.NewRandom()).String(),
 		SkinData:         base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0}, 32*64*4)),
+	}
+}
+
+// defaultIdentityData returns a valid default identity data object which may be used to fill out if the
+// client is not authenticated and if no identity data was provided.
+func defaultIdentityData() login.IdentityData {
+	return login.IdentityData{
+		XUID:        strconv.FormatInt(rand2.Int63(), 10),
+		Identity:    uuid.Must(uuid.NewRandom()).String(),
+		DisplayName: "Steve",
 	}
 }
