@@ -32,6 +32,7 @@ const (
 	IDUpdateAttributes
 	IDInventoryTransaction
 	IDMobEquipment
+	IDMobArmourEquipment
 )
 
 // ...
