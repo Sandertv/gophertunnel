@@ -48,19 +48,19 @@ func (e *Encoder) Encode(v interface{}) error {
 // are found in the list below.
 //
 // The following Go types are converted to tags as such:
-// byte/uint8: TAG_Byte
-// int16: TAG_Short
-// int32: TAG_Int
-// int64: TAG_Long
-// float32: TAG_Float
-// float64: TAG_Double
-// [...]byte: TAG_ByteArray
-// [...]int32: TAG_IntArray
-// [...]int64: TAG_LongArray
-// string: TAG_String
-// []<type>: TAG_List
-// struct{...}: TAG_Compound
-// map[string]<type/interface{}>: TAG_Compound
+//   byte/uint8: TAG_Byte
+//   int16: TAG_Short
+//   int32: TAG_Int
+//   int64: TAG_Long
+//   float32: TAG_Float
+//   float64: TAG_Double
+//   [...]byte: TAG_ByteArray
+//   [...]int32: TAG_IntArray
+//   [...]int64: TAG_LongArray
+//   string: TAG_String
+//   []<type>: TAG_List
+//   struct{...}: TAG_Compound
+//   map[string]<type/interface{}>: TAG_Compound
 //
 // Marshal accepts struct fields with the 'nbt' struct tag. The 'nbt' struct tag allows setting the name of
 // a field that some tag should be decoded in. Setting the struct tag to '-' means that field will never be

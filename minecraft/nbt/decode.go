@@ -45,16 +45,16 @@ func (d *Decoder) Decode(v interface{}) error {
 //
 // The Go value passed must be a pointer to a value. Anything else will return an error before decoding.
 // The following NBT tags are decoded in the Go value passed as such:
-// TAG_Byte: byte/uint8(/interface{})
-// TAG_Short: int16(/interface{})
-// TAG_Int: int32(/interface{})
-// TAG_Long: int64(/interface{})
-// TAG_Float: float32(/interface{})
-// TAG_Double: float64(/interface{})
-// TAG_ByteArray: [...]byte(/interface{}) (The value must be a byte array, not a slice)
-// TAG_String: string(/interface{})
-// TAG_List: []interface{}(/interface{}) (The value type of the slice may vary. Depending on the type of
-//           values in the List tag, it might be of the type of any of the other tags, such as []int64.
+//   TAG_Byte: byte/uint8(/interface{})
+//   TAG_Short: int16(/interface{})
+//   TAG_Int: int32(/interface{})
+//   TAG_Long: int64(/interface{})
+//   TAG_Float: float32(/interface{})
+//   TAG_Double: float64(/interface{})
+//   TAG_ByteArray: [...]byte(/interface{}) (The value must be a byte array, not a slice)
+//   TAG_String: string(/interface{})
+//   TAG_List: []interface{}(/interface{}) (The value type of the slice may vary. Depending on the type of
+//             values in the List tag, it might be of the type of any of the other tags, such as []int64.
 // TAG_Compound: struct{...}/map[string]interface{}(/interface{})
 // TAG_IntArray: [...]int32(/interface{}) (The value must be an int32 array, not a slice)
 // TAG_LongArray: [...]int64(/interface{}) (The value must be an int64 array, not a slice)
