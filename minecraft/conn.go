@@ -194,7 +194,7 @@ read:
 			goto read
 		}
 		if buf.Len() != 0 {
-			conn.log.Printf("%v unread bytes left in packet %T: %v", buf.Len(), pk, hex.EncodeToString(buf.Bytes()))
+			conn.log.Printf("%v unread bytes left in packet %T%+v: %v (full payload: %v)\n", buf.Len(), pk, pk, hex.EncodeToString(buf.Bytes()), hex.EncodeToString(data))
 		}
 		// Unmarshal the bytes into the packet and return the error.
 		return pk, nil
