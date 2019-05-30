@@ -45,6 +45,7 @@ func NewPool() Pool {
 		IDMobArmourEquipment:   &MobArmourEquipment{},
 		IDInteract:             &Interact{},
 		IDBlockPickRequest:     &BlockPickRequest{},
+		IDEntityPickRequest:    &EntityPickRequest{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

@@ -35,6 +35,7 @@ const (
 	IDMobArmourEquipment
 	IDInteract
 	IDBlockPickRequest
+	IDEntityPickRequest
 )
 
 // ...
