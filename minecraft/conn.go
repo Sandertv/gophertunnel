@@ -357,7 +357,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 
 		case *packet.Disconnect:
 			_ = conn.Close()
-			return errors.New(pk.Message)
+			return errors.New("Disconnected: " + pk.Message)
 		}
 	}
 	return nil
