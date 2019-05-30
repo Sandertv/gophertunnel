@@ -118,19 +118,26 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 	if err := WriteVarint32(dst, int32(x.MetadataValue<<8)|int32(x.Count)); err != nil {
 		return wrap(err)
 	}
-	// Write a fixed -1, which used to be the NBT length.
-	if err := binary.Write(dst, binary.LittleEndian, int16(-1)); err != nil {
-		return wrap(err)
+	if len(x.NBTData) != 0 {
+		// Write a fixed -1, which used to be the NBT length.
+		if err := binary.Write(dst, binary.LittleEndian, int16(-1)); err != nil {
+			return wrap(err)
+		}
+		// NBT Count, which is always one in our case.
+		if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
+			return wrap(err)
+		}
+		b, err := nbt.Marshal(x.NBTData)
+		if err != nil {
+			return fmt.Errorf("%v: error writing NBT: %v", callFrame(), err)
+		}
+		_, _ = dst.Write(b)
+	} else {
+		// There's no NBT to write, so we just write 0 and continue with the rest.
+		if err := binary.Write(dst, binary.LittleEndian, int16(0)); err != nil {
+			return wrap(err)
+		}
 	}
-	// NBT Count, which is always one in our case.
-	if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
-		return wrap(err)
-	}
-	b, err := nbt.Marshal(x.NBTData)
-	if err != nil {
-		return fmt.Errorf("%v: error writing NBT: %v", callFrame(), err)
-	}
-	_, _ = dst.Write(b)
 	if err := WriteVarint32(dst, int32(len(x.CanBePlacedOn))); err != nil {
 		return wrap(err)
 	}
@@ -154,6 +161,5 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 			return wrap(err)
 		}
 	}
-
 	return nil
 }
