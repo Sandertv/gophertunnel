@@ -97,7 +97,7 @@ func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		var length uint32
 		if err := chainErr(
-			protocol.String(buf, &pk.SourceName),
+			protocol.String(buf, &pk.Message),
 			protocol.Varuint32(buf, &length),
 		); err != nil {
 			return err
