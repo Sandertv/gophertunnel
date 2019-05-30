@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -189,8 +190,11 @@ read:
 		if err := pk.Unmarshal(buf); err != nil {
 			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
 			// we return to reading a new packet.
-			conn.log.Printf("error decoding packet 0x%x: %v", header.PacketID, err)
+			conn.log.Printf("error decoding packet %T: %v", pk, err)
 			goto read
+		}
+		if buf.Len() != 0 {
+			conn.log.Printf("%v unread bytes left in packet %T: %v", buf.Len(), pk, hex.EncodeToString(buf.Bytes()))
 		}
 		// Unmarshal the bytes into the packet and return the error.
 		return pk, nil
