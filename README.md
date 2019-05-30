@@ -14,8 +14,8 @@ package [minecraft/nbt](https://godoc.org/github.com/Sandertv/gophertunnel/minec
 Minecraft NBT format. Three variants of the format are implemented: The Java Edition variant (Big Endian) and
 the Bedrock Edition variants (Little Endian, both with and without varints)
 
-package [minecraft/packet](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/protocol/packet): A package
-implementing the reading and writing of packets found in the Minecraft Bedrock Edition protocol.
+package [minecraft/protocol](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/protocol): A package
+implementing the reading, writing and handling of packets found in the Minecraft Bedrock Edition protocol.
 
 ## Examples
 Creating a Minecraft client that authenticates using an XBOX Live account and connects to a server:
