@@ -43,6 +43,7 @@ func NewPool() Pool {
 		IDInventoryTransaction: &InventoryTransaction{},
 		IDMobEquipment:         &MobEquipment{},
 		IDMobArmourEquipment:   &MobArmourEquipment{},
+		IDInteract:             &Interact{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

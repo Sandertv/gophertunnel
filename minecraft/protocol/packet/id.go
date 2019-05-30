@@ -33,6 +33,7 @@ const (
 	IDInventoryTransaction
 	IDMobEquipment
 	IDMobArmourEquipment
+	IDInteract
 )
 
 // ...
