@@ -31,6 +31,7 @@ const (
 	IDMobEffect
 	IDUpdateAttributes
 	IDInventoryTransaction
+	IDMobEquipment
 )
 
 // ...
