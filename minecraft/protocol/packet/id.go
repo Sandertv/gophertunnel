@@ -43,6 +43,7 @@ const (
 	IDSetEntityMotion
 	IDSetEntityLink
 	IDSetHealth
+	IDSetSpawnPosition
 )
 
 // ...
