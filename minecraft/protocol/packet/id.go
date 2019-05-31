@@ -42,6 +42,7 @@ const (
 	IDSetEntityData
 	IDSetEntityMotion
 	IDSetEntityLink
+	IDSetHealth
 )
 
 // ...
