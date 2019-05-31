@@ -50,6 +50,7 @@ func NewPool() Pool {
 		IDEntityFall:           &EntityFall{},
 		IDHurtArmour:           &HurtArmour{},
 		IDSetEntityData:        &SetEntityData{},
+		IDSetEntityMotion:      &SetEntityMotion{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

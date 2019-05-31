@@ -40,6 +40,7 @@ const (
 	IDEntityFall
 	IDHurtArmour
 	IDSetEntityData
+	IDSetEntityMotion
 )
 
 // ...
