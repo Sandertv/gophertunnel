@@ -37,6 +37,7 @@ const (
 	IDBlockPickRequest
 	IDEntityPickRequest
 	IDPlayerAction
+	IDEntityFall
 )
 
 // ...

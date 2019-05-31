@@ -47,6 +47,7 @@ func NewPool() Pool {
 		IDBlockPickRequest:     &BlockPickRequest{},
 		IDEntityPickRequest:    &EntityPickRequest{},
 		IDPlayerAction:         &PlayerAction{},
+		IDEntityFall:           &EntityFall{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
