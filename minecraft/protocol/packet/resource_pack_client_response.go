@@ -41,7 +41,7 @@ func (pk *ResourcePackClientResponse) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *ResourcePackClientResponse) Unmarshal(buf *bytes.Buffer) error {
 	var length int16
-	if err := ChainErr(
+	if err := chainErr(
 		binary.Read(buf, binary.LittleEndian, &pk.Response),
 		binary.Read(buf, binary.LittleEndian, &length),
 	); err != nil {

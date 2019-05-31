@@ -47,7 +47,7 @@ func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
 // Unmarshal ...
 func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
 	var length int16
-	if err := ChainErr(
+	if err := chainErr(
 		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
 		binary.Read(buf, binary.LittleEndian, &pk.HasScripts),
 		binary.Read(buf, binary.LittleEndian, &length),
@@ -87,7 +87,7 @@ func writeResourcePackInfoEntry(buf *bytes.Buffer, pack ResourcePack) {
 
 // resourcePackInfoEntry reads a resource pack info entry from the bytes.Buffer passed.
 func resourcePackInfoEntry(buf *bytes.Buffer, pack *ResourcePack) error {
-	return ChainErr(
+	return chainErr(
 		protocol.String(buf, &pack.UUID),
 		protocol.String(buf, &pack.Version),
 		binary.Read(buf, binary.LittleEndian, &pack.Size),

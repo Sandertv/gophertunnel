@@ -41,7 +41,7 @@ func (pk *ResourcePackDataInfo) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePackDataInfo) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.String(buf, &pk.UUID),
 		binary.Read(buf, binary.LittleEndian, &pk.DataChunkSize),
 		binary.Read(buf, binary.LittleEndian, &pk.ChunkCount),

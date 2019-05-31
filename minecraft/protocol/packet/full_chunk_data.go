@@ -32,7 +32,7 @@ func (pk *FullChunkData) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *FullChunkData) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		protocol.Varint32(buf, &pk.ChunkX),
 		protocol.Varint32(buf, &pk.ChunkZ),
 		protocol.String(buf, &pk.Data),

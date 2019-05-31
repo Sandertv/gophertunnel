@@ -31,7 +31,7 @@ func (pk *Login) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *Login) Unmarshal(buf *bytes.Buffer) error {
-	return ChainErr(
+	return chainErr(
 		binary.Read(buf, binary.BigEndian, &pk.ClientProtocol),
 		protocol.String(buf, &pk.ConnectionRequest),
 	)

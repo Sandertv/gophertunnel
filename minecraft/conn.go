@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -178,12 +179,16 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
+read:
 	select {
 	case data := <-conn.packets:
 		buf := bytes.NewBuffer(data)
 		header := &packet.Header{}
 		if err := header.Read(buf); err != nil {
-			return nil, fmt.Errorf("error reading packet header: %v", err)
+			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+			// we return to reading a new packet.
+			conn.log.Printf("error reading packet header: %v", err)
+			goto read
 		}
 		if conn.packetFunc != nil {
 			// The packet func was set, so we call it.
@@ -196,8 +201,17 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			// the reader.
 			pk = &packet.Unknown{PacketID: header.PacketID}
 		}
+		if err := pk.Unmarshal(buf); err != nil {
+			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+			// we return to reading a new packet.
+			conn.log.Printf("error decoding packet %T: %v", pk, err)
+			goto read
+		}
+		if buf.Len() != 0 {
+			conn.log.Printf("%v unread bytes left in packet %T%+v: %v (full payload: %v)\n", buf.Len(), pk, pk, hex.EncodeToString(buf.Bytes()), hex.EncodeToString(data))
+		}
 		// Unmarshal the bytes into the packet and return the error.
-		return pk, pk.Unmarshal(buf)
+		return pk, nil
 	case <-conn.readDeadline:
 		return nil, fmt.Errorf("error reading packet: read timeout")
 	case <-conn.close:
@@ -364,7 +378,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			return conn.handleChunkRadiusUpdated(pk)
 		case *packet.Disconnect:
 			_ = conn.Close()
-			return errors.New(pk.Message)
+			return errors.New("Disconnected: " + pk.Message)
 		}
 	}
 	return nil

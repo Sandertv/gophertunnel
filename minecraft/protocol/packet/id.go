@@ -12,6 +12,31 @@ const (
 	IDText
 	IDSetTime
 	IDStartGame
+	IDAddPlayer
+	IDAddEntity
+	IDRemoveEntity
+	IDAddItemEntity
+	_
+	IDTakeItemEntity
+	IDMoveEntityAbsolute
+	IDMovePlayer
+	IDRiderJump
+	IDUpdateBlock
+	IDAddPainting
+	IDExplode
+	_
+	IDLevelEvent
+	IDBlockEvent
+	IDEntityEvent
+	IDMobEffect
+	IDUpdateAttributes
+	IDInventoryTransaction
+	IDMobEquipment
+	IDMobArmourEquipment
+	IDInteract
+	IDBlockPickRequest
+	IDEntityPickRequest
+	IDPlayerAction
 )
 
 // ...

@@ -214,7 +214,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		pk.GameRules = make(map[string]interface{})
 	}
 	var blockCount uint32
-	if err := ChainErr(
+	if err := chainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		protocol.Varint32(buf, &pk.PlayerGameMode),
@@ -264,7 +264,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 	pk.Blocks = make([]BlockEntry, blockCount)
 	for i := uint32(0); i < blockCount; i++ {
 		block := BlockEntry{}
-		if err := ChainErr(
+		if err := chainErr(
 			protocol.String(buf, &block.Name),
 			binary.Read(buf, binary.LittleEndian, &block.Data),
 		); err != nil {

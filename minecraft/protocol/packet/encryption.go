@@ -31,7 +31,7 @@ func newEncrypt(keyBytes [32]byte) *encrypt {
 	}
 }
 
-// ecrypt encrypts the data passed, adding the packet checksum at the end of it before CFB8 encrypting it.
+// encrypt encrypts the data passed, adding the packet checksum at the end of it before CFB8 encrypting it.
 func (encrypt *encrypt) encrypt(data []byte) []byte {
 	// We first write the current send counter to a buffer and use it to produce a packet checksum.
 	buf := bytes.NewBuffer(make([]byte, 0, 8))
