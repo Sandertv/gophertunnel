@@ -49,6 +49,7 @@ func NewPool() Pool {
 		IDPlayerAction:         &PlayerAction{},
 		IDEntityFall:           &EntityFall{},
 		IDHurtArmour:           &HurtArmour{},
+		IDSetEntityData:        &SetEntityData{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

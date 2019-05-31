@@ -39,6 +39,7 @@ const (
 	IDPlayerAction
 	IDEntityFall
 	IDHurtArmour
+	IDSetEntityData
 )
 
 // ...
