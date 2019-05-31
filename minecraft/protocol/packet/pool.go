@@ -51,6 +51,7 @@ func NewPool() Pool {
 		IDHurtArmour:           &HurtArmour{},
 		IDSetEntityData:        &SetEntityData{},
 		IDSetEntityMotion:      &SetEntityMotion{},
+		IDSetEntityLink:        &SetEntityLink{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

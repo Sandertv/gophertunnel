@@ -41,6 +41,7 @@ const (
 	IDHurtArmour
 	IDSetEntityData
 	IDSetEntityMotion
+	IDSetEntityLink
 )
 
 // ...
