@@ -54,6 +54,7 @@ func NewPool() Pool {
 		IDSetEntityLink:        &SetEntityLink{},
 		IDSetHealth:            &SetHealth{},
 		IDSetSpawnPosition:     &SetSpawnPosition{},
+		IDAnimate:              &Animate{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

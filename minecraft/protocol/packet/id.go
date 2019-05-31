@@ -44,6 +44,7 @@ const (
 	IDSetEntityLink
 	IDSetHealth
 	IDSetSpawnPosition
+	IDAnimate
 )
 
 // ...
