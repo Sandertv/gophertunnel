@@ -5,6 +5,34 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	PlayerActionStartBreak = iota
+	PlayerActionAbortBreak
+	PlayerActionStopBreak
+	PlayerActionGetUpdatedBlock
+	PlayerActionDropItem
+	PlayerActionStartSleeping
+	PlayerActionStopSleeping
+	PlayerActionRespawn
+	PlayerActionJump
+	PlayerActionStartSprint
+	PlayerActionStopSprint
+	PlayerActionStartSneak
+	PlayerActionStopSneak
+	PlayerActionDimensionChangeRequest
+	PlayerActionDimensionChangeDone
+	PlayerActionStartGlide
+	PlayerActionStopGlide
+	PlayerActionBuildDenied
+	PlayerActionContinueBreak
+	_
+	PlayerActionSetEnchantmentSeed
+	PlayerActionStartSwimming
+	PlayerActionStopSwimming
+	PlayerActionStartSpinAttack
+	PlayerActionStopSpinAttack
+)
+
 // PlayerAction is sent by the client when it executes any action, for example starting to sprint, swim,
 // starting the breaking of a block, dropping an item, etc.
 type PlayerAction struct {
