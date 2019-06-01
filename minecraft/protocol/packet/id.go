@@ -45,6 +45,7 @@ const (
 	IDSetHealth
 	IDSetSpawnPosition
 	IDAnimate
+	IDRespawn
 )
 
 // ...
