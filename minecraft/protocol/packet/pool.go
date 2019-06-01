@@ -56,6 +56,7 @@ func NewPool() Pool {
 		IDSetSpawnPosition:     &SetSpawnPosition{},
 		IDAnimate:              &Animate{},
 		IDRespawn:              &Respawn{},
+		IDContainerOpen:        &ContainerOpen{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

@@ -46,6 +46,7 @@ const (
 	IDSetSpawnPosition
 	IDAnimate
 	IDRespawn
+	IDContainerOpen
 )
 
 // ...
