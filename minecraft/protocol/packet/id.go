@@ -49,6 +49,7 @@ const (
 	IDContainerOpen
 	IDContainerClose
 	IDPlayerHotBar
+	IDInventoryContent
 )
 
 // ...
