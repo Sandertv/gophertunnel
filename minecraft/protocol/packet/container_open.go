@@ -10,7 +10,8 @@ import (
 // present in the world, for the packet to have any effect. Unlike Java Edition, Bedrock Edition requires that
 // chests for example must be present and in range to open its inventory.
 type ContainerOpen struct {
-	// WindowID is the ID representing the window type of the container that is being opened.
+	// WindowID is the ID representing the window that is being opened. It may be used later to close the
+	// container using a ContainerClose packet.
 	WindowID byte
 	// ContainerType is the type ID of the container that is being opened when opening the container at the
 	// position of the packet. It depends on the block/entity, and could, for example, be the window type of

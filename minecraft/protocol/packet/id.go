@@ -47,6 +47,7 @@ const (
 	IDAnimate
 	IDRespawn
 	IDContainerOpen
+	IDContainerClose
 )
 
 // ...
