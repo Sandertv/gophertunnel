@@ -58,6 +58,7 @@ func NewPool() Pool {
 		IDRespawn:              &Respawn{},
 		IDContainerOpen:        &ContainerOpen{},
 		IDContainerClose:       &ContainerClose{},
+		IDPlayerHotBar:         &PlayerHotBar{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...

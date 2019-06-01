@@ -48,6 +48,7 @@ const (
 	IDRespawn
 	IDContainerOpen
 	IDContainerClose
+	IDPlayerHotBar
 )
 
 // ...
