@@ -50,6 +50,7 @@ const (
 	IDContainerClose
 	IDPlayerHotBar
 	IDInventoryContent
+	IDInventorySlot
 )
 
 // ...
