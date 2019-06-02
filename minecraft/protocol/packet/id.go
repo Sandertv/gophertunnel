@@ -51,6 +51,7 @@ const (
 	IDPlayerHotBar
 	IDInventoryContent
 	IDInventorySlot
+	IDContainerSetData
 )
 
 // ...

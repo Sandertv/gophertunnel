@@ -61,6 +61,7 @@ func NewPool() Pool {
 		IDPlayerHotBar:         &PlayerHotBar{},
 		IDInventoryContent:     &InventoryContent{},
 		IDInventorySlot:        &InventorySlot{},
+		IDContainerSetData:     &ContainerSetData{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
