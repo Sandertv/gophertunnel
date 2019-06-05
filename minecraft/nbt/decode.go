@@ -432,6 +432,9 @@ func (d *Decoder) tag() (tagType byte, tagName string, err error) {
 	if d.depth >= maximumNestingDepth {
 		return 0, "", MaximumDepthReachedError{}
 	}
+	if d.r.off >= maximumNetworkOffset && d.Variant == VarLittleEndian {
+		return 0, "", MaximumBytesReadError{}
+	}
 	tagType, err = d.r.ReadByte()
 	if err != nil {
 		return 0, "", BufferOverrunError{Op: "ReadTag"}

@@ -16,7 +16,7 @@ type InvalidTypeError struct {
 
 // Error ...
 func (err InvalidTypeError) Error() string {
-	return fmt.Sprintf("invalid type for tag '%v' at offset %v: cannot unmarshalTag %v into %v", err.Field, err.Off, tagName(err.TagType), err.FieldType)
+	return fmt.Sprintf("nbt: invalid type for tag '%v' at offset %v: cannot unmarshalTag %v into %v", err.Field, err.Off, tagName(err.TagType), err.FieldType)
 }
 
 // UnknownTagError is returned when the type of a tag read is not known, meaning it is not found in the tag.go
@@ -29,7 +29,7 @@ type UnknownTagError struct {
 
 // Error ...
 func (err UnknownTagError) Error() string {
-	return fmt.Sprintf("unknown nbt tag '%v' at offset %v during op '%v'", err.TagType, err.Off, err.Op)
+	return fmt.Sprintf("nbt: unknown tag '%v' at offset %v during op '%v'", err.TagType, err.Off, err.Op)
 }
 
 // UnexpectedTagError is returned when a tag type encountered was not expected, and thus valid in its context.
@@ -40,7 +40,7 @@ type UnexpectedTagError struct {
 
 // Error ...
 func (err UnexpectedTagError) Error() string {
-	return fmt.Sprintf("unexpected nbt tag %v at offset %v: tag is not valid in its context", tagName(err.TagType), err.Off)
+	return fmt.Sprintf("nbt: unexpected tag %v at offset %v: tag is not valid in its context", tagName(err.TagType), err.Off)
 }
 
 // NonPointerTypeError is returned when the type of a value passed in Decoder.Decode or Unmarshal is not a
@@ -51,7 +51,7 @@ type NonPointerTypeError struct {
 
 // Error ...
 func (err NonPointerTypeError) Error() string {
-	return fmt.Sprintf("expected ptr type to decode into, but got '%v'", err.ActualType)
+	return fmt.Sprintf("nbt: expected ptr type to decode into, but got '%v'", err.ActualType)
 }
 
 // BufferOverrunError is returned when the data buffer passed in when reading is overrun, meaning one of the
@@ -62,7 +62,7 @@ type BufferOverrunError struct {
 
 // Error ...
 func (err BufferOverrunError) Error() string {
-	return fmt.Sprintf("unexpected buffer end during op: '%v'", err.Op)
+	return fmt.Sprintf("nbt: unexpected buffer end during op: '%v'", err.Op)
 }
 
 // InvalidArraySizeError is returned when an array read from the NBT (that includes byte arrays, int32 arrays
@@ -76,7 +76,7 @@ type InvalidArraySizeError struct {
 
 // Error ...
 func (err InvalidArraySizeError) Error() string {
-	return fmt.Sprintf("mismatched array size at %v during op '%v': expected size %v, found %v in NBT", err.Off, err.Op, err.GoLength, err.NBTLength)
+	return fmt.Sprintf("nbt: mismatched array size at %v during op '%v': expected size %v, found %v in NBT", err.Off, err.Op, err.GoLength, err.NBTLength)
 }
 
 // UnexpectedNamedTagError is returned when a named tag is read from a compound which is not present in the
@@ -89,7 +89,7 @@ type UnexpectedNamedTagError struct {
 
 // Error ...
 func (err UnexpectedNamedTagError) Error() string {
-	return fmt.Sprintf("unexpected named tag '%v' with type %v at offset %v: not present in struct to be decoded into", err.TagName, tagName(err.TagType), err.Off)
+	return fmt.Sprintf("nbt: unexpected named tag '%v' with type %v at offset %v: not present in struct to be decoded into", err.TagName, tagName(err.TagType), err.Off)
 }
 
 // FailedWriteError is returned if a Write operation failed on an offsetWriter, meaning some of the data could
@@ -102,7 +102,7 @@ type FailedWriteError struct {
 
 // Error ...
 func (err FailedWriteError) Error() string {
-	return fmt.Sprintf("failed write during op '%v' at offset %v: %v", err.Op, err.Off, err.Err)
+	return fmt.Sprintf("nbt: failed write during op '%v' at offset %v: %v", err.Op, err.Off, err.Err)
 }
 
 // IncompatibleTypeError is returned if a value is attempted to be written to an io.Writer, but its type can-
@@ -114,7 +114,7 @@ type IncompatibleTypeError struct {
 
 // Error ...
 func (err IncompatibleTypeError) Error() string {
-	return fmt.Sprintf("value type %v (%v) cannot be translated to an NBT tag", err.Type, err.ValueName)
+	return fmt.Sprintf("nbt: value type %v (%v) cannot be translated to an NBT tag", err.Type, err.ValueName)
 }
 
 // InvalidStringError is returned if a string read is not valid, meaning it does not exist exclusively out of
@@ -127,7 +127,7 @@ type InvalidStringError struct {
 
 // Error ...
 func (err InvalidStringError) Error() string {
-	return fmt.Sprintf("string at offset %v is not valid: %v (%v)", err.Off, err.Err, err.String)
+	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (%v)", err.Off, err.Err, err.String)
 }
 
 const maximumNestingDepth = 512
@@ -137,6 +137,19 @@ const maximumNestingDepth = 512
 type MaximumDepthReachedError struct {
 }
 
+// Error ...
 func (err MaximumDepthReachedError) Error() string {
-	return fmt.Sprintf("maximum nesting depth of %v was reached", maximumNestingDepth)
+	return fmt.Sprintf("nbt: maximum nesting depth of %v was reached", maximumNestingDepth)
+}
+
+const maximumNetworkOffset = 4 * 1024 * 1024
+
+// MaximumBytesReadError is returned if the maximum amount of bytes has been read for VarLittleEndian format.
+// It is returned if the offset hits maximumNetworkOffset
+type MaximumBytesReadError struct {
+}
+
+// Error ...
+func (err MaximumBytesReadError) Error() string {
+	return fmt.Sprintf("nbt: limit of bytes read %v with VarLittleEndian format exhausted", maximumNetworkOffset)
 }

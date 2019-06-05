@@ -25,7 +25,8 @@ type Variant interface {
 }
 
 // VarLittleEndian is the variable sized integer implementation of NBT. It is otherwise the same as the normal
-// little-endian NBT.
+// little-endian NBT. The VarLittleEndian format limits the total bytes of NBT that may be read. If the limit
+// is hit, the reading operation will fail immediately.
 var VarLittleEndian varLittleEndian
 
 // LittleEndian is the fixed size little endian implementation of NBT. It is the format typically used for
