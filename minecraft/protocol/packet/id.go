@@ -53,6 +53,7 @@ const (
 	IDInventorySlot
 	IDContainerSetData
 	IDCraftingData
+	IDCraftingEvent
 )
 
 // ...

@@ -63,6 +63,7 @@ func NewPool() Pool {
 		IDInventorySlot:        &InventorySlot{},
 		IDContainerSetData:     &ContainerSetData{},
 		IDCraftingData:         &CraftingData{},
+		IDCraftingEvent:        &CraftingEvent{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
