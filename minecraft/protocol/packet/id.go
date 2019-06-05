@@ -37,6 +37,22 @@ const (
 	IDBlockPickRequest
 	IDEntityPickRequest
 	IDPlayerAction
+	IDEntityFall
+	IDHurtArmour
+	IDSetEntityData
+	IDSetEntityMotion
+	IDSetEntityLink
+	IDSetHealth
+	IDSetSpawnPosition
+	IDAnimate
+	IDRespawn
+	IDContainerOpen
+	IDContainerClose
+	IDPlayerHotBar
+	IDInventoryContent
+	IDInventorySlot
+	IDContainerSetData
+	IDCraftingData
 )
 
 // ...

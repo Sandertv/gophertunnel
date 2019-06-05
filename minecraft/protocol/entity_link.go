@@ -24,7 +24,7 @@ type EntityLink struct {
 	// RiderEntityUniqueID is the entity unique ID of the entity that is riding. For a player sitting in a
 	// boat, this is the unique ID of the player.
 	RiderEntityUniqueID int64
-	// Type is one of the types above.
+	// Type is one of the types above. It specifies the way the entity is linked to another entity.
 	Type byte
 	// Immediate is set to immediately dismount an entity from another. This should be set when the mount of
 	// an entity is killed.
