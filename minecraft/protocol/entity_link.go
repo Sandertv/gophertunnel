@@ -47,6 +47,9 @@ func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
 	if err := Varuint32(src, &count); err != nil {
 		return wrap(err)
 	}
+	if count > lowerLimit {
+		return LimitHitError{Limit: lowerLimit, Type: "entity link"}
+	}
 	*x = make([]EntityLink, count)
 	for i := uint32(0); i < count; i++ {
 		if err := EntityLinkAction(src, &(*x)[i]); err != nil {

@@ -28,6 +28,9 @@ func Attributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	if err := Varuint32(src, &count); err != nil {
 		return wrap(err)
 	}
+	if count > mediumLimit {
+		return LimitHitError{Limit: mediumLimit, Type: "attribute"}
+	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
 		attribute := Attribute{}
@@ -70,6 +73,9 @@ func InitialAttributes(src *bytes.Buffer, attributes *[]Attribute) error {
 	var count uint32
 	if err := Varuint32(src, &count); err != nil {
 		return wrap(err)
+	}
+	if count > mediumLimit {
+		return LimitHitError{Limit: mediumLimit, Type: "attribute"}
 	}
 	*attributes = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
