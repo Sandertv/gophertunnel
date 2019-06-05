@@ -52,6 +52,7 @@ const (
 	IDInventoryContent
 	IDInventorySlot
 	IDContainerSetData
+	IDCraftingData
 )
 
 // ...
