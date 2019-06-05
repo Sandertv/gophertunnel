@@ -14,7 +14,7 @@ type CraftingEvent struct {
 	WindowID byte
 	// CraftingType is a type that indicates the way the crafting was done, for example if a crafting table
 	// was used.
-	CraftingType int32
+	CraftingType int32 // TODO: Figure out the options for this.
 	// RecipeUUID is the UUID of the recipe that was crafted. It points to the UUID of the recipe that was
 	// sent earlier in the CraftingData packet.
 	RecipeUUID uuid.UUID
