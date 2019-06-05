@@ -54,6 +54,7 @@ const (
 	IDContainerSetData
 	IDCraftingData
 	IDCraftingEvent
+	IDGUIDataPickItem
 )
 
 // ...
