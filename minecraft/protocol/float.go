@@ -43,3 +43,20 @@ func WriteVec3(dst *bytes.Buffer, x mgl32.Vec3) error {
 		WriteFloat32(dst, x[2]),
 	)
 }
+
+// Vec2 reads an mgl32.Vec2 (float32 vector) from Buffer src, setting the result to the pointer to an
+// mgl32.Vec2 passed.
+func Vec2(src *bytes.Buffer, x *mgl32.Vec2) error {
+	return chainErr(
+		Float32(src, &(*x)[0]),
+		Float32(src, &(*x)[1]),
+	)
+}
+
+// WriteVec2 writes an mgl32.Vec2 (float32 vector) to Buffer dst, writing each of the float32s separately.
+func WriteVec2(dst *bytes.Buffer, x mgl32.Vec2) error {
+	return chainErr(
+		WriteFloat32(dst, x[0]),
+		WriteFloat32(dst, x[1]),
+	)
+}
