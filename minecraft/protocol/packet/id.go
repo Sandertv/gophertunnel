@@ -58,11 +58,7 @@ const (
 	IDAdventureSettings
 	IDBlockEntityData
 	IDPlayerInput
-)
-
-// ...
-const (
-	IDFullChunkData = iota + 0x3a
+	IDFullChunkData
 )
 
 // ...
