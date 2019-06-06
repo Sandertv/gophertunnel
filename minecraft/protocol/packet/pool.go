@@ -71,6 +71,7 @@ func NewPool() Pool {
 		IDFullChunkData:        &FullChunkData{},
 		IDSetCommandsEnabled:   &SetCommandsEnabled{},
 		IDSetDifficulty:        &SetDifficulty{},
+		IDChangeDimension:      &ChangeDimension{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},

@@ -61,6 +61,7 @@ const (
 	IDFullChunkData
 	IDSetCommandsEnabled
 	IDSetDifficulty
+	IDChangeDimension
 )
 
 // ...
