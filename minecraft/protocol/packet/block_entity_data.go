@@ -1,0 +1,39 @@
+package packet
+
+import (
+	"bytes"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
+)
+
+// BlockEntityData is sent by the server to update data of a block entity client-side, for example the data of
+// a chest.
+type BlockEntityData struct {
+	// Position is the position of the block that holds the block entity. If no block entity is at this
+	// position, the packet is ignored by the client.
+	Position protocol.BlockPos
+	// NBTData is the new data of the block that will be encoded to NBT and applied client-side, so that the
+	// client can see the block update. The NBTData should contain all properties of the block, not just
+	// properties that were changed.
+	NBTData map[string]interface{}
+}
+
+// ID ...
+func (*BlockEntityData) ID() uint32 {
+	return IDBlockEntityData
+}
+
+// Marshal ...
+func (pk *BlockEntityData) Marshal(buf *bytes.Buffer) {
+	_ = protocol.WriteUBlockPosition(buf, pk.Position)
+	_ = nbt.NewEncoder(buf).Encode(pk.NBTData)
+}
+
+// Unmarshal ...
+func (pk *BlockEntityData) Unmarshal(buf *bytes.Buffer) error {
+	pk.NBTData = make(map[string]interface{})
+	return chainErr(
+		protocol.UBlockPosition(buf, &pk.Position),
+		nbt.NewDecoder(buf).Decode(&pk.NBTData),
+	)
+}
