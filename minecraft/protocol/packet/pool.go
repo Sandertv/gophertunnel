@@ -70,6 +70,7 @@ func NewPool() Pool {
 		IDPlayerInput:          &PlayerInput{},
 		IDFullChunkData:        &FullChunkData{},
 		IDSetCommandsEnabled:   &SetCommandsEnabled{},
+		IDSetDifficulty:        &SetDifficulty{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},

@@ -60,6 +60,7 @@ const (
 	IDPlayerInput
 	IDFullChunkData
 	IDSetCommandsEnabled
+	IDSetDifficulty
 )
 
 // ...
