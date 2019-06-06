@@ -59,6 +59,7 @@ const (
 	IDBlockEntityData
 	IDPlayerInput
 	IDFullChunkData
+	IDSetCommandsEnabled
 )
 
 // ...
