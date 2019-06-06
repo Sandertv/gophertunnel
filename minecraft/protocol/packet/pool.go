@@ -67,6 +67,7 @@ func NewPool() Pool {
 		IDGUIDataPickItem:      &GUIDataPickItem{},
 		IDAdventureSettings:    &AdventureSettings{},
 		IDBlockEntityData:      &BlockEntityData{},
+		IDPlayerInput:          &PlayerInput{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
