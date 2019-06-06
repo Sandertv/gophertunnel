@@ -55,6 +55,7 @@ const (
 	IDCraftingData
 	IDCraftingEvent
 	IDGUIDataPickItem
+	IDAdventureSettings
 )
 
 // ...

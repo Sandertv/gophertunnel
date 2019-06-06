@@ -54,8 +54,8 @@ type AddPlayer struct {
 	// Flags is a set of flags that specify certain properties of the player, such as whether or not it can
 	// fly and/or move through blocks.
 	Flags uint32
-	// CommandPermissions is a set of permissions that specify what commands a player is allowed to execute.
-	CommandPermissions uint32
+	// CommandPermissionLevel is a set of permissions that specify what commands a player is allowed to execute.
+	CommandPermissionLevel uint32
 	// ActionPermissions is, much like Flags, a set of flags that specify actions that the player is allowed
 	// to undertake, such as whether it is allowed to edit blocks, open doors etc.
 	ActionPermissions uint32
@@ -64,9 +64,9 @@ type AddPlayer struct {
 	PermissionLevel uint32
 	// CustomStoredPermissions ...
 	CustomStoredPermissions uint32
-	// PlayerID is a unique identifier of the player. It appears it is not required to fill this field out
-	// with a correct value. Simply writing 0 seems to work.
-	PlayerID int64
+	// PlayerUniqueID is a unique identifier of the player. It appears it is not required to fill this field
+	// out with a correct value. Simply writing 0 seems to work.
+	PlayerUniqueID int64
 	// EntityLinks is a list of entity links that are currently active on the player. These links alter the
 	// way the player shows up when first spawned in terms of it shown as riding an entity. Setting these
 	// links is important for new viewers to see the player is riding another entity.
@@ -96,11 +96,11 @@ func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteItem(buf, pk.HeldItem)
 	_ = protocol.WriteEntityMetadata(buf, pk.EntityMetadata)
 	_ = protocol.WriteVaruint32(buf, pk.Flags)
-	_ = protocol.WriteVaruint32(buf, pk.CommandPermissions)
+	_ = protocol.WriteVaruint32(buf, pk.CommandPermissionLevel)
 	_ = protocol.WriteVaruint32(buf, pk.ActionPermissions)
 	_ = protocol.WriteVaruint32(buf, pk.PermissionLevel)
 	_ = protocol.WriteVaruint32(buf, pk.CustomStoredPermissions)
-	_ = binary.Write(buf, binary.LittleEndian, pk.PlayerID)
+	_ = binary.Write(buf, binary.LittleEndian, pk.PlayerUniqueID)
 	_ = protocol.WriteEntityLinks(buf, pk.EntityLinks)
 	_ = protocol.WriteString(buf, pk.DeviceID)
 }
@@ -122,11 +122,11 @@ func (pk *AddPlayer) Unmarshal(buf *bytes.Buffer) error {
 		protocol.Item(buf, &pk.HeldItem),
 		protocol.EntityMetadata(buf, &pk.EntityMetadata),
 		protocol.Varuint32(buf, &pk.Flags),
-		protocol.Varuint32(buf, &pk.CommandPermissions),
+		protocol.Varuint32(buf, &pk.CommandPermissionLevel),
 		protocol.Varuint32(buf, &pk.ActionPermissions),
 		protocol.Varuint32(buf, &pk.PermissionLevel),
 		protocol.Varuint32(buf, &pk.CustomStoredPermissions),
-		binary.Read(buf, binary.LittleEndian, &pk.PlayerID),
+		binary.Read(buf, binary.LittleEndian, &pk.PlayerUniqueID),
 		protocol.EntityLinks(buf, &pk.EntityLinks),
 		protocol.String(buf, &pk.DeviceID),
 	)

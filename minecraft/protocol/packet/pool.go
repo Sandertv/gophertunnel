@@ -65,6 +65,7 @@ func NewPool() Pool {
 		IDCraftingData:         &CraftingData{},
 		IDCraftingEvent:        &CraftingEvent{},
 		IDGUIDataPickItem:      &GUIDataPickItem{},
+		IDAdventureSettings:    &AdventureSettings{},
 		// ...
 		IDFullChunkData: &FullChunkData{},
 		// ...
