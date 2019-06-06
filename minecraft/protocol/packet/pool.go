@@ -68,8 +68,7 @@ func NewPool() Pool {
 		IDAdventureSettings:    &AdventureSettings{},
 		IDBlockEntityData:      &BlockEntityData{},
 		IDPlayerInput:          &PlayerInput{},
-		// ...
-		IDFullChunkData: &FullChunkData{},
+		IDFullChunkData:        &FullChunkData{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},
