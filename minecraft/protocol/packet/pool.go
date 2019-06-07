@@ -73,6 +73,7 @@ func NewPool() Pool {
 		IDSetDifficulty:        &SetDifficulty{},
 		IDChangeDimension:      &ChangeDimension{},
 		IDSetPlayerGameType:    &SetPlayerGameType{},
+		IDPlayerList:           &PlayerList{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},

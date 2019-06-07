@@ -63,6 +63,7 @@ const (
 	IDSetDifficulty
 	IDChangeDimension
 	IDSetPlayerGameType
+	IDPlayerList
 )
 
 // ...
