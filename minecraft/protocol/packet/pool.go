@@ -74,6 +74,7 @@ func NewPool() Pool {
 		IDChangeDimension:      &ChangeDimension{},
 		IDSetPlayerGameType:    &SetPlayerGameType{},
 		IDPlayerList:           &PlayerList{},
+		IDSimpleEvent:          &SimpleEvent{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},

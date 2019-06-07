@@ -64,6 +64,7 @@ const (
 	IDChangeDimension
 	IDSetPlayerGameType
 	IDPlayerList
+	IDSimpleEvent
 )
 
 // ...
