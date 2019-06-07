@@ -76,6 +76,7 @@ func NewPool() Pool {
 		IDPlayerList:           &PlayerList{},
 		IDSimpleEvent:          &SimpleEvent{},
 		IDEvent:                &Event{},
+		IDSpawnExperienceOrb:   &SpawnExperienceOrb{},
 		// ...
 		IDRequestChunkRadius: &RequestChunkRadius{},
 		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},

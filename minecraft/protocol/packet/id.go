@@ -66,6 +66,7 @@ const (
 	IDPlayerList
 	IDSimpleEvent
 	IDEvent
+	IDSpawnExperienceOrb
 )
 
 // ...
