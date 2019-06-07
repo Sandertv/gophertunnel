@@ -65,6 +65,7 @@ const (
 	IDSetPlayerGameType
 	IDPlayerList
 	IDSimpleEvent
+	IDEvent
 )
 
 // ...
