@@ -9,12 +9,15 @@ import (
 // GameRules reads a map of game rules from Buffer src. It sets one of the types 'bool', 'float32' or 'uint32'
 // to the map x, with the key being the name of the game rule.
 func GameRules(src *bytes.Buffer, x *map[string]interface{}) error {
-	var length uint32
+	var count uint32
 	// The amount of game rules is in a varuint32 before the game rules.
-	if err := Varuint32(src, &length); err != nil {
+	if err := Varuint32(src, &count); err != nil {
 		return wrap(err)
 	}
-	for i := uint32(0); i < length; i++ {
+	if count > mediumLimit {
+		return LimitHitError{Limit: mediumLimit, Type: "game rules"}
+	}
+	for i := uint32(0); i < count; i++ {
 		// Each of the game rules holds a name and a value type, with the actual value depending on the type
 		// that it is.
 		var name string
@@ -29,19 +32,19 @@ func GameRules(src *bytes.Buffer, x *map[string]interface{}) error {
 		case 1:
 			var v bool
 			if err := binary.Read(src, binary.LittleEndian, &v); err != nil {
-				wrap(err)
+				return wrap(err)
 			}
 			(*x)[name] = v
 		case 2:
 			var v uint32
 			if err := Varuint32(src, &v); err != nil {
-				wrap(err)
+				return wrap(err)
 			}
 			(*x)[name] = v
 		case 3:
 			var v float32
 			if err := Float32(src, &v); err != nil {
-				wrap(err)
+				return wrap(err)
 			}
 			(*x)[name] = v
 		default:

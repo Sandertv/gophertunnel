@@ -54,11 +54,19 @@ const (
 	IDContainerSetData
 	IDCraftingData
 	IDCraftingEvent
-)
-
-// ...
-const (
-	IDFullChunkData = iota + 0x3a
+	IDGUIDataPickItem
+	IDAdventureSettings
+	IDBlockEntityData
+	IDPlayerInput
+	IDFullChunkData
+	IDSetCommandsEnabled
+	IDSetDifficulty
+	IDChangeDimension
+	IDSetPlayerGameType
+	IDPlayerList
+	IDSimpleEvent
+	IDEvent
+	IDSpawnExperienceOrb
 )
 
 // ...

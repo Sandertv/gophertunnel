@@ -56,6 +56,9 @@ func (pk *CraftingEvent) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
+	if length > 64 {
+		return protocol.LimitHitError{Type: "crafting event", Limit: 64}
+	}
 	pk.Input = make([]protocol.ItemStack, length)
 	for i := uint32(0); i < length; i++ {
 		if err := protocol.Item(buf, &pk.Input[i]); err != nil {
@@ -64,6 +67,9 @@ func (pk *CraftingEvent) Unmarshal(buf *bytes.Buffer) error {
 	}
 	if err := protocol.Varuint32(buf, &length); err != nil {
 		return err
+	}
+	if length > 64 {
+		return protocol.LimitHitError{Type: "crafting event", Limit: 64}
 	}
 	pk.Output = make([]protocol.ItemStack, length)
 	for i := uint32(0); i < length; i++ {

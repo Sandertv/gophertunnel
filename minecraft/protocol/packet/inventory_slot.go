@@ -12,10 +12,10 @@ type InventorySlot struct {
 	// WindowID is the ID of the window that the packet modifies. It must point to one of the windows that the
 	// client currently has opened.
 	WindowID uint32
-	// SlotIndex is the index of the slot that the packet modifies. The new item will be set to the slot at
-	// this index.
-	SlotIndex uint32
-	// NewItem is the item to be put in the slot at SlotIndex. It will overwrite any item that may currently
+	// Slot is the index of the slot that the packet modifies. The new item will be set to the slot at this
+	// index.
+	Slot uint32
+	// NewItem is the item to be put in the slot at Slot. It will overwrite any item that may currently
 	// be present in that slot.
 	NewItem protocol.ItemStack
 }
@@ -28,7 +28,7 @@ func (*InventorySlot) ID() uint32 {
 // Marshal ...
 func (pk *InventorySlot) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.WindowID)
-	_ = protocol.WriteVaruint32(buf, pk.SlotIndex)
+	_ = protocol.WriteVaruint32(buf, pk.Slot)
 	_ = protocol.WriteItem(buf, pk.NewItem)
 }
 
@@ -36,7 +36,7 @@ func (pk *InventorySlot) Marshal(buf *bytes.Buffer) {
 func (pk *InventorySlot) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint32(buf, &pk.WindowID),
-		protocol.Varuint32(buf, &pk.SlotIndex),
+		protocol.Varuint32(buf, &pk.Slot),
 		protocol.Item(buf, &pk.NewItem),
 	)
 }

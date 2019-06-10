@@ -74,7 +74,7 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 			}
 		} else {
 			if legacyNBTLength < 0 {
-				return fmt.Errorf("%v: invalid NBT length %v", callFrame(), legacyNBTLength)
+				return fmt.Errorf("%v: invalid NBT count %v", callFrame(), legacyNBTLength)
 			}
 			nbtData := src.Next(int(legacyNBTLength))
 			if err := nbt.UnmarshalVariant(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
@@ -83,21 +83,33 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 		}
 	}
 
-	var length int32
-	if err := Varint32(src, &length); err != nil {
+	var count int32
+	if err := Varint32(src, &count); err != nil {
 		return wrap(err)
 	}
-	x.CanBePlacedOn = make([]string, length)
-	for i := int32(0); i < length; i++ {
+	if count < 0 {
+		return NegativeCountError{Type: "item can be placed on"}
+	}
+	if count > higherLimit {
+		return LimitHitError{Limit: higherLimit, Type: "item can be placed on"}
+	}
+	x.CanBePlacedOn = make([]string, count)
+	for i := int32(0); i < count; i++ {
 		if err := String(src, &x.CanBePlacedOn[i]); err != nil {
 			return wrap(err)
 		}
 	}
-	if err := Varint32(src, &length); err != nil {
+	if err := Varint32(src, &count); err != nil {
 		return wrap(err)
 	}
-	x.CanBreak = make([]string, length)
-	for i := int32(0); i < length; i++ {
+	if count < 0 {
+		return NegativeCountError{Type: "item can break"}
+	}
+	if count > higherLimit {
+		return LimitHitError{Limit: higherLimit, Type: "item can break"}
+	}
+	x.CanBreak = make([]string, count)
+	for i := int32(0); i < count; i++ {
 		if err := String(src, &x.CanBreak[i]); err != nil {
 			return wrap(err)
 		}

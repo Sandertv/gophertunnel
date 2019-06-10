@@ -17,7 +17,7 @@ import (
 // by Mojang, and can thus be trusted.
 type IdentityData struct {
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
-	// logged in with the XBOX Live account..
+	// logged in with the XBOX Live account.
 	XUID string
 	// Identity is the UUID of the player, which will also remain consistent for as long as the user is logged
 	// into its XBOX Live account.

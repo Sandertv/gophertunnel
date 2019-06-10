@@ -68,6 +68,9 @@ func (pk *InventoryTransaction) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
+	if length > 512 {
+		return protocol.LimitHitError{Type: "inventory transaction", Limit: 512}
+	}
 	pk.Actions = make([]protocol.InventoryAction, length)
 	for i := uint32(0); i < length; i++ {
 		// Each InventoryTransaction packet has a list of actions at the start, with a transaction data object

@@ -250,6 +250,9 @@ func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 		// item count.
 		return fmt.Errorf("recipe width and height must be bigger than 0, but got %v by %v", recipe.Width, recipe.Height)
 	}
+	if recipe.Width > lowerLimit || recipe.Height > lowerLimit {
+		return LimitHitError{Type: "shaped recipe dimensions", Limit: lowerLimit}
+	}
 	itemCount := int(recipe.Width * recipe.Height)
 	recipe.Input = make([]ItemStack, itemCount)
 	for i := 0; i < itemCount; i++ {
@@ -260,6 +263,9 @@ func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 	var outputCount uint32
 	if err := Varuint32(buf, &outputCount); err != nil {
 		return err
+	}
+	if outputCount > lowerLimit {
+		return LimitHitError{Type: "shaped recipe output", Limit: lowerLimit}
 	}
 	recipe.Output = make([]ItemStack, outputCount)
 	for i := uint32(0); i < outputCount; i++ {
@@ -293,6 +299,9 @@ func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 	if err := Varuint32(buf, &count); err != nil {
 		return err
 	}
+	if count > lowerLimit {
+		return LimitHitError{Type: "shapeless recipe input", Limit: lowerLimit}
+	}
 	recipe.Input = make([]ItemStack, count)
 	for i := uint32(0); i < count; i++ {
 		if err := Item(buf, &recipe.Input[i]); err != nil {
@@ -301,6 +310,9 @@ func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 	}
 	if err := Varuint32(buf, &count); err != nil {
 		return wrap(err)
+	}
+	if count > lowerLimit {
+		return LimitHitError{Type: "shapeless recipe output", Limit: lowerLimit}
 	}
 	recipe.Output = make([]ItemStack, count)
 	for i := uint32(0); i < count; i++ {

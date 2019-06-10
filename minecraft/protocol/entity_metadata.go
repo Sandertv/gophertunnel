@@ -27,6 +27,9 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 	if err = Varuint32(src, &count); err != nil {
 		return wrap(err)
 	}
+	if count > mediumLimit {
+		return LimitHitError{Limit: mediumLimit, Type: "entity metadata"}
+	}
 	for i := uint32(0); i < count; i++ {
 		var key, dataType uint32
 		if err = Varuint32(src, &key); err != nil {
