@@ -558,8 +558,7 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 			return fmt.Errorf("behaviour pack {uuid=%v, version=%v} not downloaded", pack.UUID, pack.Version)
 		}
 	}
-	conn.connected <- true
-	conn.loggedIn = true
+	conn.expect(packet.IDStartGame)
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 

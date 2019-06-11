@@ -74,20 +74,6 @@ func Dial(network string, address string) (conn *Conn, err error) {
 // Specific fields in the Dialer specify additional behaviour during the connection, such as authenticating
 // to XBOX Live and custom client data.
 func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error) {
-	var netConn net.Conn
-
-	switch network {
-	case "raknet":
-		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
-		netConn, err = raknet.Dial(address)
-	default:
-		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
-		// the network passed.
-		netConn, err = net.Dial(network, address)
-	}
-	if err != nil {
-		return nil, err
-	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 
 	var chainData string
@@ -102,6 +88,20 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 	if dialer.InitialChunkRadius == 0 {
 		dialer.InitialChunkRadius = 8
+	}
+	var netConn net.Conn
+
+	switch network {
+	case "raknet":
+		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
+		netConn, err = raknet.Dial(address)
+	default:
+		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
+		// the network passed.
+		netConn, err = net.Dial(network, address)
+	}
+	if err != nil {
+		return nil, err
 	}
 	conn = newConn(netConn, key, dialer.ErrorLog)
 	conn.clientData = defaultClientData(address)
