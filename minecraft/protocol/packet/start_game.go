@@ -149,6 +149,9 @@ type StartGame struct {
 	// MultiPlayerCorrelationID is a unique ID specifying the multi-player session of the player. A random
 	// UUID should be filled out for this field.
 	MultiPlayerCorrelationID string
+	// OnlySpawnV1Villagers is a hack that Mojang put in place to preserve backwards compatibility with old
+	// villagers. The bool is never actually read though, so it has no functionality.
+	OnlySpawnV1Villagers bool
 }
 
 // ID ...
@@ -206,6 +209,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 		_ = binary.Write(buf, binary.LittleEndian, block.Data)
 	}
 	_ = protocol.WriteString(buf, pk.MultiPlayerCorrelationID)
+	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
 }
 
 // Unmarshal ...
@@ -272,7 +276,10 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		}
 		pk.Blocks[i] = block
 	}
-	return protocol.String(buf, &pk.MultiPlayerCorrelationID)
+	return chainErr(
+		protocol.String(buf, &pk.MultiPlayerCorrelationID),
+		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
+	)
 }
 
 // BlockEntry is a block sent in the StartGame packet block runtime ID table. It holds a name and a metadata
