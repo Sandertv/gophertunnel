@@ -73,7 +73,7 @@ func (pk *CraftingEvent) Unmarshal(buf *bytes.Buffer) error {
 	}
 	pk.Output = make([]protocol.ItemStack, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.Item(buf, &pk.Input[i]); err != nil {
+		if err := protocol.Item(buf, &pk.Output[i]); err != nil {
 			return err
 		}
 	}
