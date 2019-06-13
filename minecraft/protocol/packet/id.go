@@ -68,11 +68,8 @@ const (
 	IDEvent
 	IDSpawnExperienceOrb
 	IDClientBoundMapItemData
-)
-
-// ...
-const (
-	IDRequestChunkRadius = iota + 0x45
+	IDMapInfoRequest
+	IDRequestChunkRadius
 	IDChunkRadiusUpdated
 )
 
