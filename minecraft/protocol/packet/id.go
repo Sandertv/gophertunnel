@@ -72,6 +72,7 @@ const (
 	IDRequestChunkRadius
 	IDChunkRadiusUpdated
 	IDItemFrameDropItem
+	IDGameRulesChanged
 )
 
 // ...

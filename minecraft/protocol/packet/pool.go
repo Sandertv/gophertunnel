@@ -82,6 +82,7 @@ func NewPool() Pool {
 		IDRequestChunkRadius:     &RequestChunkRadius{},
 		IDChunkRadiusUpdated:     &ChunkRadiusUpdated{},
 		IDItemFrameDropItem:      &ItemFrameDropItem{},
+		IDGameRulesChanged:       &GameRulesChanged{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
