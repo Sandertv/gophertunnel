@@ -111,7 +111,12 @@ func (e *Encoder) marshal(val reflect.Value, tagName string) error {
 // encode encodes the payload of a value passed with the tag name passed. Unlike calling Encoder.marshal(), it
 // does not write the name and type of the tag.
 func (e *Encoder) encode(val reflect.Value, tagName string) error {
-	switch vk := val.Kind(); vk {
+	kind := val.Kind()
+	if kind == reflect.Interface {
+		val = val.Elem()
+		kind = val.Kind()
+	}
+	switch vk := kind; vk {
 	case reflect.Uint8:
 		return e.w.WriteByte(byte(val.Uint()))
 
@@ -179,7 +184,19 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 
 	case reflect.Slice:
 		e.depth++
-		listType := tagFromType(val.Type().Elem())
+		elemType := val.Type().Elem()
+		if elemType.Kind() == reflect.Interface {
+			if val.Len() == 0 {
+				// If the slice is empty, we cannot find out the type of the interface slice. Luckily the NBT
+				// format allows a byte type for empty lists.
+				elemType = byteType
+			} else {
+				// The slice is not empty, so we'll simply get the tag type from the first element.
+				elemType = val.Index(0).Elem().Type()
+			}
+		}
+
+		listType := tagFromType(elemType)
 		if listType == math.MaxUint8 {
 			return IncompatibleTypeError{Type: val.Type(), ValueName: tagName}
 		}

@@ -28,5 +28,8 @@ func callFrame() string {
 
 // wrap wraps a callframe around an error and returns the new error.
 func wrap(e error) error {
+	if e == nil {
+		return nil
+	}
 	return fmt.Errorf("%v: %v", callFrame(), e)
 }

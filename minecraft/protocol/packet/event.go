@@ -28,11 +28,10 @@ type Event struct {
 	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
-	// EventData is a packed int32 containing data specific to the event that is called. They way data may be
-	// packed in the int32 depends on the event type.
-	EventData int32
 	// EventType is the type of the event to be called. It is one of the constants that may be found above.
-	EventType byte
+	EventType int32
+	// Unknown ... TODO: Find out what this is for.
+	Unknown byte
 }
 
 // ID ...
@@ -43,8 +42,8 @@ func (*Event) ID() uint32 {
 // Marshal ...
 func (pk *Event) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteVarint32(buf, pk.EventData)
-	_ = binary.Write(buf, binary.LittleEndian, pk.EventType)
+	_ = protocol.WriteVarint32(buf, pk.EventType)
+	_ = binary.Write(buf, binary.LittleEndian, pk.Unknown)
 
 	switch pk.EventType {
 	// TODO: Figure out which events carry additional fields.
@@ -55,8 +54,8 @@ func (pk *Event) Marshal(buf *bytes.Buffer) {
 func (pk *Event) Unmarshal(buf *bytes.Buffer) error {
 	if err := chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Varint32(buf, &pk.EventData),
-		binary.Read(buf, binary.LittleEndian, &pk.EventType),
+		protocol.Varint32(buf, &pk.EventType),
+		binary.Read(buf, binary.LittleEndian, &pk.Unknown),
 	); err != nil {
 		return err
 	}

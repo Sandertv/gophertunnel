@@ -28,7 +28,7 @@ func (*PlayerHotBar) ID() uint32 {
 func (pk *PlayerHotBar) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.SelectedHotBarSlot)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.SelectedHotBarSlot)
+	_ = binary.Write(buf, binary.LittleEndian, pk.SelectHotBarSlot)
 }
 
 // Unmarshal ...

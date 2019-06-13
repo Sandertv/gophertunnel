@@ -342,6 +342,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		if !found {
 			// This is not the packet we expected next in the login sequence. We just ignore it as it might
 			// be a packet such as a movement that was simply sent too early.
+			conn.log.Printf("unexpected packet %+v: discarding the packet\n", pk)
 			return nil
 		}
 		switch pk := pk.(type) {
