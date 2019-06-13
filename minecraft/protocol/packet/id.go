@@ -67,6 +67,7 @@ const (
 	IDSimpleEvent
 	IDEvent
 	IDSpawnExperienceOrb
+	IDClientBoundMapItemData
 )
 
 // ...
