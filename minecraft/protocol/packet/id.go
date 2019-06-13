@@ -71,6 +71,7 @@ const (
 	IDMapInfoRequest
 	IDRequestChunkRadius
 	IDChunkRadiusUpdated
+	IDItemFrameDropItem
 )
 
 // ...
