@@ -73,6 +73,7 @@ const (
 	IDChunkRadiusUpdated
 	IDItemFrameDropItem
 	IDGameRulesChanged
+	IDCamera
 )
 
 // ...
