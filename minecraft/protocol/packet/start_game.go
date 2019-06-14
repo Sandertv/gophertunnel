@@ -276,10 +276,10 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		}
 		pk.Blocks[i] = block
 	}
-	return chainErr(
-		protocol.String(buf, &pk.MultiPlayerCorrelationID),
-		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
-	)
+	err := protocol.String(buf, &pk.MultiPlayerCorrelationID)
+	// This boolean is not read by the vanilla client, so we should also not care if it does not exist.
+	_ = binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers)
+	return err
 }
 
 // BlockEntry is a block sent in the StartGame packet block runtime ID table. It holds a name and a metadata
