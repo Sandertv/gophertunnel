@@ -84,6 +84,7 @@ func NewPool() Pool {
 		IDItemFrameDropItem:      &ItemFrameDropItem{},
 		IDGameRulesChanged:       &GameRulesChanged{},
 		IDCamera:                 &Camera{},
+		IDBossEvent:              &BossEvent{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},

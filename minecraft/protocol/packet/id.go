@@ -74,6 +74,7 @@ const (
 	IDItemFrameDropItem
 	IDGameRulesChanged
 	IDCamera
+	IDBossEvent
 )
 
 // ...
