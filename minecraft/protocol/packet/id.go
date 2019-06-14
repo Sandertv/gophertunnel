@@ -75,6 +75,7 @@ const (
 	IDGameRulesChanged
 	IDCamera
 	IDBossEvent
+	IDShowCredits
 )
 
 // ...
