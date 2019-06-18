@@ -92,6 +92,8 @@ func NewPool() Pool {
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
 		IDTransfer:                 &Transfer{},
 		// ...
+		IDPlayerSkin: &PlayerSkin{},
+		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},
 		IDServerSettingsRequest:  &ServerSettingsRequest{},

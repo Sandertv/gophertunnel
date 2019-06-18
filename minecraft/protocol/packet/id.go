@@ -88,6 +88,11 @@ const (
 
 // ...
 const (
+	IDPlayerSkin = iota + 0x5d
+)
+
+// ...
+const (
 	IDModalFormRequest = iota + 0x64
 	IDModalFormResponse
 	IDServerSettingsRequest
