@@ -78,14 +78,21 @@ func NewPool() Pool {
 		IDEvent:                  &Event{},
 		IDSpawnExperienceOrb:     &SpawnExperienceOrb{},
 		IDClientBoundMapItemData: &ClientBoundMapItemData{},
-		// ...
-		IDRequestChunkRadius: &RequestChunkRadius{},
-		IDChunkRadiusUpdated: &ChunkRadiusUpdated{},
+		IDMapInfoRequest:         &MapInfoRequest{},
+		IDRequestChunkRadius:     &RequestChunkRadius{},
+		IDChunkRadiusUpdated:     &ChunkRadiusUpdated{},
+		IDItemFrameDropItem:      &ItemFrameDropItem{},
+		IDGameRulesChanged:       &GameRulesChanged{},
+		IDCamera:                 &Camera{},
+		IDBossEvent:              &BossEvent{},
+		IDShowCredits:            &ShowCredits{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
 		IDTransfer:                 &Transfer{},
+		// ...
+		IDPlayerSkin: &PlayerSkin{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},

@@ -7,7 +7,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -208,7 +207,7 @@ read:
 			goto read
 		}
 		if buf.Len() != 0 {
-			conn.log.Printf("%v unread bytes left in packet %T%v: %v (full payload: %v)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], hex.EncodeToString(buf.Bytes()), hex.EncodeToString(data))
+			conn.log.Printf("%v unread bytes left in packet %T%v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], buf.Bytes(), data)
 		}
 		// Unmarshal the bytes into the packet and return the error.
 		return pk, nil

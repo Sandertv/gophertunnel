@@ -68,12 +68,14 @@ const (
 	IDEvent
 	IDSpawnExperienceOrb
 	IDClientBoundMapItemData
-)
-
-// ...
-const (
-	IDRequestChunkRadius = iota + 0x45
+	IDMapInfoRequest
+	IDRequestChunkRadius
 	IDChunkRadiusUpdated
+	IDItemFrameDropItem
+	IDGameRulesChanged
+	IDCamera
+	IDBossEvent
+	IDShowCredits
 )
 
 // ...
@@ -82,6 +84,11 @@ const (
 	IDResourcePackChunkData
 	IDResourcePackChunkRequest
 	IDTransfer
+)
+
+// ...
+const (
+	IDPlayerSkin = iota + 0x5d
 )
 
 // ...
