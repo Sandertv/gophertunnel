@@ -13,10 +13,6 @@ github.com/mitchellh/mapstructure v1.1.2 h1:fmNYVwqnSfB9mZU6OS2O6GsXM+wcskZDuKQz
 github.com/mitchellh/mapstructure v1.1.2/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/pelletier/go-toml v1.4.0 h1:u3Z1r+oOXJIkxqw34zVhyPgjBsm6X2wn21NWs/HfSeg=
 github.com/pelletier/go-toml v1.4.0/go.mod h1:PN7xzY2wHTK0K9p34ErDQMlFxa51Fk0OUruD3k1mMwo=
-github.com/sandertv/go-raknet v1.3.4 h1:/c2JCXBEiNeC+5kcm7irDKlceWId8GvhaxL/q3chCm0=
-github.com/sandertv/go-raknet v1.3.4/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
-github.com/sandertv/go-raknet v1.3.5 h1:E8Thv6QXOA3QSagU5Lu2RNLDBozH/MraZHpdEBp71w4=
-github.com/sandertv/go-raknet v1.3.5/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
 github.com/sandertv/go-raknet v1.4.0 h1:IiZHtIZPXoq3jlsLQdsl8OgTQBYNs7PPis0LyMgOf0g=
 github.com/sandertv/go-raknet v1.4.0/go.mod h1:s1lD7LTts74R9csTeI4WlGcp6PmXAGX+DeJlQF3KMlg=
 github.com/yuin/gluamapper v0.0.0-20150323120927-d836955830e7 h1:noHsffKZsNfU38DwcXWEPldrTjIZ8FPNKx8mYMGnqjs=
