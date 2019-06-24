@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
@@ -304,6 +305,16 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 // SetWriteDeadline is a stub function to implement net.Conn. It has no functionality.
 func (conn *Conn) SetWriteDeadline(t time.Time) error {
 	return nil
+}
+
+// SimulatePacketLoss makes the connection simulate packet loss, with a loss chance passed. It will start
+// to discard packets randomly depending on the loss chance, both for sending and for receiving packets.
+// The function panics if a loss change is higher than 1 or lower than 0.
+func (conn *Conn) SimulatePacketLoss(lossChance float64) {
+	if lossChance > 1 || lossChance < 0 {
+		panic(fmt.Sprintf("packet loss must be between 0-1, but got %v", lossChance))
+	}
+	conn.conn.(*raknet.Conn).SimulatePacketLoss(lossChance)
 }
 
 // handleIncoming handles an incoming serialised packet from the underlying connection. If the connection is
