@@ -84,8 +84,8 @@ type ClientData struct {
 	DeviceID string `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.
 	GameVersion string
-	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 for a smaller GUI
-	// scale than usual.
+	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 or -2 for a smaller
+	// GUI scale than usual.
 	GUIScale int `json:"GuiScale"`
 	// LanguageCode is the language code of the player. It looks like 'en_UK'. It follows the ISO language
 	// codes, but hyphens ('-') are replaced with underscores. ('_')
@@ -141,8 +141,8 @@ func (data ClientData) Validate() error {
 	if !checkVersion(data.GameVersion) {
 		return fmt.Errorf("GameVersion must only contain dots and numbers, but got %v", data.GameVersion)
 	}
-	if data.GUIScale != -1 && data.GUIScale != 0 {
-		return fmt.Errorf("GUIScale must be either -1 or 0, but got %v", data.GUIScale)
+	if data.GUIScale != -2 && data.GUIScale != -1 && data.GUIScale != 0 {
+		return fmt.Errorf("GUIScale must be either -2, -1 or 0, but got %v", data.GUIScale)
 	}
 	if _, err := language.Parse(strings.Replace(data.LanguageCode, "_", "-", 1)); err != nil {
 		return fmt.Errorf("LanguageCode must be a valid BCP-47 ISO language code, but got %v", data.LanguageCode)
