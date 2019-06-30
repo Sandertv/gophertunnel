@@ -77,6 +77,7 @@ const (
 	IDBossEvent
 	IDShowCredits
 	IDAvailableCommands
+	IDCommandRequest
 )
 
 // ...

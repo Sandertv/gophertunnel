@@ -87,6 +87,7 @@ func NewPool() Pool {
 		IDBossEvent:              &BossEvent{},
 		IDShowCredits:            &ShowCredits{},
 		IDAvailableCommands:      &AvailableCommands{},
+		IDCommandRequest:         &CommandRequest{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},

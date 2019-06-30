@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"github.com/google/uuid"
 )
 
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
@@ -104,6 +105,73 @@ type CommandEnum struct {
 	// Dynamic specifies if the command enum is considered dynamic. If set to true, it is written differently
 	// and may be updated during runtime as a result using the UpdateSoftEnum packet.
 	Dynamic bool
+}
+
+const (
+	CommandOriginPlayer = iota
+	CommandOriginBlock
+	CommandOriginMinecartBlock
+	CommandOriginDevConsole
+	CommandOriginTest
+	CommandOriginAutomationPlayer
+	CommandOriginClientAutomation
+	CommandOriginDedicatedServer
+	CommandOriginEntity
+	CommandOriginVirtual
+	CommandOriginGameArgument
+	CommandOriginEntityServer
+)
+
+// CommandOrigin holds data that identifies the origin of the requesting of a command. It holds several
+// fields that may be used to get specific information.
+// When sent in a CommandRequest packet, the same CommandOrigin should be sent in a CommandOutput packet.
+type CommandOrigin struct {
+	// Origin is one of the values above that specifies the origin of the command. The origin may change,
+	// depending on what part of the client actually called the command. The command may be issued by a
+	// websocket server, for example.
+	Origin uint32
+	// UUID is the UUID of the command called. This UUID is a bit odd as it is not specified by the server. It
+	// is not clear what exactly this UUID is meant to identify, but it is unique for each command called.
+	UUID uuid.UUID
+	// RequestID is an ID that identifies the request of the client. The server should send a CommandOrigin
+	// with the same request ID to ensure it can be matched with the request by the caller of the command.
+	// This is especially important for websocket servers.
+	// The request ID is usually a UUID, but is not guaranteed to be that.
+	RequestID string
+	// PlayerUniqueID is an ID that identifies the player, the same as the one found in the AdventureSettings
+	// packet. Filling it out with 0 seems to work.
+	// PlayerUniqueID is only written if Origin is CommandOriginDevConsole or CommandOriginTest.
+	PlayerUniqueID int64
+}
+
+// WriteCommandOriginData writes a CommandOrigin x to Buffer dst.
+func WriteCommandOriginData(dst *bytes.Buffer, x CommandOrigin) error {
+	if err := chainErr(
+		WriteVaruint32(dst, x.Origin),
+		WriteUUID(dst, x.UUID),
+		WriteString(dst, x.RequestID),
+	); err != nil {
+		return err
+	}
+	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
+		return WriteVarint64(dst, x.PlayerUniqueID)
+	}
+	return nil
+}
+
+// CommandOriginData reads a CommandOrigin x from Buffer src.
+func CommandOriginData(src *bytes.Buffer, x *CommandOrigin) error {
+	if err := chainErr(
+		Varuint32(src, &x.Origin),
+		UUID(src, &x.UUID),
+		String(src, &x.RequestID),
+	); err != nil {
+		return err
+	}
+	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
+		return Varint64(src, &x.PlayerUniqueID)
+	}
+	return nil
 }
 
 // WriteCommandData writes a Command x to Buffer dst, using the enum indices and suffix indices passed to
