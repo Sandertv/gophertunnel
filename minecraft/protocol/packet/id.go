@@ -78,6 +78,7 @@ const (
 	IDShowCredits
 	IDAvailableCommands
 	IDCommandRequest
+	IDCommandBlockUpdate
 )
 
 // ...

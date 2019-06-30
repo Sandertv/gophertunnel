@@ -88,6 +88,7 @@ func NewPool() Pool {
 		IDShowCredits:            &ShowCredits{},
 		IDAvailableCommands:      &AvailableCommands{},
 		IDCommandRequest:         &CommandRequest{},
+		IDCommandBlockUpdate:     &CommandBlockUpdate{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
