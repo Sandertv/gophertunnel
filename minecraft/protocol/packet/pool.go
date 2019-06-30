@@ -86,6 +86,7 @@ func NewPool() Pool {
 		IDCamera:                 &Camera{},
 		IDBossEvent:              &BossEvent{},
 		IDShowCredits:            &ShowCredits{},
+		IDAvailableCommands:      &AvailableCommands{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},

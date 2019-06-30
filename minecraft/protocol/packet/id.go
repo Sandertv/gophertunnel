@@ -76,6 +76,7 @@ const (
 	IDCamera
 	IDBossEvent
 	IDShowCredits
+	IDAvailableCommands
 )
 
 // ...
