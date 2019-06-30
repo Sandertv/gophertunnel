@@ -3,6 +3,7 @@ package minecraft
 import (
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -40,7 +41,12 @@ func Listen(network, address string) (*Listener, error) {
 	case "raknet":
 		// Listen specifically for the RakNet network type, as the standard library (obviously) doesn't
 		// implement that.
-		netListener, err = raknet.Listen(address)
+		var l *raknet.Listener
+		l, err = raknet.Listen(address)
+		if err == nil {
+			l.ErrorLog = log.New(ioutil.Discard, "", 0)
+			netListener = l
+		}
 	default:
 		// Otherwise fall back to the standard net.Listen.
 		netListener, err = net.Listen(network, address)
