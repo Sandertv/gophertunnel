@@ -135,13 +135,66 @@ type CommandOrigin struct {
 	UUID uuid.UUID
 	// RequestID is an ID that identifies the request of the client. The server should send a CommandOrigin
 	// with the same request ID to ensure it can be matched with the request by the caller of the command.
-	// This is especially important for websocket servers.
-	// The request ID is usually a UUID, but is not guaranteed to be that.
+	// This is especially important for websocket servers and it seems that this field is only non-empty for
+	// these websocket servers.
 	RequestID string
 	// PlayerUniqueID is an ID that identifies the player, the same as the one found in the AdventureSettings
 	// packet. Filling it out with 0 seems to work.
 	// PlayerUniqueID is only written if Origin is CommandOriginDevConsole or CommandOriginTest.
 	PlayerUniqueID int64
+}
+
+// CommandOutputMessage represents a message sent by a command that holds the output of one of the commands
+// executed.
+type CommandOutputMessage struct {
+	// Success indicates if the output message was one of a successful command execution. If set to true, the
+	// output message is by default coloured white, whereas if set to false, the message is by default
+	// coloured red.
+	Success bool
+	// Message is the message that is sent to the client in the chat window. It may either be simply a
+	// message or a translated built-in string like 'commands.tp.success.coordinates', combined with specific
+	// parameters below.
+	Message string
+	// Parameters is a list of parameters that serve to supply the message sent with additional information,
+	// such as the position that a player was teleported to or the effect that was applied to an entity.
+	// These parameters only apply for the Minecraft built-in command output.
+	Parameters []string
+}
+
+// CommandMessage reads a CommandOutputMessage x from Buffer src.
+func CommandMessage(src *bytes.Buffer, x *CommandOutputMessage) error {
+	var count uint32
+	if err := chainErr(
+		binary.Read(src, binary.LittleEndian, &x.Success),
+		String(src, &x.Message),
+		Varuint32(src, &count),
+	); err != nil {
+		return err
+	}
+	x.Parameters = make([]string, count)
+	for i := uint32(0); i < count; i++ {
+		if err := String(src, &x.Parameters[i]); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// WriteCommandMessage writes a CommandOutputMessage x to Buffer dst.
+func WriteCommandMessage(dst *bytes.Buffer, x CommandOutputMessage) error {
+	if err := chainErr(
+		binary.Write(dst, binary.LittleEndian, x.Success),
+		WriteString(dst, x.Message),
+		WriteVaruint32(dst, uint32(len(x.Parameters))),
+	); err != nil {
+		return err
+	}
+	for _, param := range x.Parameters {
+		if err := WriteString(dst, param); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // WriteCommandOriginData writes a CommandOrigin x to Buffer dst.

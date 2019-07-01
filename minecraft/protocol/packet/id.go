@@ -79,6 +79,7 @@ const (
 	IDAvailableCommands
 	IDCommandRequest
 	IDCommandBlockUpdate
+	IDCommandOutput
 )
 
 // ...
