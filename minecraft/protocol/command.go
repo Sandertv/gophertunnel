@@ -266,19 +266,13 @@ func CommandData(src *bytes.Buffer, x *Command, enums []CommandEnum, suffixes []
 		overloadCount, paramCount uint32
 		aliasOffset               int32
 	)
-	if err := String(src, &x.Name); err != nil {
-		return err
-	}
-	if err := String(src, &x.Description); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Flags); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.PermissionLevel); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &aliasOffset); err != nil {
+	if err := chainErr(
+		String(src, &x.Name),
+		String(src, &x.Description),
+		binary.Read(src, binary.LittleEndian, &x.Flags),
+		binary.Read(src, binary.LittleEndian, &x.PermissionLevel),
+		binary.Read(src, binary.LittleEndian, &aliasOffset),
+	); err != nil {
 		return err
 	}
 	if aliasOffset >= 0 {
@@ -308,12 +302,10 @@ func CommandData(src *bytes.Buffer, x *Command, enums []CommandEnum, suffixes []
 // WriteCommandParam writes a CommandParameter x to Buffer dst, using the enum indices and suffix indices
 // to translate the respective values to the offset in the buffer.
 func WriteCommandParam(dst *bytes.Buffer, x CommandParameter, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) error {
-	if len(x.Enum.Options) != 0 {
-		if x.Enum.Dynamic {
-			x.Type = CommandArgSoftEnum | CommandArgValid | uint32(dynamicEnumIndices[x.Enum.Type])
-		} else {
-			x.Type = CommandArgEnum | CommandArgValid | uint32(enumIndices[x.Enum.Type])
-		}
+	if x.Enum.Dynamic {
+		x.Type = CommandArgSoftEnum | CommandArgValid | uint32(dynamicEnumIndices[x.Enum.Type])
+	} else if len(x.Enum.Options) != 0 {
+		x.Type = CommandArgEnum | CommandArgValid | uint32(enumIndices[x.Enum.Type])
 	} else if x.Suffix != "" {
 		x.Type = CommandArgSuffixed | uint32(suffixIndices[x.Suffix])
 	}
@@ -329,16 +321,12 @@ func WriteCommandParam(dst *bytes.Buffer, x CommandParameter, enumIndices map[st
 // offsets to their respective values. CommandParam does not handle soft/dynamic enums. The caller is
 // responsible to do this itself.
 func CommandParam(src *bytes.Buffer, x *CommandParameter, enums []CommandEnum, suffixes []string) error {
-	if err := String(src, &x.Name); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Type); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Optional); err != nil {
-		return err
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.CollapseEnumOptions); err != nil {
+	if err := chainErr(
+		String(src, &x.Name),
+		binary.Read(src, binary.LittleEndian, &x.Type),
+		binary.Read(src, binary.LittleEndian, &x.Optional),
+		binary.Read(src, binary.LittleEndian, &x.CollapseEnumOptions),
+	); err != nil {
 		return err
 	}
 	if x.Type&CommandArgSoftEnum != 0 {
