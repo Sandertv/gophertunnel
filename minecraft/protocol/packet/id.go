@@ -80,6 +80,7 @@ const (
 	IDCommandRequest
 	IDCommandBlockUpdate
 	IDCommandOutput
+	IDUpdateTrade
 )
 
 // ...

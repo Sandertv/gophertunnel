@@ -90,6 +90,7 @@ func NewPool() Pool {
 		IDCommandRequest:         &CommandRequest{},
 		IDCommandBlockUpdate:     &CommandBlockUpdate{},
 		IDCommandOutput:          &CommandOutput{},
+		IDUpdateTrade:            &UpdateTrade{},
 		// ...
 		IDResourcePackDataInfo:     &ResourcePackDataInfo{},
 		IDResourcePackChunkData:    &ResourcePackChunkData{},
