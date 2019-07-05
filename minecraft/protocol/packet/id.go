@@ -81,6 +81,7 @@ const (
 	IDCommandBlockUpdate
 	IDCommandOutput
 	IDUpdateTrade
+	IDUpdateEquip
 )
 
 // ...

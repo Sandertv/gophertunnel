@@ -36,7 +36,7 @@ type UpdateTrade struct {
 	// demand for the item. (A mechanic added in 1.11.) Buying more of the same item will increase the price
 	// of that particular item.
 	DemandBasedPrices bool
-	// SerialisedOffers is an NBT serialised compound of offers that the villager has.
+	// SerialisedOffers is a network NBT serialised compound of offers that the villager has.
 	SerialisedOffers []byte
 }
 
