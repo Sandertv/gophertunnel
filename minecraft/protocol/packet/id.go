@@ -82,14 +82,11 @@ const (
 	IDCommandOutput
 	IDUpdateTrade
 	IDUpdateEquip
-)
-
-// ...
-const (
-	IDResourcePackDataInfo = iota + 0x52
+	IDResourcePackDataInfo
 	IDResourcePackChunkData
 	IDResourcePackChunkRequest
 	IDTransfer
+	IDPlaySound
 )
 
 // ...
