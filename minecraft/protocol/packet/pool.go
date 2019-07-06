@@ -100,6 +100,7 @@ func NewPool() Pool {
 		IDStopSound:                &StopSound{},
 		IDSetTitle:                 &SetTitle{},
 		IDAddBehaviourTree:         &AddBehaviourTree{},
+		IDStructureBlockUpdate:     &StructureBlockUpdate{},
 		// ...
 		IDPlayerSkin: &PlayerSkin{},
 		// ...

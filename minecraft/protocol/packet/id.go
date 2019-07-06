@@ -90,6 +90,7 @@ const (
 	IDStopSound
 	IDSetTitle
 	IDAddBehaviourTree
+	IDStructureBlockUpdate
 )
 
 // ...
