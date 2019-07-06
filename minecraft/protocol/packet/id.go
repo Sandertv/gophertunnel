@@ -88,6 +88,7 @@ const (
 	IDTransfer
 	IDPlaySound
 	IDStopSound
+	IDSetTitle
 )
 
 // ...

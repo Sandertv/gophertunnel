@@ -98,6 +98,7 @@ func NewPool() Pool {
 		IDTransfer:                 &Transfer{},
 		IDPlaySound:                &PlaySound{},
 		IDStopSound:                &StopSound{},
+		IDSetTitle:                 &SetTitle{},
 		// ...
 		IDPlayerSkin: &PlayerSkin{},
 		// ...

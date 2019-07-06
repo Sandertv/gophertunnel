@@ -19,11 +19,11 @@ const (
 // show up to a client if it has not been added to the player list, because several properties of the player
 // are obtained from the player list, such as the skin.
 type PlayerList struct {
-	// Action is the action to execute upon the player list. The entries that follow specify which entries are
-	// added or removed from the player list.
-	Action byte
+	// ActionType is the action to execute upon the player list. The entries that follow specify which entries
+	// are added or removed from the player list.
+	ActionType byte
 	// Entries is a list of all player list entries that should be added/removed from the player list,
-	// depending on the Action set.
+	// depending on the ActionType set.
 	Entries []PlayerListEntry
 }
 
@@ -70,10 +70,10 @@ func (*PlayerList) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Action)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Entries)))
 	for _, entry := range pk.Entries {
-		switch pk.Action {
+		switch pk.ActionType {
 		case PlayerListActionAdd:
 			_ = protocol.WriteUUID(buf, entry.UUID)
 			_ = protocol.WriteVarint64(buf, entry.EntityUniqueID)
@@ -88,7 +88,7 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 		case PlayerListActionRemove:
 			_ = protocol.WriteUUID(buf, entry.UUID)
 		default:
-			panic(fmt.Sprintf("invalid player list action type %v", pk.Action))
+			panic(fmt.Sprintf("invalid player list action type %v", pk.ActionType))
 		}
 	}
 }
@@ -97,14 +97,14 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
 	var count uint32
 	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Action),
+		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
 		protocol.Varuint32(buf, &count),
 	); err != nil {
 		return err
 	}
 	pk.Entries = make([]PlayerListEntry, count)
 	for i := uint32(0); i < count; i++ {
-		switch pk.Action {
+		switch pk.ActionType {
 		case PlayerListActionAdd:
 			if err := chainErr(
 				protocol.UUID(buf, &pk.Entries[i].UUID),
@@ -125,7 +125,7 @@ func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
 				return err
 			}
 		default:
-			return fmt.Errorf("unknown player list action type %v", pk.Action)
+			return fmt.Errorf("unknown player list action type %v", pk.ActionType)
 		}
 	}
 	return nil
