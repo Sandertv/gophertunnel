@@ -95,6 +95,7 @@ const (
 	IDPurchaseReceipt
 	IDPlayerSkin
 	IDSubClientLogin
+	IDAutomationClientConnect
 )
 
 // ...

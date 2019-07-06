@@ -105,6 +105,7 @@ func NewPool() Pool {
 		IDPurchaseReceipt:          &PurchaseReceipt{},
 		IDPlayerSkin:               &PlayerSkin{},
 		IDSubClientLogin:           &SubClientLogin{},
+		IDAutomationClientConnect:  &AutomationClientConnect{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},
