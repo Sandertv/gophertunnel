@@ -13,7 +13,7 @@ import (
 // Encoder writes NBT objects to an NBT output stream.
 type Encoder struct {
 	// Variant is the variant to use for encoding the objects passed. By default, the variant is set to
-	// VarLittleEndian, which is the variant used for network NBT.
+	// NetworkLittleEndian, which is the variant used for network NBT.
 	Variant Variant
 
 	w     *offsetWriter
@@ -31,7 +31,7 @@ func NewEncoder(w io.Writer) *Encoder {
 			return err
 		}}
 	}
-	return &Encoder{w: writer, Variant: VarLittleEndian}
+	return &Encoder{w: writer, Variant: NetworkLittleEndian}
 }
 
 // Encode encodes an object to NBT and writes it to the NBT output stream of the encoder. See the Marshal
@@ -42,7 +42,7 @@ func (e *Encoder) Encode(v interface{}) error {
 }
 
 // Marshal encodes an object to its NBT representation and returns it as a byte slice. It uses the
-// VarLittleEndian NBT format. To use a specific format, use MarshalVariant.
+// NetworkLittleEndian NBT format. To use a specific format, use MarshalVariant.
 //
 // The Go value passed must be one of the values below, and structs, maps and slices may only have types that
 // are found in the list below.
@@ -67,7 +67,7 @@ func (e *Encoder) Encode(v interface{}) error {
 // filled by the decoding of the data passed. Suffixing the 'nbt' struct tag with ',omitempty' will prevent
 // the field from being encoded if it is equal to its default value.
 func Marshal(v interface{}) ([]byte, error) {
-	return MarshalVariant(v, VarLittleEndian)
+	return MarshalVariant(v, NetworkLittleEndian)
 }
 
 // MarshalVariant encodes an object to its NBT representation and returns it as a byte slice. Its

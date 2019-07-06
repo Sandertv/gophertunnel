@@ -14,7 +14,7 @@ import (
 // Decoder reads NBT objects from an NBT input stream.
 type Decoder struct {
 	// Variant is the variant to use for decoding the NBT passed. By default, the variant is set to
-	// VarLittleEndian, which is the variant used for network NBT.
+	// NetworkLittleEndian, which is the variant used for network NBT.
 	Variant Variant
 
 	r     *offsetReader
@@ -23,7 +23,7 @@ type Decoder struct {
 
 // NewDecoder returns a new Decoder for the input stream reader passed.
 func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{Variant: VarLittleEndian, r: newOffsetReader(r)}
+	return &Decoder{Variant: NetworkLittleEndian, r: newOffsetReader(r)}
 }
 
 // Decode reads the next NBT object from the input stream and stores it into the pointer to an object passed.
@@ -41,7 +41,7 @@ func (d *Decoder) Decode(v interface{}) error {
 }
 
 // Unmarshal decodes a slice of NBT data into a pointer to a Go values passed. Marshal will use the
-// VarLittleEndian NBT format by default. To use a specific format, use UnmarshalVariant.
+// NetworkLittleEndian NBT format by default. To use a specific format, use UnmarshalVariant.
 //
 // The Go value passed must be a pointer to a value. Anything else will return an error before decoding.
 // The following NBT tags are decoded in the Go value passed as such:
@@ -68,7 +68,7 @@ func (d *Decoder) Decode(v interface{}) error {
 // a field that some tag should be decoded in. Setting the struct tag to '-' means that field will never be
 // filled by the decoding of the data passed.
 func Unmarshal(data []byte, v interface{}) error {
-	return UnmarshalVariant(data, v, VarLittleEndian)
+	return UnmarshalVariant(data, v, NetworkLittleEndian)
 }
 
 // UnmarshalVariant decodes a slice of NBT data into a pointer to a Go values passed using the NBT variant
@@ -434,7 +434,7 @@ func (d *Decoder) tag() (tagType byte, tagName string, err error) {
 	if d.depth >= maximumNestingDepth {
 		return 0, "", MaximumDepthReachedError{}
 	}
-	if d.r.off >= maximumNetworkOffset && d.Variant == VarLittleEndian {
+	if d.r.off >= maximumNetworkOffset && d.Variant == NetworkLittleEndian {
 		return 0, "", MaximumBytesReadError{}
 	}
 	tagType, err = d.r.ReadByte()
