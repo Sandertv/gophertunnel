@@ -101,6 +101,7 @@ func NewPool() Pool {
 		IDSetTitle:                 &SetTitle{},
 		IDAddBehaviourTree:         &AddBehaviourTree{},
 		IDStructureBlockUpdate:     &StructureBlockUpdate{},
+		IDShowStoreOffer:           &ShowStoreOffer{},
 		// ...
 		IDPlayerSkin: &PlayerSkin{},
 		// ...

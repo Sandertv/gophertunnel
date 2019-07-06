@@ -91,6 +91,7 @@ const (
 	IDSetTitle
 	IDAddBehaviourTree
 	IDStructureBlockUpdate
+	IDShowStoreOffer
 )
 
 // ...
