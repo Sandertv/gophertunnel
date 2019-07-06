@@ -97,6 +97,7 @@ const (
 	IDSubClientLogin
 	IDAutomationClientConnect
 	IDSetLastHurtBy
+	IDBookEdit
 )
 
 // ...
