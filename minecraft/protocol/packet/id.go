@@ -87,6 +87,7 @@ const (
 	IDResourcePackChunkRequest
 	IDTransfer
 	IDPlaySound
+	IDStopSound
 )
 
 // ...

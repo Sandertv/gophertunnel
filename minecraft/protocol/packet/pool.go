@@ -97,6 +97,7 @@ func NewPool() Pool {
 		IDResourcePackChunkRequest: &ResourcePackChunkRequest{},
 		IDTransfer:                 &Transfer{},
 		IDPlaySound:                &PlaySound{},
+		IDStopSound:                &StopSound{},
 		// ...
 		IDPlayerSkin: &PlayerSkin{},
 		// ...
