@@ -103,8 +103,8 @@ func NewPool() Pool {
 		IDStructureBlockUpdate:     &StructureBlockUpdate{},
 		IDShowStoreOffer:           &ShowStoreOffer{},
 		IDPurchaseReceipt:          &PurchaseReceipt{},
-		// ...
-		IDPlayerSkin: &PlayerSkin{},
+		IDPlayerSkin:               &PlayerSkin{},
+		IDSubClientLogin:           &SubClientLogin{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},

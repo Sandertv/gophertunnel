@@ -93,11 +93,8 @@ const (
 	IDStructureBlockUpdate
 	IDShowStoreOffer
 	IDPurchaseReceipt
-)
-
-// ...
-const (
-	IDPlayerSkin = iota + 0x5d
+	IDPlayerSkin
+	IDSubClientLogin
 )
 
 // ...
