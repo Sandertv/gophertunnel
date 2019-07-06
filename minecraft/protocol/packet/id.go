@@ -96,6 +96,7 @@ const (
 	IDPlayerSkin
 	IDSubClientLogin
 	IDAutomationClientConnect
+	IDSetLastHurtBy
 )
 
 // ...

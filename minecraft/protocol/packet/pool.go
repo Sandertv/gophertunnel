@@ -106,6 +106,7 @@ func NewPool() Pool {
 		IDPlayerSkin:               &PlayerSkin{},
 		IDSubClientLogin:           &SubClientLogin{},
 		IDAutomationClientConnect:  &AutomationClientConnect{},
+		IDSetLastHurtBy:            &SetLastHurtBy{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},
