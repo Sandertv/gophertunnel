@@ -89,6 +89,7 @@ const (
 	IDPlaySound
 	IDStopSound
 	IDSetTitle
+	IDAddBehaviourTree
 )
 
 // ...
