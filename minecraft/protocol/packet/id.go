@@ -92,6 +92,7 @@ const (
 	IDAddBehaviourTree
 	IDStructureBlockUpdate
 	IDShowStoreOffer
+	IDPurchaseReceipt
 )
 
 // ...
