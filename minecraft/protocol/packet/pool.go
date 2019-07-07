@@ -108,6 +108,7 @@ func NewPool() Pool {
 		IDAutomationClientConnect:  &AutomationClientConnect{},
 		IDSetLastHurtBy:            &SetLastHurtBy{},
 		IDBookEdit:                 &BookEdit{},
+		IDNPCRequest:               &NPCRequest{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},

@@ -98,6 +98,7 @@ const (
 	IDAutomationClientConnect
 	IDSetLastHurtBy
 	IDBookEdit
+	IDNPCRequest
 )
 
 // ...
