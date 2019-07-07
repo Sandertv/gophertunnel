@@ -105,6 +105,7 @@ const (
 	IDServerSettingsRequest
 	IDServerSettingsResponse
 	IDShowProfile
+	IDSetDefaultGameType
 )
 
 // ...

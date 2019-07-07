@@ -115,6 +115,7 @@ func NewPool() Pool {
 		IDServerSettingsRequest:    &ServerSettingsRequest{},
 		IDServerSettingsResponse:   &ServerSettingsResponse{},
 		IDShowProfile:              &ShowProfile{},
+		IDSetDefaultGameType:       &SetDefaultGameType{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
