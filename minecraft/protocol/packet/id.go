@@ -99,6 +99,7 @@ const (
 	IDSetLastHurtBy
 	IDBookEdit
 	IDNPCRequest
+	IDPhotoTransfer
 )
 
 // ...

@@ -109,6 +109,7 @@ func NewPool() Pool {
 		IDSetLastHurtBy:            &SetLastHurtBy{},
 		IDBookEdit:                 &BookEdit{},
 		IDNPCRequest:               &NPCRequest{},
+		IDPhotoTransfer:            &PhotoTransfer{},
 		// ...
 		IDModalFormRequest:       &ModalFormRequest{},
 		IDModalFormResponse:      &ModalFormResponse{},
