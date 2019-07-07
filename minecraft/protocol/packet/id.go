@@ -100,14 +100,11 @@ const (
 	IDBookEdit
 	IDNPCRequest
 	IDPhotoTransfer
-)
-
-// ...
-const (
-	IDModalFormRequest = iota + 0x64
+	IDModalFormRequest
 	IDModalFormResponse
 	IDServerSettingsRequest
 	IDServerSettingsResponse
+	IDShowProfile
 )
 
 // ...

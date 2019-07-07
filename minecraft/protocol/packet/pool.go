@@ -110,11 +110,11 @@ func NewPool() Pool {
 		IDBookEdit:                 &BookEdit{},
 		IDNPCRequest:               &NPCRequest{},
 		IDPhotoTransfer:            &PhotoTransfer{},
-		// ...
-		IDModalFormRequest:       &ModalFormRequest{},
-		IDModalFormResponse:      &ModalFormResponse{},
-		IDServerSettingsRequest:  &ServerSettingsRequest{},
-		IDServerSettingsResponse: &ServerSettingsResponse{},
+		IDModalFormRequest:         &ModalFormRequest{},
+		IDModalFormResponse:        &ModalFormResponse{},
+		IDServerSettingsRequest:    &ServerSettingsRequest{},
+		IDServerSettingsResponse:   &ServerSettingsResponse{},
+		IDShowProfile:              &ShowProfile{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
