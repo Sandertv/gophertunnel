@@ -40,6 +40,17 @@ type ScoreboardEntry struct {
 	DisplayName string
 }
 
+// ScoreboardIdentityEntry holds an entry to either associate an identity with one of the entries in a
+// scoreboard, or to remove associations.
+type ScoreboardIdentityEntry struct {
+	// EntryID is the unique identifier of the entry that the identity should be associated with, or that
+	// associations should be cleared from.
+	EntryID int64
+	// EntityUniqueID is the unique ID that the entry should be associated with. It is empty if the
+	// SetScoreboardIdentity packet is sent to remove associations with identities.
+	EntityUniqueID int64
+}
+
 // WriteScoreEntry writes a ScoreboardEntry x to Buffer dst. If modify is set to true, the display information
 // of the entry is written. If not, it is ignored, as expected when the SetScore packet is sent to modify
 // entries.

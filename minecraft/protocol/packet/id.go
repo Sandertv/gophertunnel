@@ -112,6 +112,7 @@ const (
 	IDLabTable
 	IDUpdateBlockSynced
 	IDMoveEntityDelta
+	IDSetScoreboardIdentity
 )
 
 // ...
