@@ -108,6 +108,7 @@ const (
 	IDSetDefaultGameType
 	IDRemoveObjective
 	IDSetDisplayObjective
+	IDSetScore
 )
 
 // ...
