@@ -117,6 +117,7 @@ func NewPool() Pool {
 		IDShowProfile:              &ShowProfile{},
 		IDSetDefaultGameType:       &SetDefaultGameType{},
 		IDRemoveObjective:          &RemoveObjective{},
+		IDSetDisplayObjective:      &SetDisplayObjective{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}

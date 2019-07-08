@@ -107,6 +107,7 @@ const (
 	IDShowProfile
 	IDSetDefaultGameType
 	IDRemoveObjective
+	IDSetDisplayObjective
 )
 
 // ...
