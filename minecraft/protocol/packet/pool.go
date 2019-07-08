@@ -121,6 +121,7 @@ func NewPool() Pool {
 		IDSetScore:                 &SetScore{},
 		IDLabTable:                 &LabTable{},
 		IDUpdateBlockSynced:        &UpdateBlockSynced{},
+		IDMoveEntityDelta:          &MoveEntityDelta{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
