@@ -119,6 +119,7 @@ func NewPool() Pool {
 		IDRemoveObjective:          &RemoveObjective{},
 		IDSetDisplayObjective:      &SetDisplayObjective{},
 		IDSetScore:                 &SetScore{},
+		IDLabTable:                 &LabTable{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}

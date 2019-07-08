@@ -109,6 +109,7 @@ const (
 	IDRemoveObjective
 	IDSetDisplayObjective
 	IDSetScore
+	IDLabTable
 )
 
 // ...
