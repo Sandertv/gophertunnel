@@ -110,6 +110,7 @@ const (
 	IDSetDisplayObjective
 	IDSetScore
 	IDLabTable
+	IDUpdateBlockSynced
 )
 
 // ...

@@ -120,6 +120,7 @@ func NewPool() Pool {
 		IDSetDisplayObjective:      &SetDisplayObjective{},
 		IDSetScore:                 &SetScore{},
 		IDLabTable:                 &LabTable{},
+		IDUpdateBlockSynced:        &UpdateBlockSynced{},
 		// ...
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 	}
