@@ -106,6 +106,7 @@ const (
 	IDServerSettingsResponse
 	IDShowProfile
 	IDSetDefaultGameType
+	IDRemoveObjective
 )
 
 // ...
