@@ -70,6 +70,8 @@ func (pk *MoveEntityDelta) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *MoveEntityDelta) Unmarshal(buf *bytes.Buffer) error {
+	pk.DeltaPosition = mgl32.Vec3{}
+	pk.DeltaRotation = mgl32.Vec3{}
 	var flags byte
 	if err := chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
