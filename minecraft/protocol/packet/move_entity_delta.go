@@ -40,13 +40,24 @@ func (*MoveEntityDelta) ID() uint32 {
 func (pk *MoveEntityDelta) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	var flags byte
-	func(checks ...float32) {
-		for i, check := range checks {
-			if check != 0 {
-				flags |= 1 << byte(i)
-			}
-		}
-	}(pk.DeltaPosition[0], pk.DeltaPosition[1], pk.DeltaPosition[2], pk.DeltaRotation[0], pk.DeltaRotation[1], pk.DeltaRotation[2])
+	if pk.DeltaPosition[0] != 0 {
+		flags |= moveFlagHasX
+	}
+	if pk.DeltaPosition[1] != 0 {
+		flags |= moveFlagHasY
+	}
+	if pk.DeltaPosition[2] != 0 {
+		flags |= moveFlagHasZ
+	}
+	if pk.DeltaRotation[0] != 0 {
+		flags |= moveFlagHasRotX
+	}
+	if pk.DeltaRotation[1] != 0 {
+		flags |= moveFlagHasRotY
+	}
+	if pk.DeltaRotation[2] != 0 {
+		flags |= moveFlagHasRotZ
+	}
 	_ = binary.Write(buf, binary.LittleEndian, flags)
 	if pk.DeltaPosition[0] != 0 {
 		_ = protocol.WriteVarint32(buf, int32(math.Float32bits(pk.DeltaPosition[0])))
