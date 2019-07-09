@@ -119,4 +119,5 @@ const (
 	_
 	IDScriptCustomEvent
 	IDSpawnParticleEffect
+	IDAvailableEntityIdentifiers
 )
