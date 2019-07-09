@@ -24,7 +24,7 @@ const (
 	IDUpdateBlock
 	IDAddPainting
 	IDExplode
-	_
+	_ // IDLevelSoundEvent(1): We don't bother implementing this.
 	IDLevelEvent
 	IDBlockEvent
 	IDEntityEvent
@@ -120,4 +120,6 @@ const (
 	IDScriptCustomEvent
 	IDSpawnParticleEffect
 	IDAvailableEntityIdentifiers
+	_ // IDLevelSoundEvent(2): We don't bother implementing this.
+	IDNetworkChunkPublisherUpdate
 )
