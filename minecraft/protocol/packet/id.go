@@ -127,4 +127,5 @@ const (
 	IDLecternUpdate
 	IDVideoStreamConnect
 	IDMapCreateLockedCopy
+	IDOnScreenTextureAnimation
 )

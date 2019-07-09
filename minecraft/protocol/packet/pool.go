@@ -136,6 +136,7 @@ func NewPool() Pool {
 		IDLecternUpdate:               &LecternUpdate{},
 		IDVideoStreamConnect:          &VideoStreamConnect{},
 		IDMapCreateLockedCopy:         &MapCreateLockedCopy{},
+		IDOnScreenTextureAnimation:    &OnScreenTextureAnimation{},
 	}
 }
 
