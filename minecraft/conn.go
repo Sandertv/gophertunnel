@@ -392,7 +392,8 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 			status = packet.PlayStatusLoginFailedServer
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
-		return conn.Close()
+		_ = conn.Close()
+		return fmt.Errorf("incompatible protocol: expected protocol = %v, client got = %v", protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
 	publicKey, authenticated, err := login.Verify(pk.ConnectionRequest)
