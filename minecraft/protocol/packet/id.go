@@ -124,4 +124,5 @@ const (
 	IDNetworkChunkPublisherUpdate
 	IDBiomeDefinitionList
 	IDLevelSoundEvent
+	IDLecternUpdate
 )

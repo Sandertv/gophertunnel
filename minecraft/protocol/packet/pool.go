@@ -133,6 +133,7 @@ func NewPool() Pool {
 		IDNetworkChunkPublisherUpdate: &NetworkChunkPublisherUpdate{},
 		IDBiomeDefinitionList:         &BiomeDefinitionList{},
 		IDLevelSoundEvent:             &LevelSoundEvent{},
+		IDLecternUpdate:               &LecternUpdate{},
 	}
 }
 
