@@ -127,7 +127,8 @@ func NewPool() Pool {
 		IDUpdateSoftEnum:              &UpdateSoftEnum{},
 		IDNetworkStackLatency:         &NetworkStackLatency{},
 		// ---
-		IDScriptCustomEvent: &ScriptCustomEvent{},
+		IDScriptCustomEvent:   &ScriptCustomEvent{},
+		IDSpawnParticleEffect: &SpawnParticleEffect{},
 	}
 }
 

@@ -118,4 +118,5 @@ const (
 	IDNetworkStackLatency
 	_
 	IDScriptCustomEvent
+	IDSpawnParticleEffect
 )
