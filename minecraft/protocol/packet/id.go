@@ -122,4 +122,5 @@ const (
 	IDAvailableEntityIdentifiers
 	_ // IDLevelSoundEvent(2): We don't bother implementing this.
 	IDNetworkChunkPublisherUpdate
+	IDBiomeDefinitionList
 )

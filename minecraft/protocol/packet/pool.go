@@ -131,6 +131,7 @@ func NewPool() Pool {
 		IDSpawnParticleEffect:         &SpawnParticleEffect{},
 		IDAvailableEntityIdentifiers:  &AvailableEntityIdentifiers{},
 		IDNetworkChunkPublisherUpdate: &NetworkChunkPublisherUpdate{},
+		IDBiomeDefinitionList:         &BiomeDefinitionList{},
 	}
 }
 

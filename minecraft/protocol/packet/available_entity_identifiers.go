@@ -5,8 +5,8 @@ import "bytes"
 // AvailableEntityIdentifiers is sent by the server at the start of the game to let the client know all
 // entities that are available on the server.
 type AvailableEntityIdentifiers struct {
-	// SerialisedEntityIdentifiers is an NBT serialised compound of all entity identifiers that are available
-	// in the server.
+	// SerialisedEntityIdentifiers is a network NBT serialised compound of all entity identifiers that are
+	// available in the server.
 	SerialisedEntityIdentifiers []byte
 }
 
