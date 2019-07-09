@@ -126,4 +126,5 @@ const (
 	IDLevelSoundEvent
 	IDLecternUpdate
 	IDVideoStreamConnect
+	IDMapCreateLockedCopy
 )

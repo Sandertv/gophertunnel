@@ -135,6 +135,7 @@ func NewPool() Pool {
 		IDLevelSoundEvent:             &LevelSoundEvent{},
 		IDLecternUpdate:               &LecternUpdate{},
 		IDVideoStreamConnect:          &VideoStreamConnect{},
+		IDMapCreateLockedCopy:         &MapCreateLockedCopy{},
 	}
 }
 
