@@ -125,6 +125,7 @@ func NewPool() Pool {
 		IDSetScoreboardIdentity:       &SetScoreboardIdentity{},
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 		IDUpdateSoftEnum:              &UpdateSoftEnum{},
+		IDNetworkStackLatency:         &NetworkStackLatency{},
 	}
 }
 

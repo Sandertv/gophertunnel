@@ -115,4 +115,5 @@ const (
 	IDSetScoreboardIdentity
 	IDSetLocalPlayerAsInitialised
 	IDUpdateSoftEnum
+	IDNetworkStackLatency
 )
