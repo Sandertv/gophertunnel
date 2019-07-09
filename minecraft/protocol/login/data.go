@@ -164,7 +164,7 @@ func (data ClientData) Validate() error {
 	}
 	if geomData, err := base64.StdEncoding.DecodeString(data.SkinGeometry); err != nil {
 		return fmt.Errorf("SkinGeometry was not a valid base64 string: %v", err)
-	} else {
+	} else if len(geomData) != 0 {
 		m := make(map[string]interface{})
 		if err := json.Unmarshal(geomData, &m); err != nil {
 			return fmt.Errorf("SkinGeometry base64 decoded was not a valid JSON string: %v", err)
