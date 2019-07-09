@@ -113,9 +113,6 @@ const (
 	IDUpdateBlockSynced
 	IDMoveEntityDelta
 	IDSetScoreboardIdentity
-)
-
-// ...
-const (
-	IDSetLocalPlayerAsInitialised = iota + 0x71
+	IDSetLocalPlayerAsInitialised
+	IDUpdateSoftEnum
 )
