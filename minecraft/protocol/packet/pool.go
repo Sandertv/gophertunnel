@@ -126,6 +126,8 @@ func NewPool() Pool {
 		IDSetLocalPlayerAsInitialised: &SetLocalPlayerAsInitialised{},
 		IDUpdateSoftEnum:              &UpdateSoftEnum{},
 		IDNetworkStackLatency:         &NetworkStackLatency{},
+		// ---
+		IDScriptCustomEvent: &ScriptCustomEvent{},
 	}
 }
 

@@ -116,4 +116,6 @@ const (
 	IDSetLocalPlayerAsInitialised
 	IDUpdateSoftEnum
 	IDNetworkStackLatency
+	_
+	IDScriptCustomEvent
 )
