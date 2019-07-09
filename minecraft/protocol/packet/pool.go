@@ -134,6 +134,7 @@ func NewPool() Pool {
 		IDBiomeDefinitionList:         &BiomeDefinitionList{},
 		IDLevelSoundEvent:             &LevelSoundEvent{},
 		IDLecternUpdate:               &LecternUpdate{},
+		IDVideoStreamConnect:          &VideoStreamConnect{},
 	}
 }
 

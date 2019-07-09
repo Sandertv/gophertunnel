@@ -125,4 +125,5 @@ const (
 	IDBiomeDefinitionList
 	IDLevelSoundEvent
 	IDLecternUpdate
+	IDVideoStreamConnect
 )
