@@ -82,19 +82,19 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(conn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	if key == nil {
 		// If not key is passed, we generate one in this function and use it instead.
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
-	c := &Conn{
-		conn:      conn,
-		encoder:   packet.NewEncoder(conn),
-		decoder:   packet.NewDecoder(conn),
+	conn := &Conn{
+		conn:      netConn,
+		encoder:   packet.NewEncoder(netConn),
+		decoder:   packet.NewDecoder(netConn),
 		pool:      packet.NewPool(),
 		packets:   make(chan []byte, 32),
 		connected: make(chan bool),
-		close:     make(chan bool, 1),
+		close:     make(chan bool, 2),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
 		expectedIDs: []uint32{packet.IDLogin},
@@ -102,7 +102,7 @@ func newConn(conn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		salt:        make([]byte, 16),
 		log:         log,
 	}
-	_, _ = rand.Read(c.salt)
+	_, _ = rand.Read(conn.salt)
 
 	go func() {
 		ticker := time.NewTicker(time.Second / 20)
@@ -110,17 +110,17 @@ func newConn(conn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		for {
 			select {
 			case <-ticker.C:
-				if err := c.Flush(); err != nil {
-					return
+				if err := conn.Flush(); err != nil {
+					_ = conn.Close()
 				}
-			case <-c.close:
+			case <-conn.close:
 				// Break out of the goroutine and propagate the close signal again.
-				c.close <- true
+				conn.close <- true
 				return
 			}
 		}
 	}()
-	return c
+	return conn
 }
 
 // IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
@@ -320,7 +320,13 @@ func (conn *Conn) SimulatePacketLoss(lossChance float64) {
 // handleIncoming handles an incoming serialised packet from the underlying connection. If the connection is
 // not yet logged in, the packet is immediately read and processed.
 func (conn *Conn) handleIncoming(data []byte) error {
-	conn.packets <- data
+	select {
+	case conn.packets <- data:
+	case <-conn.close:
+		conn.close <- true
+		return nil
+	}
+
 	if !conn.loggedIn {
 		pk, err := conn.ReadPacket()
 		if err != nil {
@@ -393,7 +399,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		_ = conn.Close()
-		return fmt.Errorf("incompatible protocol: expected protocol = %v, client got = %v", protocol.CurrentProtocol, pk.ClientProtocol)
+		return fmt.Errorf("incompatible protocol: expected protocol = %v, client protocol = %v", protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
 	publicKey, authenticated, err := login.Verify(pk.ConnectionRequest)
@@ -660,8 +666,15 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				UUID:       uuid,
 				ChunkIndex: i,
 			})
-			// Write the fragment to the full buffer of the downloading resource pack.
-			_, _ = downloadingPack.buf.Write(<-downloadingPack.newFrag)
+			select {
+			case frag := <-downloadingPack.newFrag:
+				// Write the fragment to the full buffer of the downloading resource pack.
+				_, _ = downloadingPack.buf.Write(frag)
+			case <-conn.close:
+				conn.close <- true
+				return
+			}
+
 		}
 		if downloadingPack.buf.Len() != int(downloadingPack.size) {
 			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())
