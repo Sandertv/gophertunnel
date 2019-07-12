@@ -10,7 +10,7 @@ import (
 	"strings"
 )
 
-// version is the version of the query protocol. It represents Gamespy Do Protocol version 4.
+// version is the version of the query protocol. It represents Gamespy Query Protocol version 4.
 var version = [2]byte{0xfe, 0xfd}
 
 // padding is the padding used for the queryTypeInformation request.
