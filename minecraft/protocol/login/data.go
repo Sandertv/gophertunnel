@@ -141,9 +141,6 @@ func (data ClientData) Validate() error {
 	if !checkVersion(data.GameVersion) {
 		return fmt.Errorf("GameVersion must only contain dots and numbers, but got %v", data.GameVersion)
 	}
-	if data.GUIScale != -2 && data.GUIScale != -1 && data.GUIScale != 0 {
-		return fmt.Errorf("GUIScale must be either -2, -1 or 0, but got %v", data.GUIScale)
-	}
 	if _, err := language.Parse(strings.Replace(data.LanguageCode, "_", "-", 1)); err != nil {
 		return fmt.Errorf("LanguageCode must be a valid BCP-47 ISO language code, but got %v", data.LanguageCode)
 	}
