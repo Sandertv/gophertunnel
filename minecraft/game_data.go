@@ -3,7 +3,6 @@ package minecraft
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // GameData is a loose wrapper around a part of the data found in the StartGame packet. It holds data sent
@@ -39,5 +38,8 @@ type GameData struct {
 	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
 	// that are in the game, including any specific variants of that block, will crash mobile clients. It
 	// seems Windows 10 games do not crash.
-	Blocks []packet.BlockEntry
+	Blocks []protocol.BlockEntry
+	// Items is a list of all items existing in the game. Failing to send any of the default items that are in
+	// the game will crash mobile clients.
+	Items []protocol.ItemEntry
 }

@@ -61,6 +61,9 @@ type Conn struct {
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
+	// onlyLogin specifies if the connection should only handle the login and stop handling packets after it
+	// it is completed.
+	onlyLogin bool
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
 	expectedIDs []uint32
@@ -448,9 +451,15 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake) error {
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
-
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)
+	}
+
+	if conn.onlyLogin {
+		// Only login, so we stop handling packets after that.
+		conn.connected <- true
+		conn.loggedIn = true
+		return nil
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
@@ -642,6 +651,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			GameRules:                data.GameRules,
 			Time:                     data.Time,
 			Blocks:                   data.Blocks,
+			Items:                    data.Items,
 			AchievementsDisabled:     true,
 			Generator:                1,
 			EducationFeaturesEnabled: true,
@@ -809,6 +819,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		GameRules:       pk.GameRules,
 		Time:            pk.Time,
 		Blocks:          pk.Blocks,
+		Items:           pk.Items,
 	}
 	conn.expect(packet.IDChunkRadiusUpdated)
 	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: conn.initialChunkRadius})
@@ -856,6 +867,11 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	case packet.PlayStatusLoginSuccess:
 		// The next packet we expect is the ResourcePacksInfo packet.
 		conn.expect(packet.IDResourcePacksInfo)
+		if conn.onlyLogin {
+			// Only login, so we stop handling packets after that.
+			conn.connected <- true
+			conn.loggedIn = true
+		}
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
 		return fmt.Errorf("client outdated")

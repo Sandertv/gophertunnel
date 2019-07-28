@@ -51,6 +51,11 @@ type Dialer struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+	// OnlyLogin specifies if the Conn returned will first handle packets to establish a fully spawned client,
+	// or if it should only handle packets to login.
+	// If OnlyLogin is set to true, the first packet the returned Conn when calling Dial will obtain is a
+	// ResourcePackInfo packet.
+	OnlyLogin bool
 
 	// InitialChunkRadius is the initial requested chunk radius of the connection. The client will obtain this
 	// chunk radius or lower, if the server decides it to be. The chunk radius may be changed at any point
@@ -109,6 +114,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
 	conn.initialChunkRadius = int32(dialer.InitialChunkRadius)
+	conn.onlyLogin = dialer.OnlyLogin
 
 	var emptyClientData login.ClientData
 	if dialer.ClientData != emptyClientData {

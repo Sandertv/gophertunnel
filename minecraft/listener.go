@@ -45,6 +45,12 @@ type Listener struct {
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
 
+	// OnlyLogin specifies if the Conn returned will first handle packets to establish a fully spawned client,
+	// or if it should only handle packets to login.
+	// If OnlyLogin is set to true, the first packet the returned Conn when calling Accept will expect is a
+	// ResourcePackInfo packet.
+	OnlyLogin bool
+
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount int
@@ -165,6 +171,7 @@ func (listener *Listener) listen() {
 		conn.resourcePacks = listener.ResourcePacks
 		conn.serverName = listener.ServerName
 		conn.initialChunkRadius = int32(listener.MaximumChunkRadius)
+		conn.onlyLogin = listener.OnlyLogin
 
 		if listener.playerCount == listener.MaximumPlayers && listener.MaximumPlayers != 0 {
 			// The server was full. We kick the player immediately and close the connection.
