@@ -9,7 +9,7 @@ import (
 // to 3. The packet marks the moment at which the client is fully initialised and can receive any packet
 // without discarding it.
 type SetLocalPlayerAsInitialised struct {
-	// EntityRuntimeID is the entity runtime ID the player was assigned earlier in the login sequence in the
+	// EntityNetworkID is the entity runtime ID the player was assigned earlier in the login sequence in the
 	// StartGame packet.
 	EntityRuntimeID uint64
 }

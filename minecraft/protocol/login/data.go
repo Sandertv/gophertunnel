@@ -94,6 +94,9 @@ type ClientData struct {
 	PlatformOfflineID string `json:"PlatformOfflineId"`
 	// PlatformOnlineID is either a UUID or an empty string ...
 	PlatformOnlineID string `json:"PlatformOnlineId"`
+	// PlatformUserID holds a UUID which is only sent if the DeviceOS is of type device.XBOX. Its function
+	// is not exactly clear.
+	PlatformUserID string `json:"PlatformUserId,omitempty"`
 	// PremiumSkin indicates if the skin the player held was a premium skin, meaning it was obtained through
 	// payment.
 	PremiumSkin bool
@@ -132,8 +135,8 @@ func (data ClientData) Validate() error {
 	if err := base64DecLength(data.CapeData, 64*32*4, 0); err != nil {
 		return fmt.Errorf("CapeData invalid: %v", err)
 	}
-	if data.DeviceOS <= 0 || data.DeviceOS > 12 {
-		return fmt.Errorf("DeviceOS must carry a value between 1 and 12, but got %v", data.DeviceOS)
+	if data.DeviceOS <= 0 || data.DeviceOS > 13 {
+		return fmt.Errorf("DeviceOS must carry a value between 1 and 13, but got %v", data.DeviceOS)
 	}
 	if _, err := uuid.Parse(data.DeviceID); err != nil {
 		return fmt.Errorf("DeviceID must be parseable as a valid UUID, but got %v", data.DeviceID)

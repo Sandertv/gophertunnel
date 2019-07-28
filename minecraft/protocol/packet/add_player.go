@@ -9,7 +9,7 @@ import (
 )
 
 // AddPlayer is sent by the server to the client to make a player entity show up client-side. It is one of the
-// few entities that cannot be sent using the AddEntity packet.
+// few entities that cannot be sent using the AddActor packet.
 type AddPlayer struct {
 	// UUID is the UUID of the player. It is the same UUID that the client sent in the Login packet at the
 	// start of the session. A player with this UUID must exist in the player list (built up using the
@@ -22,7 +22,7 @@ type AddPlayer struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the player out for
 	// this field.
 	EntityUniqueID int64
-	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// PlatformChatID is an identifier only set for particular platforms when chatting (presumably only for

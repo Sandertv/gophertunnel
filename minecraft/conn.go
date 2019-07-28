@@ -344,7 +344,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		if !found {
 			// This is not the packet we expected next in the login sequence. We just ignore it as it might
 			// be a packet such as a movement that was simply sent too early.
-			conn.log.Printf("unexpected packet %+v: discarding the packet\n", pk)
+			conn.log.Printf("unexpected packet %T%v: discarding the packet\n", pk, fmt.Sprintf("%+v", pk)[1:])
 			return nil
 		}
 		switch pk := pk.(type) {
@@ -430,7 +430,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake) error {
 	// The next expected packet is a resource pack client response.
-	conn.expect(packet.IDResourcePackClientResponse)
+	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)

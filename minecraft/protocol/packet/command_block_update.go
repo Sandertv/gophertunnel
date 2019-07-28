@@ -12,7 +12,7 @@ const (
 	CommandBlockChain
 )
 
-// CommandBlockUpdate is sent by the server to update a command block at a specific position. The command
+// CommandBlockUpdate is sent by the client to update a command block at a specific position. The command
 // block may be either a physical block or an entity.
 type CommandBlockUpdate struct {
 	// Block specifies if the command block updated was an actual physical block. If false, the command block
@@ -50,6 +50,12 @@ type CommandBlockUpdate struct {
 	// ShouldTrackOutput specifies if the command block tracks output. If set to false, the output box won't
 	// be shown within the command block.
 	ShouldTrackOutput bool
+	// TickDelay is the delay in ticks between executions of a command block, if it is a repeating command
+	// block.
+	TickDelay int32
+	// ExecuteOnFirstTick specifies if the command block should execute on the first tick, AKA as soon as the
+	// command block is enabled.
+	ExecuteOnFirstTick bool
 }
 
 // ID ...
@@ -72,6 +78,8 @@ func (pk *CommandBlockUpdate) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.LastOutput)
 	_ = protocol.WriteString(buf, pk.Name)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ShouldTrackOutput)
+	_ = binary.Write(buf, binary.LittleEndian, pk.TickDelay)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ExecuteOnFirstTick)
 }
 
 // Unmarshal ...
@@ -98,5 +106,7 @@ func (pk *CommandBlockUpdate) Unmarshal(buf *bytes.Buffer) error {
 		protocol.String(buf, &pk.LastOutput),
 		protocol.String(buf, &pk.Name),
 		binary.Read(buf, binary.LittleEndian, &pk.ShouldTrackOutput),
+		binary.Read(buf, binary.LittleEndian, &pk.TickDelay),
+		binary.Read(buf, binary.LittleEndian, &pk.ExecuteOnFirstTick),
 	)
 }

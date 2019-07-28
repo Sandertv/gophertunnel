@@ -14,7 +14,7 @@ type SubClientLogin struct {
 	// verify if the player is connected to XBOX Live. The connection request also contains the necessary
 	// client public key to initiate encryption.
 	// The ConnectionRequest in this packet is identical to the one found in the Login packet.
-	ConnectionRequest string
+	ConnectionRequest []byte
 }
 
 // ID ...
@@ -24,10 +24,10 @@ func (*SubClientLogin) ID() uint32 {
 
 // Marshal ...
 func (pk *SubClientLogin) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.ConnectionRequest)
+	_ = protocol.WriteByteSlice(buf, pk.ConnectionRequest)
 }
 
 // Unmarshal ...
 func (pk *SubClientLogin) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.ConnectionRequest)
+	return protocol.ByteSlice(buf, &pk.ConnectionRequest)
 }

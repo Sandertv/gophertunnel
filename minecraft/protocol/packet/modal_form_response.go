@@ -16,7 +16,7 @@ type ModalFormResponse struct {
 	// cancelled, a JSON encoded 'null' is in the response. For a modal form, the response is either true or
 	// false, for a menu form, the response is an integer specifying the index of the button clicked, and for
 	// a custom form, the response is an array containing a value for each element.
-	ResponseData string
+	ResponseData []byte
 }
 
 // ID ...
@@ -27,13 +27,13 @@ func (*ModalFormResponse) ID() uint32 {
 // Marshal ...
 func (pk *ModalFormResponse) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.FormID)
-	_ = protocol.WriteString(buf, pk.ResponseData)
+	_ = protocol.WriteByteSlice(buf, pk.ResponseData)
 }
 
 // Unmarshal ...
 func (pk *ModalFormResponse) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint32(buf, &pk.FormID),
-		protocol.String(buf, &pk.ResponseData),
+		protocol.ByteSlice(buf, &pk.ResponseData),
 	)
 }

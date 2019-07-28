@@ -29,6 +29,9 @@ type Recipe interface {
 // ShapelessRecipe is a recipe that has no particular shape. Its functionality is shared with the
 // RecipeShulkerBox and RecipeShapelessChemistry types.
 type ShapelessRecipe struct {
+	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
+	// but its functionality is not exactly known.
+	RecipeID string
 	// Input is a list of items that serve as the input of the shapeless recipe. These items are the items
 	// required to craft the output.
 	Input []ItemStack
@@ -40,6 +43,8 @@ type ShapelessRecipe struct {
 	// Block is the block name that is required to craft the output of the recipe. The block is not prefixed
 	// with 'minecraft:', so it will look like 'crafting_table' as an example.
 	Block string
+	// Priority ...
+	Priority int32
 }
 
 // ShulkerBoxRecipe is a shapeless recipe made specifically for shulker box crafting, so that they don't lose
@@ -54,6 +59,9 @@ type ShapelessChemistryRecipe ShapelessRecipe
 // Trying to craft the item in any other shape will not work. The ShapedRecipe is of the same structure as the
 // ShapedChemistryRecipe.
 type ShapedRecipe struct {
+	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
+	// but its functionality is not exactly known.
+	RecipeID string
 	// Width is the width of the recipe's shape.
 	Width int32
 	// Height is the height of the recipe's shape.
@@ -69,6 +77,8 @@ type ShapedRecipe struct {
 	// Block is the block name that is required to craft the output of the recipe. The block is not prefixed
 	// with 'minecraft:', so it will look like 'crafting_table' as an example.
 	Block string
+	// Priority ...
+	Priority int32
 }
 
 // ShapedChemistryRecipe is a recipe specifically made for chemistry related features, which exist only in the
@@ -218,6 +228,7 @@ func (recipe *MultiRecipe) Unmarshal(buf *bytes.Buffer) error {
 
 // marshalShaped ...
 func marshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) {
+	_ = WriteString(buf, recipe.RecipeID)
 	_ = WriteVarint32(buf, recipe.Width)
 	_ = WriteVarint32(buf, recipe.Height)
 	itemCount := int(recipe.Width * recipe.Height)
@@ -227,7 +238,7 @@ func marshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) {
 		panic(fmt.Sprintf("shaped recipe must have exactly %vx%v input items, but got %v", recipe.Width, recipe.Height, len(recipe.Input)))
 	}
 	for _, input := range recipe.Input {
-		_ = WriteItem(buf, input)
+		_ = WriteRecipeIngredient(buf, input)
 	}
 	_ = WriteVaruint32(buf, uint32(len(recipe.Output)))
 	for _, output := range recipe.Output {
@@ -235,11 +246,13 @@ func marshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) {
 	}
 	_ = WriteUUID(buf, recipe.UUID)
 	_ = WriteString(buf, recipe.Block)
+	_ = WriteVarint32(buf, recipe.Priority)
 }
 
 // unmarshalShaped ...
 func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 	if err := chainErr(
+		String(buf, &recipe.RecipeID),
 		Varint32(buf, &recipe.Width),
 		Varint32(buf, &recipe.Height),
 	); err != nil {
@@ -256,7 +269,7 @@ func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 	itemCount := int(recipe.Width * recipe.Height)
 	recipe.Input = make([]ItemStack, itemCount)
 	for i := 0; i < itemCount; i++ {
-		if err := Item(buf, &recipe.Input[i]); err != nil {
+		if err := RecipeIngredient(buf, &recipe.Input[i]); err != nil {
 			return err
 		}
 	}
@@ -276,14 +289,16 @@ func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 	return chainErr(
 		UUID(buf, &recipe.UUID),
 		String(buf, &recipe.Block),
+		Varint32(buf, &recipe.Priority),
 	)
 }
 
 // marshalShapeless ...
 func marshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) {
+	_ = WriteString(buf, recipe.RecipeID)
 	_ = WriteVaruint32(buf, uint32(len(recipe.Input)))
 	for _, input := range recipe.Input {
-		_ = WriteItem(buf, input)
+		_ = WriteRecipeIngredient(buf, input)
 	}
 	_ = WriteVaruint32(buf, uint32(len(recipe.Output)))
 	for _, output := range recipe.Output {
@@ -291,12 +306,16 @@ func marshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) {
 	}
 	_ = WriteUUID(buf, recipe.UUID)
 	_ = WriteString(buf, recipe.Block)
+	_ = WriteVarint32(buf, recipe.Priority)
 }
 
 // unmarshalShapeless ...
 func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 	var count uint32
-	if err := Varuint32(buf, &count); err != nil {
+	if err := chainErr(
+		String(buf, &recipe.RecipeID),
+		Varuint32(buf, &count),
+	); err != nil {
 		return err
 	}
 	if count > lowerLimit {
@@ -304,7 +323,7 @@ func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 	}
 	recipe.Input = make([]ItemStack, count)
 	for i := uint32(0); i < count; i++ {
-		if err := Item(buf, &recipe.Input[i]); err != nil {
+		if err := RecipeIngredient(buf, &recipe.Input[i]); err != nil {
 			return wrap(err)
 		}
 	}
@@ -323,5 +342,6 @@ func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 	return chainErr(
 		UUID(buf, &recipe.UUID),
 		String(buf, &recipe.Block),
+		Varint32(buf, &recipe.Priority),
 	)
 }

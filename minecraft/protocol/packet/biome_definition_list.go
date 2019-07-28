@@ -1,9 +1,12 @@
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"math"
+)
 
 // BiomeDefinitionList is sent by the server to let the client know all biomes that are available and
-// implemented on the server side. It is much like the AvailableEntityIdentifiers packet, but instead
+// implemented on the server side. It is much like the AvailableActorIdentifiers packet, but instead
 // functions for biomes.
 type BiomeDefinitionList struct {
 	// SerialisedBiomeDefinitions is a network NBT serialised compound of all definitions of biomes that are
@@ -23,7 +26,6 @@ func (pk *BiomeDefinitionList) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *BiomeDefinitionList) Unmarshal(buf *bytes.Buffer) error {
-	pk.SerialisedBiomeDefinitions = make([]byte, buf.Len())
-	_, err := buf.Read(pk.SerialisedBiomeDefinitions)
-	return err
+	pk.SerialisedBiomeDefinitions = buf.Next(math.MaxInt32)
+	return nil
 }

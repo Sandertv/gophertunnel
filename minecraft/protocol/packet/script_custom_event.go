@@ -14,7 +14,7 @@ type ScriptCustomEvent struct {
 	EventName string
 	// EventData is the data of the event. This data is typically a JSON encoded string, that the script is
 	// able to encode and decode too.
-	EventData string
+	EventData []byte
 }
 
 // ID ...
@@ -25,13 +25,13 @@ func (*ScriptCustomEvent) ID() uint32 {
 // Marshal ...
 func (pk *ScriptCustomEvent) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.EventName)
-	_ = protocol.WriteString(buf, pk.EventData)
+	_ = protocol.WriteByteSlice(buf, pk.EventData)
 }
 
 // Unmarshal ...
 func (pk *ScriptCustomEvent) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.String(buf, &pk.EventName),
-		protocol.String(buf, &pk.EventData),
+		protocol.ByteSlice(buf, &pk.EventData),
 	)
 }

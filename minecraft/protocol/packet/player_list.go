@@ -44,16 +44,16 @@ type PlayerListEntry struct {
 	SkinID string
 	// SkinData is a byte slice of 64*32*4, 64*64*4 or 128*128*4 bytes. It is a RGBA ordered byte
 	// representation of the skin colours.
-	SkinData string
+	SkinData []byte
 	// CapeData is a byte slice of 64*32*4 bytes. It is a RGBA ordered byte representation of the cape
 	// colours, much like the SkinData.
-	CapeData string
+	CapeData []byte
 	// SkinGeometryName is the geometry name of the skin geometry above. This name must be equal to one of the
 	// outer names found in the SkinGeometry, so that the client can find the correct geometry data.
 	SkinGeometryName string
 	// SkinGeometry is a base64 JSON encoded structure of the geometry data of a skin, containing properties
 	// such as bones, uv, pivot etc.
-	SkinGeometry string
+	SkinGeometry []byte
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
 	// logged in with the XBOX Live account.
 	XUID string
@@ -79,10 +79,10 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 			_ = protocol.WriteVarint64(buf, entry.EntityUniqueID)
 			_ = protocol.WriteString(buf, entry.Username)
 			_ = protocol.WriteString(buf, entry.SkinID)
-			_ = protocol.WriteString(buf, entry.SkinData)
-			_ = protocol.WriteString(buf, entry.CapeData)
+			_ = protocol.WriteByteSlice(buf, entry.SkinData)
+			_ = protocol.WriteByteSlice(buf, entry.CapeData)
 			_ = protocol.WriteString(buf, entry.SkinGeometryName)
-			_ = protocol.WriteString(buf, entry.SkinGeometry)
+			_ = protocol.WriteByteSlice(buf, entry.SkinGeometry)
 			_ = protocol.WriteString(buf, entry.XUID)
 			_ = protocol.WriteString(buf, entry.PlatformChatID)
 		case PlayerListActionRemove:
@@ -111,10 +111,10 @@ func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
 				protocol.Varint64(buf, &pk.Entries[i].EntityUniqueID),
 				protocol.String(buf, &pk.Entries[i].Username),
 				protocol.String(buf, &pk.Entries[i].SkinID),
-				protocol.String(buf, &pk.Entries[i].SkinData),
-				protocol.String(buf, &pk.Entries[i].CapeData),
+				protocol.ByteSlice(buf, &pk.Entries[i].SkinData),
+				protocol.ByteSlice(buf, &pk.Entries[i].CapeData),
 				protocol.String(buf, &pk.Entries[i].SkinGeometryName),
-				protocol.String(buf, &pk.Entries[i].SkinGeometry),
+				protocol.ByteSlice(buf, &pk.Entries[i].SkinGeometry),
 				protocol.String(buf, &pk.Entries[i].XUID),
 				protocol.String(buf, &pk.Entries[i].PlatformChatID),
 			); err != nil {

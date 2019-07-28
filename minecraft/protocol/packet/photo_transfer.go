@@ -15,7 +15,7 @@ type PhotoTransfer struct {
 	PhotoName string
 	// PhotoData is the raw data of the photo image. The format of this data may vary: Formats such as JPEG or
 	// PNG work, as long as PhotoName has the correct extension.
-	PhotoData string
+	PhotoData []byte
 	// BookID is the ID of the book that the photo is associated with. If the PhotoName in a book with this ID
 	// is set to PhotoName, it will display the photo (provided Education Edition is used).
 	// The photo image is downloaded to a sub-folder with this book ID.
@@ -30,7 +30,7 @@ func (*PhotoTransfer) ID() uint32 {
 // Marshal ...
 func (pk *PhotoTransfer) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.PhotoName)
-	_ = protocol.WriteString(buf, pk.PhotoData)
+	_ = protocol.WriteByteSlice(buf, pk.PhotoData)
 	_ = protocol.WriteString(buf, pk.BookID)
 }
 
@@ -38,7 +38,7 @@ func (pk *PhotoTransfer) Marshal(buf *bytes.Buffer) {
 func (pk *PhotoTransfer) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.String(buf, &pk.PhotoName),
-		protocol.String(buf, &pk.PhotoData),
+		protocol.ByteSlice(buf, &pk.PhotoData),
 		protocol.String(buf, &pk.BookID),
 	)
 }

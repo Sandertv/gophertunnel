@@ -181,3 +181,40 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 	}
 	return nil
 }
+
+// RecipeIngredient reads an ItemStack x as a recipe ingredient from Buffer src.
+func RecipeIngredient(src *bytes.Buffer, x *ItemStack) error {
+	if err := Varint32(src, &x.NetworkID); err != nil {
+		return nil
+	}
+	if x.NetworkID == 0 {
+		return nil
+	}
+	var meta, count int32
+	if err := Varint32(src, &meta); err != nil {
+		return err
+	}
+	x.MetadataValue = int16(meta)
+	if err := Varint32(src, &count); err != nil {
+		return err
+	}
+	if count < 0 {
+		return NegativeCountError{Type: "recipe ingredient count"}
+	}
+	x.Count = int16(count)
+	return nil
+}
+
+// WriteRecipeIngredient writes an ItemStack x as a recipe ingredient to Buffer dst.
+func WriteRecipeIngredient(dst *bytes.Buffer, x ItemStack) error {
+	if err := WriteVarint32(dst, x.NetworkID); err != nil {
+		return err
+	}
+	if x.NetworkID == 0 {
+		return nil
+	}
+	return chainErr(
+		WriteVarint32(dst, int32(x.MetadataValue)),
+		WriteVarint32(dst, int32(x.Count)),
+	)
+}

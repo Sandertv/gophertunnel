@@ -23,16 +23,16 @@ type PlayerSkin struct {
 	OldSkinName string
 	// SkinData is a byte slice of 64*32*4, 64*64*4 or 128*128*4 bytes. It is a RGBA ordered byte
 	// representation of the skin colours.
-	SkinData string
+	SkinData []byte
 	// CapeData is a byte slice of 64*32*4 bytes. It is a RGBA ordered byte representation of the cape
 	// colours, much like the SkinData.
-	CapeData string
+	CapeData []byte
 	// SkinGeometryName is the geometry name of the skin geometry above. This name must be equal to one of the
 	// outer names found in the SkinGeometry, so that the client can find the correct geometry data.
 	SkinGeometryName string
 	// SkinGeometry is a base64 JSON encoded structure of the geometry data of a skin, containing properties
 	// such as bones, uv, pivot etc.
-	SkinGeometry string
+	SkinGeometry []byte
 	// PremiumSkin specifies if the skin equipped was a premium skin, meaning a payment was required in the
 	// marketplace to get access to it.
 	PremiumSkin bool
@@ -49,10 +49,10 @@ func (pk *PlayerSkin) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.SkinID)
 	_ = protocol.WriteString(buf, pk.NewSkinName)
 	_ = protocol.WriteString(buf, pk.OldSkinName)
-	_ = protocol.WriteString(buf, pk.SkinData)
-	_ = protocol.WriteString(buf, pk.CapeData)
+	_ = protocol.WriteByteSlice(buf, pk.SkinData)
+	_ = protocol.WriteByteSlice(buf, pk.CapeData)
 	_ = protocol.WriteString(buf, pk.SkinGeometryName)
-	_ = protocol.WriteString(buf, pk.SkinGeometry)
+	_ = protocol.WriteByteSlice(buf, pk.SkinGeometry)
 	_ = binary.Write(buf, binary.LittleEndian, pk.PremiumSkin)
 }
 
@@ -63,10 +63,10 @@ func (pk *PlayerSkin) Unmarshal(buf *bytes.Buffer) error {
 		protocol.String(buf, &pk.SkinID),
 		protocol.String(buf, &pk.NewSkinName),
 		protocol.String(buf, &pk.OldSkinName),
-		protocol.String(buf, &pk.SkinData),
-		protocol.String(buf, &pk.CapeData),
+		protocol.ByteSlice(buf, &pk.SkinData),
+		protocol.ByteSlice(buf, &pk.CapeData),
 		protocol.String(buf, &pk.SkinGeometryName),
-		protocol.String(buf, &pk.SkinGeometry),
+		protocol.ByteSlice(buf, &pk.SkinGeometry),
 		binary.Read(buf, binary.LittleEndian, &pk.PremiumSkin),
 	)
 }

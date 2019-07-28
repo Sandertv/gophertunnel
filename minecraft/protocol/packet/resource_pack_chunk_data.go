@@ -18,7 +18,7 @@ type ResourcePackChunkData struct {
 	// DataOffset is the current progress in bytes or offset in the data that the resource pack data chunk is
 	// taken from.
 	DataOffset int64
-	// Data is a byte slice containing a chunk of data from the resource pack. It must be of the same size or
+	// RawPayload is a byte slice containing a chunk of data from the resource pack. It must be of the same size or
 	// less than the DataChunkSize set in the ResourcePackDataInfo packet.
 	Data []byte
 }

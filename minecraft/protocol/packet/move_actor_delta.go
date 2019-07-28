@@ -17,10 +17,10 @@ const (
 	moveFlagHasRotZ
 )
 
-// MoveEntityDelta is sent by the server to move an entity by a given delta. The packet is specifically
+// MoveActorDelta is sent by the server to move an entity by a given delta. The packet is specifically
 // optimised to save as much space as possible, by only writing non-zero fields.
-type MoveEntityDelta struct {
-	// EntityRuntimeID is the runtime ID of the entity that is being moved. The packet works provided a
+type MoveActorDelta struct {
+	// EntityNetworkID is the runtime ID of the entity that is being moved. The packet works provided a
 	// non-player entity with this runtime ID is present.
 	EntityRuntimeID uint64
 	// DeltaPosition is the difference from the previous position to the new position. It is the distance on
@@ -32,12 +32,12 @@ type MoveEntityDelta struct {
 }
 
 // ID ...
-func (*MoveEntityDelta) ID() uint32 {
-	return IDMoveEntityDelta
+func (*MoveActorDelta) ID() uint32 {
+	return IDMoveActorDelta
 }
 
 // Marshal ...
-func (pk *MoveEntityDelta) Marshal(buf *bytes.Buffer) {
+func (pk *MoveActorDelta) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	var flags byte
 	if pk.DeltaPosition[0] != 0 {
@@ -80,7 +80,7 @@ func (pk *MoveEntityDelta) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MoveEntityDelta) Unmarshal(buf *bytes.Buffer) error {
+func (pk *MoveActorDelta) Unmarshal(buf *bytes.Buffer) error {
 	pk.DeltaPosition = mgl32.Vec3{}
 	pk.DeltaRotation = mgl32.Vec3{}
 	var flags byte

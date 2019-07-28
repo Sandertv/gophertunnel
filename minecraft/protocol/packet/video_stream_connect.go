@@ -28,6 +28,12 @@ type VideoStreamConnect struct {
 	// ActionType is the type of the action to execute. It is either VideoStreamActionStart or
 	// VideoStreamActionStop to start or stop the video streaming respectively.
 	ActionType byte
+	// ResolutionX is the width in pixels of the 'screenshots' sent to the websocket. This is the resolution
+	// of the video on the X axis.
+	ResolutionX int32
+	// ResolutionY is the height in pixels of the 'screenshots' sent to the websocket. This is the resolution
+	// of the video on the Y axis.
+	ResolutionY int32
 }
 
 // ID ...
@@ -40,6 +46,8 @@ func (pk *VideoStreamConnect) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.ServerURI)
 	_ = protocol.WriteFloat32(buf, pk.FrameSendFrequency)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ResolutionX)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ResolutionY)
 }
 
 // Unmarshal ...
@@ -48,5 +56,7 @@ func (pk *VideoStreamConnect) Unmarshal(buf *bytes.Buffer) error {
 		protocol.String(buf, &pk.ServerURI),
 		protocol.Float32(buf, &pk.FrameSendFrequency),
 		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
+		binary.Read(buf, binary.LittleEndian, &pk.ResolutionX),
+		binary.Read(buf, binary.LittleEndian, &pk.ResolutionY),
 	)
 }

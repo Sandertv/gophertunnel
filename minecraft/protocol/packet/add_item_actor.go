@@ -7,14 +7,14 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// AddItemEntity is sent by the server to the client to make an item entity show up. It is one of the few
-// entities that cannot be sent using the AddEntity packet
-type AddItemEntity struct {
+// AddItemActor is sent by the server to the client to make an item entity show up. It is one of the few
+// entities that cannot be sent using the AddActor packet
+type AddItemActor struct {
 	// EntityUniqueID is the unique ID of the entity. The unique ID is a value that remains consistent across
 	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
 	// this field.
 	EntityUniqueID int64
-	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Item is the item that is spawned. It must have a valid ID for it to show up client-side. If it is not
@@ -36,12 +36,12 @@ type AddItemEntity struct {
 }
 
 // ID ...
-func (*AddItemEntity) ID() uint32 {
-	return IDAddItemEntity
+func (*AddItemActor) ID() uint32 {
+	return IDAddItemActor
 }
 
 // Marshal ...
-func (pk *AddItemEntity) Marshal(buf *bytes.Buffer) {
+func (pk *AddItemActor) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	_ = protocol.WriteItem(buf, pk.Item)
@@ -52,7 +52,7 @@ func (pk *AddItemEntity) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddItemEntity) Unmarshal(buf *bytes.Buffer) error {
+func (pk *AddItemActor) Unmarshal(buf *bytes.Buffer) error {
 	pk.EntityMetadata = map[uint32]interface{}{}
 	return chainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),

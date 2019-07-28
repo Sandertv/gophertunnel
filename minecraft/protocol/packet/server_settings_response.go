@@ -16,7 +16,7 @@ type ServerSettingsResponse struct {
 	FormID uint32
 	// FormData is a JSON encoded object of form data. The content of the object differs, depending on the
 	// type of the form sent, which is also set in the JSON.
-	FormData string
+	FormData []byte
 }
 
 // ID ...
@@ -27,13 +27,13 @@ func (*ServerSettingsResponse) ID() uint32 {
 // Marshal ...
 func (pk *ServerSettingsResponse) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.FormID)
-	_ = protocol.WriteString(buf, pk.FormData)
+	_ = protocol.WriteByteSlice(buf, pk.FormData)
 }
 
 // Unmarshal ...
 func (pk *ServerSettingsResponse) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint32(buf, &pk.FormID),
-		protocol.String(buf, &pk.FormData),
+		protocol.ByteSlice(buf, &pk.FormData),
 	)
 }

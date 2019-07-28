@@ -13,12 +13,12 @@ const (
 	IDSetTime
 	IDStartGame
 	IDAddPlayer
-	IDAddEntity
-	IDRemoveEntity
-	IDAddItemEntity
+	IDAddActor
+	IDRemoveActor
+	IDAddItemActor
 	_
-	IDTakeItemEntity
-	IDMoveEntityAbsolute
+	IDTakeItemActor
+	IDMoveActorAbsolute
 	IDMovePlayer
 	IDRiderJump
 	IDUpdateBlock
@@ -27,7 +27,7 @@ const (
 	_ // IDLevelSoundEvent(1): We don't bother implementing this.
 	IDLevelEvent
 	IDBlockEvent
-	IDEntityEvent
+	IDActorEvent
 	IDMobEffect
 	IDUpdateAttributes
 	IDInventoryTransaction
@@ -35,13 +35,13 @@ const (
 	IDMobArmourEquipment
 	IDInteract
 	IDBlockPickRequest
-	IDEntityPickRequest
+	IDActorPickRequest
 	IDPlayerAction
-	IDEntityFall
+	IDActorFall
 	IDHurtArmour
-	IDSetEntityData
-	IDSetEntityMotion
-	IDSetEntityLink
+	IDSetActorData
+	IDSetActorMotion
+	IDSetActorLink
 	IDSetHealth
 	IDSetSpawnPosition
 	IDAnimate
@@ -56,9 +56,9 @@ const (
 	IDCraftingEvent
 	IDGUIDataPickItem
 	IDAdventureSettings
-	IDBlockEntityData
+	IDBlockActorData
 	IDPlayerInput
-	IDFullChunkData
+	IDLevelChunk
 	IDSetCommandsEnabled
 	IDSetDifficulty
 	IDChangeDimension
@@ -111,7 +111,7 @@ const (
 	IDSetScore
 	IDLabTable
 	IDUpdateBlockSynced
-	IDMoveEntityDelta
+	IDMoveActorDelta
 	IDSetScoreboardIdentity
 	IDSetLocalPlayerAsInitialised
 	IDUpdateSoftEnum
@@ -119,13 +119,22 @@ const (
 	_
 	IDScriptCustomEvent
 	IDSpawnParticleEffect
-	IDAvailableEntityIdentifiers
+	IDAvailableActorIdentifiers
 	_ // IDLevelSoundEvent(2): We don't bother implementing this.
 	IDNetworkChunkPublisherUpdate
 	IDBiomeDefinitionList
 	IDLevelSoundEvent
+	IDLevelEventGeneric
 	IDLecternUpdate
 	IDVideoStreamConnect
+	IDAddEntity
+	IDRemoveEntity
+	IDClientCacheStatus
 	IDMapCreateLockedCopy
 	IDOnScreenTextureAnimation
+	IDStructureTemplateDataExportRequest
+	IDStructureTemplateDataExportResponse
+	IDUpdateBlockProperties
+	IDClientCacheBlobStatus
+	IDClientCacheMissResponse
 )
