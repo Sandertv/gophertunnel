@@ -94,6 +94,7 @@ func RequestXSTSToken(liveToken *TokenPair) (*XSTSToken, error) {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
 	c := &http.Client{}
+	defer c.CloseIdleConnections()
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
 	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)

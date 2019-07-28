@@ -42,6 +42,7 @@ func (script *Script) RunFile(file string) error {
 
 // Close closes the script, making it stop processing any code.
 func (script *Script) Close() error {
+	script.state = nil
 	script.closed = true
 	return nil
 }

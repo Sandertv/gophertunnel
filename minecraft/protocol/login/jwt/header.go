@@ -1,9 +1,9 @@
 package jwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"fmt"
-	"strings"
 )
 
 // allowedAlgorithm is a slice of allowed algorithms.
@@ -35,14 +35,14 @@ type Header struct {
 
 // Header parses the JWT passed and returns the base64 decoded header section of the claim. The JSON data
 // returned is not guaranteed to be valid JSON.
-func HeaderFrom(jwt string) ([]byte, error) {
-	fragments := strings.Split(jwt, ".")
+func HeaderFrom(jwt []byte) ([]byte, error) {
+	fragments := bytes.Split(jwt, []byte{'.'})
 	if len(fragments) != 3 {
 		return nil, fmt.Errorf("expected claim to have 3 sections, but got %v", len(fragments))
 	}
 	// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
-	fragments[0] = strings.TrimRight(fragments[0], "=")
-	payload, err := base64.RawURLEncoding.DecodeString(fragments[0])
+	fragments[0] = bytes.TrimRight(fragments[0], "=")
+	payload, err := base64.RawURLEncoding.DecodeString(string(fragments[0]))
 	if err != nil {
 		return nil, fmt.Errorf("error base64 decoding payload: %v (%v)", err, fragments[0])
 	}

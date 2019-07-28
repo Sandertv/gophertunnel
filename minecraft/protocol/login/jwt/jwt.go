@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/sha512"
 	"crypto/x509"
@@ -8,7 +9,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 	"time"
 )
 
@@ -23,8 +23,8 @@ const (
 // The publicKey passed is used to verify the signature of the claim. If a zero public key is passed (meaning,
 // not a nil pointer, but an empty *ecdsa.PublicKey{}), the key is retrieved from the x5u of the header.
 // The public key passed will be updated for the identityPublicKey found in the claim.
-func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangKey bool, err error) {
-	fragments := strings.Split(jwt, ".")
+func Verify(jwt []byte, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangKey bool, err error) {
+	fragments := bytes.Split(jwt, []byte{'.'})
 	if len(fragments) != 3 {
 		return false, fmt.Errorf("expected claim to have 3 sections, but got %v", len(fragments))
 	}
@@ -32,12 +32,12 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 		// First base64 decode all of these fragments so we can directly assign them without having to decode
 		// them one by one.
 		// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
-		f = strings.TrimRight(f, "=")
-		b, err := base64.RawURLEncoding.DecodeString(f)
+		f = bytes.TrimRight(f, "=")
+		b, err := base64.RawURLEncoding.DecodeString(string(f))
 		if err != nil {
 			return false, fmt.Errorf("error base64 decoding claim: %v", err)
 		}
-		fragments[index] = string(b)
+		fragments[index] = b
 	}
 	rawHeader, rawPayload, rawSignature := fragments[0], fragments[1], fragments[2]
 
@@ -66,7 +66,7 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 
 	// Payload validation.
 	jwtData := jwtPayload{}
-	if err := json.Unmarshal([]byte(rawPayload), &jwtData); err != nil {
+	if err := json.Unmarshal(rawPayload, &jwtData); err != nil {
 		return false, fmt.Errorf("error decoding payload: %v", err)
 	}
 	// Account for one hour of clock drift.
@@ -98,11 +98,11 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 	// Signature verification.
 	hash := sha512.New384()
 	// The hash is produced using the header and the payload section of the claim.
-	hash.Write([]byte(jwt[:strings.LastIndex(jwt, ".")]))
+	hash.Write(jwt[:bytes.LastIndex(jwt, []byte{'.'})])
 
 	sigLength := len(rawSignature)
-	r := new(big.Int).SetBytes([]byte(rawSignature[:sigLength/2]))
-	s := new(big.Int).SetBytes([]byte(rawSignature[sigLength/2:]))
+	r := new(big.Int).SetBytes(rawSignature[:sigLength/2])
+	s := new(big.Int).SetBytes(rawSignature[sigLength/2:])
 
 	if !ecdsa.Verify(publicKey, hash.Sum(nil), r, s) {
 		return false, fmt.Errorf("JWT claim has an incorrect signature")
@@ -120,14 +120,14 @@ func Verify(jwt string, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 
 // Payload parses the JWT passed and returns the base64 decoded payload section of the claim. The JSON data
 // returned is not guaranteed to be valid JSON.
-func Payload(jwt string) ([]byte, error) {
-	fragments := strings.Split(jwt, ".")
+func Payload(jwt []byte) ([]byte, error) {
+	fragments := bytes.Split(jwt, []byte{'.'})
 	if len(fragments) != 3 {
 		return nil, fmt.Errorf("expected claim to have 3 sections, but got %v", len(fragments))
 	}
 	// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
-	fragments[1] = strings.TrimRight(fragments[1], "=")
-	payload, err := base64.RawURLEncoding.DecodeString(fragments[1])
+	fragments[1] = bytes.TrimRight(fragments[1], "=")
+	payload, err := base64.RawURLEncoding.DecodeString(string(fragments[1]))
 	if err != nil {
 		return nil, fmt.Errorf("error base64 decoding payload: %v", err)
 	}

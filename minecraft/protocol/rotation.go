@@ -19,11 +19,11 @@ func Rotation(src *bytes.Buffer, x *mgl32.Vec3) error {
 	return nil
 }
 
-// WriteRotation writes a rotation Vec3 to buffer src as 3 bytes.
-func WriteRotation(src *bytes.Buffer, x mgl32.Vec3) error {
+// WriteRotation writes a rotation Vec3 to buffer dst as 3 bytes.
+func WriteRotation(dst *bytes.Buffer, x mgl32.Vec3) error {
 	return chainErr(
-		src.WriteByte(byte(x[0]/(360.0/256.0))),
-		src.WriteByte(byte(x[1]/(360.0/256.0))),
-		src.WriteByte(byte(x[2]/(360.0/256.0))),
+		dst.WriteByte(byte(x[0]/(360.0/256.0))),
+		dst.WriteByte(byte(x[1]/(360.0/256.0))),
+		dst.WriteByte(byte(x[2]/(360.0/256.0))),
 	)
 }

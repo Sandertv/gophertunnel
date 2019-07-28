@@ -15,7 +15,7 @@ type Login struct {
 	// ConnectionRequest is a string containing information about the player and JWTs that may be used to
 	// verify if the player is connected to XBOX Live. The connection request also contains the necessary
 	// client public key to initiate encryption.
-	ConnectionRequest string
+	ConnectionRequest []byte
 }
 
 // ID ...
@@ -26,13 +26,13 @@ func (*Login) ID() uint32 {
 // Marshal ...
 func (pk *Login) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.BigEndian, pk.ClientProtocol)
-	_ = protocol.WriteString(buf, pk.ConnectionRequest)
+	_ = protocol.WriteByteSlice(buf, pk.ConnectionRequest)
 }
 
 // Unmarshal ...
 func (pk *Login) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		binary.Read(buf, binary.BigEndian, &pk.ClientProtocol),
-		protocol.String(buf, &pk.ConnectionRequest),
+		protocol.ByteSlice(buf, &pk.ConnectionRequest),
 	)
 }

@@ -124,6 +124,7 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 	values := location.Query()
 
 	t, _ := strconv.Atoi(values.Get("expires_in"))
+	c.CloseIdleConnections()
 	return NewTokenPair(values.Get("access_token"), values.Get("refresh_token"), time.Duration(t)), nil
 }
 

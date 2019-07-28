@@ -13,21 +13,21 @@ const (
 	IDSetTime
 	IDStartGame
 	IDAddPlayer
-	IDAddEntity
-	IDRemoveEntity
-	IDAddItemEntity
+	IDAddActor
+	IDRemoveActor
+	IDAddItemActor
 	_
-	IDTakeItemEntity
-	IDMoveEntityAbsolute
+	IDTakeItemActor
+	IDMoveActorAbsolute
 	IDMovePlayer
 	IDRiderJump
 	IDUpdateBlock
 	IDAddPainting
 	IDExplode
-	_
+	_ // IDLevelSoundEvent(1): We don't bother implementing this.
 	IDLevelEvent
 	IDBlockEvent
-	IDEntityEvent
+	IDActorEvent
 	IDMobEffect
 	IDUpdateAttributes
 	IDInventoryTransaction
@@ -35,13 +35,13 @@ const (
 	IDMobArmourEquipment
 	IDInteract
 	IDBlockPickRequest
-	IDEntityPickRequest
+	IDActorPickRequest
 	IDPlayerAction
-	IDEntityFall
+	IDActorFall
 	IDHurtArmour
-	IDSetEntityData
-	IDSetEntityMotion
-	IDSetEntityLink
+	IDSetActorData
+	IDSetActorMotion
+	IDSetActorLink
 	IDSetHealth
 	IDSetSpawnPosition
 	IDAnimate
@@ -56,9 +56,9 @@ const (
 	IDCraftingEvent
 	IDGUIDataPickItem
 	IDAdventureSettings
-	IDBlockEntityData
+	IDBlockActorData
 	IDPlayerInput
-	IDFullChunkData
+	IDLevelChunk
 	IDSetCommandsEnabled
 	IDSetDifficulty
 	IDChangeDimension
@@ -76,30 +76,65 @@ const (
 	IDCamera
 	IDBossEvent
 	IDShowCredits
-)
-
-// ...
-const (
-	IDResourcePackDataInfo = iota + 0x52
+	IDAvailableCommands
+	IDCommandRequest
+	IDCommandBlockUpdate
+	IDCommandOutput
+	IDUpdateTrade
+	IDUpdateEquip
+	IDResourcePackDataInfo
 	IDResourcePackChunkData
 	IDResourcePackChunkRequest
 	IDTransfer
-)
-
-// ...
-const (
-	IDPlayerSkin = iota + 0x5d
-)
-
-// ...
-const (
-	IDModalFormRequest = iota + 0x64
+	IDPlaySound
+	IDStopSound
+	IDSetTitle
+	IDAddBehaviourTree
+	IDStructureBlockUpdate
+	IDShowStoreOffer
+	IDPurchaseReceipt
+	IDPlayerSkin
+	IDSubClientLogin
+	IDAutomationClientConnect
+	IDSetLastHurtBy
+	IDBookEdit
+	IDNPCRequest
+	IDPhotoTransfer
+	IDModalFormRequest
 	IDModalFormResponse
 	IDServerSettingsRequest
 	IDServerSettingsResponse
-)
-
-// ...
-const (
-	IDSetLocalPlayerAsInitialised = iota + 0x71
+	IDShowProfile
+	IDSetDefaultGameType
+	IDRemoveObjective
+	IDSetDisplayObjective
+	IDSetScore
+	IDLabTable
+	IDUpdateBlockSynced
+	IDMoveActorDelta
+	IDSetScoreboardIdentity
+	IDSetLocalPlayerAsInitialised
+	IDUpdateSoftEnum
+	IDNetworkStackLatency
+	_
+	IDScriptCustomEvent
+	IDSpawnParticleEffect
+	IDAvailableActorIdentifiers
+	_ // IDLevelSoundEvent(2): We don't bother implementing this.
+	IDNetworkChunkPublisherUpdate
+	IDBiomeDefinitionList
+	IDLevelSoundEvent
+	IDLevelEventGeneric
+	IDLecternUpdate
+	IDVideoStreamConnect
+	IDAddEntity
+	IDRemoveEntity
+	IDClientCacheStatus
+	IDMapCreateLockedCopy
+	IDOnScreenTextureAnimation
+	IDStructureTemplateDataExportRequest
+	IDStructureTemplateDataExportResponse
+	IDUpdateBlockProperties
+	IDClientCacheBlobStatus
+	IDClientCacheMissResponse
 )

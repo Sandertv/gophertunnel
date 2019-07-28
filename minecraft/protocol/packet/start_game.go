@@ -15,7 +15,7 @@ type StartGame struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
 	// this field.
 	EntityUniqueID int64
-	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// PlayerGameMode is the game mode the player currently has. It is a value from 0-4, with 0 being
@@ -124,6 +124,9 @@ type StartGame struct {
 	// properties above in the settings GUI. It is recommended to set this to true for servers that do not
 	// allow things such as setting game rules through the GUI.
 	WorldTemplateSettingsLocked bool
+	// OnlySpawnV1Villagers is a hack that Mojang put in place to preserve backwards compatibility with old
+	// villagers. The bool is never actually read though, so it has no functionality.
+	OnlySpawnV1Villagers bool
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -145,13 +148,13 @@ type StartGame struct {
 	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
 	// that are in the game, including any specific variants of that block, will crash mobile clients. It
 	// seems Windows 10 games do not crash.
-	Blocks []BlockEntry
+	Blocks []protocol.BlockEntry
+	// Items is a list of all items with their legacy IDs which are available in the game. Failing to send any
+	// of the items that are in the game will crash mobile clients.
+	Items []protocol.ItemEntry
 	// MultiPlayerCorrelationID is a unique ID specifying the multi-player session of the player. A random
 	// UUID should be filled out for this field.
 	MultiPlayerCorrelationID string
-	// OnlySpawnV1Villagers is a hack that Mojang put in place to preserve backwards compatibility with old
-	// villagers. The bool is never actually read though, so it has no functionality.
-	OnlySpawnV1Villagers bool
 }
 
 // ID ...
@@ -197,6 +200,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.MSAGamerTagsOnly)
 	_ = binary.Write(buf, binary.LittleEndian, pk.FromWorldTemplate)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WorldTemplateSettingsLocked)
+	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
 	_ = protocol.WriteString(buf, pk.LevelID)
 	_ = protocol.WriteString(buf, pk.WorldName)
 	_ = protocol.WriteString(buf, pk.PremiumWorldTemplateID)
@@ -207,9 +211,14 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	for _, block := range pk.Blocks {
 		_ = protocol.WriteString(buf, block.Name)
 		_ = binary.Write(buf, binary.LittleEndian, block.Data)
+		_ = binary.Write(buf, binary.LittleEndian, block.LegacyID)
+	}
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Items)))
+	for _, item := range pk.Items {
+		_ = protocol.WriteString(buf, item.Name)
+		_ = binary.Write(buf, binary.LittleEndian, item.LegacyID)
 	}
 	_ = protocol.WriteString(buf, pk.MultiPlayerCorrelationID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
 }
 
 // Unmarshal ...
@@ -217,7 +226,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 	if pk.GameRules == nil {
 		pk.GameRules = make(map[string]interface{})
 	}
-	var blockCount uint32
+	var blockCount, itemCount uint32
 	if err := chainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
@@ -255,6 +264,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.MSAGamerTagsOnly),
 		binary.Read(buf, binary.LittleEndian, &pk.FromWorldTemplate),
 		binary.Read(buf, binary.LittleEndian, &pk.WorldTemplateSettingsLocked),
+		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
 		protocol.String(buf, &pk.LevelID),
 		protocol.String(buf, &pk.WorldName),
 		protocol.String(buf, &pk.PremiumWorldTemplateID),
@@ -265,29 +275,31 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
-	pk.Blocks = make([]BlockEntry, blockCount)
+	pk.Blocks = make([]protocol.BlockEntry, blockCount)
 	for i := uint32(0); i < blockCount; i++ {
-		block := BlockEntry{}
+		block := protocol.BlockEntry{}
 		if err := chainErr(
 			protocol.String(buf, &block.Name),
 			binary.Read(buf, binary.LittleEndian, &block.Data),
+			binary.Read(buf, binary.LittleEndian, &block.LegacyID),
 		); err != nil {
 			return err
 		}
 		pk.Blocks[i] = block
 	}
-	err := protocol.String(buf, &pk.MultiPlayerCorrelationID)
-	// This boolean is not read by the vanilla client, so we should also not care if it does not exist.
-	_ = binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers)
-	return err
-}
-
-// BlockEntry is a block sent in the StartGame packet block runtime ID table. It holds a name and a metadata
-// value of a block.
-type BlockEntry struct {
-	// Name is the name of the block. It looks like 'minecraft:stone'.
-	Name string
-	// Data is the metadata value of the block. A lot of blocks only have 0 as data value, but some blocks
-	// carry specific variants or properties encoded in the metadata.
-	Data int16
+	if err := protocol.Varuint32(buf, &itemCount); err != nil {
+		return err
+	}
+	pk.Items = make([]protocol.ItemEntry, itemCount)
+	for i := uint32(0); i < itemCount; i++ {
+		item := protocol.ItemEntry{}
+		if err := chainErr(
+			protocol.String(buf, &item.Name),
+			binary.Read(buf, binary.LittleEndian, &item.LegacyID),
+		); err != nil {
+			return err
+		}
+		pk.Items[i] = item
+	}
+	return protocol.String(buf, &pk.MultiPlayerCorrelationID)
 }

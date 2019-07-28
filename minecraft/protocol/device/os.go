@@ -17,4 +17,5 @@ const (
 	TVOS
 	Orbis
 	NX
+	XBOX
 )

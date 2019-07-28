@@ -11,7 +11,7 @@ import (
 type ServerToClientHandshake struct {
 	// JWT is a raw JWT token containing data such as the public key from the server, the algorithm used and
 	// the server's token. It is used for the client to produce a shared secret.
-	JWT string
+	JWT []byte
 }
 
 // ID ...
@@ -21,10 +21,10 @@ func (*ServerToClientHandshake) ID() uint32 {
 
 // Marshal ...
 func (pk *ServerToClientHandshake) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.JWT)
+	_ = protocol.WriteByteSlice(buf, pk.JWT)
 }
 
 // Unmarshal ...
 func (pk *ServerToClientHandshake) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.JWT)
+	return protocol.ByteSlice(buf, &pk.JWT)
 }

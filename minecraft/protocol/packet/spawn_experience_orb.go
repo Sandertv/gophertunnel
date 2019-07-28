@@ -7,7 +7,7 @@ import (
 )
 
 // SpawnExperienceOrb is sent by the server to spawn an experience orb entity client-side. Much like the
-// AddPainting packet, it is one of the few packets that spawn an entity without using the AddEntity packet.
+// AddPainting packet, it is one of the few packets that spawn an entity without using the AddActor packet.
 type SpawnExperienceOrb struct {
 	// Position is the position to spawn the experience orb on. If the entity is on a distance that the player
 	// cannot see it, the entity will still show up if the player moves closer.

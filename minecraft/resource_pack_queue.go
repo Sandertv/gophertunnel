@@ -60,12 +60,27 @@ func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok 
 		queue.currentPack = pack
 		queue.currentOffset = 0
 		checksum := pack.Checksum()
+
+		var packType byte
+		switch {
+		case pack.HasWorldTemplate():
+			packType = packet.ResourcePackTypeWorldTemplate
+		case pack.HasTextures() && (pack.HasBehaviours() || pack.HasScripts()):
+			packType = packet.ResourcePackTypeAddon
+		case !pack.HasTextures() && (pack.HasBehaviours() || pack.HasScripts()):
+			packType = packet.ResourcePackTypeBehaviour
+		case pack.HasTextures():
+			packType = packet.ResourcePackTypeResource
+		default:
+			packType = packet.ResourcePackTypeSkins
+		}
 		return &packet.ResourcePackDataInfo{
 			UUID:          pack.UUID(),
 			DataChunkSize: packChunkSize,
 			ChunkCount:    int32(pack.DataChunkCount(packChunkSize)),
 			Size:          int64(pack.Len()),
-			Hash:          string(checksum[:]),
+			Hash:          checksum[:],
+			PackType:      packType,
 		}, true
 	}
 	return nil, false

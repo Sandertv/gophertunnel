@@ -122,11 +122,29 @@ func (pack *Pack) HasScripts() bool {
 func (pack *Pack) HasBehaviours() bool {
 	for _, module := range pack.manifest.Modules {
 		if module.Type == "client_data" || module.Type == "data" {
-			// The module has the client_data or data type, meaning it holds behaviours
+			// The module has the client_data or data type, meaning it holds behaviours.
 			return true
 		}
 	}
 	return false
+}
+
+// HasTextures checks if any of the modules of the resource pack have the type 'resources', meaning they have
+// textures in them.
+func (pack *Pack) HasTextures() bool {
+	for _, module := range pack.manifest.Modules {
+		if module.Type == "resources" {
+			// The module has the resources type, meaning it holds textures.
+			return true
+		}
+	}
+	return false
+}
+
+// HasWorldTemplate checks if the resource compiled holds a level.dat in it, indicating that the resource is
+// a world template.
+func (pack *Pack) HasWorldTemplate() bool {
+	return pack.manifest.worldTemplate
 }
 
 // Checksum returns the SHA256 checksum made from the full, compressed content of the resource pack archive.
@@ -294,6 +312,9 @@ func readManifest(path string) (*Manifest, error) {
 	manifest := &Manifest{}
 	if err := json.Unmarshal(allData, manifest); err != nil {
 		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
+	}
+	if _, err := reader.find("level.dat"); err != nil {
+		manifest.worldTemplate = true
 	}
 
 	return manifest, nil

@@ -6,6 +6,16 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	ResourcePackTypeResource = iota + 1
+	ResourcePackTypeBehaviour
+	ResourcePackTypeWorldTemplate
+	ResourcePackTypeAddon
+	ResourcePackTypeSkins
+	ResourcePackTypeCached
+	ResourcePackTypeCopyProtected
+)
+
 // ResourcePackDataInfo is sent by the server to the client to inform the client about the data contained in
 // one of the resource packs that are about to be sent.
 type ResourcePackDataInfo struct {
@@ -22,7 +32,13 @@ type ResourcePackDataInfo struct {
 	// archive (zip) of the resource pack.
 	Size int64
 	// Hash is a SHA256 hash of the content of the resource pack.
-	Hash string
+	Hash []byte
+	// Premium specifies if the resource pack was a premium resource pack, meaning it was bought from the
+	// Minecraft store.
+	Premium bool
+	// PackType is the type of the resource pack. It is one of the resource pack types that may be found in
+	// the constants above.
+	PackType byte
 }
 
 // ID ...
@@ -36,7 +52,9 @@ func (pk *ResourcePackDataInfo) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.DataChunkSize)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ChunkCount)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Size)
-	_ = protocol.WriteString(buf, pk.Hash)
+	_ = protocol.WriteByteSlice(buf, pk.Hash)
+	_ = binary.Write(buf, binary.LittleEndian, pk.Premium)
+	_ = binary.Write(buf, binary.LittleEndian, pk.PackType)
 }
 
 // Unmarshal ...
@@ -46,6 +64,8 @@ func (pk *ResourcePackDataInfo) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.DataChunkSize),
 		binary.Read(buf, binary.LittleEndian, &pk.ChunkCount),
 		binary.Read(buf, binary.LittleEndian, &pk.Size),
-		protocol.String(buf, &pk.Hash),
+		protocol.ByteSlice(buf, &pk.Hash),
+		binary.Read(buf, binary.LittleEndian, &pk.Premium),
+		binary.Read(buf, binary.LittleEndian, &pk.PackType),
 	)
 }

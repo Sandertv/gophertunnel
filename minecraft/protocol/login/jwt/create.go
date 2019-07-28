@@ -11,18 +11,18 @@ import (
 
 // New produces an encoded JWT from the header and payload passed. The signature of the JWT is created using
 // the private key passed.
-func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) (string, error) {
+func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) ([]byte, error) {
 	// First JSON+base64 encode the header.
 	headerRaw, err := json.Marshal(header)
 	if err != nil {
-		return "", fmt.Errorf("error JSON encoding header: %v", err)
+		return nil, fmt.Errorf("error JSON encoding header: %v", err)
 	}
 	headerSection := base64.RawURLEncoding.EncodeToString(headerRaw)
 
 	// After that, we JSON+base64 encode the payload.
 	payloadRaw, err := json.Marshal(payload)
 	if err != nil {
-		return "", fmt.Errorf("error JSON encoding payload: %v", err)
+		return nil, fmt.Errorf("error JSON encoding payload: %v", err)
 	}
 	payloadSection := base64.RawURLEncoding.EncodeToString(payloadRaw)
 
@@ -35,10 +35,10 @@ func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) (stri
 	// signature of the JWT.
 	r, s, err := ecdsa.Sign(rand.Reader, privateKey, checksum.Sum(nil))
 	if err != nil {
-		return "", fmt.Errorf("error signing JWT payload: %v", err)
+		return nil, fmt.Errorf("error signing JWT payload: %v", err)
 	}
 	signatureSection := base64.RawURLEncoding.EncodeToString(append(r.Bytes(), s.Bytes()...))
 
 	// Finally we join together all sections and return it as a single string.
-	return headerSection + "." + payloadSection + "." + signatureSection, nil
+	return []byte(headerSection + "." + payloadSection + "." + signatureSection), nil
 }

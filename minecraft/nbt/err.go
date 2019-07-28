@@ -144,12 +144,12 @@ func (err MaximumDepthReachedError) Error() string {
 
 const maximumNetworkOffset = 4 * 1024 * 1024
 
-// MaximumBytesReadError is returned if the maximum amount of bytes has been read for VarLittleEndian format.
-// It is returned if the offset hits maximumNetworkOffset
+// MaximumBytesReadError is returned if the maximum amount of bytes has been read for NetworkLittleEndian
+// format. It is returned if the offset hits maximumNetworkOffset.
 type MaximumBytesReadError struct {
 }
 
 // Error ...
 func (err MaximumBytesReadError) Error() string {
-	return fmt.Sprintf("nbt: limit of bytes read %v with VarLittleEndian format exhausted", maximumNetworkOffset)
+	return fmt.Sprintf("nbt: limit of bytes read %v with NetworkLittleEndian format exhausted", maximumNetworkOffset)
 }

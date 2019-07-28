@@ -94,6 +94,9 @@ type ClientData struct {
 	PlatformOfflineID string `json:"PlatformOfflineId"`
 	// PlatformOnlineID is either a UUID or an empty string ...
 	PlatformOnlineID string `json:"PlatformOnlineId"`
+	// PlatformUserID holds a UUID which is only sent if the DeviceOS is of type device.XBOX. Its function
+	// is not exactly clear.
+	PlatformUserID string `json:"PlatformUserId,omitempty"`
 	// PremiumSkin indicates if the skin the player held was a premium skin, meaning it was obtained through
 	// payment.
 	PremiumSkin bool
@@ -132,17 +135,14 @@ func (data ClientData) Validate() error {
 	if err := base64DecLength(data.CapeData, 64*32*4, 0); err != nil {
 		return fmt.Errorf("CapeData invalid: %v", err)
 	}
-	if data.DeviceOS <= 0 || data.DeviceOS > 12 {
-		return fmt.Errorf("DeviceOS must carry a value between 1 and 12, but got %v", data.DeviceOS)
+	if data.DeviceOS <= 0 || data.DeviceOS > 13 {
+		return fmt.Errorf("DeviceOS must carry a value between 1 and 13, but got %v", data.DeviceOS)
 	}
 	if _, err := uuid.Parse(data.DeviceID); err != nil {
 		return fmt.Errorf("DeviceID must be parseable as a valid UUID, but got %v", data.DeviceID)
 	}
 	if !checkVersion(data.GameVersion) {
 		return fmt.Errorf("GameVersion must only contain dots and numbers, but got %v", data.GameVersion)
-	}
-	if data.GUIScale != -2 && data.GUIScale != -1 && data.GUIScale != 0 {
-		return fmt.Errorf("GUIScale must be either -2, -1 or 0, but got %v", data.GUIScale)
 	}
 	if _, err := language.Parse(strings.Replace(data.LanguageCode, "_", "-", 1)); err != nil {
 		return fmt.Errorf("LanguageCode must be a valid BCP-47 ISO language code, but got %v", data.LanguageCode)
@@ -164,7 +164,7 @@ func (data ClientData) Validate() error {
 	}
 	if geomData, err := base64.StdEncoding.DecodeString(data.SkinGeometry); err != nil {
 		return fmt.Errorf("SkinGeometry was not a valid base64 string: %v", err)
-	} else {
+	} else if len(geomData) != 0 {
 		m := make(map[string]interface{})
 		if err := json.Unmarshal(geomData, &m); err != nil {
 			return fmt.Errorf("SkinGeometry base64 decoded was not a valid JSON string: %v", err)

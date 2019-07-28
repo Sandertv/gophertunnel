@@ -5,9 +5,9 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// TakeItemEntity is sent by the server when a player picks up an item entity. It makes the item entity
+// TakeItemActor is sent by the server when a player picks up an item entity. It makes the item entity
 // disappear to viewers and shows the pick-up animation.
-type TakeItemEntity struct {
+type TakeItemActor struct {
 	// ItemEntityRuntimeID is the entity runtime ID of the item that is being taken by another entity. It will
 	// disappear to viewers after showing the pick-up animation.
 	ItemEntityRuntimeID uint64
@@ -17,18 +17,18 @@ type TakeItemEntity struct {
 }
 
 // ID ...
-func (*TakeItemEntity) ID() uint32 {
-	return IDTakeItemEntity
+func (*TakeItemActor) ID() uint32 {
+	return IDTakeItemActor
 }
 
 // Marshal ...
-func (pk *TakeItemEntity) Marshal(buf *bytes.Buffer) {
+func (pk *TakeItemActor) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.ItemEntityRuntimeID)
 	_ = protocol.WriteVaruint64(buf, pk.TakerEntityRuntimeID)
 }
 
 // Unmarshal ...
-func (pk *TakeItemEntity) Unmarshal(buf *bytes.Buffer) error {
+func (pk *TakeItemActor) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint64(buf, &pk.ItemEntityRuntimeID),
 		protocol.Varuint64(buf, &pk.TakerEntityRuntimeID),

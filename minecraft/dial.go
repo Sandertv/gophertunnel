@@ -14,6 +14,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/device"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"io/ioutil"
 	"log"
 	rand2 "math/rand"
 	"net"
@@ -94,7 +95,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	switch network {
 	case "raknet":
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
-		netConn, err = raknet.Dial(address)
+		netConn, err = raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}.Dial(address)
 	default:
 		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
 		// the network passed.

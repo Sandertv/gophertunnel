@@ -12,10 +12,10 @@ const (
 	MoveFlagTeleport
 )
 
-// MoveEntityAbsolute is sent by the server to move an entity to an absolute position. It is typically used
+// MoveActorAbsolute is sent by the server to move an entity to an absolute position. It is typically used
 // for movements where high accuracy isn't needed, such as for long range teleporting.
-type MoveEntityAbsolute struct {
-	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+type MoveActorAbsolute struct {
+	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Flags is a combination of flags that specify details of the movement. It is a combination of the flags
@@ -30,12 +30,12 @@ type MoveEntityAbsolute struct {
 }
 
 // ID ...
-func (*MoveEntityAbsolute) ID() uint32 {
-	return IDMoveEntityAbsolute
+func (*MoveActorAbsolute) ID() uint32 {
+	return IDMoveActorAbsolute
 }
 
 // Marshal ...
-func (pk *MoveEntityAbsolute) Marshal(buf *bytes.Buffer) {
+func (pk *MoveActorAbsolute) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Flags)
 	_ = protocol.WriteVec3(buf, pk.Position)
@@ -43,7 +43,7 @@ func (pk *MoveEntityAbsolute) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MoveEntityAbsolute) Unmarshal(buf *bytes.Buffer) error {
+func (pk *MoveActorAbsolute) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		binary.Read(buf, binary.LittleEndian, &pk.Flags),

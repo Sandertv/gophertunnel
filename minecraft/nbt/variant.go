@@ -24,10 +24,10 @@ type Variant interface {
 	WriteString(w *offsetWriter, x string) error
 }
 
-// VarLittleEndian is the variable sized integer implementation of NBT. It is otherwise the same as the normal
-// little-endian NBT. The VarLittleEndian format limits the total bytes of NBT that may be read. If the limit
-// is hit, the reading operation will fail immediately.
-var VarLittleEndian varLittleEndian
+// NetworkLittleEndian is the variable sized integer implementation of NBT. It is otherwise the same as the
+// normal little endian NBT. The NetworkLittleEndian format limits the total bytes of NBT that may be read. If
+// the limit is hit, the reading operation will fail immediately.
+var NetworkLittleEndian networkLittleEndian
 
 // LittleEndian is the fixed size little endian implementation of NBT. It is the format typically used for
 // writing Minecraft (Bedrock Edition) world saves.
@@ -37,10 +37,10 @@ var LittleEndian littleEndian
 // used only on Minecraft Java Edition.
 var BigEndian bigEndian
 
-type varLittleEndian struct{}
+type networkLittleEndian struct{}
 
 // WriteInt16 ...
-func (e varLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
+func (e networkLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
 	if err := w.WriteByte(byte(x)); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
@@ -51,7 +51,7 @@ func (e varLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
 }
 
 // WriteInt32 ...
-func (e varLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
+func (e networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
 	ux := uint32(x) << 1
 	if x < 0 {
 		ux = ^ux
@@ -69,7 +69,7 @@ func (e varLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
 }
 
 // WriteInt64 ...
-func (e varLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
+func (e networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 	ux := uint64(x) << 1
 	if x < 0 {
 		ux = ^ux
@@ -87,7 +87,7 @@ func (e varLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 }
 
 // WriteFloat32 ...
-func (e varLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
+func (e networkLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	bits := math.Float32bits(x)
 	if err := w.WriteByte(byte(bits)); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
@@ -105,7 +105,7 @@ func (e varLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 }
 
 // WriteFloat64 ...
-func (e varLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
+func (e networkLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	bits := math.Float64bits(x)
 	if err := w.WriteByte(byte(bits)); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
@@ -135,7 +135,7 @@ func (e varLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 }
 
 // WriteString ...
-func (e varLittleEndian) WriteString(w *offsetWriter, x string) error {
+func (e networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 	if len(x) > math.MaxInt16 {
 		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
 	}
@@ -157,7 +157,7 @@ func (e varLittleEndian) WriteString(w *offsetWriter, x string) error {
 }
 
 // Int16 ...
-func (varLittleEndian) Int16(r *offsetReader) (int16, error) {
+func (networkLittleEndian) Int16(r *offsetReader) (int16, error) {
 	b, err := consumeN(2, r)
 	if err != nil {
 		return 0, BufferOverrunError{Op: "Int16"}
@@ -166,7 +166,7 @@ func (varLittleEndian) Int16(r *offsetReader) (int16, error) {
 }
 
 // Int32 ...
-func (varLittleEndian) Int32(r *offsetReader) (int32, error) {
+func (networkLittleEndian) Int32(r *offsetReader) (int32, error) {
 	var ux uint32
 	for i := uint(0); i < 35; i += 7 {
 		b, err := r.ReadByte()
@@ -186,7 +186,7 @@ func (varLittleEndian) Int32(r *offsetReader) (int32, error) {
 }
 
 // Int64
-func (varLittleEndian) Int64(r *offsetReader) (int64, error) {
+func (networkLittleEndian) Int64(r *offsetReader) (int64, error) {
 	var ux uint64
 	for i := uint(0); i < 70; i += 7 {
 		b, err := r.ReadByte()
@@ -206,7 +206,7 @@ func (varLittleEndian) Int64(r *offsetReader) (int64, error) {
 }
 
 // Float32 ...
-func (varLittleEndian) Float32(r *offsetReader) (float32, error) {
+func (networkLittleEndian) Float32(r *offsetReader) (float32, error) {
 	b, err := consumeN(4, r)
 	if err != nil {
 		return 0, BufferOverrunError{Op: "Float32"}
@@ -215,7 +215,7 @@ func (varLittleEndian) Float32(r *offsetReader) (float32, error) {
 }
 
 // Float64 ...
-func (varLittleEndian) Float64(r *offsetReader) (float64, error) {
+func (networkLittleEndian) Float64(r *offsetReader) (float64, error) {
 	b, err := consumeN(8, r)
 	if err != nil {
 		return 0, BufferOverrunError{Op: "Float64"}
@@ -225,7 +225,7 @@ func (varLittleEndian) Float64(r *offsetReader) (float64, error) {
 }
 
 // String ...
-func (e varLittleEndian) String(r *offsetReader) (string, error) {
+func (e networkLittleEndian) String(r *offsetReader) (string, error) {
 	var length uint32
 	for i := uint(0); i < 35; i += 7 {
 		b, err := r.ReadByte()

@@ -33,16 +33,16 @@ func RequestMinecraftChain(token *XSTSToken, key *ecdsa.PrivateKey) (string, err
 	request.Header.Set("User-Agent", "MCPE/UWP")
 	request.Header.Set("Client-Version", protocol.CurrentVersion)
 
-	resp, err := (&http.Client{}).Do(request)
+	c := &http.Client{}
+	resp, err := c.Do(request)
 	if err != nil {
 		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, err)
 	}
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, resp.Status)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
 	data, err = ioutil.ReadAll(resp.Body)
+	_ = resp.Body.Close()
+	c.CloseIdleConnections()
 	return string(data), err
 }

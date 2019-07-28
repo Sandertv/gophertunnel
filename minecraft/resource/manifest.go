@@ -18,6 +18,9 @@ type Manifest struct {
 	// Capabilities are the different features that the pack makes use of that aren't necessarily enabled by
 	// default. For a list of options, see below.
 	Capabilities []Capability `json:"capabilities,omitempty"`
+
+	// worldTemplate holds a value indicating if the pack holds an entire world template or not.
+	worldTemplate bool
 }
 
 // Header is the header of a resource pack. It contains information that applies to the entire resource pack,

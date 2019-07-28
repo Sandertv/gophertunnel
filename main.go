@@ -90,28 +90,26 @@ func main() {
 		go func() {
 			defer s.Close()
 			defer conn.Close()
+			defer serverConn.Close()
 			for {
 				pk, err := conn.ReadPacket()
 				if err != nil {
-					serverConn.Close()
 					return
 				}
 				if err := serverConn.WritePacket(pk); err != nil {
-					serverConn.Close()
 					return
 				}
 			}
 		}()
 		go func() {
 			defer serverConn.Close()
+			defer conn.Close()
 			for {
 				pk, err := serverConn.ReadPacket()
 				if err != nil {
-					conn.Close()
 					return
 				}
 				if err := conn.WritePacket(pk); err != nil {
-					conn.Close()
 					return
 				}
 			}

@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 )
 
-// EntityPickRequest is sent by the client when it tries to pick an entity, so that it gets a spawn egg which
+// ActorPickRequest is sent by the client when it tries to pick an entity, so that it gets a spawn egg which
 // can spawn that entity.
-type EntityPickRequest struct {
+type ActorPickRequest struct {
 	// EntityUniqueID is the unique ID of the entity that was attempted to be picked. The server must find the
 	// type of that entity and provide the correct spawn egg to the player.
 	EntityUniqueID int64
@@ -17,18 +17,18 @@ type EntityPickRequest struct {
 }
 
 // ID ...
-func (*EntityPickRequest) ID() uint32 {
-	return IDEntityPickRequest
+func (*ActorPickRequest) ID() uint32 {
+	return IDActorPickRequest
 }
 
 // Marshal ...
-func (pk *EntityPickRequest) Marshal(buf *bytes.Buffer) {
+func (pk *ActorPickRequest) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.EntityUniqueID)
 	_ = binary.Write(buf, binary.LittleEndian, pk.HotBarSlot)
 }
 
 // Unmarshal ...
-func (pk *EntityPickRequest) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ActorPickRequest) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		binary.Read(buf, binary.LittleEndian, &pk.EntityUniqueID),
 		binary.Read(buf, binary.LittleEndian, &pk.HotBarSlot),
