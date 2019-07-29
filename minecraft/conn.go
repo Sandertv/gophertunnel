@@ -640,7 +640,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 	case packet.PackResponseCompleted:
 		data := conn.gameData
 		_ = conn.WritePacket(&packet.StartGame{
-			EntityUniqueID:           int64(data.EntityRuntimeID),
+			EntityUniqueID:           data.EntityUniqueID,
 			EntityRuntimeID:          data.EntityRuntimeID,
 			PlayerGameMode:           data.PlayerGameMode,
 			PlayerPosition:           data.PlayerPosition,
@@ -811,6 +811,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
 		EntityRuntimeID: pk.EntityRuntimeID,
+		EntityUniqueID:  pk.EntityUniqueID,
 		PlayerGameMode:  pk.PlayerGameMode,
 		Pitch:           pk.Pitch,
 		Yaw:             pk.Yaw,

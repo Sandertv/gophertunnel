@@ -8,6 +8,9 @@ import (
 // GameData is a loose wrapper around a part of the data found in the StartGame packet. It holds data sent
 // specifically at the start of the game, such as the position of the player, the game mode, etc.
 type GameData struct {
+	// EntityUniqueID is the unique ID of the player. The unique ID is unique for the entire world and is
+	// often used in packets. Most servers send an EntityUniqueID equal to the EntityRuntimeID.
+	EntityUniqueID int64
 	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
