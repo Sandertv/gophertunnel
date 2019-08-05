@@ -1,6 +1,7 @@
 package minecraft
 
 import (
+	"fmt"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"io/ioutil"
@@ -70,8 +71,15 @@ func Listen(network, address string) (*Listener, error) {
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
 // packets. It is recommended to cast the net.Conn returned to a *minecraft.Conn so that it is possible to
 // use the conn.ReadPacket() and conn.WritePacket() methods.
+// Accept returns an error if the listener is closed.
 func (listener *Listener) Accept() (net.Conn, error) {
-	return <-listener.incoming, nil
+	select {
+	case conn := <-listener.incoming:
+		return conn, nil
+	case <-listener.close:
+		listener.close <- true
+		return nil, fmt.Errorf("accept: listener closed")
+	}
 }
 
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
