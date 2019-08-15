@@ -19,7 +19,7 @@ const liveTokenURL = `https://login.live.com/oauth20_token.srf`
 // requestURL is the first URL that a GET request is made to in order to authenticate to Live.
 const requestURL = `https://login.live.com/oauth20_authorize.srf?client_id=00000000441cc96b&redirect_uri=https://login.live.com/oauth20_desktop.srf&response_type=token&display=touch&scope=service::user.auth.xboxlive.com::MBI_SSL&locale=en`
 
-// The flowToken seems like to have a fixed lenght
+// The flowToken seems like to have a fixed length
 const flowTokenLen = 216
 
 // RequestLiveToken does a login request for Microsoft Live using the login and password passed. If
