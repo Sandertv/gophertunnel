@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
-	"encoding/xml"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -19,6 +18,9 @@ const liveTokenURL = `https://login.live.com/oauth20_token.srf`
 
 // requestURL is the first URL that a GET request is made to in order to authenticate to Live.
 const requestURL = `https://login.live.com/oauth20_authorize.srf?client_id=00000000441cc96b&redirect_uri=https://login.live.com/oauth20_desktop.srf&response_type=token&display=touch&scope=service::user.auth.xboxlive.com::MBI_SSL&locale=en`
+
+// The flowToken seems like to have a fixed lenght
+const flowTokenLen = 216
 
 // RequestLiveToken does a login request for Microsoft Live using the login and password passed. If
 // successful, a token containing the access token, refresh token, expiry and user ID is returned.
@@ -36,29 +38,41 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 	_ = resp.Body.Close()
 	// We're looking for a JavaScript object (not JSON) that holds data on the next URL that we need to
 	// send a request to in order to be continue the authentication.
-	index := bytes.Index(body, []byte("var ServerData = "))
-	offset := len("var ServerData = ")
-	obj := parseJSObject(body[index+offset:])
-
-	// m is a container of the flowtoken. It is in an XML attribute, so we first unmarshal it in this
-	// container struct.
-	m := struct {
-		Value string `xml:"value,attr"`
-	}{}
-	if err := xml.Unmarshal([]byte(obj["sFTTag"]), &m); err != nil {
-		return nil, fmt.Errorf("error decoding flowtoken XML container: %v", err)
+	sFTTagIndex := bytes.Index(body, []byte("sFTTag:"))
+	if sFTTagIndex == -1 {
+		return nil, fmt.Errorf("sFTTag not found in response body")
 	}
-
-	flowToken := m.Value
-
-	var credentialTypeURL, uaid string
-	for _, value := range obj {
-		// The field that holds the GetCredentialType URL differs each time, so we need to loop through all
-		// fields and find the one that holds it.
-		if strings.HasPrefix(value, "https://login.live.com/GetCredentialType.srf") {
-			credentialTypeURL = value
-		}
+	valueIndex := bytes.Index(body[sFTTagIndex:], []byte("value=\""))
+	if valueIndex == -1 {
+		return nil, fmt.Errorf("sFTTag value not found in response body")
 	}
+	valueIndex += sFTTagIndex + 7
+	flowToken := string(body[valueIndex : valueIndex+flowTokenLen])
+
+	credentialTypeURLPrefixIndex := bytes.Index(body, []byte("https://login.live.com/GetCredentialType.srf"))
+	if credentialTypeURLPrefixIndex == -1 {
+		return nil, fmt.Errorf("credentialTypeURL prefix not found in response body")
+	}
+	endIndex := bytes.Index(body[credentialTypeURLPrefixIndex:], []byte("',"))
+	if endIndex == -1 {
+		return nil, fmt.Errorf("credentialTypeURL end not found")
+	}
+	endIndex += credentialTypeURLPrefixIndex
+	credentialTypeURL := string(body[credentialTypeURLPrefixIndex:endIndex])
+
+	urlPostIndex := bytes.Index(body, []byte("urlPost:'"))
+	if urlPostIndex == -1 {
+		return nil, fmt.Errorf("urlPost not found in response body")
+	}
+	urlPostIndex += 9
+	endIndex = bytes.Index(body[urlPostIndex:], []byte("',"))
+	if endIndex == -1 {
+		return nil, fmt.Errorf("urlPost end not found")
+	}
+	endIndex += urlPostIndex
+	urlPost := string(body[urlPostIndex:endIndex])
+
+	var uaid string
 	for _, cookie := range resp.Cookies() {
 		// We need the uaid for the next request we send, so we look through the cookies of the last response
 		// and search the cookie that holds the uaid.
@@ -102,13 +116,13 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 		"NewUser":      []string{"1"},
 		"LoginOptions": []string{"1"},
 	}
-	request, _ = http.NewRequest("POST", obj["urlPost"], strings.NewReader(postData.Encode()))
+	request, _ = http.NewRequest("POST", urlPost, strings.NewReader(postData.Encode()))
 	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	transferCookies(request, resp)
 
 	resp, err = c.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("POST %v: %v", obj["urlPost"], err)
+		return nil, fmt.Errorf("POST %v: %v", urlPost, err)
 	}
 	_ = resp.Body.Close()
 	location, err := resp.Location()
