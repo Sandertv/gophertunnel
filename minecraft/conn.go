@@ -567,6 +567,11 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		})
 	}
 	conn.expect(packet.IDResourcePackStack)
+
+	// TODO: Add a field to modify this. For now, we set this to false at all times.
+	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: false}); err != nil {
+		return fmt.Errorf("error sending client cache status: %v", err)
+	}
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 }
 
