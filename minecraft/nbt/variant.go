@@ -40,7 +40,7 @@ var BigEndian bigEndian
 type networkLittleEndian struct{}
 
 // WriteInt16 ...
-func (e networkLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
+func (networkLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
 	if err := w.WriteByte(byte(x)); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
@@ -51,7 +51,7 @@ func (e networkLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
 }
 
 // WriteInt32 ...
-func (e networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
+func (networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
 	ux := uint32(x) << 1
 	if x < 0 {
 		ux = ^ux
@@ -69,7 +69,7 @@ func (e networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
 }
 
 // WriteInt64 ...
-func (e networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
+func (networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 	ux := uint64(x) << 1
 	if x < 0 {
 		ux = ^ux
@@ -87,7 +87,7 @@ func (e networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 }
 
 // WriteFloat32 ...
-func (e networkLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
+func (networkLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	bits := math.Float32bits(x)
 	if err := w.WriteByte(byte(bits)); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
@@ -105,7 +105,7 @@ func (e networkLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 }
 
 // WriteFloat64 ...
-func (e networkLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
+func (networkLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	bits := math.Float64bits(x)
 	if err := w.WriteByte(byte(bits)); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
@@ -135,7 +135,7 @@ func (e networkLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 }
 
 // WriteString ...
-func (e networkLittleEndian) WriteString(w *offsetWriter, x string) error {
+func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 	if len(x) > math.MaxInt16 {
 		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
 	}
