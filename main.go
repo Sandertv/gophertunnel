@@ -89,7 +89,7 @@ func main() {
 
 		go func() {
 			defer s.Close()
-			defer conn.Close()
+			defer listener.Disconnect(conn, "connection lost")
 			defer serverConn.Close()
 			for {
 				pk, err := conn.ReadPacket()
@@ -103,7 +103,7 @@ func main() {
 		}()
 		go func() {
 			defer serverConn.Close()
-			defer conn.Close()
+			defer listener.Disconnect(conn, "connection lost")
 			for {
 				pk, err := serverConn.ReadPacket()
 				if err != nil {
