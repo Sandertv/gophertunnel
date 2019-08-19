@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync/atomic"
 )
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -48,16 +49,16 @@ type Listener struct {
 
 	listener net.Listener
 
-	hijackingPong bool
+	hijackingPong atomic.Value
 	incoming      chan *Conn
 	close         chan bool
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
-// "unixpacket" or "raknet". A Listener is returned which may be used to accept connections.
+// "unixpacket" or "raknet".
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
-func Listen(network, address string) (*Listener, error) {
+func (listener *Listener) Listen(network, address string) error {
 	var netListener net.Listener
 	var err error
 	switch network {
@@ -75,20 +76,35 @@ func Listen(network, address string) (*Listener, error) {
 		netListener, err = net.Listen(network, address)
 	}
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	listener := &Listener{
-		ErrorLog:   log.New(os.Stderr, "", log.LstdFlags),
-		ServerName: "Minecraft Server",
-		listener:   netListener,
-		close:      make(chan bool, 2),
-		incoming:   make(chan *Conn),
+	if listener.ErrorLog == nil {
+		listener.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
+	if listener.ServerName == "" {
+		listener.ServerName = "Minecraft Server"
+	}
+	listener.listener = netListener
+	listener.close = make(chan bool, 2)
+	listener.incoming = make(chan *Conn)
+	listener.hijackingPong.Store(false)
 
 	// Actually start listening.
 	go listener.listen()
-	return listener, nil
+	return nil
+}
+
+// Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
+// "unixpacket" or "raknet". A Listener is returned which may be used to accept connections.
+// If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
+// available unicast and anycast IP addresses of the local system.
+// Listen has the default values for the fields of Listener filled out. To use different values for these
+// fields, call &Listener{}.Listen() instead.
+func Listen(network, address string) (*Listener, error) {
+	l := &Listener{}
+	err := l.Listen(network, address)
+	return l, err
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
@@ -123,7 +139,7 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 // Calling HijackPong means that any current and future pong data set using listener.PongData is overwritten
 // each update.
 func (listener *Listener) HijackPong(address string) error {
-	listener.hijackingPong = true
+	listener.hijackingPong.Store(true)
 	return listener.listener.(*raknet.Listener).HijackPong(address)
 }
 
@@ -141,7 +157,7 @@ func (listener *Listener) Close() error {
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
-	if listener.hijackingPong {
+	if listener.hijackingPong.Load().(bool) {
 		return
 	}
 	maxCount := listener.MaximumPlayers

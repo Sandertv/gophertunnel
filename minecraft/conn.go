@@ -22,6 +22,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -64,14 +65,14 @@ type Conn struct {
 	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
 	// the world: It is completing a sequence that will result in the spawning.
 	spawn           chan bool
-	waitingForSpawn bool
+	waitingForSpawn atomic.Value
 
 	// onlyLogin specifies if the connection should only handle the login and stop handling packets after it
 	// it is completed.
 	onlyLogin bool
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
-	expectedIDs []uint32
+	expectedIDs atomic.Value
 
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -100,20 +101,19 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
 	conn := &Conn{
-		conn:    netConn,
-		encoder: packet.NewEncoder(netConn),
-		decoder: packet.NewDecoder(netConn),
-		pool:    packet.NewPool(),
-		packets: make(chan []byte, 32),
-		close:   make(chan bool, 2),
-		spawn:   make(chan bool),
-		// By default we set this to the login packet, but a client will have to set the play status packet's
-		// ID as the first expected one.
-		expectedIDs: []uint32{packet.IDLogin},
-		privateKey:  key,
-		salt:        make([]byte, 16),
-		log:         log,
+		conn:       netConn,
+		encoder:    packet.NewEncoder(netConn),
+		decoder:    packet.NewDecoder(netConn),
+		pool:       packet.NewPool(),
+		packets:    make(chan []byte, 32),
+		close:      make(chan bool, 2),
+		spawn:      make(chan bool),
+		privateKey: key,
+		salt:       make([]byte, 16),
+		log:        log,
 	}
+	conn.waitingForSpawn.Store(false)
+	conn.expectedIDs.Store([]uint32{packet.IDLogin})
 	_, _ = rand.Read(conn.salt)
 
 	go func() {
@@ -167,7 +167,7 @@ func (conn *Conn) StartGame(data GameData) error {
 		data.WorldName = conn.gameData.WorldName
 	}
 	conn.gameData = data
-	conn.waitingForSpawn = true
+	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
 	timeout := time.After(time.Second * 10)
@@ -191,7 +191,7 @@ func (conn *Conn) DoSpawn() error {
 	if conn.onlyLogin {
 		panic("cannot do spawn for minecraft.Conn with OnlyLogin")
 	}
-	conn.waitingForSpawn = true
+	conn.waitingForSpawn.Store(true)
 
 	timeout := time.After(time.Second * 10)
 	select {
@@ -403,13 +403,13 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		return nil
 	}
 
-	if !conn.loggedIn || conn.waitingForSpawn {
+	if !conn.loggedIn || conn.waitingForSpawn.Load().(bool) {
 		pk, err := conn.ReadPacket()
 		if err != nil {
 			return err
 		}
 		found := false
-		for _, id := range conn.expectedIDs {
+		for _, id := range conn.expectedIDs.Load().([]uint32) {
 			if id == pk.ID() || pk.ID() == packet.IDDisconnect {
 				// If the packet was expected, we set found to true and handle it. If not, we skip it and
 				// ignore it eventually.
@@ -936,7 +936,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
 	conn.spawn <- true
-	conn.waitingForSpawn = false
+	conn.waitingForSpawn.Store(false)
 	return nil
 }
 
@@ -960,7 +960,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
 		conn.spawn <- true
-		conn.waitingForSpawn = false
+		conn.waitingForSpawn.Store(false)
 		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()
@@ -1021,5 +1021,5 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 
 // expect sets the packet IDs that are next expected to arrive.
 func (conn *Conn) expect(packetIDs ...uint32) {
-	conn.expectedIDs = packetIDs
+	conn.expectedIDs.Store(packetIDs)
 }
