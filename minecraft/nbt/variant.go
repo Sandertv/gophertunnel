@@ -613,7 +613,7 @@ func (bigEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	stringLength := int(uint16(b[0]<<8) | uint16(b[1]))
+	stringLength := int(uint16(b[0])<<8 | uint16(b[1]))
 	data, err := consumeN(stringLength, r)
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
