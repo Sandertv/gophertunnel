@@ -8,6 +8,12 @@ import (
 // GameData is a loose wrapper around a part of the data found in the StartGame packet. It holds data sent
 // specifically at the start of the game, such as the position of the player, the game mode, etc.
 type GameData struct {
+	// WorldName is the name of the world that the player spawns in. This name will be displayed at the top of
+	// the player list when opening the in-game menu. It may contain colour codes and does not have to be an
+	// actual world name, but instead, can be the server name.
+	// If WorldName is left empty, the name of the Listener will be used to show above the player list
+	// in-game.
+	WorldName string
 	// EntityUniqueID is the unique ID of the player. The unique ID is unique for the entire world and is
 	// often used in packets. Most servers send an EntityUniqueID equal to the EntityRuntimeID.
 	EntityUniqueID int64

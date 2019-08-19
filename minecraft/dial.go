@@ -57,11 +57,10 @@ type Dialer struct {
 	// ResourcePackInfo packet.
 	OnlyLogin bool
 
-	// InitialChunkRadius is the initial requested chunk radius of the connection. The client will obtain this
-	// chunk radius or lower, if the server decides it to be. The chunk radius may be changed at any point
-	// during the game later on.
-	// If InitialChunkRadius is left 0, a default chunk radius of 8 is set.
-	InitialChunkRadius int
+	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
+	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
+	// transmitted every time, resulting in less network transmission.
+	EnableClientCache bool
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
@@ -92,9 +91,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	if dialer.ErrorLog == nil {
 		dialer.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
-	if dialer.InitialChunkRadius == 0 {
-		dialer.InitialChunkRadius = 8
-	}
 	var netConn net.Conn
 
 	switch network {
@@ -113,8 +109,8 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.clientData = defaultClientData(address)
 	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
-	conn.initialChunkRadius = int32(dialer.InitialChunkRadius)
 	conn.onlyLogin = dialer.OnlyLogin
+	conn.cacheEnabled = dialer.EnableClientCache
 
 	var emptyClientData login.ClientData
 	if dialer.ClientData != emptyClientData {
@@ -128,7 +124,8 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 
-	go listenConn(conn, dialer.ErrorLog)
+	c := make(chan struct{})
+	go listenConn(conn, dialer.ErrorLog, c)
 
 	request := login.Encode(chainData, conn.clientData, key)
 	identityData, _, _ := login.Decode(request)
@@ -140,7 +137,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		return nil, err
 	}
 	select {
-	case <-conn.connected:
+	case <-c:
 		// We've connected successfully. We return the connection and no error.
 		return conn, nil
 	case <-conn.close:
@@ -150,8 +147,9 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	}
 }
 
-// listenConn listens on the connection until it is closed on another goroutine.
-func listenConn(conn *Conn, logger *log.Logger) {
+// listenConn listens on the connection until it is closed on another goroutine. The channel passed will
+// receive a value once the connection is logged in.
+func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 	defer func() {
 		_ = conn.Close()
 	}()
@@ -166,9 +164,15 @@ func listenConn(conn *Conn, logger *log.Logger) {
 			return
 		}
 		for _, data := range packets {
+			loggedInBefore := conn.loggedIn
 			if err := conn.handleIncoming(data); err != nil {
 				logger.Printf("error: %v", err)
 				return
+			}
+			if !loggedInBefore && conn.loggedIn {
+				// This is the signal that the connection was considered logged in, so we put a value in the
+				// channel so that it may be detected.
+				c <- struct{}{}
 			}
 		}
 	}

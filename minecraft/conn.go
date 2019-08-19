@@ -25,6 +25,8 @@ import (
 	"time"
 )
 
+const defaultChunkRadius = 16
+
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
 type Conn struct {
@@ -38,8 +40,6 @@ type Conn struct {
 	identityData login.IdentityData
 	clientData   login.ClientData
 	gameData     GameData
-
-	serverName string
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -61,6 +61,11 @@ type Conn struct {
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
+	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
+	// the world: It is completing a sequence that will result in the spawning.
+	spawn           chan bool
+	waitingForSpawn bool
+
 	// onlyLogin specifies if the connection should only handle the login and stop handling packets after it
 	// it is completed.
 	onlyLogin bool
@@ -76,16 +81,13 @@ type Conn struct {
 	texturePacksRequired bool
 	packQueue            *resourcePackQueue
 
+	cacheEnabled bool
+
 	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// initialChunkRadius is the initial chunk radius of the connection. It may be lower if the server has a
-	// lower maximum, and the chunk radius may be changed at any point during the game.
-	initialChunkRadius int32
-
-	connected chan bool
-	close     chan bool
+	close chan bool
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -98,13 +100,13 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
 	conn := &Conn{
-		conn:      netConn,
-		encoder:   packet.NewEncoder(netConn),
-		decoder:   packet.NewDecoder(netConn),
-		pool:      packet.NewPool(),
-		packets:   make(chan []byte, 32),
-		connected: make(chan bool),
-		close:     make(chan bool, 2),
+		conn:    netConn,
+		encoder: packet.NewEncoder(netConn),
+		decoder: packet.NewDecoder(netConn),
+		pool:    packet.NewPool(),
+		packets: make(chan []byte, 32),
+		close:   make(chan bool, 2),
+		spawn:   make(chan bool),
 		// By default we set this to the login packet, but a client will have to set the play status packet's
 		// ID as the first expected one.
 		expectedIDs: []uint32{packet.IDLogin},
@@ -151,6 +153,56 @@ func (conn *Conn) ClientData() login.ClientData {
 // is obtained from the server.
 func (conn *Conn) GameData() GameData {
 	return conn.gameData
+}
+
+// StartGame starts the game for a client that connected to the server. StartGame should be called for a Conn
+// obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
+// the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
+// If StartGame is called for an OnlyLogin connection, the method will panic.
+func (conn *Conn) StartGame(data GameData) error {
+	if conn.onlyLogin {
+		panic("cannot start game for minecraft.Conn with OnlyLogin")
+	}
+	if data.WorldName == "" {
+		data.WorldName = conn.gameData.WorldName
+	}
+	conn.gameData = data
+	conn.waitingForSpawn = true
+	conn.startGame()
+
+	timeout := time.After(time.Second * 10)
+	select {
+	case <-conn.spawn:
+		// Conn was spawned successfully.
+		return nil
+	case <-timeout:
+		return fmt.Errorf("start game spawning timeout")
+	case <-conn.close:
+		return fmt.Errorf("connection closed")
+	}
+}
+
+// DoSpawn starts the game for the client in the server. DoSpawn should be called for a Conn obtained using
+// minecraft.Dial(). Use Conn.StartGame to spawn a Conn obtained using a minecraft.Listener.
+// DoSpawn will start the spawning sequence using the game
+// data found in conn.GameData(), which was sent earlier by the server.
+// If DoSpawn is called for an OnlyLogin connection, the method will panic.
+func (conn *Conn) DoSpawn() error {
+	if conn.onlyLogin {
+		panic("cannot do spawn for minecraft.Conn with OnlyLogin")
+	}
+	conn.waitingForSpawn = true
+
+	timeout := time.After(time.Second * 10)
+	select {
+	case <-conn.spawn:
+		// Conn was spawned successfully.
+		return nil
+	case <-timeout:
+		return fmt.Errorf("start game spawning timeout")
+	case <-conn.close:
+		return fmt.Errorf("connection closed")
+	}
 }
 
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
@@ -334,6 +386,13 @@ func (conn *Conn) SimulatePacketLoss(lossChance float64) {
 	conn.conn.(*raknet.Conn).SimulatePacketLoss(lossChance)
 }
 
+// ClientCacheEnabled checks if the connection has the client blob cache enabled. If true, the server may send
+// blobs to the client to reduce network transmission, but if false, the client does not support it, and the
+// server must send chunks as usual.
+func (conn *Conn) ClientCacheEnabled() bool {
+	return conn.cacheEnabled
+}
+
 // handleIncoming handles an incoming serialised packet from the underlying connection. If the connection is
 // not yet logged in, the packet is immediately read and processed.
 func (conn *Conn) handleIncoming(data []byte) error {
@@ -344,7 +403,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		return nil
 	}
 
-	if !conn.loggedIn {
+	if !conn.loggedIn || conn.waitingForSpawn {
 		pk, err := conn.ReadPacket()
 		if err != nil {
 			return err
@@ -361,45 +420,54 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		if !found {
 			// This is not the packet we expected next in the login sequence. We just ignore it as it might
 			// be a packet such as a movement that was simply sent too early.
-			conn.log.Printf("unexpected packet %T%v: discarding the packet\n", pk, fmt.Sprintf("%+v", pk)[1:])
+			conn.log.Printf("unexpected packet %T%+v: discarding the packet\n", pk, fmt.Sprintf("%+v", pk)[1:])
 			return nil
 		}
-		switch pk := pk.(type) {
-		// Internal packets destined for the server.
-		case *packet.Login:
-			return conn.handleLogin(pk)
-		case *packet.ClientToServerHandshake:
-			return conn.handleClientToServerHandshake(pk)
-		case *packet.ResourcePackClientResponse:
-			return conn.handleResourcePackClientResponse(pk)
-		case *packet.ResourcePackChunkRequest:
-			return conn.handleResourcePackChunkRequest(pk)
-		case *packet.RequestChunkRadius:
-			return conn.handleRequestChunkRadius(pk)
-		case *packet.SetLocalPlayerAsInitialised:
-			return conn.handleSetLocalPlayerAsInitialised(pk)
+		return conn.handlePacket(pk)
+	}
+	return nil
+}
 
-		// Internal packets destined for the client.
-		case *packet.ServerToClientHandshake:
-			return conn.handleServerToClientHandshake(pk)
-		case *packet.PlayStatus:
-			return conn.handlePlayStatus(pk)
-		case *packet.ResourcePacksInfo:
-			return conn.handleResourcePacksInfo(pk)
-		case *packet.ResourcePackDataInfo:
-			return conn.handleResourcePackDataInfo(pk)
-		case *packet.ResourcePackChunkData:
-			return conn.handleResourcePackChunkData(pk)
-		case *packet.ResourcePackStack:
-			return conn.handleResourcePackStack(pk)
-		case *packet.StartGame:
-			return conn.handleStartGame(pk)
-		case *packet.ChunkRadiusUpdated:
-			return conn.handleChunkRadiusUpdated(pk)
-		case *packet.Disconnect:
-			_ = conn.Close()
-			return errors.New("Disconnected: " + pk.Message)
-		}
+// handlePacket handles an incoming packet. It returns an error if any of the data found in the packet was not
+// valid or if handling failed for any other reason.
+func (conn *Conn) handlePacket(pk packet.Packet) error {
+	switch pk := pk.(type) {
+	// Internal packets destined for the server.
+	case *packet.Login:
+		return conn.handleLogin(pk)
+	case *packet.ClientToServerHandshake:
+		return conn.handleClientToServerHandshake(pk)
+	case *packet.ClientCacheStatus:
+		return conn.handleClientCacheStatus(pk)
+	case *packet.ResourcePackClientResponse:
+		return conn.handleResourcePackClientResponse(pk)
+	case *packet.ResourcePackChunkRequest:
+		return conn.handleResourcePackChunkRequest(pk)
+	case *packet.RequestChunkRadius:
+		return conn.handleRequestChunkRadius(pk)
+	case *packet.SetLocalPlayerAsInitialised:
+		return conn.handleSetLocalPlayerAsInitialised(pk)
+
+	// Internal packets destined for the client.
+	case *packet.ServerToClientHandshake:
+		return conn.handleServerToClientHandshake(pk)
+	case *packet.PlayStatus:
+		return conn.handlePlayStatus(pk)
+	case *packet.ResourcePacksInfo:
+		return conn.handleResourcePacksInfo(pk)
+	case *packet.ResourcePackDataInfo:
+		return conn.handleResourcePackDataInfo(pk)
+	case *packet.ResourcePackChunkData:
+		return conn.handleResourcePackChunkData(pk)
+	case *packet.ResourcePackStack:
+		return conn.handleResourcePackStack(pk)
+	case *packet.StartGame:
+		return conn.handleStartGame(pk)
+	case *packet.ChunkRadiusUpdated:
+		return conn.handleChunkRadiusUpdated(pk)
+	case *packet.Disconnect:
+		_ = conn.Close()
+		return errors.New("Disconnected: " + pk.Message)
 	}
 	return nil
 }
@@ -457,7 +525,6 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 
 	if conn.onlyLogin {
 		// Only login, so we stop handling packets after that.
-		conn.connected <- true
 		conn.loggedIn = true
 		return nil
 	}
@@ -537,6 +604,13 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	return conn.WritePacket(&packet.ClientToServerHandshake{})
 }
 
+// handleClientCacheStatus handles a ClientCacheStatus packet sent by the client. It specifies if the client
+// has support for the client blob cache.
+func (conn *Conn) handleClientCacheStatus(pk *packet.ClientCacheStatus) error {
+	conn.cacheEnabled = pk.Enabled
+	return nil
+}
+
 // handleResourcePacksInfo handles a ResourcePacksInfo packet sent by the server. The client responds by
 // sending the packs it needs downloaded.
 func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
@@ -568,10 +642,6 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	}
 	conn.expect(packet.IDResourcePackStack)
 
-	// TODO: Add a field to modify this. For now, we set this to false at all times.
-	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: false}); err != nil {
-		return fmt.Errorf("error sending client cache status: %v", err)
-	}
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 }
 
@@ -591,6 +661,9 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 		}
 	}
 	conn.expect(packet.IDStartGame)
+	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
+		return fmt.Errorf("error sending client cache status: %v", err)
+	}
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 
@@ -643,34 +716,39 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			return fmt.Errorf("error writing resource pack stack packet: %v", err)
 		}
 	case packet.PackResponseCompleted:
-		data := conn.gameData
-		_ = conn.WritePacket(&packet.StartGame{
-			EntityUniqueID:           data.EntityUniqueID,
-			EntityRuntimeID:          data.EntityRuntimeID,
-			PlayerGameMode:           data.PlayerGameMode,
-			PlayerPosition:           data.PlayerPosition,
-			Pitch:                    data.Pitch,
-			Yaw:                      data.Yaw,
-			Dimension:                data.Dimension,
-			WorldSpawn:               data.WorldSpawn,
-			GameRules:                data.GameRules,
-			Time:                     data.Time,
-			Blocks:                   data.Blocks,
-			Items:                    data.Items,
-			AchievementsDisabled:     true,
-			Generator:                1,
-			EducationFeaturesEnabled: true,
-			MultiPlayerGame:          true,
-			MultiPlayerCorrelationID: uuid.Must(uuid.NewRandom()).String(),
-			CommandsEnabled:          true,
-			WorldName:                conn.serverName,
-			LANBroadcastEnabled:      true,
-		})
-		conn.expect(packet.IDRequestChunkRadius)
+		conn.loggedIn = true
 	default:
 		return fmt.Errorf("unknown resource pack client response: %v", pk.Response)
 	}
 	return nil
+}
+
+// startGame sends a StartGame packet using the game data of the connection.
+func (conn *Conn) startGame() {
+	data := conn.gameData
+	_ = conn.WritePacket(&packet.StartGame{
+		EntityUniqueID:           data.EntityUniqueID,
+		EntityRuntimeID:          data.EntityRuntimeID,
+		PlayerGameMode:           data.PlayerGameMode,
+		PlayerPosition:           data.PlayerPosition,
+		Pitch:                    data.Pitch,
+		Yaw:                      data.Yaw,
+		Dimension:                data.Dimension,
+		WorldSpawn:               data.WorldSpawn,
+		GameRules:                data.GameRules,
+		Time:                     data.Time,
+		Blocks:                   data.Blocks,
+		Items:                    data.Items,
+		AchievementsDisabled:     true,
+		Generator:                1,
+		EducationFeaturesEnabled: true,
+		MultiPlayerGame:          true,
+		MultiPlayerCorrelationID: uuid.Must(uuid.NewRandom()).String(),
+		CommandsEnabled:          true,
+		WorldName:                conn.gameData.WorldName,
+		LANBroadcastEnabled:      true,
+	})
+	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
 
 // nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info
@@ -815,9 +893,11 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
-		EntityRuntimeID: pk.EntityRuntimeID,
+		WorldName:       pk.WorldName,
 		EntityUniqueID:  pk.EntityUniqueID,
+		EntityRuntimeID: pk.EntityRuntimeID,
 		PlayerGameMode:  pk.PlayerGameMode,
+		PlayerPosition:  pk.PlayerPosition,
 		Pitch:           pk.Pitch,
 		Yaw:             pk.Yaw,
 		Dimension:       pk.Dimension,
@@ -827,30 +907,23 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Blocks:          pk.Blocks,
 		Items:           pk.Items,
 	}
-	conn.expect(packet.IDChunkRadiusUpdated)
-	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: conn.initialChunkRadius})
+	conn.loggedIn = true
+
+	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
+	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: defaultChunkRadius})
 }
 
 // handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
 // of the connection, and spawns the player.
 func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error {
-	if pk.ChunkRadius < conn.initialChunkRadius {
-		// Only adjust the initial chunk radius if it is lower than the maximum, which has been set to the
-		// initial chunk radius by the listener.
-		conn.initialChunkRadius = pk.ChunkRadius
-	}
 	conn.expect(packet.IDSetLocalPlayerAsInitialised)
-	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: conn.initialChunkRadius})
+	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: defaultChunkRadius})
 	return conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
 }
 
 // handleChunkRadiusUpdated handles an incoming ChunkRadiusUpdated packet, which updates the initial chunk
 // radius of the connection.
 func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error {
-	if pk.ChunkRadius < conn.initialChunkRadius {
-		// We only set this radius if the packet's chunk radius is lower than our requested one.
-		conn.initialChunkRadius = pk.ChunkRadius
-	}
 	conn.expect(packet.IDPlayStatus)
 	return nil
 }
@@ -862,7 +935,8 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
-	conn.loggedIn = true
+	conn.spawn <- true
+	conn.waitingForSpawn = false
 	return nil
 }
 
@@ -875,7 +949,6 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.expect(packet.IDResourcePacksInfo)
 		if conn.onlyLogin {
 			// Only login, so we stop handling packets after that.
-			conn.connected <- true
 			conn.loggedIn = true
 		}
 	case packet.PlayStatusLoginFailedClient:
@@ -886,8 +959,8 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
-		conn.connected <- true
-		conn.loggedIn = true
+		conn.spawn <- true
+		conn.waitingForSpawn = false
 		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()

@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
@@ -56,6 +57,22 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
+		var g sync.WaitGroup
+		g.Add(2)
+		go func() {
+			if err := conn.StartGame(serverConn.GameData()); err != nil {
+				panic(err)
+			}
+			g.Done()
+		}()
+		go func() {
+			if err := serverConn.DoSpawn(); err != nil {
+				panic(err)
+			}
+			g.Done()
+		}()
+		g.Wait()
+
 		s := script.New()
 		s.SetModule(script.NewModule("client").
 			Func("send", func(L *lua.LState) int {

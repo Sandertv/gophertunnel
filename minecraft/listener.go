@@ -28,15 +28,6 @@ type Listener struct {
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
-	// InitialGameData is the game data that joining players should obtain. Some of this information may not
-	// be changed over the course of the game, so they must be set correctly at the start.
-	// A function must be set which returns a new object each time.
-	InitialGameData func(conn *Conn) GameData
-
-	// MaximumChunkRadius is the maximum initial requested chunk radius of the connection. The client will
-	// obtain this initial chunk radius if it requests a radius higher than this.
-	// A default maximum chunk radius of 16 is set.
-	MaximumChunkRadius int
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -88,11 +79,7 @@ func Listen(network, address string) (*Listener, error) {
 	}
 
 	listener := &Listener{
-		ErrorLog:           log.New(os.Stderr, "", log.LstdFlags),
-		MaximumChunkRadius: 16,
-		InitialGameData: func(*Conn) GameData {
-			return GameData{}
-		},
+		ErrorLog:   log.New(os.Stderr, "", log.LstdFlags),
 		ServerName: "Minecraft Server",
 		listener:   netListener,
 		close:      make(chan bool, 2),
@@ -187,8 +174,7 @@ func (listener *Listener) listen() {
 		conn := newConn(netConn, nil, listener.ErrorLog)
 		conn.texturePacksRequired = listener.TexturePacksRequired
 		conn.resourcePacks = listener.ResourcePacks
-		conn.serverName = listener.ServerName
-		conn.initialChunkRadius = int32(listener.MaximumChunkRadius)
+		conn.gameData.WorldName = listener.ServerName
 		conn.onlyLogin = listener.OnlyLogin
 
 		if listener.playerCount == listener.MaximumPlayers && listener.MaximumPlayers != 0 {
@@ -199,8 +185,6 @@ func (listener *Listener) listen() {
 		}
 		listener.playerCount++
 		listener.updatePongData()
-
-		hasGameData := false
 
 		go func() {
 			defer func() {
@@ -230,12 +214,6 @@ func (listener *Listener) listen() {
 						// a call to Accept() can receive it.
 						listener.incoming <- conn
 					}
-				}
-				if !hasGameData {
-					// We wait with this until the Conn receives and handles its first packet. The Login packet
-					// contains information which may be relevant for the user to create game data for.
-					conn.gameData = listener.InitialGameData(conn)
-					hasGameData = true
 				}
 			}
 		}()
