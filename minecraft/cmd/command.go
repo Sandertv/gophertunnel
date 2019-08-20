@@ -14,6 +14,8 @@ import (
 // int8, int16, int32, int64, int, uint8, uint16, uint32, uint64, uint,
 // float32, float64, string, bool, mgl32.Vec3,
 // or a type that implements the cmd.Parameter or cmd.Enum interface.
+// Fields in the Runnable struct may have the `optional:""` struct tag to mark them as an optional parameter,
+// and the `suffix:"$suffix"` struct tag to add a suffix to the parameter in the usage.
 type Runnable interface {
 	// Run runs the Command, using the arguments passed to the Command. The source is passed to the method,
 	// which is the source of the execution of the Command, and the output is passed, to which messages may be
