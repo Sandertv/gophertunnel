@@ -188,16 +188,3 @@ func (p parser) vec3(line *Line, v reflect.Value) error {
 	}
 	return p.float(line, v.Index(2))
 }
-
-// optional checks if a struct field is considered optional.
-func optional(v reflect.StructField) bool {
-	if _, ok := v.Tag.Lookup("optional"); ok {
-		return true
-	}
-	return false
-}
-
-// suffix returns the suffix of the parameter as set in the struct field, if any.
-func suffix(v reflect.StructField) string {
-	return v.Tag.Get("suffix")
-}

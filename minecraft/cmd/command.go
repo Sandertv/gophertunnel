@@ -15,7 +15,8 @@ import (
 // float32, float64, string, bool, mgl32.Vec3,
 // or a type that implements the cmd.Parameter or cmd.Enum interface.
 // Fields in the Runnable struct may have the `optional:""` struct tag to mark them as an optional parameter,
-// and the `suffix:"$suffix"` struct tag to add a suffix to the parameter in the usage.
+// the `suffix:"$suffix"` struct tag to add a suffix to the parameter in the usage, and the `name:"name"` tag
+// to specify a name different than the field name for the parameter.
 type Runnable interface {
 	// Run runs the Command, using the arguments passed to the Command. The source is passed to the method,
 	// which is the source of the execution of the Command, and the output is passed, to which messages may be
@@ -174,11 +175,11 @@ func (cmd Command) executeRunnable(v reflect.Value, args string, source Source, 
 
 // parseUsage parses the usage of a command found in value v using the name passed. It accounts for optional
 // parameters and converts types to a more friendly representation.
-func parseUsage(name string, v reflect.Value) string {
+func parseUsage(commandName string, v reflect.Value) string {
 	command := v.Elem()
 
 	parts := make([]string, 0, command.NumField()+1)
-	parts = append(parts, "/"+name)
+	parts = append(parts, "/"+commandName)
 
 	for i := 0; i < command.NumField(); i++ {
 		field := command.Field(i)
@@ -191,10 +192,10 @@ func parseUsage(name string, v reflect.Value) string {
 		fieldType := command.Type().Field(i)
 		suffix := suffix(fieldType)
 		if optional(fieldType) {
-			parts = append(parts, "["+fieldType.Name+": "+typeName+"]"+suffix)
+			parts = append(parts, "["+name(fieldType)+": "+typeName+"]"+suffix)
 			continue
 		}
-		parts = append(parts, "<"+fieldType.Name+": "+typeName+">"+suffix)
+		parts = append(parts, "<"+name(fieldType)+": "+typeName+">"+suffix)
 	}
 	return strings.Join(parts, " ")
 }

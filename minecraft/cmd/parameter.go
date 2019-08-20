@@ -26,3 +26,24 @@ type Enum interface {
 	// obtained using Enum.Options().
 	SetOption(option string, v reflect.Value)
 }
+
+// optional checks if a struct field is considered optional.
+func optional(v reflect.StructField) bool {
+	if _, ok := v.Tag.Lookup("optional"); ok {
+		return true
+	}
+	return false
+}
+
+// suffix returns the suffix of the parameter as set in the struct field, if any.
+func suffix(v reflect.StructField) string {
+	return v.Tag.Get("suffix")
+}
+
+// name returns the name of the parameter as set in the struct tag if it exists, or the field's name if not.
+func name(v reflect.StructField) string {
+	if name, ok := v.Tag.Lookup("name"); ok {
+		return name
+	}
+	return v.Name
+}
