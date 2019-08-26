@@ -437,7 +437,7 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
+		resourcePack := protocol.ResourcePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
 		if pack.HasScripts() {
 			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
 			pk.HasScripts = true
@@ -605,7 +605,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 	case packet.PackResponseAllPacksDownloaded:
 		pk := &packet.ResourcePackStack{TexturePackRequired: conn.texturePacksRequired}
 		for _, pack := range conn.resourcePacks {
-			resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version()}
+			resourcePack := protocol.StackResourcePack{UUID: pack.UUID(), Version: pack.Version()}
 			// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
 			// list.
 			if pack.HasBehaviours() {

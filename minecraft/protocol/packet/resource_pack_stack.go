@@ -15,11 +15,11 @@ type ResourcePackStack struct {
 	TexturePackRequired bool
 	// BehaviourPack is a list of behaviour packs that the client needs to download before joining the server.
 	// All of these behaviour packs will be applied together, and the order does not necessarily matter.
-	BehaviourPacks []ResourcePack
+	BehaviourPacks []protocol.StackResourcePack
 	// TexturePacks is a list of texture packs that the client needs to download before joining the server.
 	// The order of these texture packs specifies the order that they are applied in on the client side. The
 	// first in the list will be applied first.
-	TexturePacks []ResourcePack
+	TexturePacks []protocol.StackResourcePack
 	// Experimental specifies if the resource packs in the stack are experimental. This is internal and should
 	// always be set to false.
 	Experimental bool
@@ -35,11 +35,11 @@ func (pk *ResourcePackStack) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.TexturePackRequired)
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.BehaviourPacks)))
 	for _, pack := range pk.BehaviourPacks {
-		writeResourcePackStackEntry(buf, pack)
+		_ = protocol.WriteStackPack(buf, pack)
 	}
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.TexturePacks)))
 	for _, pack := range pk.TexturePacks {
-		writeResourcePackStackEntry(buf, pack)
+		_ = protocol.WriteStackPack(buf, pack)
 	}
 	_ = binary.Write(buf, binary.LittleEndian, pk.Experimental)
 }
@@ -53,38 +53,20 @@ func (pk *ResourcePackStack) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
+	pk.BehaviourPacks = make([]protocol.StackResourcePack, length)
 	for i := uint32(0); i < length; i++ {
-		pack := &ResourcePack{}
-		if err := resourcePackStackEntry(buf, pack); err != nil {
+		if err := protocol.StackPack(buf, &pk.BehaviourPacks[i]); err != nil {
 			return err
 		}
-		pk.BehaviourPacks = append(pk.BehaviourPacks, *pack)
 	}
 	if err := protocol.Varuint32(buf, &length); err != nil {
 		return err
 	}
+	pk.TexturePacks = make([]protocol.StackResourcePack, length)
 	for i := uint32(0); i < length; i++ {
-		pack := &ResourcePack{}
-		if err := resourcePackStackEntry(buf, pack); err != nil {
+		if err := protocol.StackPack(buf, &pk.TexturePacks[i]); err != nil {
 			return err
 		}
-		pk.TexturePacks = append(pk.TexturePacks, *pack)
 	}
 	return binary.Read(buf, binary.LittleEndian, &pk.Experimental)
-}
-
-// writeResourcePackStackEntry writes a resource pack stack entry to the bytes.Buffer passed.
-func writeResourcePackStackEntry(buf *bytes.Buffer, pack ResourcePack) {
-	_ = protocol.WriteString(buf, pack.UUID)
-	_ = protocol.WriteString(buf, pack.Version)
-	_ = protocol.WriteString(buf, pack.SubPackName)
-}
-
-// resourcePackStackEntry reads a resource pack stack entry from the bytes.Buffer passed.
-func resourcePackStackEntry(buf *bytes.Buffer, pack *ResourcePack) error {
-	return chainErr(
-		protocol.String(buf, &pack.UUID),
-		protocol.String(buf, &pack.Version),
-		protocol.String(buf, &pack.SubPackName),
-	)
 }
