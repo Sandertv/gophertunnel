@@ -29,7 +29,6 @@ type Listener struct {
 	listener net.Listener
 
 	incoming chan *Conn
-	close    chan bool
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
@@ -60,7 +59,6 @@ func Listen(network, address string) (*Listener, error) {
 	listener := &Listener{
 		ErrorLog: log.New(os.Stderr, "", log.LstdFlags),
 		listener: netListener,
-		close:    make(chan bool, 2),
 		incoming: make(chan *Conn),
 	}
 
@@ -74,13 +72,11 @@ func Listen(network, address string) (*Listener, error) {
 // use the conn.ReadPacket() and conn.WritePacket() methods.
 // Accept returns an error if the listener is closed.
 func (listener *Listener) Accept() (net.Conn, error) {
-	select {
-	case conn := <-listener.incoming:
-		return conn, nil
-	case <-listener.close:
-		listener.close <- true
+	conn, ok := <-listener.incoming
+	if !ok {
 		return nil, fmt.Errorf("accept: listener closed")
 	}
+	return conn, nil
 }
 
 // Disconnect disconnects a Minecraft Conn passed by first sending a disconnect with the message passed, and
@@ -109,9 +105,9 @@ func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
 }
 
-// Close closes the listener and the underlying net.Listener.
+// Close closes the listener and the underlying net.Listener. Pending calls to Accept will fail immediately.
 func (listener *Listener) Close() error {
-	listener.close <- true
+	close(listener.incoming)
 	return listener.listener.Close()
 }
 
