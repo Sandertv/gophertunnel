@@ -51,8 +51,14 @@ type Conn struct {
 
 	// packets is a channel of byte slices containing serialised packets that are coming in from the other
 	// side of the connection.
-	packets      chan []byte
-	readDeadline <-chan time.Time
+	packets chan []byte
+
+	pushedBackPacketsLock sync.Mutex
+	// pushedBackPackets is a list of packets that were pushed back during the login sequence because they
+	// were not used by the connection yet. These packets are read the first when calling to Read or
+	// ReadPacket after being connected.
+	pushedBackPackets [][]byte
+	readDeadline      <-chan time.Time
 
 	sendMutex sync.Mutex
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
@@ -235,43 +241,41 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 read:
+	if data, ok := conn.takePushedBackPacket(); ok {
+		pk, err := conn.parsePacket(data)
+		if err != nil {
+			conn.log.Println(err)
+			goto read
+		}
+		return pk, nil
+	}
+	pk, tryNext, err := conn.readPacket()
+	if tryNext {
+		goto read
+	}
+	return pk, err
+}
+
+// readPacket reads a new packet from the Conn, depending on the packet ID that is found in front of the
+// packet data. If a read deadline is set, an error is returned if the deadline is reached before any packet
+// is received.
+//
+// If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
+// packet read.
+func (conn *Conn) readPacket() (pk packet.Packet, readNext bool, err error) {
 	select {
 	case data := <-conn.packets:
-		buf := bytes.NewBuffer(data)
-		header := &packet.Header{}
-		if err := header.Read(buf); err != nil {
-			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
-			// we return to reading a new packet.
-			conn.log.Printf("error reading packet header: %v", err)
-			goto read
+		pk, err := conn.parsePacket(data)
+		if err != nil {
+			conn.log.Println(err)
+			return nil, true, nil
 		}
-		if conn.packetFunc != nil {
-			// The packet func was set, so we call it.
-			conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
-		}
-		// Attempt to fetch the packet with the right packet ID from the pool.
-		pk, ok := conn.pool[header.PacketID]
-		if !ok {
-			// We haven't implemented this packet ID, so we return an unknown packet which could be used by
-			// the reader.
-			pk = &packet.Unknown{PacketID: header.PacketID}
-		}
-		if err := pk.Unmarshal(buf); err != nil {
-			// We don't return this as an error as it's not in the hand of the user to control this. Instead,
-			// we return to reading a new packet.
-			conn.log.Printf("error decoding packet %T: %v", pk, err)
-			goto read
-		}
-		if buf.Len() != 0 {
-			conn.log.Printf("%v unread bytes left in packet %T%v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], buf.Bytes(), data)
-		}
-		// Unmarshal the bytes into the packet and return the error.
-		return pk, nil
+		return pk, false, nil
 	case <-conn.readDeadline:
-		return nil, fmt.Errorf("error reading packet: read timeout")
+		return nil, false, fmt.Errorf("error reading packet: read timeout")
 	case <-conn.close:
 		conn.close <- true
-		return nil, fmt.Errorf("error reading packet: connection closed")
+		return nil, false, fmt.Errorf("error reading packet: connection closed")
 	}
 }
 
@@ -296,6 +300,12 @@ func (conn *Conn) Write(b []byte) (n int, err error) {
 // to carry the full packet.
 // It is recommended to use ReadPacket() rather than Read() in cases where reading is done directly.
 func (conn *Conn) Read(b []byte) (n int, err error) {
+	if data, ok := conn.takePushedBackPacket(); ok {
+		if len(b) < len(data) {
+			return 0, fmt.Errorf("error reading data: A message sent on a Minecraft socket was larger than the buffer used to receive the message into")
+		}
+		return copy(b, data), nil
+	}
 	select {
 	case data := <-conn.packets:
 		if len(b) < len(data) {
@@ -393,6 +403,53 @@ func (conn *Conn) ClientCacheEnabled() bool {
 	return conn.cacheEnabled
 }
 
+// parsePacket parses a packet from the data passed and returns it, if successful. If the packet could not be
+// parsed successfully, nil and an error is returned.
+func (conn *Conn) parsePacket(data []byte) (packet.Packet, error) {
+	buf := bytes.NewBuffer(data)
+	header := &packet.Header{}
+	if err := header.Read(buf); err != nil {
+		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+		// we return to reading a new packet.
+		return nil, fmt.Errorf("error reading packet header: %v", err)
+	}
+	if conn.packetFunc != nil {
+		// The packet func was set, so we call it.
+		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
+	}
+	// Attempt to fetch the packet with the right packet ID from the pool.
+	pk, ok := conn.pool[header.PacketID]
+	if !ok {
+		// We haven't implemented this packet ID, so we return an unknown packet which could be used by
+		// the reader.
+		pk = &packet.Unknown{PacketID: header.PacketID}
+	}
+	if err := pk.Unmarshal(buf); err != nil {
+		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
+		// we return to reading a new packet.
+		return nil, fmt.Errorf("error decoding packet %T: %v", pk, err)
+	}
+	if buf.Len() != 0 {
+		return nil, fmt.Errorf("%v unread bytes left in packet %T%v: 0x%x (full payload: 0x%x)", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], buf.Bytes(), data)
+	}
+	return pk, nil
+}
+
+// takePushedBackPacketLocked locks the pushed back packets lock and takes the next packet from the list of
+// pushed back packets. If none was found, it returns false, and if one was found, the data and true is
+// returned.
+func (conn *Conn) takePushedBackPacket() ([]byte, bool) {
+	conn.pushedBackPacketsLock.Lock()
+	defer conn.pushedBackPacketsLock.Unlock()
+	if len(conn.pushedBackPackets) == 0 {
+		return nil, false
+	}
+
+	data := conn.pushedBackPackets[0]
+	conn.pushedBackPackets = conn.pushedBackPackets[1:]
+	return data, true
+}
+
 // handleIncoming handles an incoming serialised packet from the underlying connection. If the connection is
 // not yet logged in, the packet is immediately read and processed.
 func (conn *Conn) handleIncoming(data []byte) error {
@@ -404,7 +461,12 @@ func (conn *Conn) handleIncoming(data []byte) error {
 	}
 
 	if !conn.loggedIn || conn.waitingForSpawn.Load().(bool) {
-		pk, err := conn.ReadPacket()
+		pk, tryNext, err := conn.readPacket()
+		if tryNext {
+			// Some non-critical error occurred that was already logged to the logger. We simply stop handling
+			// this packet.
+			return nil
+		}
 		if err != nil {
 			return err
 		}
@@ -418,9 +480,9 @@ func (conn *Conn) handleIncoming(data []byte) error {
 			}
 		}
 		if !found {
-			// This is not the packet we expected next in the login sequence. We just ignore it as it might
-			// be a packet such as a movement that was simply sent too early.
-			conn.log.Printf("unexpected packet %T%+v: discarding the packet\n", pk, fmt.Sprintf("%+v", pk)[1:])
+			// This is not the packet we expected next in the login sequence. We push it back so that it may
+			// be handled by the user.
+			conn.pushedBackPackets = append(conn.pushedBackPackets, data)
 			return nil
 		}
 		return conn.handlePacket(pk)
