@@ -7,6 +7,7 @@ import (
 	"go/ast"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 	"unicode/utf8"
 )
@@ -415,15 +416,10 @@ func (d *Decoder) populateFields(val reflect.Value, m map[string]reflect.Value) 
 			if tag == "-" {
 				continue
 			}
-			omitEmptyLen := len(",omitempty")
-			tagLen := len(tag)
-			if tagLen >= omitEmptyLen {
-				withoutOmitEmpty := tag[tagLen-omitEmptyLen:]
-				if withoutOmitEmpty == ",omitempty" {
-					tag = withoutOmitEmpty
-				}
+			tag = strings.TrimSuffix(tag, ",omitempty")
+			if tag != "" {
+				name = tag
 			}
-			name = tag
 		}
 		m[name] = field
 	}
