@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -24,43 +23,7 @@ type PlayerList struct {
 	ActionType byte
 	// Entries is a list of all player list entries that should be added/removed from the player list,
 	// depending on the ActionType set.
-	Entries []PlayerListEntry
-}
-
-// PlayerListEntry is an entry found in the PlayerList packet. It represents a single player using the UUID
-// found in the entry, and contains several properties such as the skin.
-type PlayerListEntry struct {
-	// UUID is the UUID of the player as sent in the Login packet when the client joined the server. It must
-	// match this UUID exactly for the correct XBOX Live icon to show up in the list.
-	UUID uuid.UUID
-	// EntityUniqueID is the unique entity ID of the player. This ID typically stays consistent during the
-	// lifetime of a world, but servers often send the runtime ID for this.
-	EntityUniqueID int64
-	// Username is the username that is shown in the player list of the player that obtains a PlayerList
-	// packet with this entry. It does not have to be the same as the actual username of the player.
-	Username string
-	// SkinID is a unique ID produced for the skin, for example 'c18e65aa-7b21-4637-9b63-8ad63622ef01_Alex'
-	// for the default Alex skin.
-	SkinID string
-	// SkinData is a byte slice of 64*32*4, 64*64*4 or 128*128*4 bytes. It is a RGBA ordered byte
-	// representation of the skin colours.
-	SkinData []byte
-	// CapeData is a byte slice of 64*32*4 bytes. It is a RGBA ordered byte representation of the cape
-	// colours, much like the SkinData.
-	CapeData []byte
-	// SkinGeometryName is the geometry name of the skin geometry above. This name must be equal to one of the
-	// outer names found in the SkinGeometry, so that the client can find the correct geometry data.
-	SkinGeometryName string
-	// SkinGeometry is a base64 JSON encoded structure of the geometry data of a skin, containing properties
-	// such as bones, uv, pivot etc.
-	SkinGeometry []byte
-	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
-	// logged in with the XBOX Live account.
-	XUID string
-	// PlatformChatID is an identifier only set for particular platforms when chatting (presumably only for
-	// Nintendo Switch). It is otherwise an empty string, and is used to decide which players are able to
-	// chat with each other.
-	PlatformChatID string
+	Entries []protocol.PlayerListEntry
 }
 
 // ID ...
@@ -75,18 +38,9 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 	for _, entry := range pk.Entries {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			_ = protocol.WriteUUID(buf, entry.UUID)
-			_ = protocol.WriteVarint64(buf, entry.EntityUniqueID)
-			_ = protocol.WriteString(buf, entry.Username)
-			_ = protocol.WriteString(buf, entry.SkinID)
-			_ = protocol.WriteByteSlice(buf, entry.SkinData)
-			_ = protocol.WriteByteSlice(buf, entry.CapeData)
-			_ = protocol.WriteString(buf, entry.SkinGeometryName)
-			_ = protocol.WriteByteSlice(buf, entry.SkinGeometry)
-			_ = protocol.WriteString(buf, entry.XUID)
-			_ = protocol.WriteString(buf, entry.PlatformChatID)
+			_ = protocol.WritePlayerAddEntry(buf, entry)
 		case PlayerListActionRemove:
-			_ = protocol.WriteUUID(buf, entry.UUID)
+			_ = protocol.WritePlayerRemoveEntry(buf, entry)
 		default:
 			panic(fmt.Sprintf("invalid player list action type %v", pk.ActionType))
 		}
@@ -102,26 +56,15 @@ func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
-	pk.Entries = make([]PlayerListEntry, count)
+	pk.Entries = make([]protocol.PlayerListEntry, count)
 	for i := uint32(0); i < count; i++ {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			if err := chainErr(
-				protocol.UUID(buf, &pk.Entries[i].UUID),
-				protocol.Varint64(buf, &pk.Entries[i].EntityUniqueID),
-				protocol.String(buf, &pk.Entries[i].Username),
-				protocol.String(buf, &pk.Entries[i].SkinID),
-				protocol.ByteSlice(buf, &pk.Entries[i].SkinData),
-				protocol.ByteSlice(buf, &pk.Entries[i].CapeData),
-				protocol.String(buf, &pk.Entries[i].SkinGeometryName),
-				protocol.ByteSlice(buf, &pk.Entries[i].SkinGeometry),
-				protocol.String(buf, &pk.Entries[i].XUID),
-				protocol.String(buf, &pk.Entries[i].PlatformChatID),
-			); err != nil {
+			if err := protocol.PlayerAddEntry(buf, &pk.Entries[i]); err != nil {
 				return err
 			}
 		case PlayerListActionRemove:
-			if err := protocol.UUID(buf, &pk.Entries[i].UUID); err != nil {
+			if err := protocol.PlayerRemoveEntry(buf, &pk.Entries[i]); err != nil {
 				return err
 			}
 		default:

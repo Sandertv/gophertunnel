@@ -154,7 +154,7 @@ func ParsePublicKey(b64Data string, key *ecdsa.PublicKey) error {
 }
 
 // MarshalPublicKey marshals an ECDSA public key to a base64 encoded binary representation.
-func MarshalPublicKey(key *ecdsa.PublicKey) (b64Data string, err error) {
+func MarshalPublicKey(key *ecdsa.PublicKey) string {
 	data, _ := x509.MarshalPKIXPublicKey(key)
-	return base64.RawStdEncoding.EncodeToString(data), nil
+	return base64.RawStdEncoding.EncodeToString(data)
 }

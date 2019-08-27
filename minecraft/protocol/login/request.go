@@ -121,7 +121,7 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 // client data token is signed using the private key passed. It must be the same as the one used to get the
 // login chain.
 func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
-	keyData, _ := jwt.MarshalPublicKey(&key.PublicKey)
+	keyData := jwt.MarshalPublicKey(&key.PublicKey)
 
 	// We first decode the login chain we actually got in a new request.
 	request := &request{}

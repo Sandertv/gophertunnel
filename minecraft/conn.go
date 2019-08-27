@@ -530,7 +530,7 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
+		resourcePack := protocol.ResourcePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
 		if pack.HasScripts() {
 			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
 			pk.HasScripts = true
@@ -703,7 +703,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 	case packet.PackResponseAllPacksDownloaded:
 		pk := &packet.ResourcePackStack{TexturePackRequired: conn.texturePacksRequired}
 		for _, pack := range conn.resourcePacks {
-			resourcePack := packet.ResourcePack{UUID: pack.UUID(), Version: pack.Version()}
+			resourcePack := protocol.StackResourcePack{UUID: pack.UUID(), Version: pack.Version()}
 			// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
 			// list.
 			if pack.HasBehaviours() {
@@ -983,10 +983,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 // enableEncryption enables encryption on the server side over the connection. It sends an unencrypted
 // handshake packet to the client and enables encryption after that.
 func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
-	pubKey, err := jwt.MarshalPublicKey(&conn.privateKey.PublicKey)
-	if err != nil {
-		return fmt.Errorf("error marshaling public key: %v", err)
-	}
+	pubKey := jwt.MarshalPublicKey(&conn.privateKey.PublicKey)
 	header := jwt.Header{
 		Algorithm: "ES384",
 		X5U:       pubKey,

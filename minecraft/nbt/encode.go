@@ -6,6 +6,7 @@ import (
 	"io"
 	"math"
 	"reflect"
+	"strings"
 	"sync"
 	"unicode/utf8"
 )
@@ -96,6 +97,9 @@ var bufferPool = sync.Pool{
 // with an NBT tag.
 func (e *Encoder) marshal(val reflect.Value, tagName string) error {
 	if val.Kind() == reflect.Interface {
+		val = val.Elem()
+	}
+	if val.Kind() == reflect.Ptr {
 		val = val.Elem()
 	}
 	tagType := tagFromType(val.Type())
@@ -243,40 +247,34 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 // the io.Writer of the encoder.
 func (e *Encoder) writeStructValues(val reflect.Value) error {
 	for i := 0; i < val.NumField(); i++ {
-		valType := val.Type().Field(i)
-		valValue := val.Field(i)
-		tag := valType.Tag.Get("nbt")
-		if valType.PkgPath != "" || tag == "-" {
+		fieldType := val.Type().Field(i)
+		fieldValue := val.Field(i)
+		tag := fieldType.Tag.Get("nbt")
+		if fieldType.PkgPath != "" || tag == "-" {
 			// Either the PkgPath was not empty, meaning we're dealing with an unexported field, or the
 			// tag was '-', meaning we should skip it.
 			continue
 		}
-		if valType.Anonymous {
+		if fieldType.Anonymous {
 			// The field was anonymous, so we write that in the same compound tag as this one.
-			if err := e.writeStructValues(valValue); err != nil {
+			if err := e.writeStructValues(fieldValue); err != nil {
 				return err
 			}
 			continue
 		}
-		tagName := valType.Name
-		if tag != "" {
-			omitEmptyLen := len(",omitempty")
-			tagLen := len(tag)
-			// Make sure the tag's length is at least as long as ',omitempty'
-			if tagLen >= omitEmptyLen {
-				omitEmpty := tag[tagLen-omitEmptyLen:]
-				if omitEmpty == ",omitempty" {
-					if reflect.DeepEqual(valValue, reflect.Zero(valValue.Type())) {
-						// The tag had the ',omitempty' tag, meaning it should be omitted if it has the zero
-						// value. If this is reached, that was the case, and we skip it.
-						continue
-					}
-					tag = tag[:tagLen-omitEmptyLen]
-				}
+		tagName := fieldType.Name
+		if strings.HasSuffix(tag, ",omitempty") {
+			tag = strings.TrimSuffix(tag, ",omitempty")
+			if reflect.DeepEqual(fieldValue.Interface(), reflect.Zero(fieldValue.Type()).Interface()) {
+				// The tag had the ',omitempty' tag, meaning it should be omitted if it has the zero
+				// value. If this is reached, that was the case, and we skip it.
+				continue
 			}
+		}
+		if tag != "" {
 			tagName = tag
 		}
-		if err := e.marshal(valValue, tagName); err != nil {
+		if err := e.marshal(fieldValue, tagName); err != nil {
 			return err
 		}
 	}

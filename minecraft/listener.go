@@ -50,8 +50,7 @@ type Listener struct {
 	listener net.Listener
 
 	hijackingPong atomic.Value
-	incoming      chan *Conn
-	close         chan bool
+	incoming chan *Conn
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
@@ -86,7 +85,6 @@ func (listener *Listener) Listen(network, address string) error {
 		listener.ServerName = "Minecraft Server"
 	}
 	listener.listener = netListener
-	listener.close = make(chan bool, 2)
 	listener.incoming = make(chan *Conn)
 	listener.hijackingPong.Store(false)
 
@@ -112,13 +110,11 @@ func Listen(network, address string) (*Listener, error) {
 // use the conn.ReadPacket() and conn.WritePacket() methods.
 // Accept returns an error if the listener is closed.
 func (listener *Listener) Accept() (net.Conn, error) {
-	select {
-	case conn := <-listener.incoming:
-		return conn, nil
-	case <-listener.close:
-		listener.close <- true
+	conn, ok := <-listener.incoming
+	if !ok {
 		return nil, fmt.Errorf("accept: listener closed")
 	}
+	return conn, nil
 }
 
 // Disconnect disconnects a Minecraft Conn passed by first sending a disconnect with the message passed, and
@@ -148,9 +144,9 @@ func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
 }
 
-// Close closes the listener and the underlying net.Listener.
+// Close closes the listener and the underlying net.Listener. Pending calls to Accept will fail immediately.
 func (listener *Listener) Close() error {
-	listener.close <- true
+	close(listener.incoming)
 	return listener.listener.Close()
 }
 
@@ -202,36 +198,40 @@ func (listener *Listener) listen() {
 		listener.playerCount++
 		listener.updatePongData()
 
-		go func() {
-			defer func() {
-				_ = conn.Close()
-				listener.playerCount--
-				listener.updatePongData()
-			}()
-			for {
-				// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
-				// and push them to the Conn so that they may be processed.
-				packets, err := conn.decoder.Decode()
-				if err != nil {
-					if !raknet.ErrConnectionClosed(err) {
-						listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
-					}
-					return
-				}
-				for _, data := range packets {
-					loggedInBefore := conn.loggedIn
-					if err := conn.handleIncoming(data); err != nil {
-						listener.ErrorLog.Printf("error: %v", err)
-						return
-					}
-					if !loggedInBefore && conn.loggedIn {
-						// The connection was previously not logged in, but was after receiving this packet,
-						// meaning the connection is fully completely now. We add it to the channel so that
-						// a call to Accept() can receive it.
-						listener.incoming <- conn
-					}
-				}
+		go listener.handleConn(conn)
+	}
+}
+
+// handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to
+// log in, after which it will expose packets received to the user.
+func (listener *Listener) handleConn(conn *Conn) {
+	defer func() {
+		_ = conn.Close()
+		listener.playerCount--
+		listener.updatePongData()
+	}()
+	for {
+		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
+		// and push them to the Conn so that they may be processed.
+		packets, err := conn.decoder.Decode()
+		if err != nil {
+			if !raknet.ErrConnectionClosed(err) {
+				listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
 			}
-		}()
+			return
+		}
+		for _, data := range packets {
+			loggedInBefore := conn.loggedIn
+			if err := conn.handleIncoming(data); err != nil {
+				listener.ErrorLog.Printf("error: %v", err)
+				return
+			}
+			if !loggedInBefore && conn.loggedIn {
+				// The connection was previously not logged in, but was after receiving this packet,
+				// meaning the connection is fully completely now. We add it to the channel so that
+				// a call to Accept() can receive it.
+				listener.incoming <- conn
+			}
+		}
 	}
 }
