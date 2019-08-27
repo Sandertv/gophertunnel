@@ -71,7 +71,7 @@ func (token *TokenPair) Refresh() error {
 		return fmt.Errorf("GET %v: %v", uri, resp.Status)
 	}
 	m := make(map[string]interface{})
-	_ = json.NewDecoder(resp.Body).Decode(m)
+	_ = json.NewDecoder(resp.Body).Decode(&m)
 
 	token.access = m["access_token"].(string)
 	token.refresh = m["refresh_token"].(string)
