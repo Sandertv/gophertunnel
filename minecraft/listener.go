@@ -132,34 +132,38 @@ func (listener *Listener) listen() {
 		conn.texturePacksRequired = listener.TexturePacksRequired
 		conn.resourcePacks = listener.ResourcePacks
 
-		go func() {
-			defer func() {
-				_ = conn.Close()
-			}()
-			for {
-				// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
-				// and push them to the Conn so that they may be processed.
-				packets, err := conn.decoder.Decode()
-				if err != nil {
-					if !raknet.ErrConnectionClosed(err) {
-						listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
-					}
-					return
-				}
-				for _, data := range packets {
-					loggedInBefore := conn.loggedIn
-					if err := conn.handleIncoming(data); err != nil {
-						listener.ErrorLog.Printf("error: %v", err)
-						return
-					}
-					if !loggedInBefore && conn.loggedIn {
-						// The connection was previously not logged in, but was after receiving this packet,
-						// meaning the connection is fully completely now. We add it to the channel so that
-						// a call to Accept() can receive it.
-						listener.incoming <- conn
-					}
-				}
+		go listener.handleConn(conn)
+	}
+}
+
+// handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to
+// log in, after which it will expose packets received to the user.
+func (listener *Listener) handleConn(conn *Conn) {
+	defer func() {
+		_ = conn.Close()
+	}()
+	for {
+		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
+		// and push them to the Conn so that they may be processed.
+		packets, err := conn.decoder.Decode()
+		if err != nil {
+			if !raknet.ErrConnectionClosed(err) {
+				listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
 			}
-		}()
+			return
+		}
+		for _, data := range packets {
+			loggedInBefore := conn.loggedIn
+			if err := conn.handleIncoming(data); err != nil {
+				listener.ErrorLog.Printf("error: %v", err)
+				return
+			}
+			if !loggedInBefore && conn.loggedIn {
+				// The connection was previously not logged in, but was after receiving this packet,
+				// meaning the connection is fully completely now. We add it to the channel so that
+				// a call to Accept() can receive it.
+				listener.incoming <- conn
+			}
+		}
 	}
 }
