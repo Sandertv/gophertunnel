@@ -97,7 +97,7 @@ type Conn struct {
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	if key == nil {
-		// If not key is passed, we generate one in this function and use it instead.
+		// If no key is passed, we generate one in this function and use it instead.
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
 	conn := &Conn{
