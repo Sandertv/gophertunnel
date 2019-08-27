@@ -802,10 +802,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 // enableEncryption enables encryption on the server side over the connection. It sends an unencrypted
 // handshake packet to the client and enables encryption after that.
 func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
-	pubKey, err := jwt.MarshalPublicKey(&conn.privateKey.PublicKey)
-	if err != nil {
-		return fmt.Errorf("error marshaling public key: %v", err)
-	}
+	pubKey := jwt.MarshalPublicKey(&conn.privateKey.PublicKey)
 	header := jwt.Header{
 		Algorithm: "ES384",
 		X5U:       pubKey,
