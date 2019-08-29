@@ -64,6 +64,8 @@ type Conn struct {
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
+	// wbuf is used to write packets to, without having to re-allocate for each extra byte written.
+	wbuf *bytes.Buffer
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
@@ -112,6 +114,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		decoder:    packet.NewDecoder(netConn),
 		pool:       packet.NewPool(),
 		packets:    make(chan []byte, 32),
+		wbuf:       bytes.NewBuffer(make([]byte, 0, 1024)),
 		close:      make(chan bool, 2),
 		spawn:      make(chan bool),
 		privateKey: key,
@@ -214,21 +217,23 @@ func (conn *Conn) DoSpawn() error {
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
 // next 20th of a second, after which the data is flushed and sent over the connection.
 func (conn *Conn) WritePacket(pk packet.Packet) error {
-	header := &packet.Header{PacketID: pk.ID()}
-	buffer := bytes.NewBuffer(make([]byte, 0, 5))
-	if err := header.Write(buffer); err != nil {
-		return fmt.Errorf("error writing packet header: %v", err)
-	}
-	// Record the length of the header so we can filter it out for the packet func.
-	headerLen := buffer.Len()
+	conn.sendMutex.Lock()
+	defer conn.sendMutex.Unlock()
 
-	pk.Marshal(buffer)
+	header := &packet.Header{PacketID: pk.ID()}
+	_ = header.Write(conn.wbuf)
+	// Record the length of the header so we can filter it out for the packet func.
+	headerLen := conn.wbuf.Len()
+
+	pk.Marshal(conn.wbuf)
 	if conn.packetFunc != nil {
 		// The packet func was set, so we call it.
-		conn.packetFunc(*header, buffer.Bytes()[headerLen:], conn.LocalAddr(), conn.RemoteAddr())
+		conn.packetFunc(*header, conn.wbuf.Bytes()[headerLen:], conn.LocalAddr(), conn.RemoteAddr())
 	}
-	_, err := conn.Write(buffer.Bytes())
-	return err
+	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), conn.wbuf.Bytes()...))
+
+	conn.wbuf.Reset()
+	return nil
 }
 
 // ReadPacket reads a packet from the Conn, depending on the packet ID that is found in front of the packet
