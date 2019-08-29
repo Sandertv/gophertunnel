@@ -45,12 +45,12 @@ type Listener struct {
 
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
-	playerCount int
+	playerCount *int32
 
 	listener net.Listener
 
 	hijackingPong atomic.Value
-	incoming chan *Conn
+	incoming      chan *Conn
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
@@ -77,6 +77,7 @@ func (listener *Listener) Listen(network, address string) error {
 	if err != nil {
 		return err
 	}
+	var count int32
 
 	if listener.ErrorLog == nil {
 		listener.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
@@ -87,6 +88,7 @@ func (listener *Listener) Listen(network, address string) error {
 	listener.listener = netListener
 	listener.incoming = make(chan *Conn)
 	listener.hijackingPong.Store(false)
+	listener.playerCount = &count
 
 	// Actually start listening.
 	go listener.listen()
@@ -156,11 +158,11 @@ func (listener *Listener) updatePongData() {
 	if listener.hijackingPong.Load().(bool) {
 		return
 	}
-	maxCount := listener.MaximumPlayers
+	maxCount := int32(listener.MaximumPlayers)
 	if maxCount == 0 {
 		// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
 		// plus 1, so that new players can always join.
-		maxCount = listener.playerCount + 1
+		maxCount = atomic.LoadInt32(listener.playerCount) + 1
 	}
 
 	rakListener := listener.listener.(*raknet.Listener)
@@ -189,13 +191,13 @@ func (listener *Listener) listen() {
 		conn.gameData.WorldName = listener.ServerName
 		conn.onlyLogin = listener.OnlyLogin
 
-		if listener.playerCount == listener.MaximumPlayers && listener.MaximumPlayers != 0 {
+		if atomic.LoadInt32(listener.playerCount) == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
 			// The server was full. We kick the player immediately and close the connection.
 			_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 			_ = conn.Close()
 			continue
 		}
-		listener.playerCount++
+		atomic.AddInt32(listener.playerCount, 1)
 		listener.updatePongData()
 
 		go listener.handleConn(conn)
@@ -207,7 +209,7 @@ func (listener *Listener) listen() {
 func (listener *Listener) handleConn(conn *Conn) {
 	defer func() {
 		_ = conn.Close()
-		listener.playerCount--
+		atomic.AddInt32(listener.playerCount, -1)
 		listener.updatePongData()
 	}()
 	for {
