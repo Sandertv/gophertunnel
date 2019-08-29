@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -149,31 +148,4 @@ func transferCookies(request *http.Request, previous *http.Response) {
 	for _, cookie := range previous.Cookies() {
 		request.AddCookie(cookie)
 	}
-}
-
-// parseJSObject is used to parse a javascript object from the data slice passed. It is used to parse data
-// found in the Server data object found in the first login request payload.
-func parseJSObject(data []byte) map[string]string {
-	buf := bytes.NewBuffer(data[1:])
-	reader := bufio.NewReader(buf)
-	m := make(map[string]string)
-	for {
-		if bytes.Index(buf.Bytes(), []byte{'}'}) < bytes.Index(buf.Bytes(), []byte{':'}) {
-			break
-		}
-		name, err := reader.ReadString(':')
-		if err != nil {
-			break
-		}
-		name = name[:len(name)-1]
-
-		value, err := reader.ReadString(',')
-		if err != nil {
-			break
-		}
-		// Remove the comma at the end of the value and trim the quotes away on the outsides of the value so
-		// that we obtain a clean string.
-		m[name] = strings.Trim(value[:len(value)-1], `'`)
-	}
-	return m
 }
