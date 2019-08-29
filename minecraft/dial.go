@@ -51,11 +51,6 @@ type Dialer struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
-	// OnlyLogin specifies if the Conn returned will first handle packets to establish a fully spawned client,
-	// or if it should only handle packets to login.
-	// If OnlyLogin is set to true, the first packet the returned Conn when calling Dial will obtain is a
-	// ResourcePackInfo packet.
-	OnlyLogin bool
 
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
@@ -109,7 +104,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.clientData = defaultClientData(address)
 	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
-	conn.onlyLogin = dialer.OnlyLogin
 	conn.cacheEnabled = dialer.EnableClientCache
 
 	var emptyClientData login.ClientData

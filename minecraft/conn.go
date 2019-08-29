@@ -75,9 +75,6 @@ type Conn struct {
 	spawn           chan bool
 	waitingForSpawn atomic.Value
 
-	// onlyLogin specifies if the connection should only handle the login and stop handling packets after it
-	// it is completed.
-	onlyLogin bool
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
 	expectedIDs atomic.Value
@@ -169,9 +166,6 @@ func (conn *Conn) GameData() GameData {
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
 // If StartGame is called for an OnlyLogin connection, the method will panic.
 func (conn *Conn) StartGame(data GameData) error {
-	if conn.onlyLogin {
-		panic("cannot start game for minecraft.Conn with OnlyLogin")
-	}
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
@@ -197,9 +191,6 @@ func (conn *Conn) StartGame(data GameData) error {
 // data found in conn.GameData(), which was sent earlier by the server.
 // If DoSpawn is called for an OnlyLogin connection, the method will panic.
 func (conn *Conn) DoSpawn() error {
-	if conn.onlyLogin {
-		panic("cannot do spawn for minecraft.Conn with OnlyLogin")
-	}
 	conn.waitingForSpawn.Store(true)
 
 	timeout := time.After(time.Second * 10)
@@ -588,12 +579,6 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)
-	}
-
-	if conn.onlyLogin {
-		// Only login, so we stop handling packets after that.
-		conn.loggedIn = true
-		return nil
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
@@ -1014,10 +999,6 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	case packet.PlayStatusLoginSuccess:
 		// The next packet we expect is the ResourcePacksInfo packet.
 		conn.expect(packet.IDResourcePacksInfo)
-		if conn.onlyLogin {
-			// Only login, so we stop handling packets after that.
-			conn.loggedIn = true
-		}
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
 		return fmt.Errorf("client outdated")
