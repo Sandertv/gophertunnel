@@ -264,10 +264,10 @@ type packReader struct {
 
 // find attempts to find a file in a zip reader. If found, it returns an Open()ed reader of the file that may
 // be used to read data from the file.
-func (reader packReader) find(file string) (io.ReadCloser, error) {
+func (reader packReader) find(fileName string) (io.ReadCloser, error) {
 	for _, file := range reader.File {
 		base := filepath.Base(file.Name)
-		if base != "manifest.json" && base != "pack_manifest.json" {
+		if file.Name != fileName && base != fileName {
 			continue
 		}
 		fileReader, err := file.Open()
@@ -276,7 +276,7 @@ func (reader packReader) find(file string) (io.ReadCloser, error) {
 		}
 		return fileReader, nil
 	}
-	return nil, fmt.Errorf("could not find '%v' in zip", file)
+	return nil, fmt.Errorf("could not find '%v' in zip", fileName)
 }
 
 // readManifest reads the manifest from the resource pack located at the path passed. If not found in the root
@@ -313,7 +313,7 @@ func readManifest(path string) (*Manifest, error) {
 	if err := json.Unmarshal(allData, manifest); err != nil {
 		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
 	}
-	if _, err := reader.find("level.dat"); err != nil {
+	if _, err := reader.find("level.dat"); err == nil {
 		manifest.worldTemplate = true
 	}
 
