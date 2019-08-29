@@ -100,8 +100,7 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 	}
 	_ = resp.Body.Close()
 
-	// Don't allow redirecting on the next POST request. We need the Location data from that request, which
-	// we need.
+	// Don't allow redirecting on the next POST request. We need the Location data from that request.
 	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
