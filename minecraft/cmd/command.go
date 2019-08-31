@@ -132,6 +132,12 @@ func (cmd Command) Execute(args string, source Source) {
 	output.Error(leastErroneous)
 }
 
+// String returns the usage of the command. The usage will be roughly equal to the one showed by the client
+// in-game.
+func (cmd Command) String() string {
+	return cmd.usage
+}
+
 // executeRunnable executes a Runnable v, by parsing the args passed using the source and output obtained. If
 // parsing was not successful or the Runnable could not be ran by this source, an error is returned, and the
 // leftover command line.

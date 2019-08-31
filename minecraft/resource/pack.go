@@ -180,6 +180,11 @@ func (pack *Pack) Manifest() Manifest {
 	return *pack.manifest
 }
 
+// String returns a readable representation of the resource pack. It implements the Stringer interface.
+func (pack *Pack) String() string {
+	return fmt.Sprintf("%v v%v (%v): %v", pack.Name(), pack.Version(), pack.UUID(), pack.Description())
+}
+
 // compile compiles the resource pack found in path, either a zip archive or a directory, and returns a
 // resource pack if successful.
 func compile(path string) (*Pack, error) {
