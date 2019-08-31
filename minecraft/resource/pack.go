@@ -197,7 +197,7 @@ func compile(path string) (*Pack, error) {
 
 		// Make sure we close the temp file and remove it at the end. We don't need to keep it, as we read all
 		// the content in a byte slice.
-		//_ = temp.Close()
+		_ = temp.Close()
 		defer func() {
 			_ = os.Remove(temp.Name())
 		}()
