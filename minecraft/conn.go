@@ -245,7 +245,7 @@ read:
 		}
 		return pk, nil
 	}
-	pk, tryNext, err := conn.readPacket()
+	pk, _, tryNext, err := conn.readPacket()
 	if tryNext {
 		goto read
 	}
@@ -258,20 +258,20 @@ read:
 //
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
-func (conn *Conn) readPacket() (pk packet.Packet, readNext bool, err error) {
+func (conn *Conn) readPacket() (pk packet.Packet, rawData []byte, readNext bool, err error) {
 	select {
 	case data := <-conn.packets:
 		pk, err := conn.parsePacket(data)
 		if err != nil {
 			conn.log.Println(err)
-			return nil, true, nil
+			return nil, nil, true, nil
 		}
-		return pk, false, nil
+		return pk, data, false, nil
 	case <-conn.readDeadline:
-		return nil, false, fmt.Errorf("error reading packet: read timeout")
+		return nil, nil, false, fmt.Errorf("error reading packet: read timeout")
 	case <-conn.close:
 		conn.close <- true
-		return nil, false, fmt.Errorf("error reading packet: connection closed")
+		return nil, nil, false, fmt.Errorf("error reading packet: connection closed")
 	}
 }
 
@@ -457,7 +457,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 	}
 
 	if !conn.loggedIn || conn.waitingForSpawn.Load().(bool) {
-		pk, tryNext, err := conn.readPacket()
+		pk, rawPk, tryNext, err := conn.readPacket()
 		if tryNext {
 			// Some non-critical error occurred that was already logged to the logger. We simply stop handling
 			// this packet.
@@ -478,7 +478,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		if !found {
 			// This is not the packet we expected next in the login sequence. We push it back so that it may
 			// be handled by the user.
-			conn.pushedBackPackets = append(conn.pushedBackPackets, data)
+			conn.pushedBackPackets = append(conn.pushedBackPackets, rawPk)
 			return nil
 		}
 		return conn.handlePacket(pk)
