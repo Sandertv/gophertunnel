@@ -71,7 +71,7 @@ func (script *Script) SetModule(mod *Module) {
 	}
 }
 
-// SetModule pre-loads a script module so that it may be imported in the script using 'require()'. It must
+// PreloadModule pre-loads a script module so that it may be imported in the script using 'require()'. It must
 // be done by the script itself.
 // For the module to be set directly so that the script doesn't have to use 'require()', see SetModule.
 func (script *Script) PreloadModule(mod *Module) {

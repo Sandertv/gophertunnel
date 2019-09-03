@@ -39,14 +39,14 @@ func Verify(requestString []byte) (publicKey *ecdsa.PublicKey, authenticated boo
 	for _, claim := range chain {
 		// Verify each of the claims found in the chain using the empty public key above, which will be set
 		// after verifying the first public key.
-		if hasKey, err := jwt.Verify([]byte(claim), pubKey, true); err != nil {
+		hasKey, err := jwt.Verify([]byte(claim), pubKey, true)
+		if err != nil {
 			return nil, false, fmt.Errorf("error verifying claim: %v", err)
-		} else {
-			if hasKey == true {
-				// If the claim we just verified had the Mojang public key in it, we set the authenticated
-				// bool to true.
-				authenticated = true
-			}
+		}
+		if hasKey == true {
+			// If the claim we just verified had the Mojang public key in it, we set the authenticated
+			// bool to true.
+			authenticated = true
 		}
 	}
 	var rawLength int32

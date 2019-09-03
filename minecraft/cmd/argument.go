@@ -81,7 +81,7 @@ func (p parser) parseArgument(line *Line, v reflect.Value, optional bool) (err e
 		}
 		panic(fmt.Sprintf("non-command parameter type %T in command structure", i))
 	}
-	if err == InsufficientArgs && optional {
+	if err == ErrInsufficientArgs && optional {
 		// The command ran didn't have enough arguments for this parameter, but it was optional, so it does
 		// not matter.
 		return nil
@@ -89,15 +89,15 @@ func (p parser) parseArgument(line *Line, v reflect.Value, optional bool) (err e
 	return err
 }
 
-// InsufficientArgs is returned by argument parsing functions if it does not have sufficient arguments passed
-// and is not optional.
-var InsufficientArgs = errors.New("not enough arguments for command")
+// ErrInsufficientArgs is returned by argument parsing functions if it does not have sufficient arguments
+// passed and is not optional.
+var ErrInsufficientArgs = errors.New("not enough arguments for command")
 
 // int ...
 func (p parser) int(line *Line, v reflect.Value) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	value, err := strconv.ParseInt(arg, 10, v.Type().Bits())
 	if err != nil {
@@ -111,7 +111,7 @@ func (p parser) int(line *Line, v reflect.Value) error {
 func (p parser) uint(line *Line, v reflect.Value) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	value, err := strconv.ParseUint(arg, 10, v.Type().Bits())
 	if err != nil {
@@ -125,7 +125,7 @@ func (p parser) uint(line *Line, v reflect.Value) error {
 func (p parser) float(line *Line, v reflect.Value) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	value, err := strconv.ParseFloat(arg, v.Type().Bits())
 	if err != nil {
@@ -139,7 +139,7 @@ func (p parser) float(line *Line, v reflect.Value) error {
 func (p parser) string(line *Line, v reflect.Value) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	v.SetString(arg)
 	return nil
@@ -149,7 +149,7 @@ func (p parser) string(line *Line, v reflect.Value) error {
 func (p parser) bool(line *Line, v reflect.Value) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	value, err := strconv.ParseBool(arg)
 	if err != nil {
@@ -163,7 +163,7 @@ func (p parser) bool(line *Line, v reflect.Value) error {
 func (p parser) enum(line *Line, val reflect.Value, v Enum) error {
 	arg, ok := line.Next()
 	if !ok {
-		return InsufficientArgs
+		return ErrInsufficientArgs
 	}
 	found := ""
 	for _, option := range v.Options() {
