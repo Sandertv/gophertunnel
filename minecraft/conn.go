@@ -25,7 +25,10 @@ import (
 	"time"
 )
 
-const defaultChunkRadius = 16
+const (
+	educationEditionPackUUID    = "0fba4063-dba1-4281-9b89-ff9390653530"
+	educationEditionPackVersion = "1.0.0"
+)
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
@@ -722,6 +725,11 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 // hasPack checks if the connection has a resource pack downloaded with the UUID and version passed, provided
 // the pack either has or does not have behaviours in it.
 func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool {
+	if uuid == educationEditionPackUUID {
+		// The server may send this resource pack on the stack without sending it in the info, as the client
+		// always has it downloaded.
+		return true
+	}
 	for _, pack := range conn.resourcePacks {
 		if pack.UUID() == uuid && pack.Version() == version && pack.HasBehaviours() == hasBehaviours {
 			return true
@@ -764,6 +772,10 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			}
 			pk.TexturePacks = append(pk.TexturePacks, resourcePack)
 		}
+		pk.TexturePacks = append(pk.TexturePacks, protocol.StackResourcePack{
+			UUID:    educationEditionPackUUID,
+			Version: educationEditionPackVersion,
+		})
 		if err := conn.WritePacket(pk); err != nil {
 			return fmt.Errorf("error writing resource pack stack packet: %v", err)
 		}
@@ -962,14 +974,14 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.loggedIn = true
 
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
-	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: defaultChunkRadius})
+	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
 }
 
 // handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
 // of the connection, and spawns the player.
 func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error {
 	conn.expect(packet.IDSetLocalPlayerAsInitialised)
-	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: defaultChunkRadius})
+	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 16})
 	return conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
 }
 
