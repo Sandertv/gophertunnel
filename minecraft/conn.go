@@ -204,6 +204,9 @@ func (conn *Conn) DoSpawn() error {
 	case <-timeout:
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.close:
+		if conn.disconnectMessage != "" {
+			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage)
+		}
 		return fmt.Errorf("connection closed")
 	}
 }
