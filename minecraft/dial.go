@@ -121,12 +121,18 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	c := make(chan struct{})
 	go listenConn(conn, dialer.ErrorLog, c)
 
-	request := login.Encode(chainData, conn.clientData, key)
-	identityData, _, _ := login.Decode(request)
-	// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as we
-	// are not aware of the identity data ourselves yet.
-	conn.identityData = identityData
-
+	var request []byte
+	if dialer.Email == "" {
+		// We haven't logged into the user's XBL account. We create a login request with only one token
+		// holding the identity data set in the Dialer.
+		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
+	} else {
+		request = login.Encode(chainData, conn.clientData, key)
+		identityData, _, _ := login.Decode(request)
+		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
+		// we are not aware of the identity data ourselves yet.
+		conn.identityData = identityData
+	}
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
 		return nil, err
 	}
@@ -137,6 +143,9 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	case <-conn.close:
 		// The connection was closed before we even were fully 'connected', so we return an error.
 		conn.close <- true
+		if conn.disconnectMessage != "" {
+			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage)
+		}
 		return nil, fmt.Errorf("connection timeout")
 	}
 }

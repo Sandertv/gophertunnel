@@ -8,7 +8,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
@@ -93,7 +92,8 @@ type Conn struct {
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	close chan bool
+	close             chan bool
+	disconnectMessage string
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -525,7 +525,7 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 		return conn.handleChunkRadiusUpdated(pk)
 	case *packet.Disconnect:
 		_ = conn.Close()
-		return errors.New("Disconnected: " + pk.Message)
+		conn.disconnectMessage = pk.Message
 	}
 	return nil
 }

@@ -159,6 +159,38 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
 	return buf.Bytes()
 }
 
+// EncodeOffline creates a login request using the identity data and client data passed. The private key
+// passed will be used to self sign the JWTs.
+// Unlike Encode, EncodeOffline does not have a token signed by the Mojang key. It consists of only one JWT
+// which holds the identity data of the player.
+func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey) []byte {
+	keyData := jwt.MarshalPublicKey(&key.PublicKey)
+	// We create a new self signed claim with both the x5u and the identity public key as our public key
+	// data.
+	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
+		"certificateAuthority": true,
+		"exp":                  time.Now().Unix() + int64(time.Hour*6),
+		"identityPublicKey":    keyData,
+		"nbf":                  time.Now().Unix() - int64(time.Hour*6),
+		"extraData":            identityData,
+	}, key)
+	request := &request{Chain: Chain{string(claim)}}
+
+	loginChainBytes, _ := json.Marshal(request)
+	loginChain := string(loginChainBytes)
+
+	buf := bytes.NewBuffer(nil)
+	_ = binary.Write(buf, binary.LittleEndian, int32(len(loginChain)))
+	_, _ = buf.WriteString(loginChain)
+
+	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
+	// just now it contains client data.
+	token, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, data, key)
+	_ = binary.Write(buf, binary.LittleEndian, int32(len(token)))
+	_, _ = buf.Write(token)
+	return buf.Bytes()
+}
+
 // identityDataContainer is used to decode identity data found in a JWT claim into an IdentityData struct.
 type identityDataContainer struct {
 	ExtraData IdentityData `json:"extraData"`
