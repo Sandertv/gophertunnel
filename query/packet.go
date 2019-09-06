@@ -176,14 +176,14 @@ func (pk *response) Unmarshal(r io.Reader) error {
 		if playerIndex != -1 {
 			playerData := data[playerIndex+len(playerKey):]
 			values = bytes.Split(playerData, []byte{0x00})
-			players := make([]string, len(values))
+			players := make([]string, 0, len(values))
 			for i := 0; i < len(values); i++ {
 				if len(values[i]) == 0 {
 					// Empty string means we've reached the end of the data. Break immediately so that the
 					// name isn't added to the players slice.
 					break
 				}
-				players[i] = string(values[i])
+				players = append(players, string(values[i]))
 			}
 			pk.Information["players"] = strings.Join(players, ", ")
 		}
