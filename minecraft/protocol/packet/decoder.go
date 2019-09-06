@@ -33,8 +33,13 @@ func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 	decoder.encrypt = newEncrypt(keyBytes)
 }
 
-// header is the header of compressed 'batches' from Minecraft.
-const header = 0xfe
+const (
+	// header is the header of compressed 'batches' from Minecraft.
+	header = 0xfe
+	// maximumInBatch is the maximum amount of packets that may be found in a batch. If a compressed batch has
+	// more than this amount, decoding will fail.
+	maximumInBatch = 512
+)
 
 // Decode decodes one 'packet' from the reader passed in NewDecoder(), producing a slice of packets that it
 // held and an error if not successful.
@@ -63,6 +68,9 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 
 	b := bytes.NewBuffer(raw)
 	for b.Len() != 0 {
+		if len(packets) > maximumInBatch {
+			return nil, fmt.Errorf("amount of packets in compressed batch exceeds %v", maximumInBatch)
+		}
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
 			return nil, fmt.Errorf("error reading packet length: %v", err)
