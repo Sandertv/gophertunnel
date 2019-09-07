@@ -76,6 +76,7 @@ var m = map[string]string{
 	strikethrough: ansiStrikethrough,
 	underline:     ansiUnderline,
 	reset:         ansiReset,
+	italic:        ansiItalic,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting
