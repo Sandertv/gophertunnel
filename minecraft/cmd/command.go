@@ -139,25 +139,28 @@ func (cmd Command) Execute(args string, source Source) {
 	output.Error(leastErroneous)
 }
 
+// ParamInfo holds the information of a parameter in a Runnable. Information of a parameter may be obtained
+// by calling Command.Params().
+type ParamInfo struct {
+	Name     string
+	Value    interface{}
+	Optional bool
+	Suffix   string
+}
+
 // Params returns a list of all parameters of the runnables. No assumptions should be done on the values that
 // they hold: Only the types are guaranteed to be consistent.
-func (cmd Command) Params() [][]struct {
-	Name  string
-	Value interface{}
-} {
-	params := make([][]struct {
-		Name  string
-		Value interface{}
-	}, len(cmd.v))
+func (cmd Command) Params() [][]ParamInfo {
+	params := make([][]ParamInfo, len(cmd.v))
 	for index, runnable := range cmd.v {
 		elem := runnable.Elem()
 		for i := 0; i < elem.NumField(); i++ {
-			params[index] = append(params[index], struct {
-				Name  string
-				Value interface{}
-			}{
-				Name:  elem.Type().Field(i).Name,
-				Value: elem.Field(i).Interface(),
+			fieldType := elem.Type().Field(i)
+			params[index] = append(params[index], ParamInfo{
+				Name:     fieldType.Name,
+				Value:    elem.Field(i).Interface(),
+				Optional: optional(fieldType),
+				Suffix:   suffix(fieldType),
 			})
 		}
 	}
