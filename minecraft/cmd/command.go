@@ -157,8 +157,8 @@ func (cmd Command) Params() [][]ParamInfo {
 		for i := 0; i < elem.NumField(); i++ {
 			fieldType := elem.Type().Field(i)
 			params[index] = append(params[index], ParamInfo{
-				Name:     fieldType.Name,
-				Value:    elem.Field(i).Interface(),
+				Name:     name(fieldType),
+				Value:    reflect.New(elem.Field(i).Type()).Elem().Interface(),
 				Optional: optional(fieldType),
 				Suffix:   suffix(fieldType),
 			})
