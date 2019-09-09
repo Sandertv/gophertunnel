@@ -45,12 +45,12 @@ const (
 	CommandArgSuffixed = 0x1000000
 	CommandArgSoftEnum = 0x4000000
 
-	CommandArgTypeInt = iota + 1
-	CommandArgTypeFloat
-	CommandArgTypeValue
-	CommandArgTypeWildcardInt
-	CommandArgTypeOperator
-	CommandArgTypeTarget
+	CommandArgTypeInt         = 1
+	CommandArgTypeFloat       = 2
+	CommandArgTypeValue       = 3
+	CommandArgTypeWildcardInt = 4
+	CommandArgTypeOperator    = 5
+	CommandArgTypeTarget      = 6
 
 	CommandArgTypeFilepath = 0x0e
 	CommandArgTypeString   = 0x1b
