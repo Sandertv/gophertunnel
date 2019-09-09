@@ -132,6 +132,19 @@ func (cmd Command) Execute(args string, source Source) {
 	output.Error(leastErroneous)
 }
 
+// Params returns a list of all parameters of the runnables. No assumptions should be done on the values that
+// they hold: Only the types are guaranteed to be consistent.
+func (cmd Command) Params() [][]interface{} {
+	params := make([][]interface{}, len(cmd.v))
+	for index, runnable := range cmd.v {
+		elem := runnable.Elem()
+		for i := 0; i < elem.NumField(); i++ {
+			params[index] = append(params[index], elem.Field(i).Interface())
+		}
+	}
+	return params
+}
+
 // String returns the usage of the command. The usage will be roughly equal to the one showed by the client
 // in-game.
 func (cmd Command) String() string {
