@@ -141,14 +141,24 @@ func (cmd Command) Execute(args string, source Source) {
 
 // Params returns a list of all parameters of the runnables. No assumptions should be done on the values that
 // they hold: Only the types are guaranteed to be consistent.
-// The keys of the values are the names of the parameter.
-func (cmd Command) Params() []map[string]interface{} {
-	params := make([]map[string]interface{}, len(cmd.v))
+func (cmd Command) Params() [][]struct {
+	Name  string
+	Value interface{}
+} {
+	params := make([][]struct {
+		Name  string
+		Value interface{}
+	}, len(cmd.v))
 	for index, runnable := range cmd.v {
-		params[index] = make(map[string]interface{})
 		elem := runnable.Elem()
 		for i := 0; i < elem.NumField(); i++ {
-			params[index][elem.Type().Field(i).Name] = elem.Field(i).Interface()
+			params[index] = append(params[index], struct {
+				Name  string
+				Value interface{}
+			}{
+				Name:  elem.Type().Field(i).Name,
+				Value: elem.Field(i).Interface(),
+			})
 		}
 	}
 	return params
