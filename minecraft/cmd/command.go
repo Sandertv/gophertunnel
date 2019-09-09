@@ -40,6 +40,7 @@ type Command struct {
 	name        string
 	description string
 	usage       string
+	aliases     []string
 }
 
 // New returns a new Command using the name and description passed. The Runnable passed must be a
@@ -47,7 +48,7 @@ type Command struct {
 // When the command is ran, the Run method of the Runnable will be called, after all fields have their values
 // from the parsed command set.
 // If r is not a struct or a pointer to a struct, New panics.
-func New(name, description string, r ...Runnable) Command {
+func New(name, description string, aliases []string, r ...Runnable) Command {
 	usages := make([]string, len(r))
 	runnableValues := make([]reflect.Value, len(r))
 
@@ -67,7 +68,7 @@ func New(name, description string, r ...Runnable) Command {
 		runnableValues[i], usages[i] = val, parseUsage(name, val)
 	}
 
-	return Command{name: name, description: description, v: runnableValues, usage: strings.Join(usages, "\n")}
+	return Command{name: name, description: description, aliases: aliases, v: runnableValues, usage: strings.Join(usages, "\n")}
 }
 
 // Name returns the name of the command. The name is guaranteed to be lowercase and will never have spaces in
@@ -86,6 +87,12 @@ func (cmd Command) Description() string {
 // in-game.
 func (cmd Command) Usage() string {
 	return cmd.usage
+}
+
+// Aliases returns a list of aliases for the command. In addition to the name of the command, the command may
+// be called using one of these aliases.
+func (cmd Command) Aliases() []string {
+	return cmd.aliases
 }
 
 // Execute executes the Command as a source with the args passed. The args are parsed assuming they do not
