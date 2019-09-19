@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	ScoreboardActionRemove = iota
-	ScoreboardActionModify
+	ScoreboardActionModify = iota
+	ScoreboardActionRemove
 )
 
 // SetScore is sent by the server to send the contents of a scoreboard to the player. It may be used to either
