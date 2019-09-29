@@ -682,11 +682,19 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 
 	packsToDownload := make([]string, 0, len(pk.TexturePacks)+len(pk.BehaviourPacks))
 	for _, pack := range pk.TexturePacks {
+		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
+			conn.log.Printf("duplicate resource pack entry %v in resource pack info\n", pack.UUID)
+			continue
+		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
 	}
 	for _, pack := range pk.BehaviourPacks {
+		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
+			conn.log.Printf("duplicate behaviour pack entry %v in resource pack info\n", pack.UUID)
+			continue
+		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
