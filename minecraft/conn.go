@@ -679,11 +679,12 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		downloadingPacks: make(map[string]downloadingPack),
 		awaitingPacks:    make(map[string]*downloadingPack),
 	}
-
 	packsToDownload := make([]string, 0, len(pk.TexturePacks)+len(pk.BehaviourPacks))
+
 	for _, pack := range pk.TexturePacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
-			conn.log.Printf("duplicate resource pack entry %v in resource pack info\n", pack.UUID)
+			conn.log.Printf("duplicate texture pack entry %v in resource pack info\n", pack.UUID)
+			conn.packQueue.packAmount--
 			continue
 		}
 		// This UUID_Version is a hack Mojang put in place.
@@ -693,12 +694,14 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	for _, pack := range pk.BehaviourPacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
 			conn.log.Printf("duplicate behaviour pack entry %v in resource pack info\n", pack.UUID)
+			conn.packQueue.packAmount--
 			continue
 		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
 	}
+
 	if len(packsToDownload) != 0 {
 		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData)
 		return conn.WritePacket(&packet.ResourcePackClientResponse{
@@ -717,6 +720,14 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 	// We currently don't apply resource packs in any way, so instead we just check if all resource packs in
 	// the stacks are also downloaded.
 	for _, pack := range pk.TexturePacks {
+		for i, behaviourPack := range pk.BehaviourPacks {
+			if pack.UUID == behaviourPack.UUID {
+				// We had a behaviour pack with the same UUID as the texture pack, so we drop the texture
+				// pack and log it.
+				conn.log.Printf("dropping behaviour pack with UUID %v due to a texture pack with the same UUID\n", pack.UUID)
+				pk.BehaviourPacks = append(pk.BehaviourPacks[:i], pk.BehaviourPacks[i+1:]...)
+			}
+		}
 		if !conn.hasPack(pack.UUID, pack.Version, false) {
 			return fmt.Errorf("texture pack {uuid=%v, version=%v} not downloaded", pack.UUID, pack.Version)
 		}
@@ -847,6 +858,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	id := pk.UUID
 	chunkCount := pk.ChunkCount
 	downloadingPack, ok := conn.packQueue.downloadingPacks[id]
+
 	if !ok {
 		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
 		// sent in the ResourcePacksInfo packet.
@@ -877,7 +889,6 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				conn.close <- true
 				return
 			}
-
 		}
 		if downloadingPack.buf.Len() != int(downloadingPack.size) {
 			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())
