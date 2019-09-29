@@ -16,14 +16,17 @@ type Decoder struct {
 	reader io.Reader
 
 	encrypt *encrypt
+
+	checkPacketLimit bool
 }
 
 // NewDecoder returns a new decoder decoding data from the reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
 	return &Decoder{
-		reader: reader,
-		buf:    make([]byte, 1024*1024*3),
+		reader:           reader,
+		buf:              make([]byte, 1024*1024*3),
+		checkPacketLimit: true,
 	}
 }
 
@@ -31,6 +34,12 @@ func NewDecoder(reader io.Reader) *Decoder {
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 	decoder.encrypt = newEncrypt(keyBytes)
+}
+
+// DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
+// batch. This should typically be called for Decoders decoding from a server connection.
+func (decoder *Decoder) DisableBatchPacketLimit() {
+	decoder.checkPacketLimit = false
 }
 
 const (
@@ -68,8 +77,8 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 
 	b := bytes.NewBuffer(raw)
 	for b.Len() != 0 {
-		if len(packets) > maximumInBatch {
-			return nil, fmt.Errorf("amount of packets in compressed batch exceeds %v", maximumInBatch)
+		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
+			return nil, fmt.Errorf("number of packets in compressed batch exceeds %v", maximumInBatch)
 		}
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {

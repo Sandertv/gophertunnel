@@ -105,6 +105,8 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
 	conn.cacheEnabled = dialer.EnableClientCache
+	// Disable the batch packet limit so that the server can send packets as often as it wants to.
+	conn.decoder.DisableBatchPacketLimit()
 
 	var emptyClientData login.ClientData
 	if dialer.ClientData != emptyClientData {
