@@ -8,7 +8,7 @@ import (
 // MobArmourEquipment is sent by the server to the client to update the armour an entity is wearing. It is
 // sent for both players and other entities, such as zombies.
 type MobArmourEquipment struct {
-	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Helmet is the equipped helmet of the entity. Items that are not wearable on the head will not be

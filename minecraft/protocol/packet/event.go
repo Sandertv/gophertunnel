@@ -25,7 +25,7 @@ const (
 // Event is sent by the server to send an event with additional data. It is typically sent to the client for
 // telemetry reasons, much like the SimpleEvent packet.
 type Event struct {
-	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// EventType is the type of the event to be called. It is one of the constants that may be found above.

@@ -14,7 +14,7 @@ type AddItemActor struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
 	// this field.
 	EntityUniqueID int64
-	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Item is the item that is spawned. It must have a valid ID for it to show up client-side. If it is not

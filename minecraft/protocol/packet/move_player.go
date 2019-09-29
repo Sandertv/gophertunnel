@@ -25,7 +25,7 @@ const (
 // MovePlayer is sent by players to send their movement to the server, and by the server to update the
 // movement of player entities to other players.
 type MovePlayer struct {
-	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Position is the position to spawn the player on. If the player is on a distance that the viewer cannot

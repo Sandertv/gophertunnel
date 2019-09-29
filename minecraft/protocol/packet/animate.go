@@ -18,7 +18,7 @@ type Animate struct {
 	// ActionType is the ID of the animation action to execute. It is one of the action type constants that
 	// may be found above.
 	ActionType int32
-	// EntityNetworkID is the runtime ID of the player that the animation should be played upon. The runtime
+	// EntityRuntimeID is the runtime ID of the player that the animation should be played upon. The runtime
 	// ID is unique for each world session, and entities are generally identified in packets using this
 	// runtime ID.
 	EntityRuntimeID uint64

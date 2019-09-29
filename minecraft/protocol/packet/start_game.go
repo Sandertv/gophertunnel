@@ -15,7 +15,7 @@ type StartGame struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
 	// this field.
 	EntityUniqueID int64
-	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// PlayerGameMode is the game mode the player currently has. It is a value from 0-4, with 0 being

@@ -22,7 +22,7 @@ type AddPlayer struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the player out for
 	// this field.
 	EntityUniqueID int64
-	// EntityNetworkID is the runtime ID of the player. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// PlatformChatID is an identifier only set for particular platforms when chatting (presumably only for

@@ -20,7 +20,7 @@ const (
 // MoveActorDelta is sent by the server to move an entity by a given delta. The packet is specifically
 // optimised to save as much space as possible, by only writing non-zero fields.
 type MoveActorDelta struct {
-	// EntityNetworkID is the runtime ID of the entity that is being moved. The packet works provided a
+	// EntityRuntimeID is the runtime ID of the entity that is being moved. The packet works provided a
 	// non-player entity with this runtime ID is present.
 	EntityRuntimeID uint64
 	// DeltaPosition is the difference from the previous position to the new position. It is the distance on

@@ -13,7 +13,7 @@ type AddPainting struct {
 	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
 	// this field.
 	EntityUniqueID int64
-	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Position is the position to spawn the entity on. If the entity is on a distance that the player cannot

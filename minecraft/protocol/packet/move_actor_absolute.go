@@ -15,7 +15,7 @@ const (
 // MoveActorAbsolute is sent by the server to move an entity to an absolute position. It is typically used
 // for movements where high accuracy isn't needed, such as for long range teleporting.
 type MoveActorAbsolute struct {
-	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// Flags is a combination of flags that specify details of the movement. It is a combination of the flags

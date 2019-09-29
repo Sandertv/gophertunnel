@@ -68,7 +68,7 @@ const (
 // these events are entity-specific, for example a wolf shaking itself dry, but others are used for each
 // entity, such as dying.
 type ActorEvent struct {
-	// EntityNetworkID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// EventType is the ID of the event to be called. It is one of the constants that can be found above.
