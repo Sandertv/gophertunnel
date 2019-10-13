@@ -153,15 +153,16 @@ func (listener *Listener) updatePongData() {
 		return
 	}
 	maxCount := int32(listener.MaximumPlayers)
+	current := atomic.LoadInt32(listener.playerCount)
 	if maxCount == 0 {
 		// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
 		// plus 1, so that new players can always join.
-		maxCount = atomic.LoadInt32(listener.playerCount) + 1
+		maxCount = current + 1
 	}
 
 	rakListener := listener.listener.(*raknet.Listener)
-	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;;",
-		listener.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, listener.playerCount, maxCount, rakListener.ID(),
+	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;0",
+		listener.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, current, maxCount, rakListener.ID(),
 	)))
 }
 
