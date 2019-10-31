@@ -3,8 +3,6 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/hex"
-	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -227,7 +225,6 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
-	fmt.Println(hex.EncodeToString(buf.Bytes()))
 	if pk.GameRules == nil {
 		pk.GameRules = make(map[string]interface{})
 	}
