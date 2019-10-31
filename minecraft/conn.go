@@ -433,7 +433,7 @@ func (conn *Conn) parsePacket(data []byte) (packet.Packet, error) {
 		return nil, fmt.Errorf("error decoding packet %T: %v", pk, err)
 	}
 	if buf.Len() != 0 {
-		conn.log.Printf("%v unread bytes left in packet %T%v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], buf.Bytes(), data)
+		conn.log.Printf("%v unread bytes left in packet %T%v from %v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], buf.Bytes(), conn.RemoteAddr(), data)
 	}
 	return pk, nil
 }
