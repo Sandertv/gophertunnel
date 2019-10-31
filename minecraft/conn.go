@@ -81,6 +81,7 @@ type Conn struct {
 	// logged in.
 	expectedIDs atomic.Value
 
+	packMutex sync.Mutex
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
 	resourcePacks []*resource.Pack
@@ -588,7 +589,7 @@ func (conn *Conn) handleClientToServerHandshake(*packet.ClientToServerHandshake)
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		resourcePack := protocol.ResourcePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: int64(pack.Len())}
+		resourcePack := protocol.ResourcePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
 		if pack.HasScripts() {
 			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
 			pk.HasScripts = true
@@ -752,6 +753,9 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 		// always has it downloaded.
 		return true
 	}
+	conn.packMutex.Lock()
+	defer conn.packMutex.Unlock()
+
 	for _, pack := range conn.resourcePacks {
 		if pack.UUID() == uuid && pack.Version() == version && pack.HasBehaviours() == hasBehaviours {
 			return true
@@ -855,8 +859,9 @@ func (conn *Conn) nextResourcePackDownload() error {
 // handleResourcePackDataInfo handles a resource pack data info packet, which initiates the downloading of the
 // pack by the client.
 func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) error {
-	id := pk.UUID
+	id := strings.Split(pk.UUID, "_")[0]
 	chunkCount := pk.ChunkCount
+
 	downloadingPack, ok := conn.packQueue.downloadingPacks[id]
 
 	if !ok {
@@ -867,7 +872,8 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	if downloadingPack.size != pk.Size {
 		// Size mismatch: The ResourcePacksInfo packet had a size for the pack that did not match with the
 		// size sent here.
-		return fmt.Errorf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet", id)
+		conn.log.Printf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet\n", id)
+		downloadingPack.size = pk.Size
 	}
 
 	// Remove the resource pack from the downloading packs and add it to the awaiting packets.
@@ -876,9 +882,9 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 
 	downloadingPack.chunkSize = pk.DataChunkSize
 	go func() {
-		for i := int32(0); i < chunkCount; i++ {
+		for i := uint32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
-				UUID:       id,
+				UUID:       pk.UUID,
 				ChunkIndex: i,
 			})
 			select {
@@ -890,6 +896,9 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				return
 			}
 		}
+		conn.packMutex.Lock()
+		defer conn.packMutex.Unlock()
+
 		if downloadingPack.buf.Len() != int(downloadingPack.size) {
 			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())
 			return
@@ -914,6 +923,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 // handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
 // pack that is being downloaded.
 func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) error {
+	pk.UUID = strings.Split(pk.UUID, "_")[0]
 	downloadingPack, ok := conn.packQueue.awaitingPacks[pk.UUID]
 	if !ok {
 		// We haven't received a ResourcePackDataInfo packet from the server, so we can't use this data to
@@ -921,7 +931,7 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		return fmt.Errorf("resource pack chunk data for resource pack that was not being downloaded")
 	}
 	lastData := downloadingPack.buf.Len()+int(downloadingPack.chunkSize) >= int(downloadingPack.size)
-	if !lastData && int32(len(pk.Data)) != downloadingPack.chunkSize {
+	if !lastData && uint32(len(pk.Data)) != downloadingPack.chunkSize {
 		// The chunk data didn't have the full size and wasn't the last data to be sent for the resource pack,
 		// meaning we got too little data.
 		return fmt.Errorf("resource pack chunk data had a length of %v, but expected %v", len(pk.Data), downloadingPack.chunkSize)
@@ -941,7 +951,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	if current.UUID() != pk.UUID {
 		return fmt.Errorf("resource pack chunk request had unexpected UUID: expected %v, but got %v", current.UUID(), pk.UUID)
 	}
-	if conn.packQueue.currentOffset != int64(pk.ChunkIndex)*packChunkSize {
+	if conn.packQueue.currentOffset != uint64(pk.ChunkIndex)*packChunkSize {
 		return fmt.Errorf("resource pack chunk request had unexpected chunk index: expected %v, but got %v", conn.packQueue.currentOffset/packChunkSize, pk.ChunkIndex)
 	}
 	response := &packet.ResourcePackChunkData{
@@ -952,7 +962,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	}
 	conn.packQueue.currentOffset += packChunkSize
 	// We read the data directly into the response's data.
-	if n, err := current.ReadAt(response.Data, response.DataOffset); err != nil {
+	if n, err := current.ReadAt(response.Data, int64(response.DataOffset)); err != nil {
 		// If we hit an EOF, we don't need to return an error, as we've simply reached the end of the content
 		// AKA the last chunk.
 		if err != io.EOF {
@@ -1004,6 +1014,14 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error {
 	conn.expect(packet.IDSetLocalPlayerAsInitialised)
 	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 16})
+
+	// The client crashes when not sending all biomes, due to achievements
+	const s = `CgAKDWJhbWJvb19qdW5nbGUFCGRvd25mYWxsZmZmPwULdGVtcGVyYXR1cmUzM3M/AAoTYmFtYm9vX2p1bmdsZV9oaWxscwUIZG93bmZhbGxmZmY/BQt0ZW1wZXJhdHVyZTMzcz8ACgViZWFjaAUIZG93bmZhbGzNzMw+BQt0ZW1wZXJhdHVyZc3MTD8ACgxiaXJjaF9mb3Jlc3QFCGRvd25mYWxsmpkZPwULdGVtcGVyYXR1cmWamRk/AAoSYmlyY2hfZm9yZXN0X2hpbGxzBQhkb3duZmFsbJqZGT8FC3RlbXBlcmF0dXJlmpkZPwAKGmJpcmNoX2ZvcmVzdF9oaWxsc19tdXRhdGVkBQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlMzMzPwAKFGJpcmNoX2ZvcmVzdF9tdXRhdGVkBQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlMzMzPwAKCmNvbGRfYmVhY2gFCGRvd25mYWxsmpmZPgULdGVtcGVyYXR1cmXNzEw9AAoKY29sZF9vY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAD8ACgpjb2xkX3RhaWdhBQhkb3duZmFsbM3MzD4FC3RlbXBlcmF0dXJlAAAAvwAKEGNvbGRfdGFpZ2FfaGlsbHMFCGRvd25mYWxszczMPgULdGVtcGVyYXR1cmUAAAC/AAoSY29sZF90YWlnYV9tdXRhdGVkBQhkb3duZmFsbM3MzD4FC3RlbXBlcmF0dXJlAAAAvwAKD2RlZXBfY29sZF9vY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAD8AChFkZWVwX2Zyb3plbl9vY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAAAAChNkZWVwX2x1a2V3YXJtX29jZWFuBQhkb3duZmFsbAAAAD8FC3RlbXBlcmF0dXJlAAAAPwAKCmRlZXBfb2NlYW4FCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmUAAAA/AAoPZGVlcF93YXJtX29jZWFuBQhkb3duZmFsbAAAAD8FC3RlbXBlcmF0dXJlAAAAPwAKBmRlc2VydAUIZG93bmZhbGwAAAAABQt0ZW1wZXJhdHVyZQAAAEAACgxkZXNlcnRfaGlsbHMFCGRvd25mYWxsAAAAAAULdGVtcGVyYXR1cmUAAABAAAoOZGVzZXJ0X211dGF0ZWQFCGRvd25mYWxsAAAAAAULdGVtcGVyYXR1cmUAAABAAAoNZXh0cmVtZV9oaWxscwUIZG93bmZhbGyamZk+BQt0ZW1wZXJhdHVyZc3MTD4AChJleHRyZW1lX2hpbGxzX2VkZ2UFCGRvd25mYWxsmpmZPgULdGVtcGVyYXR1cmXNzEw+AAoVZXh0cmVtZV9oaWxsc19tdXRhdGVkBQhkb3duZmFsbJqZmT4FC3RlbXBlcmF0dXJlzcxMPgAKGGV4dHJlbWVfaGlsbHNfcGx1c190cmVlcwUIZG93bmZhbGyamZk+BQt0ZW1wZXJhdHVyZc3MTD4ACiBleHRyZW1lX2hpbGxzX3BsdXNfdHJlZXNfbXV0YXRlZAUIZG93bmZhbGyamZk+BQt0ZW1wZXJhdHVyZc3MTD4ACg1mbG93ZXJfZm9yZXN0BQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlMzMzPwAKBmZvcmVzdAUIZG93bmZhbGzNzEw/BQt0ZW1wZXJhdHVyZTMzMz8ACgxmb3Jlc3RfaGlsbHMFCGRvd25mYWxszcxMPwULdGVtcGVyYXR1cmUzMzM/AAoMZnJvemVuX29jZWFuBQhkb3duZmFsbAAAAD8FC3RlbXBlcmF0dXJlAAAAAAAKDGZyb3plbl9yaXZlcgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAAAACgRoZWxsBQhkb3duZmFsbAAAAAAFC3RlbXBlcmF0dXJlAAAAQAAKDWljZV9tb3VudGFpbnMFCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmUAAAAAAAoKaWNlX3BsYWlucwUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAAAAChFpY2VfcGxhaW5zX3NwaWtlcwUIZG93bmZhbGwAAIA/BQt0ZW1wZXJhdHVyZQAAAAAACgZqdW5nbGUFCGRvd25mYWxsZmZmPwULdGVtcGVyYXR1cmUzM3M/AAoLanVuZ2xlX2VkZ2UFCGRvd25mYWxszcxMPwULdGVtcGVyYXR1cmUzM3M/AAoTanVuZ2xlX2VkZ2VfbXV0YXRlZAUIZG93bmZhbGzNzEw/BQt0ZW1wZXJhdHVyZTMzcz8ACgxqdW5nbGVfaGlsbHMFCGRvd25mYWxsZmZmPwULdGVtcGVyYXR1cmUzM3M/AAoOanVuZ2xlX211dGF0ZWQFCGRvd25mYWxsZmZmPwULdGVtcGVyYXR1cmUzM3M/AAoTbGVnYWN5X2Zyb3plbl9vY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAAAACg5sdWtld2FybV9vY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAD8ACgptZWdhX3RhaWdhBQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlmpmZPgAKEG1lZ2FfdGFpZ2FfaGlsbHMFCGRvd25mYWxszcxMPwULdGVtcGVyYXR1cmWamZk+AAoEbWVzYQUIZG93bmZhbGwAAAAABQt0ZW1wZXJhdHVyZQAAAEAACgptZXNhX2JyeWNlBQhkb3duZmFsbAAAAAAFC3RlbXBlcmF0dXJlAAAAQAAKDG1lc2FfcGxhdGVhdQUIZG93bmZhbGwAAAAABQt0ZW1wZXJhdHVyZQAAAEAAChRtZXNhX3BsYXRlYXVfbXV0YXRlZAUIZG93bmZhbGwAAAAABQt0ZW1wZXJhdHVyZQAAAEAAChJtZXNhX3BsYXRlYXVfc3RvbmUFCGRvd25mYWxsAAAAAAULdGVtcGVyYXR1cmUAAABAAAoabWVzYV9wbGF0ZWF1X3N0b25lX211dGF0ZWQFCGRvd25mYWxsAAAAAAULdGVtcGVyYXR1cmUAAABAAAoPbXVzaHJvb21faXNsYW5kBQhkb3duZmFsbAAAgD8FC3RlbXBlcmF0dXJlZmZmPwAKFW11c2hyb29tX2lzbGFuZF9zaG9yZQUIZG93bmZhbGwAAIA/BQt0ZW1wZXJhdHVyZWZmZj8ACgVvY2VhbgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAD8ACgZwbGFpbnMFCGRvd25mYWxszczMPgULdGVtcGVyYXR1cmXNzEw/AAobcmVkd29vZF90YWlnYV9oaWxsc19tdXRhdGVkBQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlmpmZPgAKFXJlZHdvb2RfdGFpZ2FfbXV0YXRlZAUIZG93bmZhbGzNzEw/BQt0ZW1wZXJhdHVyZQAAgD4ACgVyaXZlcgUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZQAAAD8ACg1yb29mZWRfZm9yZXN0BQhkb3duZmFsbM3MTD8FC3RlbXBlcmF0dXJlMzMzPwAKFXJvb2ZlZF9mb3Jlc3RfbXV0YXRlZAUIZG93bmZhbGzNzEw/BQt0ZW1wZXJhdHVyZTMzMz8ACgdzYXZhbm5hBQhkb3duZmFsbAAAAAAFC3RlbXBlcmF0dXJlmpmZPwAKD3NhdmFubmFfbXV0YXRlZAUIZG93bmZhbGwAAAA/BQt0ZW1wZXJhdHVyZc3MjD8ACg9zYXZhbm5hX3BsYXRlYXUFCGRvd25mYWxsAAAAAAULdGVtcGVyYXR1cmUAAIA/AAoXc2F2YW5uYV9wbGF0ZWF1X211dGF0ZWQFCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmUAAIA/AAoLc3RvbmVfYmVhY2gFCGRvd25mYWxsmpmZPgULdGVtcGVyYXR1cmXNzEw+AAoQc3VuZmxvd2VyX3BsYWlucwUIZG93bmZhbGzNzMw+BQt0ZW1wZXJhdHVyZc3MTD8ACglzd2FtcGxhbmQFCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmXNzEw/AAoRc3dhbXBsYW5kX211dGF0ZWQFCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmXNzEw/AAoFdGFpZ2EFCGRvd25mYWxszcxMPwULdGVtcGVyYXR1cmUAAIA+AAoLdGFpZ2FfaGlsbHMFCGRvd25mYWxszcxMPwULdGVtcGVyYXR1cmUAAIA+AAoNdGFpZ2FfbXV0YXRlZAUIZG93bmZhbGzNzEw/BQt0ZW1wZXJhdHVyZQAAgD4ACgd0aGVfZW5kBQhkb3duZmFsbAAAAD8FC3RlbXBlcmF0dXJlAAAAPwAKCndhcm1fb2NlYW4FCGRvd25mYWxsAAAAPwULdGVtcGVyYXR1cmUAAAA/AAA=`
+	b, _ := base64.StdEncoding.DecodeString(s)
+	_ = conn.WritePacket(&packet.BiomeDefinitionList{
+		SerialisedBiomeDefinitions: b,
+	})
+
 	return conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
 }
 

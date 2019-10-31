@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"encoding/binary"
 	"github.com/google/uuid"
 )
 
@@ -17,21 +18,6 @@ type PlayerListEntry struct {
 	// Username is the username that is shown in the player list of the player that obtains a PlayerList
 	// packet with this entry. It does not have to be the same as the actual username of the player.
 	Username string
-	// SkinID is a unique ID produced for the skin, for example 'c18e65aa-7b21-4637-9b63-8ad63622ef01_Alex'
-	// for the default Alex skin.
-	SkinID string
-	// SkinData is a byte slice of 64*32*4, 64*64*4 or 128*128*4 bytes. It is a RGBA ordered byte
-	// representation of the skin colours.
-	SkinData []byte
-	// CapeData is a byte slice of 64*32*4 bytes. It is a RGBA ordered byte representation of the cape
-	// colours, much like the SkinData.
-	CapeData []byte
-	// SkinGeometryName is the geometry name of the skin geometry above. This name must be equal to one of the
-	// outer names found in the SkinGeometry, so that the client can find the correct geometry data.
-	SkinGeometryName string
-	// SkinGeometry is a base64 JSON encoded structure of the geometry data of a skin, containing properties
-	// such as bones, uv, pivot etc.
-	SkinGeometry []byte
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
 	// logged in with the XBOX Live account.
 	XUID string
@@ -39,6 +25,16 @@ type PlayerListEntry struct {
 	// Nintendo Switch). It is otherwise an empty string, and is used to decide which players are able to
 	// chat with each other.
 	PlatformChatID string
+	// BuildPlatform is the platform of the player as sent by that player in the Login packet.
+	BuildPlatform int32
+	// Skin is the skin of the player that should be added to the player list. Once sent here, it will not
+	// have to be sent again.
+	Skin Skin
+	// Teacher is a Minecraft: Education Edition field. It specifies if the player to be added to the player
+	// list is a teacher.
+	Teacher bool
+	// Host specifies if the player that is added to the player list is the host of the game.
+	Host bool
 }
 
 // WritePlayerAddEntry writes a PlayerListEntry x to Buffer buf in a way that adds the player to the list.
@@ -47,13 +43,12 @@ func WritePlayerAddEntry(buf *bytes.Buffer, x PlayerListEntry) error {
 		WriteUUID(buf, x.UUID),
 		WriteVarint64(buf, x.EntityUniqueID),
 		WriteString(buf, x.Username),
-		WriteString(buf, x.SkinID),
-		WriteByteSlice(buf, x.SkinData),
-		WriteByteSlice(buf, x.CapeData),
-		WriteString(buf, x.SkinGeometryName),
-		WriteByteSlice(buf, x.SkinGeometry),
 		WriteString(buf, x.XUID),
 		WriteString(buf, x.PlatformChatID),
+		binary.Write(buf, binary.LittleEndian, x.BuildPlatform),
+		WriteSerialisedSkin(buf, x.Skin),
+		binary.Write(buf, binary.LittleEndian, x.Teacher),
+		binary.Write(buf, binary.LittleEndian, x.Host),
 	)
 }
 
@@ -63,13 +58,12 @@ func PlayerAddEntry(buf *bytes.Buffer, x *PlayerListEntry) error {
 		UUID(buf, &x.UUID),
 		Varint64(buf, &x.EntityUniqueID),
 		String(buf, &x.Username),
-		String(buf, &x.SkinID),
-		ByteSlice(buf, &x.SkinData),
-		ByteSlice(buf, &x.CapeData),
-		String(buf, &x.SkinGeometryName),
-		ByteSlice(buf, &x.SkinGeometry),
 		String(buf, &x.XUID),
 		String(buf, &x.PlatformChatID),
+		binary.Read(buf, binary.LittleEndian, &x.BuildPlatform),
+		SerialisedSkin(buf, &x.Skin),
+		binary.Read(buf, binary.LittleEndian, &x.Teacher),
+		binary.Read(buf, binary.LittleEndian, &x.Host),
 	)
 }
 

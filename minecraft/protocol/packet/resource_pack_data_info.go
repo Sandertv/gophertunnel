@@ -24,13 +24,13 @@ type ResourcePackDataInfo struct {
 	// DataChunkSize is the maximum size in bytes of the chunks in which the total size of the resource pack
 	// to be sent will be divided. A size of 1MB (1024*1024) means that a resource pack of 15.5MB will be
 	// split into 16 data chunks.
-	DataChunkSize int32
+	DataChunkSize uint32
 	// ChunkCount is the total amount of data chunks that the sent resource pack will exist out of. It is the
 	// total size of the resource pack divided by the DataChunkSize field.
-	ChunkCount int32
+	ChunkCount uint32
 	// Size is the total size in bytes that the resource pack occupies. This is the size of the compressed
 	// archive (zip) of the resource pack.
-	Size int64
+	Size uint64
 	// Hash is a SHA256 hash of the content of the resource pack.
 	Hash []byte
 	// Premium specifies if the resource pack was a premium resource pack, meaning it was bought from the

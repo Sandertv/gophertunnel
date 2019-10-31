@@ -74,6 +74,9 @@ type AddPlayer struct {
 	// DeviceID is the device ID set in one of the files found in the storage of the device of the player. It
 	// may be changed freely, so it should not be relied on for anything.
 	DeviceID string
+	// BuildPlatform is the build platform/device OS of the player that is about to be added, as it sent in
+	// the Login packet when joining.
+	BuildPlatform int32
 }
 
 // ID ...
@@ -103,6 +106,7 @@ func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.PlayerUniqueID)
 	_ = protocol.WriteEntityLinks(buf, pk.EntityLinks)
 	_ = protocol.WriteString(buf, pk.DeviceID)
+	_ = binary.Write(buf, binary.LittleEndian, pk.BuildPlatform)
 }
 
 // Unmarshal ...
@@ -129,5 +133,6 @@ func (pk *AddPlayer) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.PlayerUniqueID),
 		protocol.EntityLinks(buf, &pk.EntityLinks),
 		protocol.String(buf, &pk.DeviceID),
+		binary.Read(buf, binary.LittleEndian, &pk.BuildPlatform),
 	)
 }

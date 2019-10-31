@@ -30,7 +30,7 @@ type Event struct {
 	EntityRuntimeID uint64
 	// EventType is the type of the event to be called. It is one of the constants that may be found above.
 	EventType int32
-	// Unknown ... TODO: Find out what this is for.
+	// TODO: Find out what the unknown byte in the Event packet represents.
 	Unknown byte
 }
 
@@ -46,7 +46,7 @@ func (pk *Event) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.Unknown)
 
 	switch pk.EventType {
-	// TODO: Figure out which events carry additional fields.
+	// TODO: Figure out which events in the Event packet carry additional fields.
 	}
 }
 
@@ -60,7 +60,7 @@ func (pk *Event) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	switch pk.EventType {
-	// TODO: Figure out which events carry additional fields.
+	// TODO: Figure out which events in the Event packet carry additional fields.
 	}
 
 	return nil

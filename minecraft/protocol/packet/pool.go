@@ -33,7 +33,7 @@ func NewPool() Pool {
 		IDRiderJump:         &RiderJump{},
 		IDUpdateBlock:       &UpdateBlock{},
 		IDAddPainting:       &AddPainting{},
-		IDExplode:           &Explode{},
+		IDTickSync:          &TickSync{},
 		// ---
 		IDLevelEvent:                  &LevelEvent{},
 		IDBlockEvent:                  &BlockEvent{},
@@ -146,6 +146,14 @@ func NewPool() Pool {
 		IDUpdateBlockProperties:               &UpdateBlockProperties{},
 		IDClientCacheBlobStatus:               &ClientCacheBlobStatus{},
 		IDClientCacheMissResponse:             &ClientCacheMissResponse{},
+		IDEducationSettings:                   &EducationSettings{},
+		IDEmote:                               &Emote{},
+		IDMultiPlayerSettings:                 &MultiPlayerSettings{},
+		IDSettingsCommand:                     &SettingsCommand{},
+		IDAnvilDamage:                         &AnvilDamage{},
+		IDCompletedUsingItem:                  &CompletedUsingItem{},
+		IDNetworkSettings:                     &NetworkSettings{},
+		IDPlayerAuthInput:                     &PlayerAuthInput{},
 	}
 }
 

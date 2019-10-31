@@ -66,6 +66,10 @@ func (pk *AvailableCommands) Marshal(buf *bytes.Buffer) {
 			_ = protocol.WriteString(buf, option)
 		}
 	}
+
+	// Constraints are supposed to be here, but constraints are pointless, make no sense to be in this packet
+	// and are not worth implementing.
+	_ = protocol.WriteVaruint32(buf, 0)
 }
 
 // Unmarshal ...
@@ -163,6 +167,19 @@ func (pk *AvailableCommands) Unmarshal(buf *bytes.Buffer) error {
 					pk.Commands[i].Overloads[j].Parameters[k].Enum = softEnums[offset]
 				}
 			}
+		}
+	}
+
+	// The constraints follow: They are useless and nonsensical, so we don't implement them.
+	var enumValueSymbol, enumSymbol, constraintIndexCount uint32
+	var constraintIndex byte
+	_ = protocol.Varuint32(buf, &count)
+	for i := uint32(0); i < count; i++ {
+		_ = protocol.Varuint32(buf, &enumValueSymbol)
+		_ = protocol.Varuint32(buf, &enumSymbol)
+		_ = protocol.Varuint32(buf, &constraintIndexCount)
+		for j := uint32(0); j < constraintIndexCount; j++ {
+			_ = binary.Read(buf, binary.LittleEndian, &constraintIndex)
 		}
 	}
 

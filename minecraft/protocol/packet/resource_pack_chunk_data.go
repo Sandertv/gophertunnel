@@ -14,10 +14,10 @@ type ResourcePackChunkData struct {
 	UUID string
 	// ChunkIndex is the current chunk index of the chunk. It is a number that starts at 0 and is incremented
 	// for each resource pack data chunk sent to the client.
-	ChunkIndex int32
+	ChunkIndex uint32
 	// DataOffset is the current progress in bytes or offset in the data that the resource pack data chunk is
 	// taken from.
-	DataOffset int64
+	DataOffset uint64
 	// RawPayload is a byte slice containing a chunk of data from the resource pack. It must be of the same size or
 	// less than the DataChunkSize set in the ResourcePackDataInfo packet.
 	Data []byte
@@ -33,21 +33,15 @@ func (pk *ResourcePackChunkData) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.UUID)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ChunkIndex)
 	_ = binary.Write(buf, binary.LittleEndian, pk.DataOffset)
-	_ = binary.Write(buf, binary.LittleEndian, int32(len(pk.Data)))
-	_, _ = buf.Write(pk.Data)
+	_ = protocol.WriteByteSlice(buf, pk.Data)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackChunkData) Unmarshal(buf *bytes.Buffer) error {
-	var length int32
-	if err := chainErr(
+	return chainErr(
 		protocol.String(buf, &pk.UUID),
 		binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex),
 		binary.Read(buf, binary.LittleEndian, &pk.DataOffset),
-		binary.Read(buf, binary.LittleEndian, &length),
-	); err != nil {
-		return err
-	}
-	pk.Data = buf.Next(int(length))
-	return nil
+		protocol.ByteSlice(buf, &pk.Data),
+	)
 }

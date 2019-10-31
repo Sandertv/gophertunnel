@@ -34,11 +34,11 @@ func (*ResourcePacksInfo) ID() uint32 {
 func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.TexturePackRequired)
 	_ = binary.Write(buf, binary.LittleEndian, pk.HasScripts)
-	_ = binary.Write(buf, binary.LittleEndian, int16(len(pk.BehaviourPacks)))
+	_ = binary.Write(buf, binary.LittleEndian, uint16(len(pk.BehaviourPacks)))
 	for _, pack := range pk.BehaviourPacks {
 		_ = protocol.WritePackInfo(buf, pack)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, int16(len(pk.TexturePacks)))
+	_ = binary.Write(buf, binary.LittleEndian, uint16(len(pk.TexturePacks)))
 	for _, pack := range pk.TexturePacks {
 		_ = protocol.WritePackInfo(buf, pack)
 	}
@@ -46,7 +46,7 @@ func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
-	var length int16
+	var length uint16
 	if err := chainErr(
 		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
 		binary.Read(buf, binary.LittleEndian, &pk.HasScripts),
@@ -55,7 +55,7 @@ func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	pk.BehaviourPacks = make([]protocol.ResourcePackInfo, length)
-	for i := int16(0); i < length; i++ {
+	for i := uint16(0); i < length; i++ {
 		if err := protocol.PackInfo(buf, &pk.BehaviourPacks[i]); err != nil {
 			return err
 		}
@@ -64,7 +64,7 @@ func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	pk.TexturePacks = make([]protocol.ResourcePackInfo, length)
-	for i := int16(0); i < length; i++ {
+	for i := uint16(0); i < length; i++ {
 		if err := protocol.PackInfo(buf, &pk.TexturePacks[i]); err != nil {
 			return err
 		}

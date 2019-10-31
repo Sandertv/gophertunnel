@@ -17,7 +17,7 @@ type ResourcePackInfo struct {
 	Version string
 	// Size is the total size in bytes that the resource pack occupies. This is the size of the compressed
 	// archive (zip) of the resource pack.
-	Size int64
+	Size uint64
 	// ContentKey is the key used to decrypt the resource pack if it is encrypted. This is generally the case
 	// for marketplace resource packs.
 	ContentKey string

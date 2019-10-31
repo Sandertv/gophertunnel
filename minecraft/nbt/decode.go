@@ -27,6 +27,11 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{Variant: NetworkLittleEndian, r: newOffsetReader(r)}
 }
 
+// NewDecoderVariant returns a new Decoder for the input stream reader passed with a specific variant.
+func NewDecoderVariant(r io.Reader, variant Variant) *Decoder {
+	return &Decoder{Variant: variant, r: newOffsetReader(r)}
+}
+
 // Decode reads the next NBT object from the input stream and stores it into the pointer to an object passed.
 // See the Unmarshal docs for the conversion between NBT tags to Go types.
 func (d *Decoder) Decode(v interface{}) error {

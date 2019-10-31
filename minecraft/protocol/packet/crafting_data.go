@@ -14,10 +14,15 @@ type CraftingData struct {
 	// Recipes is a list of all recipes available on the server. It includes among others shapeless, shaped
 	// and furnace recipes. The client will only be able to craft these recipes.
 	Recipes []protocol.Recipe
-	// CleanRecipes indicates if all recipes currently active on the client should be cleaned. Doing this
+	// PotionMixes is a list of all potion mixing recipes which may be used in the brewing stand.
+	PotionMixes []protocol.PotionMix
+	// TODO: Find out what the ContainerMixes in the CraftingData packet represent.
+	// ContainerMixes is a list of all
+	ContainerMixes []protocol.ContainerMix
+	// ClearRecipes indicates if all recipes currently active on the client should be cleaned. Doing this
 	// means that the client will have no recipes active by itself: Any CraftingData packets previously sent
 	// will also be discarded, and only the recipes in this CraftingData packet will be used.
-	CleanRecipes bool
+	ClearRecipes bool
 }
 
 // ID ...
@@ -51,7 +56,15 @@ func (pk *CraftingData) Marshal(buf *bytes.Buffer) {
 		}
 		recipe.Marshal(buf)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.CleanRecipes)
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionMixes)))
+	for _, mix := range pk.PotionMixes {
+		_ = protocol.WritePotMix(buf, mix)
+	}
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.ContainerMixes)))
+	for _, mix := range pk.ContainerMixes {
+		_ = protocol.WriteContainMix(buf, mix)
+	}
+	_ = binary.Write(buf, binary.LittleEndian, pk.ClearRecipes)
 }
 
 // Unmarshal ...
@@ -92,5 +105,23 @@ func (pk *CraftingData) Unmarshal(buf *bytes.Buffer) error {
 		}
 		pk.Recipes[i] = recipe
 	}
-	return binary.Read(buf, binary.LittleEndian, &pk.CleanRecipes)
+	if err := protocol.Varuint32(buf, &length); err != nil {
+		return err
+	}
+	pk.PotionMixes = make([]protocol.PotionMix, length)
+	for i := uint32(0); i < length; i++ {
+		if err := protocol.PotMix(buf, &pk.PotionMixes[i]); err != nil {
+			return err
+		}
+	}
+	if err := protocol.Varuint32(buf, &length); err != nil {
+		return err
+	}
+	pk.ContainerMixes = make([]protocol.ContainerMix, length)
+	for i := uint32(0); i < length; i++ {
+		if err := protocol.ContainMix(buf, &pk.ContainerMixes[i]); err != nil {
+			return err
+		}
+	}
+	return binary.Read(buf, binary.LittleEndian, &pk.ClearRecipes)
 }

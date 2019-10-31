@@ -47,7 +47,7 @@ type GameData struct {
 	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
 	// that are in the game, including any specific variants of that block, will crash mobile clients. It
 	// seems Windows 10 games do not crash.
-	Blocks []protocol.BlockEntry
+	Blocks []interface{}
 	// Items is a list of all items existing in the game. Failing to send any of the default items that are in
 	// the game will crash mobile clients.
 	Items []protocol.ItemEntry

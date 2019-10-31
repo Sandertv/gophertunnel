@@ -13,7 +13,7 @@ type ResourcePackChunkRequest struct {
 	UUID string
 	// ChunkIndex is the requested chunk index of the chunk. It is a number that starts at 0 and is
 	// incremented for each resource pack data chunk requested.
-	ChunkIndex int32
+	ChunkIndex uint32
 }
 
 // ID ...

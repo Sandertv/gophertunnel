@@ -6,6 +6,66 @@ import (
 	"github.com/google/uuid"
 )
 
+// TODO: Find out what the ContainerMix recipes represent.
+type ContainerMix struct {
+	// InputItemID is the item ID of the item to be put in.
+	InputItemID int32
+	// ReagentItemID is the item ID of the item that needs to be added to the container in order to create the
+	// output item.
+	ReagentItemID int32
+	// OutputItemID is the item that is created using a combination of the InputItem and ReagentItem.
+	OutputItemID int32
+}
+
+// WriteContainMix writes a ContainerMix x to Buffer dst.
+func WriteContainMix(dst *bytes.Buffer, x ContainerMix) error {
+	return chainErr(
+		WriteVarint32(dst, x.InputItemID),
+		WriteVarint32(dst, x.ReagentItemID),
+		WriteVarint32(dst, x.OutputItemID),
+	)
+}
+
+// ContainMix reads a ContainerMix x from Buffer src.
+func ContainMix(src *bytes.Buffer, x *ContainerMix) error {
+	return chainErr(
+		Varint32(src, &x.InputItemID),
+		Varint32(src, &x.ReagentItemID),
+		Varint32(src, &x.OutputItemID),
+	)
+}
+
+// PotionMix represents a potion mixing recipe which may be used in a brewing stand.
+type PotionMix struct {
+	// InputPotionID is the potion ID of the potion to be put in. This is typically the ID of the awkward
+	// potion (or water bottle to create an awkward potion).
+	InputPotionID int32
+	// ReagentItemID is the item ID of the item that needs to be added to the brewing stand in order to brew
+	// the output potion.
+	ReagentItemID int32
+	// OutputPotionID is the potion ID of the potion that is obtained as a result of brewing the input potion
+	// with the reagent item.
+	OutputPotionID int32
+}
+
+// WritePotMix writes a PotionMix x to Buffer dst.
+func WritePotMix(dst *bytes.Buffer, x PotionMix) error {
+	return chainErr(
+		WriteVarint32(dst, x.InputPotionID),
+		WriteVarint32(dst, x.ReagentItemID),
+		WriteVarint32(dst, x.OutputPotionID),
+	)
+}
+
+// PotMix reads a PotionMix x from Buffer src.
+func PotMix(src *bytes.Buffer, x *PotionMix) error {
+	return chainErr(
+		Varint32(src, &x.InputPotionID),
+		Varint32(src, &x.ReagentItemID),
+		Varint32(src, &x.OutputPotionID),
+	)
+}
+
 const (
 	RecipeShapeless = iota
 	RecipeShaped

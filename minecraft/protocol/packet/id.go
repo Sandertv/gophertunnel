@@ -1,7 +1,7 @@
 package packet
 
 const (
-	IDLogin = iota + 0x01
+	IDLogin = iota + 1
 	IDPlayStatus
 	IDServerToClientHandshake
 	IDClientToServerHandshake
@@ -23,14 +23,14 @@ const (
 	IDRiderJump
 	IDUpdateBlock
 	IDAddPainting
-	IDExplode
+	IDTickSync
 	_ // IDLevelSoundEvent(1): We don't bother implementing this.
 	IDLevelEvent
 	IDBlockEvent
 	IDActorEvent
 	IDMobEffect
 	IDUpdateAttributes
-	IDInventoryTransaction
+	IDInventoryTransaction // 30
 	IDMobEquipment
 	IDMobArmourEquipment
 	IDInteract
@@ -137,4 +137,12 @@ const (
 	IDUpdateBlockProperties
 	IDClientCacheBlobStatus
 	IDClientCacheMissResponse
+	IDEducationSettings
+	IDEmote
+	IDMultiPlayerSettings
+	IDSettingsCommand
+	IDAnvilDamage
+	IDCompletedUsingItem
+	IDNetworkSettings
+	IDPlayerAuthInput
 )

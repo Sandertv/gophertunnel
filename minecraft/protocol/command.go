@@ -60,13 +60,22 @@ const (
 	CommandArgTypeJSON     = 0x25
 	CommandArgTypeCommand  = 0x2c
 )
+const (
+	// ParamOptionCollapseEnum specifies if the enum (only if the Type is actually an enum type. If not,
+	// setting this to true has no effect) should be collapsed. This means that the options of the enum are
+	// never shown in the actual usage of the command, but only as auto-completion, like it automatically does
+	// with enums that have a big amount of options. To illustrate, it can make
+	// <false|true|yes|no> <$Name: bool>.
+	ParamOptionCollapseEnum = iota + 1
+	ParamOptionHasSemanticConstraint
+)
 
 // CommandParameter represents a single parameter of a command overload, which accepts a certain type of input
 // values. It has a name and a type which show up client-side when a player is entering the command.
 type CommandParameter struct {
 	// Name is the name of the command parameter. It shows up in the usage like <$Name: $Type>, with the
 	// exception of enum types, which show up simply as a list of options if the list is short enough and
-	// CollapseEnumOptions is set to false.
+	// Options is set to false.
 	Name string
 	// Type is a rather odd combination of type(flag)s that result in a certain parameter type to show up
 	// client-side. It is a combination of the flags above. The basic types must be combined with the
@@ -77,11 +86,9 @@ type CommandParameter struct {
 	// should ever be present in a command overload after an optional parameter. When optional, the parameter
 	// shows up like so: [$Name: $Type], whereas when mandatory, it shows up like so: <$Name: $Type>.
 	Optional bool
-	// CollapseEnumOptions specifies if the enum (only if the Type is actually an enum type. If not, setting
-	// this to true has no effect) should be collapsed. This means that the options of the enum are never
-	// shown in the actual usage of the command, but only as auto-completion, like it automatically does with
-	// enums that have a big amount of options. To illustrate, it can make <false|true|yes|no> <$Name: bool>.
-	CollapseEnumOptions bool
+	// Options holds a combinations of options that additionally apply to the command parameter. The list of
+	// options can be found above.
+	Options byte
 
 	// Enum is the enum of the parameter if it should be of the type enum. If non-empty, the parameter will
 	// be treated as an enum and show up as such client-side.
@@ -96,7 +103,7 @@ type CommandParameter struct {
 // are valid. A value that is not one of the options results in a failure during execution.
 type CommandEnum struct {
 	// Type is the type of the command enum. The type will show up in the command usage as the type of the
-	// argument if it has a certain amount of arguments, or when CollapseEnumOptions is set to true in the
+	// argument if it has a certain amount of arguments, or when Options is set to true in the
 	// command holding the enum.
 	Type string
 	// Options is a list of options that are valid for the client to submit to the command. They will be able
@@ -313,7 +320,7 @@ func WriteCommandParam(dst *bytes.Buffer, x CommandParameter, enumIndices map[st
 		WriteString(dst, x.Name),
 		binary.Write(dst, binary.LittleEndian, x.Type),
 		binary.Write(dst, binary.LittleEndian, x.Optional),
-		binary.Write(dst, binary.LittleEndian, x.CollapseEnumOptions),
+		binary.Write(dst, binary.LittleEndian, x.Options),
 	)
 }
 
@@ -325,7 +332,7 @@ func CommandParam(src *bytes.Buffer, x *CommandParameter, enums []CommandEnum, s
 		String(src, &x.Name),
 		binary.Read(src, binary.LittleEndian, &x.Type),
 		binary.Read(src, binary.LittleEndian, &x.Optional),
-		binary.Read(src, binary.LittleEndian, &x.CollapseEnumOptions),
+		binary.Read(src, binary.LittleEndian, &x.Options),
 	); err != nil {
 		return err
 	}

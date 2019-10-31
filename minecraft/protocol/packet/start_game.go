@@ -3,7 +3,10 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -56,10 +59,10 @@ type StartGame struct {
 	// DayCycleLockTime is the time at which the day cycle was locked if the day cycle is disabled using the
 	// respective game rule. The client will maintain this time as long as the day cycle is disabled.
 	DayCycleLockTime int32
-	// EducationMode specifies if the world is specifically for education edition clients. Setting this to
-	// true for normal editions actually temporarily 'transforms' the client into Education Edition, with even
-	// the ability to see that title on the home screen.
-	EducationMode bool
+	// EducationEditionOffer is some Minecraft: Education Edition field that specifies what 'region' the world
+	// was from, with 0 being None, 1 being RestOfWorld, and 2 being China.
+	// The actual use of this field is unknown.
+	EducationEditionOffer int32
 	// EducationFeaturesEnabled specifies if the world has education edition features enabled, such as the
 	// blocks or entities specific to education edition.
 	EducationFeaturesEnabled bool
@@ -127,28 +130,32 @@ type StartGame struct {
 	// OnlySpawnV1Villagers is a hack that Mojang put in place to preserve backwards compatibility with old
 	// villagers. The bool is never actually read though, so it has no functionality.
 	OnlySpawnV1Villagers bool
+	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
+	// of this field isn't clear.
+	BaseGameVersion string
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
 	// player list for the rest of the game session, and cannot be changed. Setting the server name to this
 	// field is recommended.
 	WorldName string
-	// PremiumWorldTemplateID is a UUID specific to the premium world template that might have been used to
+	// TemplateContentIdentity is a UUID specific to the premium world template that might have been used to
 	// generate the world. Servers should always fill out an empty string for this.
-	PremiumWorldTemplateID string
+	TemplateContentIdentity string
 	// Trial specifies if the world was a trial world, meaning features are limited and there is a time limit
 	// on the world.
 	Trial bool
+	// ServerAuthoritativeOverMovement specifies if the server is authoritative over the movement of the
+	// player, meaning it controls the movement of it.
+	ServerAuthoritativeOverMovement bool
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
 	// EnchantmentSeed is the seed used to seed the random used to produce enchantments in the enchantment
 	// table. Note that the exact correct random implementation must be used to produce the correct results
 	// both client- and server-side.
 	EnchantmentSeed int32
-	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
-	// that are in the game, including any specific variants of that block, will crash mobile clients. It
-	// seems Windows 10 games do not crash.
-	Blocks []protocol.BlockEntry
+	// Blocks is a list of all blocks registered on the server.
+	Blocks []interface{}
 	// Items is a list of all items with their legacy IDs which are available in the game. Failing to send any
 	// of the items that are in the game will crash mobile clients.
 	Items []protocol.ItemEntry
@@ -178,7 +185,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteUBlockPosition(buf, pk.WorldSpawn)
 	_ = binary.Write(buf, binary.LittleEndian, pk.AchievementsDisabled)
 	_ = protocol.WriteVarint32(buf, pk.DayCycleLockTime)
-	_ = binary.Write(buf, binary.LittleEndian, pk.EducationMode)
+	_ = protocol.WriteVarint32(buf, pk.EducationEditionOffer)
 	_ = binary.Write(buf, binary.LittleEndian, pk.EducationFeaturesEnabled)
 	_ = protocol.WriteFloat32(buf, pk.RainLevel)
 	_ = protocol.WriteFloat32(buf, pk.LightningLevel)
@@ -201,18 +208,15 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.FromWorldTemplate)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WorldTemplateSettingsLocked)
 	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
+	_ = protocol.WriteString(buf, protocol.CurrentVersion)
 	_ = protocol.WriteString(buf, pk.LevelID)
 	_ = protocol.WriteString(buf, pk.WorldName)
-	_ = protocol.WriteString(buf, pk.PremiumWorldTemplateID)
+	_ = protocol.WriteString(buf, pk.TemplateContentIdentity)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Trial)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ServerAuthoritativeOverMovement)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Time)
 	_ = protocol.WriteVarint32(buf, pk.EnchantmentSeed)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Blocks)))
-	for _, block := range pk.Blocks {
-		_ = protocol.WriteString(buf, block.Name)
-		_ = binary.Write(buf, binary.LittleEndian, block.Data)
-		_ = binary.Write(buf, binary.LittleEndian, block.LegacyID)
-	}
+	_ = nbt.NewEncoder(buf).Encode(pk.Blocks)
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Items)))
 	for _, item := range pk.Items {
 		_ = protocol.WriteString(buf, item.Name)
@@ -223,10 +227,11 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
+	fmt.Println(hex.EncodeToString(buf.Bytes()))
 	if pk.GameRules == nil {
 		pk.GameRules = make(map[string]interface{})
 	}
-	var blockCount, itemCount uint32
+	var itemCount uint32
 	if err := chainErr(
 		protocol.Varint64(buf, &pk.EntityUniqueID),
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
@@ -242,7 +247,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		protocol.UBlockPosition(buf, &pk.WorldSpawn),
 		binary.Read(buf, binary.LittleEndian, &pk.AchievementsDisabled),
 		protocol.Varint32(buf, &pk.DayCycleLockTime),
-		binary.Read(buf, binary.LittleEndian, &pk.EducationMode),
+		protocol.Varint32(buf, &pk.EducationEditionOffer),
 		binary.Read(buf, binary.LittleEndian, &pk.EducationFeaturesEnabled),
 		protocol.Float32(buf, &pk.RainLevel),
 		protocol.Float32(buf, &pk.LightningLevel),
@@ -265,28 +270,19 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.FromWorldTemplate),
 		binary.Read(buf, binary.LittleEndian, &pk.WorldTemplateSettingsLocked),
 		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
+		protocol.String(buf, &pk.BaseGameVersion),
 		protocol.String(buf, &pk.LevelID),
 		protocol.String(buf, &pk.WorldName),
-		protocol.String(buf, &pk.PremiumWorldTemplateID),
+		protocol.String(buf, &pk.TemplateContentIdentity),
 		binary.Read(buf, binary.LittleEndian, &pk.Trial),
+		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeOverMovement),
 		binary.Read(buf, binary.LittleEndian, &pk.Time),
 		protocol.Varint32(buf, &pk.EnchantmentSeed),
-		protocol.Varuint32(buf, &blockCount),
+		nbt.NewDecoder(buf).Decode(&pk.Blocks),
 	); err != nil {
 		return err
 	}
-	pk.Blocks = make([]protocol.BlockEntry, blockCount)
-	for i := uint32(0); i < blockCount; i++ {
-		block := protocol.BlockEntry{}
-		if err := chainErr(
-			protocol.String(buf, &block.Name),
-			binary.Read(buf, binary.LittleEndian, &block.Data),
-			binary.Read(buf, binary.LittleEndian, &block.LegacyID),
-		); err != nil {
-			return err
-		}
-		pk.Blocks[i] = block
-	}
+
 	if err := protocol.Varuint32(buf, &itemCount); err != nil {
 		return err
 	}

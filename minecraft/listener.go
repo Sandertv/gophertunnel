@@ -180,22 +180,28 @@ func (listener *Listener) listen() {
 			// close too.
 			return
 		}
-		conn := newConn(netConn, nil, listener.ErrorLog)
-		conn.texturePacksRequired = listener.TexturePacksRequired
-		conn.resourcePacks = listener.ResourcePacks
-		conn.gameData.WorldName = listener.ServerName
-
-		if atomic.LoadInt32(listener.playerCount) == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
-			// The server was full. We kick the player immediately and close the connection.
-			_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
-			_ = conn.Close()
-			continue
-		}
-		atomic.AddInt32(listener.playerCount, 1)
-		listener.updatePongData()
-
-		go listener.handleConn(conn)
+		listener.createConn(netConn)
 	}
+}
+
+// createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
+// accepted once its login sequence is complete.
+func (listener *Listener) createConn(netConn net.Conn) {
+	conn := newConn(netConn, nil, listener.ErrorLog)
+	conn.texturePacksRequired = listener.TexturePacksRequired
+	conn.resourcePacks = listener.ResourcePacks
+	conn.gameData.WorldName = listener.ServerName
+
+	if atomic.LoadInt32(listener.playerCount) == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
+		// The server was full. We kick the player immediately and close the connection.
+		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
+		_ = conn.Close()
+		return
+	}
+	atomic.AddInt32(listener.playerCount, 1)
+	listener.updatePongData()
+
+	go listener.handleConn(conn)
 }
 
 // handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to

@@ -35,6 +35,13 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: writer, Variant: NetworkLittleEndian}
 }
 
+// NewEncoderVariant returns a new encoder for the output stream writer passed using a specific variant.
+func NewEncoderVariant(w io.Writer, variant Variant) *Encoder {
+	enc := NewEncoder(w)
+	enc.Variant = variant
+	return enc
+}
+
 // Encode encodes an object to NBT and writes it to the NBT output stream of the encoder. See the Marshal
 // docs for the conversion from Go types to NBT tags and special struct tags.
 func (e *Encoder) Encode(v interface{}) error {

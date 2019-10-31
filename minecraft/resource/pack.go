@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strconv"
+	"strings"
 )
 
 // Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds
@@ -318,6 +319,8 @@ func readManifest(path string) (*Manifest, error) {
 	if err := json.Unmarshal(allData, manifest); err != nil {
 		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
 	}
+	manifest.Header.UUID = strings.ToLower(manifest.Header.UUID)
+
 	if _, err := reader.find("level.dat"); err == nil {
 		manifest.worldTemplate = true
 	}

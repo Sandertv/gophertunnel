@@ -23,6 +23,8 @@ type ResourcePackStack struct {
 	// Experimental specifies if the resource packs in the stack are experimental. This is internal and should
 	// always be set to false.
 	Experimental bool
+	// BaseGameVersion is the vanilla version that the client should set its resource pack stack to.
+	BaseGameVersion string
 }
 
 // ID ...
@@ -42,6 +44,7 @@ func (pk *ResourcePackStack) Marshal(buf *bytes.Buffer) {
 		_ = protocol.WriteStackPack(buf, pack)
 	}
 	_ = binary.Write(buf, binary.LittleEndian, pk.Experimental)
+	_ = protocol.WriteString(buf, pk.BaseGameVersion)
 }
 
 // Unmarshal ...
@@ -68,5 +71,8 @@ func (pk *ResourcePackStack) Unmarshal(buf *bytes.Buffer) error {
 			return err
 		}
 	}
-	return binary.Read(buf, binary.LittleEndian, &pk.Experimental)
+	return chainErr(
+		binary.Read(buf, binary.LittleEndian, &pk.Experimental),
+		protocol.String(buf, &pk.BaseGameVersion),
+	)
 }

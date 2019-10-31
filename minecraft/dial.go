@@ -108,8 +108,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.decoder.DisableBatchPacketLimit()
 
-	var emptyClientData login.ClientData
-	if dialer.ClientData != emptyClientData {
+	if dialer.ClientData.SkinData != "" {
 		// If a custom client data struct was set, we change the default.
 		conn.clientData = dialer.ClientData
 	}
@@ -209,17 +208,18 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 func defaultClientData(address string) login.ClientData {
 	rand2.Seed(time.Now().Unix())
 	return login.ClientData{
-		ClientRandomID:   rand2.Int63(),
-		DeviceOS:         device.Win10,
-		GameVersion:      protocol.CurrentVersion,
-		DeviceID:         uuid.Must(uuid.NewRandom()).String(),
-		LanguageCode:     "en_UK",
-		ThirdPartyName:   "Steve",
-		SelfSignedID:     uuid.Must(uuid.NewRandom()).String(),
-		SkinGeometryName: "geometry.humanoid",
-		ServerAddress:    address,
-		SkinID:           uuid.Must(uuid.NewRandom()).String(),
-		SkinData:         base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0}, 32*64*4)),
+		ClientRandomID:  rand2.Int63(),
+		DeviceOS:        device.Win10,
+		GameVersion:     protocol.CurrentVersion,
+		DeviceID:        uuid.Must(uuid.NewRandom()).String(),
+		LanguageCode:    "en_UK",
+		ThirdPartyName:  "Steve",
+		SelfSignedID:    uuid.Must(uuid.NewRandom()).String(),
+		ServerAddress:   address,
+		SkinID:          uuid.Must(uuid.NewRandom()).String(),
+		SkinData:        base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0}, 32*64*4)),
+		SkinImageWidth:  64,
+		SkinImageHeight: 32,
 	}
 }
 
