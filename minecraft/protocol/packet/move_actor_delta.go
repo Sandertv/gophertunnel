@@ -39,7 +39,7 @@ func (*MoveActorDelta) ID() uint32 {
 // Marshal ...
 func (pk *MoveActorDelta) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	var flags byte
+	var flags uint16
 	if pk.DeltaPosition[0] != 0 {
 		flags |= moveFlagHasX
 	}
@@ -83,7 +83,7 @@ func (pk *MoveActorDelta) Marshal(buf *bytes.Buffer) {
 func (pk *MoveActorDelta) Unmarshal(buf *bytes.Buffer) error {
 	pk.DeltaPosition = mgl32.Vec3{}
 	pk.DeltaRotation = mgl32.Vec3{}
-	var flags byte
+	var flags uint16
 	if err := chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		binary.Read(buf, binary.LittleEndian, &flags),
