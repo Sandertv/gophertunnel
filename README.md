@@ -7,7 +7,7 @@ gophertunnel is composed of several packages that may be of use for creating Min
 package [query](https://godoc.org/github.com/Sandertv/gophertunnel/query): A package implementing the sending of queries
 to servers that implement the UT3/GameSpy Query Protocol.
 
-* package [minecraft](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft): A package implementing connecting
+package [minecraft](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft): A package implementing connecting
 to Minecraft Bedrock Edition servers and listening for Minecraft Bedrock Edition clients using a TCP style interface.
 
 * package [minecraft/auth](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/auth): A package implementing
