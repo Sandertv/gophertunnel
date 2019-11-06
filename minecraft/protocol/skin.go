@@ -3,6 +3,7 @@ package protocol
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 )
 
 // Skin represents the skin of a player as sent over network. The skin holds a texture and a model, and
@@ -48,8 +49,12 @@ type Skin struct {
 	FullSkinID string
 }
 
-// WriteSerialisedSkin writes a Skin x to Buffer dst.
+// WriteSerialisedSkin writes a Skin x to Buffer dst. WriteSerialisedSkin panics if the fields of the skin
+// have invalid values, usually indicating that the dimensions of the skin images are incorrect.
 func WriteSerialisedSkin(dst *bytes.Buffer, x Skin) error {
+	if err := x.validate(); err != nil {
+		panic(err)
+	}
 	if err := chainErr(
 		WriteString(dst, x.SkinID),
 		WriteByteSlice(dst, x.SkinResourcePatch),
@@ -105,7 +110,7 @@ func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 			return err
 		}
 	}
-	return chainErr(
+	if err := chainErr(
 		binary.Read(src, binary.LittleEndian, &x.CapeImageWidth),
 		binary.Read(src, binary.LittleEndian, &x.CapeImageHeight),
 		ByteSlice(src, &x.CapeData),
@@ -116,7 +121,28 @@ func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 		binary.Read(src, binary.LittleEndian, &x.PersonaCapeOnClassicSkin),
 		String(src, &x.CapeID),
 		String(src, &x.FullSkinID),
-	)
+	); err != nil {
+		return err
+	}
+
+	return x.validate()
+}
+
+// validate checks the skin and makes sure every one of its values are correct. It checks the image dimensions
+// and makes sure they match the image size of the skin, cape and the skin's animations.
+func (skin Skin) validate() error {
+	if skin.SkinImageHeight*skin.SkinImageWidth*4 != uint32(len(skin.SkinData)) {
+		return fmt.Errorf("expected size of skin is %vx%v (%v bytes total), but got %v bytes", skin.SkinImageWidth, skin.SkinImageHeight, skin.SkinImageHeight*skin.SkinImageWidth*4, len(skin.SkinData))
+	}
+	if skin.CapeImageHeight*skin.CapeImageWidth*4 != uint32(len(skin.CapeData)) {
+		return fmt.Errorf("expected size of cape is %vx%v (%v bytes total), but got %v bytes", skin.CapeImageWidth, skin.CapeImageHeight, skin.CapeImageHeight*skin.CapeImageWidth*4, len(skin.CapeData))
+	}
+	for i, animation := range skin.Animations {
+		if animation.ImageHeight*animation.ImageWidth*4 != uint32(len(animation.ImageData)) {
+			return fmt.Errorf("expected size of animation %v is %vx%v (%v bytes total), but got %v bytes", i, animation.ImageWidth, animation.ImageHeight, animation.ImageHeight*animation.ImageWidth*4, len(animation.ImageData))
+		}
+	}
+	return nil
 }
 
 const (

@@ -217,7 +217,7 @@ func defaultClientData(address string) login.ClientData {
 		SelfSignedID:    uuid.Must(uuid.NewRandom()).String(),
 		ServerAddress:   address,
 		SkinID:          uuid.Must(uuid.NewRandom()).String(),
-		SkinData:        base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0}, 32*64*4)),
+		SkinData:        base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0, 0, 0, 255}, 32*64)),
 		SkinImageWidth:  64,
 		SkinImageHeight: 32,
 	}
