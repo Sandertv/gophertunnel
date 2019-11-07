@@ -94,8 +94,5 @@ func (pk *InventoryTransaction) Unmarshal(buf *bytes.Buffer) error {
 		// We don't try to decode transactions that have some transaction type we don't know.
 		return fmt.Errorf("unknown inventory transaction type %v", transactionType)
 	}
-	if err := pk.TransactionData.Unmarshal(buf); err != nil {
-		return err
-	}
-	return nil
+	return pk.TransactionData.Unmarshal(buf)
 }

@@ -50,7 +50,7 @@ const (
 	SoundEventAddChest
 	SoundEventThrow
 	SoundEventAttack
-	SoundEventAttackNodamage
+	SoundEventAttackNoDamage
 	SoundEventAttackStrong
 	SoundEventWarn
 	SoundEventShear
@@ -69,18 +69,18 @@ const (
 	SoundEventLargeBlast
 	SoundEventTwinkle
 	SoundEventRemedy
-	SoundEventUnfect
-	SoundEventLevelup
+	SoundEventInfect
+	SoundEventLevelUp
 	SoundEventBowHit
 	SoundEventBulletHit
 	SoundEventExtinguishFire
 	SoundEventItemFizz
 	SoundEventChestOpen
 	SoundEventChestClosed
-	SoundEventShulkerboxOpen
-	SoundEventShulkerboxClosed
-	SoundEventEnderchestOpen
-	SoundEventEnderchestClosed
+	SoundEventShulkerBoxOpen
+	SoundEventShulkerBoxClosed
+	SoundEventEnderChestOpen
+	SoundEventEnderChestClosed
 	SoundEventPowerOn
 	SoundEventPowerOff
 	SoundEventAttach
@@ -123,7 +123,7 @@ const (
 	SoundEventRecordWait
 	_
 	SoundEventFlop
-	SoundEventElderguardianCurse
+	SoundEventElderGuardianCurse
 	SoundEventMobWarning
 	SoundEventMobWarningBaby
 	SoundEventTeleport
@@ -133,8 +133,8 @@ const (
 	SoundEventHaggleYes
 	SoundEventHaggleNo
 	SoundEventHaggleIdle
-	SoundEventChorusgrow
-	SoundEventChorusdeath
+	SoundEventChorusGrow
+	SoundEventChorusDeath
 	SoundEventGlass
 	SoundEventPotionBrewed
 	SoundEventCastSpell
@@ -144,8 +144,8 @@ const (
 	SoundEventFang
 	SoundEventCharge
 	SoundEventCameraTakePicture
-	SoundEventLeashknotPlace
-	SoundEventLeashknotBreak
+	SoundEventLeashKnotPlace
+	SoundEventLeashKnotBreak
 	SoundEventGrowl
 	SoundEventWhine
 	SoundEventPant
@@ -184,7 +184,7 @@ const (
 	SoundEventBlockEndPortalFrameFill
 	SoundEventBlockEndPortalSpawn
 	SoundEventRandomAnvilUse
-	SoundEventBottleDragonbreath
+	SoundEventBottleDragonBreath
 	SoundEventPortalTravel
 	SoundEventItemTridentHit
 	SoundEventItemTridentReturn
@@ -196,13 +196,13 @@ const (
 	SoundEventItemTridentHitGround
 	SoundEventDefault
 	SoundEventBlockFletchingTableUse
-	SoundEventElemconstructOpen
-	SoundEventIcebombHit
-	SoundEventBalloonpop
-	SoundEventLtReactionIcebomb
+	SoundEventElemConstructOpen
+	SoundEventIceBombHit
+	SoundEventBalloonPop
+	SoundEventLtReactionIceBomb
 	SoundEventLtReactionBleach
-	SoundEventLtReactionEpaste
-	SoundEventLtReactionEpaste2
+	SoundEventLtReactionEPaste
+	SoundEventLtReactionEPaste2
 	_
 	_
 	_
@@ -225,8 +225,8 @@ const (
 	SoundEventBubbleUp
 	SoundEventBubbleDown
 	SoundEventBubblePop
-	SoundEventBubbleUpinside
-	SoundEventBubbleDowninside
+	SoundEventBubbleUpInside
+	SoundEventBubbleDownInside
 	SoundEventHurtBaby
 	SoundEventDeathBaby
 	SoundEventStepBaby
@@ -248,7 +248,7 @@ const (
 	SoundEventConduitShort
 	SoundEventSwoop
 	SoundEventBlockBambooSaplingPlace
-	SoundEventPresneeze
+	SoundEventPreSneeze
 	SoundEventSneeze
 	SoundEventAmbientTame
 	SoundEventScared
@@ -272,8 +272,8 @@ const (
 	SoundEventStun
 	SoundEventBlockSweetBerryBushHurt
 	SoundEventBlockSweetBerryBushPick
-	SoundEventUiCartographyTableTakeResult
-	SoundEventUiStonecutterTakeResult
+	SoundEventUICartographyTableTakeResult
+	SoundEventUIStoneCutterTakeResult
 	SoundEventBlockComposterEmpty
 	SoundEventBlockComposterFill
 	SoundEventBlockComposterFillSuccess

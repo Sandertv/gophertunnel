@@ -336,10 +336,9 @@ func CommandParam(src *bytes.Buffer, x *CommandParameter, enums []CommandEnum, s
 	); err != nil {
 		return err
 	}
-	if x.Type&CommandArgSoftEnum != 0 {
-		// We explicitly do not do anything here, as we haven't yet read the soft enums. The packet read
-		// method will have to do this itself.
-	} else if x.Type&CommandArgEnum != 0 {
+	// We explicitly do not do the soft enums anything here, as we haven't yet read the soft enums. The packet
+	// read method will have to do this itself.
+	if x.Type&CommandArgEnum != 0 {
 		offset := int(x.Type & 0xffff)
 		if len(enums) <= offset {
 			return fmt.Errorf("invalid enum offset %v, expected one lower than or equal to %v", offset, len(enums))

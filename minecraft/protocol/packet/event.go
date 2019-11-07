@@ -45,9 +45,7 @@ func (pk *Event) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVarint32(buf, pk.EventType)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Unknown)
 
-	switch pk.EventType {
-	// TODO: Figure out which events in the Event packet carry additional fields.
-	}
+	// TODO: Figure out which events in the Event packet carry what additional fields.
 }
 
 // Unmarshal ...
@@ -59,9 +57,7 @@ func (pk *Event) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
-	switch pk.EventType {
-	// TODO: Figure out which events in the Event packet carry additional fields.
-	}
+	// TODO: Figure out which events in the Event packet carry what additional fields.
 
 	return nil
 }
