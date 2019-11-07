@@ -7,21 +7,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.12
-      uses: actions/setup-go@v1
-      with:
-        go-version: 1.12
-      id: go
+      - name: Set up Go 1.13
+        uses: actions/setup-go@v1
+        with:
+          go-version: 1.13
+        id: go
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v1
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v1
 
-    - name: Get dependencies
-      run: |
-        go get -v -t -d ./...
-        
-    - name: Vet
-      run: go vet ./...
+      - name: Get dependencies
+        run: |
+          mkdir -p $GOPATH/bin
+          export PATH=$PATH:$GOPATH/bin
+      - name: Vet
+        run: go vet ./...
 
-    - name: Build
-      run: go build -v .
+      - name: Lint
+        run: |
+          GOBIN=$PWD/bin go install github.com/mgechev/revive
+          ./bin/revive -config=lint.toml ./...
+
+      - name: Build
+        run: go build -o dragonfly_exec -v .
