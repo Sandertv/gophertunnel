@@ -67,16 +67,20 @@ type ClientData struct {
 	// AnimatedImageData is a list of image data for animations. Each of the elements in this slice holds the
 	// image data of a single frame of the animation.
 	AnimatedImageData []struct {
-		// Frames is the amount of frames of the animation.
+		// Frames is the amount of frames of the animation. The number of Frames here specifies how many
+		// frames may be found in the Image data.
 		Frames float64
-		// Image is the image data of the animated frame. It is an RGBA byte array of ImageHeight * ImageWidth
-		// * 4 bytes long. Image is basically a patch on top of the original skin: All pixels that do not
-		// change the original skin are transparent.
+		// Image is a base64 encoded byte slice of ImageWidth * ImageHeight bytes. It is an RGBA ordered byte
+		// representation of the animation image pixels. The ImageData contains FrameCount images in it, which
+		// each represent one stage of the animation. The actual part of the skin that this field holds
+		// depends on the Type, where SkinAnimationHead holds only the head and its hat, whereas the other
+		// animations hold the entire body of the skin.
 		Image string
 		// ImageHeight and ImageWidth are the dimensions of the animated image. Note that the size of this
 		// image is not always 32/64/128.
 		ImageHeight, ImageWidth int
-		// Type is the type of the animation. It is one of the following:
+		// Type is the type of the animation, which defines what part of the body the Image data holds. It is
+		// one of the following:
 		// 0 -> 'None', doesn't typically occur.
 		// 1 -> Face animation.
 		// 2 -> 32x32 Body animation.

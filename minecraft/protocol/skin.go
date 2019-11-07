@@ -15,6 +15,8 @@ type Skin struct {
 	SkinID string
 	// SkinResourcePatch is a JSON encoded object holding some fields that point to the geometry that the
 	// skin has.
+	// The JSON object that this holds specifies the way that the geometry of animations and the default skin
+	// of the player are combined.
 	SkinResourcePatch []byte
 	// SkinImageWidth and SkinImageHeight hold the dimensions of the skin image. Note that these are not the
 	// dimensions in bytes, but in pixels.
@@ -153,16 +155,22 @@ const (
 
 // SkinAnimation represents an animation that may be added to a skin. The client plays the animation itself,
 // without the server having to do so.
+// The rate at which these animations play appears to be decided by the client.
 type SkinAnimation struct {
 	// ImageWidth and ImageHeight hold the dimensions of the animation image. Note that these are not the
 	// dimensions in bytes, but in pixels.
 	ImageWidth, ImageHeight uint32
 	// ImageData is a byte slice of ImageWidth * ImageHeight bytes. It is an RGBA ordered byte representation
-	// of the animation image pixels.
+	// of the animation image pixels. The ImageData contains FrameCount images in it, which each represent one
+	// stage of the animation. The actual part of the skin that this field holds depends on the AnimationType,
+	// where SkinAnimationHead holds only the head and its hat, whereas the other animations hold the entire
+	// body of the skin.
 	ImageData []byte
-	// AnimationType is the type of the animation, which is one of the types found above.
+	// AnimationType is the type of the animation, which is one of the types found above. The data that
+	// ImageData contains depends on this type.
 	AnimationType uint32
-	// FrameCount is the amount of frames that the skin animation players.
+	// FrameCount is the amount of frames that the skin animation holds. The number of frames here is the
+	// amount of images that may be found in the ImageData field.
 	FrameCount float32
 }
 
