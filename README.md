@@ -1,5 +1,6 @@
 # gophertunnel
 A Minecraft library containing packages to create clients, servers, proxies and other tools, and a proxy implementation using them.
+
 ![telescope gopher](https://github.com/Sandertv/gophertunnel/blob/master/gophertunnel_telescope_coloured.png)
 
 ## Overview
