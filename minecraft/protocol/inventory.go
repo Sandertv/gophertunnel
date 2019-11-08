@@ -40,7 +40,7 @@ func InvAction(src *bytes.Buffer, action *InventoryAction) error {
 		return wrap(err)
 	}
 	switch action.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceCraftingGrid, InventoryActionSourceTODO:
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
 		if err := Varint32(src, &action.WindowID); err != nil {
 			return wrap(err)
 		}
@@ -62,7 +62,7 @@ func WriteInvAction(dst *bytes.Buffer, action InventoryAction) error {
 		return wrap(err)
 	}
 	switch action.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceCraftingGrid, InventoryActionSourceTODO:
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
 		if err := WriteVarint32(dst, action.WindowID); err != nil {
 			return wrap(err)
 		}
