@@ -23,12 +23,11 @@ const (
 	UseItemTraded
 )
 
-// CompletedUsingItem is sent by the client when it finishes the using of an item, such as when it shoots an
-// arrow or eats food. This packet holds a set of data that the server should not rely on, because it can
-// obtain the information in more reliable ways.
+// CompletedUsingItem is sent by the server to tell the client that it should be done using the item it is
+// currently using.
 type CompletedUsingItem struct {
-	// UsedItemID is the item ID of the item that the client completed using. The server should not rely on
-	// this, but should instead simply look at the held item.
+	// UsedItemID is the item ID of the item that the client completed using. This should typically be the
+	// ID of the item held in the hand.
 	UsedItemID int16
 	// UseMethod is the method of the using of the item that was completed. It is one of the constants that
 	// may be found above.
