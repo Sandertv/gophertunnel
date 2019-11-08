@@ -6,11 +6,10 @@ import (
 )
 
 const (
-	InventoryActionSourceContainer    = 0
-	InventoryActionSourceWorld        = 2
-	InventoryActionSourceCreative     = 3
-	InventoryActionSourceCraftingGrid = 100
-	InventoryActionSourceTODO         = 99999
+	InventoryActionSourceContainer = 0
+	InventoryActionSourceWorld     = 2
+	InventoryActionSourceCreative  = 3
+	InventoryActionSourceTODO      = 99999
 )
 
 // InventoryAction represents a single action that took place during an inventory transaction. On itself, this
