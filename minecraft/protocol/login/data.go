@@ -226,9 +226,6 @@ func (data ClientData) Validate() error {
 	if data.SkinID == "" {
 		return fmt.Errorf("SkinID must not be an empty string")
 	}
-	if data.CapeID == "" && data.CapeData != "" {
-		return fmt.Errorf("CapeID must not be an empty string if CapeData holds data")
-	}
 	if data.UIProfile != 0 && data.UIProfile != 1 {
 		return fmt.Errorf("UIProfile must be either 0 or 1, but got %v", data.UIProfile)
 	}
