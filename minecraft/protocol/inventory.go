@@ -168,6 +168,8 @@ const (
 type ReleaseItemTransactionData struct {
 	// ActionType is the type of the ReleaseItem inventory transaction. It is one of the action types found
 	// in the constants above, and specifies the way the item was released.
+	// As of 1.13, the ActionType is always 0. This field can be ignored, because releasing food (by consuming
+	// it) or releasing a bow (to shoot an arrow) is essentially the same.
 	ActionType uint32
 	// HotBarSlot is the hot bar slot that the player was holding while releasing the item. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
