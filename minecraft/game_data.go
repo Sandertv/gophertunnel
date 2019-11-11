@@ -51,4 +51,8 @@ type GameData struct {
 	// Items is a list of all items existing in the game. Failing to send any of the default items that are in
 	// the game will crash mobile clients.
 	Items []protocol.ItemEntry
+	// ServerAuthoritativeMovement specifies if the client should use the 'server authoritative movement',
+	// meaning it will send PlayerAuthInput packets instead of MovePlayer packets, which the server should
+	// verify.
+	ServerAuthoritativeMovement bool
 }
