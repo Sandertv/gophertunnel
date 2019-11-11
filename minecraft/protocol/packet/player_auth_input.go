@@ -70,7 +70,7 @@ type PlayerAuthInput struct {
 	HeadYaw float32
 	// InputData is a combination of bit flags that together specify the way the player moved last tick. It
 	// is a combination of the flags above.
-	InputData int64
+	InputData uint64
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.
 	InputMode uint32
@@ -94,7 +94,7 @@ func (pk *PlayerAuthInput) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVec3(buf, pk.Position)
 	_ = protocol.WriteVec2(buf, pk.MoveVector)
 	_ = protocol.WriteFloat32(buf, pk.HeadYaw)
-	_ = protocol.WriteVarint64(buf, pk.InputData)
+	_ = protocol.WriteVaruint64(buf, pk.InputData)
 	_ = protocol.WriteVaruint32(buf, pk.InputMode)
 	_ = protocol.WriteVaruint32(buf, pk.PlayMode)
 	if pk.PlayMode == PlayModeReality {
@@ -110,7 +110,7 @@ func (pk *PlayerAuthInput) Unmarshal(buf *bytes.Buffer) error {
 		protocol.Vec3(buf, &pk.Position),
 		protocol.Vec2(buf, &pk.MoveVector),
 		protocol.Float32(buf, &pk.HeadYaw),
-		protocol.Varint64(buf, &pk.InputData),
+		protocol.Varuint64(buf, &pk.InputData),
 		protocol.Varuint32(buf, &pk.InputMode),
 		protocol.Varuint32(buf, &pk.PlayMode),
 	); err != nil {
