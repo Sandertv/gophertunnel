@@ -11,8 +11,7 @@ const (
 	RefreshJoinCode
 )
 
-// MultiPlayerSettings is sent by the server to update multi-player related settings. Usually these settings
-// are also sent in the StartGame packet.
+// MultiPlayerSettings is sent by the client to update multi-player related settings server-side.
 // The MultiPlayerSettings packet is a Minecraft: Education Edition packet. It has no functionality for the
 // base game.
 type MultiPlayerSettings struct {
