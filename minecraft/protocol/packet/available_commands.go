@@ -175,8 +175,8 @@ func (pk *AvailableCommands) Unmarshal(buf *bytes.Buffer) error {
 	var constraintIndex byte
 	_ = protocol.Varuint32(buf, &count)
 	for i := uint32(0); i < count; i++ {
-		_ = protocol.Varuint32(buf, &enumValueSymbol)
-		_ = protocol.Varuint32(buf, &enumSymbol)
+		_ = binary.Read(buf, binary.LittleEndian, &enumValueSymbol)
+		_ = binary.Read(buf, binary.LittleEndian, &enumSymbol)
 		_ = protocol.Varuint32(buf, &constraintIndexCount)
 		for j := uint32(0); j < constraintIndexCount; j++ {
 			_ = binary.Read(buf, binary.LittleEndian, &constraintIndex)
