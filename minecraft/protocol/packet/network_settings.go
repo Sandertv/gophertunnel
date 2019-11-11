@@ -10,6 +10,7 @@ import (
 type NetworkSettings struct {
 	// CompressionThreshold is the minimum size of a packet that is compressed when sent. If the size of a
 	// packet is under this value, it is not compressed.
+	// When set to 0, all packets will be left uncompressed.
 	CompressionThreshold uint16
 }
 
