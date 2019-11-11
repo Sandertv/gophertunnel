@@ -6,7 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// TODO: Find out what the ContainerMix recipes represent.
+// ContainerMix represents a recipe to turn a potion from one type to another. This means from a drinkable
+// potion + gunpowder -> splash potion, and from a splash potion + dragon breath -> lingering potion.
 type ContainerMix struct {
 	// InputItemID is the item ID of the item to be put in.
 	InputItemID int32

@@ -11,9 +11,12 @@ import (
 type TickSync struct {
 	// ClientRequestTimestamp is the timestamp on which the client sent this packet to the server. The server
 	// should fill out that same value when replying.
+	// The ClientRequestTimestamp is always 0.
 	ClientRequestTimestamp int64
 	// ServerReceptionTimestamp is the timestamp on which the server received the packet sent by the client.
 	// When the packet is sent by the client, this value is 0.
+	// ServerReceptionTimestamp is generally the current tick of the server. It isn't an actual timestamp, as
+	// the field implies.
 	ServerReceptionTimestamp int64
 }
 
