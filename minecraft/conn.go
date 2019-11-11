@@ -97,7 +97,7 @@ type Conn struct {
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
 	close             chan bool
-	disconnectMessage string
+	disconnectMessage atomic.Value
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -122,6 +122,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		salt:       make([]byte, 16),
 		log:        log,
 	}
+	conn.disconnectMessage.Store("")
 	conn.waitingForSpawn.Store(false)
 	conn.expectedIDs.Store([]uint32{packet.IDLogin})
 	_, _ = rand.Read(conn.salt)
@@ -205,8 +206,8 @@ func (conn *Conn) DoSpawn() error {
 	case <-timeout:
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.close:
-		if conn.disconnectMessage != "" {
-			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage)
+		if conn.disconnectMessage.Load().(string) != "" {
+			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
 		}
 		return fmt.Errorf("connection closed")
 	}
@@ -532,7 +533,7 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 		return conn.handleChunkRadiusUpdated(pk)
 	case *packet.Disconnect:
 		_ = conn.Close()
-		conn.disconnectMessage = pk.Message
+		conn.disconnectMessage.Store(pk.Message)
 	}
 	return nil
 }
