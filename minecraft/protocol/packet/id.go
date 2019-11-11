@@ -132,8 +132,8 @@ const (
 	IDClientCacheStatus
 	IDMapCreateLockedCopy
 	IDOnScreenTextureAnimation
-	IDStructureTemplateDataExportRequest
-	IDStructureTemplateDataExportResponse
+	IDStructureTemplateDataRequest
+	IDStructureTemplateDataResponse
 	IDUpdateBlockProperties
 	IDClientCacheBlobStatus
 	IDClientCacheMissResponse

@@ -8,7 +8,7 @@ import (
 )
 
 // StructureTemplateDataExportResponse is sent by the server to send data of a structure to the client in
-// response to a StructureTemplateDataExportRequest packet. It is currently unused: The former packet is not
+// response to a StructureTemplateDataRequest packet. It is currently unused: The former packet is not
 // sent by the client.
 type StructureTemplateDataExportResponse struct {
 	// StructureName is the name of the structure that was requested. This is the name used to export the
@@ -21,7 +21,7 @@ type StructureTemplateDataExportResponse struct {
 
 // ID ...
 func (pk *StructureTemplateDataExportResponse) ID() uint32 {
-	return IDStructureTemplateDataExportResponse
+	return IDStructureTemplateDataResponse
 }
 
 // Marshal ...

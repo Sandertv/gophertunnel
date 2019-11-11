@@ -6,9 +6,9 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// StructureTemplateDataExportRequest is sent by the client to request data of a structure. It is currently
-// unused: The client never sends this packet.
-type StructureTemplateDataExportRequest struct {
+// StructureTemplateDataRequest is sent by the client to request data of a structure. It is currently unused:
+// The client never sends this packet.
+type StructureTemplateDataRequest struct {
 	// StructureName is the name of the structure that was set in the structure block's UI. This is the name
 	// used to export the structure to a file.
 	StructureName string
@@ -22,12 +22,12 @@ type StructureTemplateDataExportRequest struct {
 }
 
 // ID ...
-func (pk *StructureTemplateDataExportRequest) ID() uint32 {
-	return IDStructureTemplateDataExportRequest
+func (pk *StructureTemplateDataRequest) ID() uint32 {
+	return IDStructureTemplateDataRequest
 }
 
 // Marshal ...
-func (pk *StructureTemplateDataExportRequest) Marshal(buf *bytes.Buffer) {
+func (pk *StructureTemplateDataRequest) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.StructureName)
 	_ = protocol.WriteUBlockPosition(buf, pk.Position)
 	_ = protocol.WriteStructSettings(buf, pk.Settings)
@@ -35,7 +35,7 @@ func (pk *StructureTemplateDataExportRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StructureTemplateDataExportRequest) Unmarshal(buf *bytes.Buffer) error {
+func (pk *StructureTemplateDataRequest) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.String(buf, &pk.StructureName),
 		protocol.UBlockPosition(buf, &pk.Position),
