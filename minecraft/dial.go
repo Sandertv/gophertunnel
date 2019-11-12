@@ -19,7 +19,6 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
-	"strconv"
 	"time"
 )
 
@@ -227,7 +226,6 @@ func defaultClientData(address string) login.ClientData {
 // client is not authenticated and if no identity data was provided.
 func defaultIdentityData() login.IdentityData {
 	return login.IdentityData{
-		XUID:        strconv.FormatInt(rand2.Int63(), 10),
 		Identity:    uuid.Must(uuid.NewRandom()).String(),
 		DisplayName: "Steve",
 	}
