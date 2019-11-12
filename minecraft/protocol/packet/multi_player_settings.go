@@ -2,7 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (
@@ -17,7 +17,7 @@ const (
 type MultiPlayerSettings struct {
 	// ActionType is the action that should be done when this packet is sent. It is one of the constants that
 	// may be found above.
-	ActionType byte
+	ActionType int32
 }
 
 // ID ...
@@ -27,10 +27,10 @@ func (*MultiPlayerSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *MultiPlayerSettings) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
+	_ = protocol.WriteVarint32(buf, pk.ActionType)
 }
 
 // Unmarshal ...
 func (pk *MultiPlayerSettings) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Write(buf, binary.LittleEndian, &pk.ActionType)
+	return protocol.Varint32(buf, &pk.ActionType)
 }
