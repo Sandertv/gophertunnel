@@ -21,6 +21,11 @@ type Listener struct {
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
 
+	// AuthenticationDisables specifies if authentication of players that join is disabled. If set to true, no
+	// verification will be done to ensure that the player connecting is authenticated using their XBOX Live
+	// account.
+	AuthenticationDisabled bool
+
 	// ServerName is the server name shown in the in-game menu, above the player list. The name cannot be
 	// changed after a player is connected. By default, 'Minecraft Server' will be set.
 	ServerName string
@@ -191,6 +196,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.texturePacksRequired = listener.TexturePacksRequired
 	conn.resourcePacks = listener.ResourcePacks
 	conn.gameData.WorldName = listener.ServerName
+	conn.authEnabled = !listener.AuthenticationDisabled
 
 	if atomic.LoadInt32(listener.playerCount) == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.

@@ -211,7 +211,7 @@ func defaultClientData(address string) login.ClientData {
 		DeviceOS:        device.Win10,
 		GameVersion:     protocol.CurrentVersion,
 		DeviceID:        uuid.Must(uuid.NewRandom()).String(),
-		LanguageCode:    "en_UK",
+		LanguageCode:    "en_GB",
 		ThirdPartyName:  "Steve",
 		SelfSignedID:    uuid.Must(uuid.NewRandom()).String(),
 		ServerAddress:   address,

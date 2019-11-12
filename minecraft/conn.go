@@ -33,8 +33,9 @@ const (
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
 type Conn struct {
-	conn net.Conn
-	log  *log.Logger
+	conn        net.Conn
+	log         *log.Logger
+	authEnabled bool
 
 	pool    packet.Pool
 	encoder *packet.Encoder
@@ -560,7 +561,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if err != nil {
 		return fmt.Errorf("error verifying login request: %v", err)
 	}
-	if !authenticated {
+	if !authenticated && conn.authEnabled {
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
 	conn.identityData, conn.clientData, err = login.Decode(pk.ConnectionRequest)
