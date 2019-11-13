@@ -1,34 +1,36 @@
 # gophertunnel
 A Minecraft library containing packages to create clients, servers, proxies and other tools, and a proxy implementation using them.
 
+[Module Documentation](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel)
+
 ![telescope gopher](https://github.com/Sandertv/gophertunnel/blob/master/gophertunnel_telescope_coloured.png)
 
 ## Overview
 gophertunnel is composed of several packages that may be of use for creating Minecraft related tools.
 
-package [query](https://godoc.org/github.com/Sandertv/gophertunnel/query): A package implementing the sending of queries
+package [query](https://pkg.go.dev/github.com/sandertv/gophertunnel/query?tab=doc): A package implementing the sending of queries
 to servers that implement the UT3/GameSpy Query Protocol.
 
-package [minecraft](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft): A package implementing connecting
+package [minecraft](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft?tab=doc): A package implementing connecting
 to Minecraft Bedrock Edition servers and listening for Minecraft Bedrock Edition clients using a TCP style interface.
 
-* package [minecraft/auth](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/auth): A package implementing
+* package [minecraft/auth](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/auth?tab=doc): A package implementing
 Microsoft, XBOX Live and Minecraft account authentication.
 
-* package [minecraft/cmd](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/cmd) A package implementing a
+* package [minecraft/cmd](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/cmd?tab=doc) A package implementing a
 basic command system for Minecraft.
 
-* package [minecraft/nbt](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/nbt): A package implementing the
+* package [minecraft/nbt](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/nbt?tab=doc): A package implementing the
 Minecraft NBT format. Three variants of the format are implemented: The Java Edition variant (Big Endian) and
 the Bedrock Edition variants (Little Endian, both with and without varints)
 
-* package [minecraft/protocol](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/protocol): A package
+* package [minecraft/protocol](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/protocol?tab=doc): A package
 implementing the reading, writing and handling of packets found in the Minecraft Bedrock Edition protocol.
 
-* package [minecraft/resource](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/resource): A package handling
+* package [minecraft/resource](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/resource?tab=doc): A package handling
 the reading and compiling of Minecraft resource packs.
 
-* package [minecraft/text](https://godoc.org/github.com/Sandertv/gophertunnel/minecraft/text): A package containing utility
+* package [minecraft/text](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/text?tab=doc): A package containing utility
 functions related to Minecraft text formatting.
 
 ## Examples
