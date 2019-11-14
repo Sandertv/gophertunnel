@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/device"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/text/language"
 	"net"
 	"regexp"
@@ -110,7 +110,7 @@ type ClientData struct {
 	// this name is always '(Standard system devices) System devices'.
 	DeviceModel string
 	// DeviceOS is a numerical ID indicating the OS of the device.
-	DeviceOS device.OS
+	DeviceOS protocol.DeviceOS
 	// DeviceID is a UUID specific to the device. A different user will have the same UUID for this.
 	DeviceID string `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.

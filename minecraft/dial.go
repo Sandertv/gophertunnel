@@ -11,7 +11,6 @@ import (
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/device"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"io/ioutil"
@@ -206,7 +205,7 @@ func defaultClientData(address string) login.ClientData {
 	rand2.Seed(time.Now().Unix())
 	return login.ClientData{
 		ClientRandomID:  rand2.Int63(),
-		DeviceOS:        device.Win10,
+		DeviceOS:        protocol.DeviceWin10,
 		GameVersion:     protocol.CurrentVersion,
 		DeviceID:        uuid.Must(uuid.NewRandom()).String(),
 		LanguageCode:    "en_GB",
