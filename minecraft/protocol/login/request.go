@@ -169,9 +169,9 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	// data.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
 		"certificateAuthority": true,
-		"exp":                  time.Now().Unix() + int64(time.Hour*6),
+		"exp":                  time.Now().Unix() + int64(time.Hour),
 		"identityPublicKey":    keyData,
-		"nbf":                  time.Now().Unix() - int64(time.Hour*6),
+		"nbf":                  time.Now().Unix() - int64(time.Hour),
 		"extraData":            identityData,
 	}, key)
 	request := &request{Chain: Chain{string(claim)}}

@@ -57,9 +57,8 @@ type Dialer struct {
 	EnableClientCache bool
 }
 
-// Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
-// "tcp4", "tcp6", "unix", "unixpacket" or "raknet". A Conn is returned which may be used to receive packets
-// from and send packets to.
+// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
+// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 //
 // A zero value of a Dialer struct is used to initiate the connection. A custom Dialer may be used to specify
 // additional behaviour.
@@ -67,9 +66,8 @@ func Dial(network string, address string) (conn *Conn, err error) {
 	return Dialer{}.Dial(network, address)
 }
 
-// Dial dials a Minecraft connection to the address passed over the network passed. The network must be "tcp",
-// "tcp4", "tcp6", "unix", "unixpacket" or "raknet". A Conn is returned which may be used to receive packets
-// from and send packets to.
+// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
+// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // Specific fields in the Dialer specify additional behaviour during the connection, such as authenticating
 // to XBOX Live and custom client data.
 func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error) {
