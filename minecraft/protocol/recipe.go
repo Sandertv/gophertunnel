@@ -21,8 +21,8 @@ type PotionContainerChangeRecipe struct {
 	OutputItemID int32
 }
 
-// WriteContainMix writes a PotionContainerChangeRecipe x to Buffer dst.
-func WriteContainMix(dst *bytes.Buffer, x PotionContainerChangeRecipe) error {
+// WritePotContainerChangeRecipe writes a PotionContainerChangeRecipe x to Buffer dst.
+func WritePotContainerChangeRecipe(dst *bytes.Buffer, x PotionContainerChangeRecipe) error {
 	return chainErr(
 		WriteVarint32(dst, x.InputItemID),
 		WriteVarint32(dst, x.ReagentItemID),
@@ -30,8 +30,8 @@ func WriteContainMix(dst *bytes.Buffer, x PotionContainerChangeRecipe) error {
 	)
 }
 
-// ContainMix reads a PotionContainerChangeRecipe x from Buffer src.
-func ContainMix(src *bytes.Buffer, x *PotionContainerChangeRecipe) error {
+// PotContainerChangeRecipe reads a PotionContainerChangeRecipe x from Buffer src.
+func PotContainerChangeRecipe(src *bytes.Buffer, x *PotionContainerChangeRecipe) error {
 	return chainErr(
 		Varint32(src, &x.InputItemID),
 		Varint32(src, &x.ReagentItemID),
@@ -41,33 +41,33 @@ func ContainMix(src *bytes.Buffer, x *PotionContainerChangeRecipe) error {
 
 // PotionRecipe represents a potion mixing recipe which may be used in a brewing stand.
 type PotionRecipe struct {
-	// InputPotionType is the type of the potion to be put in. This is typically the ID of the awkward
-	// potion (or water bottle to create an awkward potion). Note that these values are the metadata values of
-	// a potion.
-	InputPotionType int32
+	// InputPotionMetadataValue is the type of the potion to be put in. This is typically the ID of the
+	// awkward potion (or water bottle to create an awkward potion). Note that these values are the metadata
+	// values of a potion.
+	InputPotionMetadataValue int32
 	// ReagentItemID is the item ID of the item that needs to be added to the brewing stand in order to brew
 	// the output potion.
 	ReagentItemID int32
-	// OutputPotionType is the type of the potion that is obtained as a result of brewing the input potion
-	// with the reagent item. Note that these values are the metadata values of a potion.
-	OutputPotionType int32
+	// OutputPotionMetadataValue is the type of the potion that is obtained as a result of brewing the input
+	// potion with the reagent item. Note that these values are the metadata values of a potion.
+	OutputPotionMetadataValue int32
 }
 
 // WritePotRecipe writes a PotionRecipe x to Buffer dst.
 func WritePotRecipe(dst *bytes.Buffer, x PotionRecipe) error {
 	return chainErr(
-		WriteVarint32(dst, x.InputPotionType),
+		WriteVarint32(dst, x.InputPotionMetadataValue),
 		WriteVarint32(dst, x.ReagentItemID),
-		WriteVarint32(dst, x.OutputPotionType),
+		WriteVarint32(dst, x.OutputPotionMetadataValue),
 	)
 }
 
 // PotRecipe reads a PotionRecipe x from Buffer src.
 func PotRecipe(src *bytes.Buffer, x *PotionRecipe) error {
 	return chainErr(
-		Varint32(src, &x.InputPotionType),
+		Varint32(src, &x.InputPotionMetadataValue),
 		Varint32(src, &x.ReagentItemID),
-		Varint32(src, &x.OutputPotionType),
+		Varint32(src, &x.OutputPotionMetadataValue),
 	)
 }
 

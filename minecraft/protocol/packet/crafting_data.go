@@ -62,7 +62,7 @@ func (pk *CraftingData) Marshal(buf *bytes.Buffer) {
 	}
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionContainerChangeRecipes)))
 	for _, mix := range pk.PotionContainerChangeRecipes {
-		_ = protocol.WriteContainMix(buf, mix)
+		_ = protocol.WritePotContainerChangeRecipe(buf, mix)
 	}
 	_ = binary.Write(buf, binary.LittleEndian, pk.ClearRecipes)
 }
@@ -119,7 +119,7 @@ func (pk *CraftingData) Unmarshal(buf *bytes.Buffer) error {
 	}
 	pk.PotionContainerChangeRecipes = make([]protocol.PotionContainerChangeRecipe, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.ContainMix(buf, &pk.PotionContainerChangeRecipes[i]); err != nil {
+		if err := protocol.PotContainerChangeRecipe(buf, &pk.PotionContainerChangeRecipes[i]); err != nil {
 			return err
 		}
 	}
