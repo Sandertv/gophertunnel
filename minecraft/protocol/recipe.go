@@ -6,20 +6,23 @@ import (
 	"github.com/google/uuid"
 )
 
-// ContainerMix represents a recipe to turn a potion from one type to another. This means from a drinkable
-// potion + gunpowder -> splash potion, and from a splash potion + dragon breath -> lingering potion.
-type ContainerMix struct {
-	// InputItemID is the item ID of the item to be put in.
+// PotionContainerChangeRecipe represents a recipe to turn a potion from one type to another. This means from
+// a drinkable potion + gunpowder -> splash potion, and from a splash potion + dragon breath -> lingering
+// potion.
+type PotionContainerChangeRecipe struct {
+	// InputItemID is the item ID of the item to be put in. This is typically either the ID of a normal potion
+	// or a splash potion.
 	InputItemID int32
 	// ReagentItemID is the item ID of the item that needs to be added to the container in order to create the
 	// output item.
 	ReagentItemID int32
-	// OutputItemID is the item that is created using a combination of the InputItem and ReagentItem.
+	// OutputItemID is the item that is created using a combination of the InputItem and ReagentItem, which is
+	// typically either the ID of a splash potion or a lingering potion.
 	OutputItemID int32
 }
 
-// WriteContainMix writes a ContainerMix x to Buffer dst.
-func WriteContainMix(dst *bytes.Buffer, x ContainerMix) error {
+// WriteContainMix writes a PotionContainerChangeRecipe x to Buffer dst.
+func WriteContainMix(dst *bytes.Buffer, x PotionContainerChangeRecipe) error {
 	return chainErr(
 		WriteVarint32(dst, x.InputItemID),
 		WriteVarint32(dst, x.ReagentItemID),
@@ -27,8 +30,8 @@ func WriteContainMix(dst *bytes.Buffer, x ContainerMix) error {
 	)
 }
 
-// ContainMix reads a ContainerMix x from Buffer src.
-func ContainMix(src *bytes.Buffer, x *ContainerMix) error {
+// ContainMix reads a PotionContainerChangeRecipe x from Buffer src.
+func ContainMix(src *bytes.Buffer, x *PotionContainerChangeRecipe) error {
 	return chainErr(
 		Varint32(src, &x.InputItemID),
 		Varint32(src, &x.ReagentItemID),
@@ -36,34 +39,35 @@ func ContainMix(src *bytes.Buffer, x *ContainerMix) error {
 	)
 }
 
-// PotionMix represents a potion mixing recipe which may be used in a brewing stand.
-type PotionMix struct {
-	// InputPotionID is the potion ID of the potion to be put in. This is typically the ID of the awkward
-	// potion (or water bottle to create an awkward potion).
-	InputPotionID int32
+// PotionRecipe represents a potion mixing recipe which may be used in a brewing stand.
+type PotionRecipe struct {
+	// InputPotionType is the type of the potion to be put in. This is typically the ID of the awkward
+	// potion (or water bottle to create an awkward potion). Note that these values are the metadata values of
+	// a potion.
+	InputPotionType int32
 	// ReagentItemID is the item ID of the item that needs to be added to the brewing stand in order to brew
 	// the output potion.
 	ReagentItemID int32
-	// OutputPotionID is the potion ID of the potion that is obtained as a result of brewing the input potion
-	// with the reagent item.
-	OutputPotionID int32
+	// OutputPotionType is the type of the potion that is obtained as a result of brewing the input potion
+	// with the reagent item. Note that these values are the metadata values of a potion.
+	OutputPotionType int32
 }
 
-// WritePotMix writes a PotionMix x to Buffer dst.
-func WritePotMix(dst *bytes.Buffer, x PotionMix) error {
+// WritePotRecipe writes a PotionRecipe x to Buffer dst.
+func WritePotRecipe(dst *bytes.Buffer, x PotionRecipe) error {
 	return chainErr(
-		WriteVarint32(dst, x.InputPotionID),
+		WriteVarint32(dst, x.InputPotionType),
 		WriteVarint32(dst, x.ReagentItemID),
-		WriteVarint32(dst, x.OutputPotionID),
+		WriteVarint32(dst, x.OutputPotionType),
 	)
 }
 
-// PotMix reads a PotionMix x from Buffer src.
-func PotMix(src *bytes.Buffer, x *PotionMix) error {
+// PotRecipe reads a PotionRecipe x from Buffer src.
+func PotRecipe(src *bytes.Buffer, x *PotionRecipe) error {
 	return chainErr(
-		Varint32(src, &x.InputPotionID),
+		Varint32(src, &x.InputPotionType),
 		Varint32(src, &x.ReagentItemID),
-		Varint32(src, &x.OutputPotionID),
+		Varint32(src, &x.OutputPotionType),
 	)
 }
 

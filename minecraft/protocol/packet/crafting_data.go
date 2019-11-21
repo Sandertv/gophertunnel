@@ -14,11 +14,11 @@ type CraftingData struct {
 	// Recipes is a list of all recipes available on the server. It includes among others shapeless, shaped
 	// and furnace recipes. The client will only be able to craft these recipes.
 	Recipes []protocol.Recipe
-	// PotionMixes is a list of all potion mixing recipes which may be used in the brewing stand.
-	PotionMixes []protocol.PotionMix
-	// ContainerMixes is a list of all recipes to convert a potion from one type to another, such as from a
-	// drinkable potion to a splash potion, or from a splash potion to a lingering potion.
-	ContainerMixes []protocol.ContainerMix
+	// PotionRecipes is a list of all potion mixing recipes which may be used in the brewing stand.
+	PotionRecipes []protocol.PotionRecipe
+	// PotionContainerChangeRecipes is a list of all recipes to convert a potion from one type to another,
+	// such as from a drinkable potion to a splash potion, or from a splash potion to a lingering potion.
+	PotionContainerChangeRecipes []protocol.PotionContainerChangeRecipe
 	// ClearRecipes indicates if all recipes currently active on the client should be cleaned. Doing this
 	// means that the client will have no recipes active by itself: Any CraftingData packets previously sent
 	// will also be discarded, and only the recipes in this CraftingData packet will be used.
@@ -56,12 +56,12 @@ func (pk *CraftingData) Marshal(buf *bytes.Buffer) {
 		}
 		recipe.Marshal(buf)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionMixes)))
-	for _, mix := range pk.PotionMixes {
-		_ = protocol.WritePotMix(buf, mix)
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionRecipes)))
+	for _, mix := range pk.PotionRecipes {
+		_ = protocol.WritePotRecipe(buf, mix)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.ContainerMixes)))
-	for _, mix := range pk.ContainerMixes {
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionContainerChangeRecipes)))
+	for _, mix := range pk.PotionContainerChangeRecipes {
 		_ = protocol.WriteContainMix(buf, mix)
 	}
 	_ = binary.Write(buf, binary.LittleEndian, pk.ClearRecipes)
@@ -108,18 +108,18 @@ func (pk *CraftingData) Unmarshal(buf *bytes.Buffer) error {
 	if err := protocol.Varuint32(buf, &length); err != nil {
 		return err
 	}
-	pk.PotionMixes = make([]protocol.PotionMix, length)
+	pk.PotionRecipes = make([]protocol.PotionRecipe, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.PotMix(buf, &pk.PotionMixes[i]); err != nil {
+		if err := protocol.PotRecipe(buf, &pk.PotionRecipes[i]); err != nil {
 			return err
 		}
 	}
 	if err := protocol.Varuint32(buf, &length); err != nil {
 		return err
 	}
-	pk.ContainerMixes = make([]protocol.ContainerMix, length)
+	pk.PotionContainerChangeRecipes = make([]protocol.PotionContainerChangeRecipe, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.ContainMix(buf, &pk.ContainerMixes[i]); err != nil {
+		if err := protocol.ContainMix(buf, &pk.PotionContainerChangeRecipes[i]); err != nil {
 			return err
 		}
 	}
