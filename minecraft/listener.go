@@ -42,6 +42,12 @@ type Listener struct {
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
 
+	// PacketFunc is called whenever a packet is read from or written to a connection returned when using
+	// Listener.Accept. It includes packets that are otherwise covered in the connection sequence, such as the
+	// Login packet. The function is called with the header of the packet and its raw payload, the address
+	// from which the packet originated, and the destination address.
+	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount *int32
@@ -192,6 +198,7 @@ func (listener *Listener) listen() {
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, nil, listener.ErrorLog)
+	conn.packetFunc = listener.PacketFunc
 	conn.texturePacksRequired = listener.TexturePacksRequired
 	conn.resourcePacks = listener.ResourcePacks
 	conn.gameData.WorldName = listener.ServerName
