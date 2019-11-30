@@ -23,6 +23,8 @@ type GameData struct {
 	// PlayerGameMode is the game mode the player currently has. It is a value from 0-4, with 0 being
 	// survival mode, 1 being creative mode, 2 being adventure mode, 3 being survival spectator and 4 being
 	// creative spectator.
+	// This field may be set to 5 to make the client fall back to the game mode set in the WorldGameMode
+	// field.
 	PlayerGameMode int32
 	// PlayerPosition is the spawn position of the player in the world. In servers this is often the same as
 	// the world's spawn position found below.
@@ -38,6 +40,9 @@ type GameData struct {
 	// WorldSpawn is the block on which the world spawn of the world. This coordinate has no effect on the
 	// place that the client spawns, but it does have an effect on the direction that a compass points.
 	WorldSpawn protocol.BlockPos
+	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
+	// settings and is used if the PlayerGameMode is set to 5.
+	WorldGameMode int32
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.

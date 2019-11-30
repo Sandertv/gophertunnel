@@ -861,6 +861,7 @@ func (conn *Conn) startGame() {
 		WorldName:                       conn.gameData.WorldName,
 		LANBroadcastEnabled:             true,
 		ServerAuthoritativeOverMovement: data.ServerAuthoritativeMovement,
+		WorldGameMode:                   data.WorldGameMode,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1027,6 +1028,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Blocks:                      pk.Blocks,
 		Items:                       pk.Items,
 		ServerAuthoritativeMovement: pk.ServerAuthoritativeOverMovement,
+		WorldGameMode:               pk.WorldGameMode,
 	}
 	conn.loggedIn = true
 

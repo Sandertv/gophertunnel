@@ -22,6 +22,8 @@ type StartGame struct {
 	// PlayerGameMode is the game mode the player currently has. It is a value from 0-4, with 0 being
 	// survival mode, 1 being creative mode, 2 being adventure mode, 3 being survival spectator and 4 being
 	// creative spectator.
+	// This field may be set to 5 to make the client fall back to the game mode set in the WorldGameMode
+	// field.
 	PlayerGameMode int32
 	// PlayerPosition is the spawn position of the player in the world. In servers this is often the same as
 	// the world's spawn position found below.
@@ -41,8 +43,8 @@ type StartGame struct {
 	// 1 being infinite worlds, 2 being flat worlds, 3 being nether worlds and 4 being end worlds. A value of
 	// 0 will actually make the client stop rendering chunks you send beyond the world limit.
 	Generator int32
-	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It has no effect
-	// on the actual game mode the player spawns with. See PlayerGameMode for that.
+	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
+	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32
 	// Difficulty is the difficulty of the world. It is a value from 0-3, with 0 being peaceful, 1 being easy,
 	// 2 being normal and 3 being hard.
