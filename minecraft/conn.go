@@ -418,9 +418,11 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, 
 		// we return to reading a new packet.
 		return nil, fmt.Errorf("error reading packet header: %v", err)
 	}
-	if conn.packetFunc != nil {
-		// The packet func was set, so we call it.
-		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
+	if callPacketFunc {
+		if conn.packetFunc != nil {
+			// The packet func was set, so we call it.
+			conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
+		}
 	}
 	// Attempt to fetch the packet with the right packet ID from the pool.
 	pk, ok := conn.pool[header.PacketID]
