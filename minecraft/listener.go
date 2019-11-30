@@ -169,10 +169,11 @@ func (listener *Listener) updatePongData() {
 		// plus 1, so that new players can always join.
 		maxCount = current + 1
 	}
-
 	rakListener := listener.listener.(*raknet.Listener)
-	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;0",
+
+	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
 		listener.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, current, maxCount, rakListener.ID(),
+		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
 
