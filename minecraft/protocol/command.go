@@ -353,3 +353,57 @@ func CommandParam(src *bytes.Buffer, x *CommandParameter, enums []CommandEnum, s
 	}
 	return nil
 }
+
+const (
+	CommandEnumConstraintCheatsEnabled = iota
+	_
+	_
+)
+
+// CommandEnumConstraint is sent in the AvailableCommands packet to limit what values of an enum may be used
+// taking in account things such as whether cheats are enabled.
+type CommandEnumConstraint struct {
+	// EnumOption is the option in an enum that the constraints should be applied to.
+	EnumOption string
+	// EnumName is the name of the enum of which the EnumOption above should be constrained.
+	EnumName string
+	// Constraints is a list of constraints that should be applied to the enum option. It is one of the values
+	// found above.
+	Constraints []byte
+}
+
+// WriteEnumConstraint writes a CommandEnumConstraint x to Buffer dst using the enum (value) indices passed.
+func WriteEnumConstraint(dst *bytes.Buffer, x CommandEnumConstraint, enumIndices map[string]int, enumValueIndices map[string]int) error {
+	if err := chainErr(
+		binary.Write(dst, binary.LittleEndian, uint32(enumValueIndices[x.EnumOption])),
+		binary.Write(dst, binary.LittleEndian, uint32(enumIndices[x.EnumName])),
+		WriteVaruint32(dst, uint32(len(x.Constraints))),
+	); err != nil {
+		return wrap(err)
+	}
+	return wrap(binary.Write(dst, binary.LittleEndian, x.Constraints))
+}
+
+// EnumConstraint reads a CommandEnumConstraint x from Buffer src using the enums and enum values passed.
+func EnumConstraint(src *bytes.Buffer, x *CommandEnumConstraint, enums []CommandEnum, enumValues []string) error {
+	var enumValueIndex, enumIndex, constraintCount uint32
+	if err := chainErr(
+		binary.Read(src, binary.LittleEndian, &enumValueIndex),
+		binary.Read(src, binary.LittleEndian, &enumIndex),
+		Varuint32(src, &constraintCount),
+	); err != nil {
+		return wrap(err)
+	}
+	if len(enumValues) <= int(enumValueIndex) {
+		return fmt.Errorf("invalid enum value index %v, expected one lower than or equal to %v", enumValueIndex, len(enumValues))
+	}
+	if len(enums) <= int(enumIndex) {
+		return fmt.Errorf("invalid enum index %v, expected one lower than or equal to %v", enumIndex, len(enums))
+	}
+	x.EnumOption = enumValues[enumValueIndex]
+	x.EnumName = enums[enumIndex].Type
+
+	x.Constraints = make([]byte, constraintCount)
+	_, err := src.Read(x.Constraints)
+	return wrap(err)
+}

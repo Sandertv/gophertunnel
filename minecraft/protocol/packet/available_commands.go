@@ -15,6 +15,9 @@ type AvailableCommands struct {
 	// Commands is a list of all commands that the client should show client-side. The AvailableCommands
 	// packet replaces any commands sent before. It does not only add the commands that are sent in it.
 	Commands []protocol.Command
+	// Constraints is a list of constraints that should be applied to certain options of enums in the commands
+	// above.
+	Constraints []protocol.CommandEnumConstraint
 }
 
 // ID ...
@@ -69,7 +72,10 @@ func (pk *AvailableCommands) Marshal(buf *bytes.Buffer) {
 
 	// Constraints are supposed to be here, but constraints are pointless, make no sense to be in this packet
 	// and are not worth implementing.
-	_ = protocol.WriteVaruint32(buf, 0)
+	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Constraints)))
+	for _, constraint := range pk.Constraints {
+		_ = protocol.WriteEnumConstraint(buf, constraint, enumIndices, valueIndices)
+	}
 }
 
 // Unmarshal ...
@@ -170,16 +176,13 @@ func (pk *AvailableCommands) Unmarshal(buf *bytes.Buffer) error {
 		}
 	}
 
-	// The constraints follow: They are useless and nonsensical, so we don't implement them.
-	var enumValueSymbol, enumSymbol, constraintIndexCount uint32
-	var constraintIndex byte
-	_ = protocol.Varuint32(buf, &count)
+	if err := protocol.Varuint32(buf, &count); err != nil {
+		return err
+	}
+	pk.Constraints = make([]protocol.CommandEnumConstraint, count)
 	for i := uint32(0); i < count; i++ {
-		_ = binary.Read(buf, binary.LittleEndian, &enumValueSymbol)
-		_ = binary.Read(buf, binary.LittleEndian, &enumSymbol)
-		_ = protocol.Varuint32(buf, &constraintIndexCount)
-		for j := uint32(0); j < constraintIndexCount; j++ {
-			_ = binary.Read(buf, binary.LittleEndian, &constraintIndex)
+		if err := protocol.EnumConstraint(buf, &pk.Constraints[i], enums, enumValues); err != nil {
+			return err
 		}
 	}
 
