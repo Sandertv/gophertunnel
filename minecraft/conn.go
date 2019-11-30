@@ -247,7 +247,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 read:
 	if data, ok := conn.takePushedBackPacket(); ok {
-		pk, err := conn.parsePacket(data)
+		pk, err := conn.parsePacket(data, false)
 		if err != nil {
 			conn.log.Println(err)
 			goto read
@@ -270,7 +270,7 @@ read:
 func (conn *Conn) readPacket() (pk packet.Packet, rawData []byte, readNext bool, err error) {
 	select {
 	case data := <-conn.packets:
-		pk, err := conn.parsePacket(data)
+		pk, err := conn.parsePacket(data, true)
 		if err != nil {
 			conn.log.Println(err)
 			return nil, nil, true, nil
@@ -410,7 +410,7 @@ func (conn *Conn) ClientCacheEnabled() bool {
 
 // parsePacket parses a packet from the data passed and returns it, if successful. If the packet could not be
 // parsed successfully, nil and an error is returned.
-func (conn *Conn) parsePacket(data []byte) (packet.Packet, error) {
+func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, error) {
 	buf := bytes.NewBuffer(data)
 	header := &packet.Header{}
 	if err := header.Read(buf); err != nil {
