@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -112,7 +113,8 @@ type Conn struct {
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	close             chan bool
+	closeCtx          context.Context
+	close             context.CancelFunc
 	disconnectMessage atomic.Value
 }
 
@@ -125,6 +127,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		// If no key is passed, we generate one in this function and use it instead.
 		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	}
+	closeCtx, cancel := context.WithCancel(context.Background())
 	conn := &Conn{
 		conn:       netConn,
 		encoder:    packet.NewEncoder(netConn),
@@ -132,7 +135,8 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		pool:       packet.NewPool(),
 		packets:    make(chan []byte, 32),
 		wbuf:       bytes.NewBuffer(make([]byte, 0, 1024)),
-		close:      make(chan bool, 2),
+		close:      cancel,
+		closeCtx:   closeCtx,
 		spawn:      make(chan bool),
 		privateKey: key,
 		salt:       make([]byte, 16),
@@ -152,9 +156,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 				if err := conn.Flush(); err != nil {
 					_ = conn.Close()
 				}
-			case <-conn.close:
-				// Break out of the goroutine and propagate the close signal again.
-				conn.close <- true
+			case <-conn.closeCtx.Done():
 				return
 			}
 		}
@@ -201,7 +203,7 @@ func (conn *Conn) StartGame(data GameData) error {
 		return nil
 	case <-timeout:
 		return fmt.Errorf("start game spawning timeout")
-	case <-conn.close:
+	case <-conn.closeCtx.Done():
 		return fmt.Errorf("connection closed")
 	}
 }
@@ -221,7 +223,7 @@ func (conn *Conn) DoSpawn() error {
 		return nil
 	case <-timeout:
 		return fmt.Errorf("start game spawning timeout")
-	case <-conn.close:
+	case <-conn.closeCtx.Done():
 		if conn.disconnectMessage.Load().(string) != "" {
 			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
 		}
@@ -293,8 +295,7 @@ func (conn *Conn) readPacket() (pk packet.Packet, rawData []byte, readNext bool,
 		return pk, data, false, nil
 	case <-conn.readDeadline:
 		return nil, nil, false, fmt.Errorf("error reading packet: read timeout")
-	case <-conn.close:
-		conn.close <- true
+	case <-conn.closeCtx.Done():
 		return nil, nil, false, fmt.Errorf("error reading packet: connection closed")
 	}
 }
@@ -334,8 +335,7 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 		return copy(b, data), nil
 	case <-conn.readDeadline:
 		return 0, fmt.Errorf("error reading packet: read timeout")
-	case <-conn.close:
-		conn.close <- true
+	case <-conn.closeCtx.Done():
 		return 0, fmt.Errorf("error reading packet: connection closed")
 	}
 }
@@ -359,12 +359,8 @@ func (conn *Conn) Flush() error {
 // Close closes the Conn and its underlying connection. Before closing, it also calls Flush() so that any
 // packets currently pending are sent out.
 func (conn *Conn) Close() error {
-	if len(conn.close) != 0 {
-		// The connection was already closed, no need to do anything.
-		return nil
-	}
+	conn.close()
 	_ = conn.Flush()
-	conn.close <- true
 	return conn.conn.Close()
 }
 
@@ -477,8 +473,7 @@ func (conn *Conn) takePushedBackPacket() ([]byte, bool) {
 func (conn *Conn) handleIncoming(data []byte) error {
 	select {
 	case conn.packets <- data:
-	case <-conn.close:
-		conn.close <- true
+	case <-conn.closeCtx.Done():
 		return nil
 	}
 
@@ -916,8 +911,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 			case frag := <-downloadingPack.newFrag:
 				// Write the fragment to the full buffer of the downloading resource pack.
 				_, _ = downloadingPack.buf.Write(frag)
-			case <-conn.close:
-				conn.close <- true
+			case <-conn.closeCtx.Done():
 				return
 			}
 		}
