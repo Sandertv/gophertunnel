@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
 const (
@@ -13,14 +14,14 @@ const (
 	EntityDataInt32
 	EntityDataFloat32
 	EntityDataString
-	EntityDataItem
+	EntityDataCompoundTag
 	EntityDataBlockPos
 	EntityDataInt64
 	EntityDataVec3
 )
 
 // EntityMetadata reads an entity metadata list from buffer src into map x. The types in the map will be one
-// of byte, int16, int32, float32, string, ItemStack, BlockPos, int64 or mgl32.Vec3.
+// of byte, int16, int32, float32, string, map[string]interface{}, BlockPos, int64 or mgl32.Vec3.
 func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 	var count uint32
 	var err error
@@ -59,9 +60,9 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 			var v string
 			err = String(src, &v)
 			(*x)[key] = v
-		case EntityDataItem:
-			var v ItemStack
-			err = Item(src, &v)
+		case EntityDataCompoundTag:
+			var v map[string]interface{}
+			err = nbt.NewDecoder(src).Decode(&v)
 			(*x)[key] = v
 		case EntityDataBlockPos:
 			var v BlockPos
@@ -87,8 +88,8 @@ func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
 }
 
 // WriteEntityMetadata writes an entity metadata list x to buffer dst. The types held by the map must be one
-// of byte, int16, int32, float32, string, ItemStack, BlockPos, int64 or mgl32.Vec3. The function will panic
-// if a different type is encountered.
+// of byte, int16, int32, float32, string, map[string]interface{}, BlockPos, int64 or mgl32.Vec3. The function
+// will panic if a different type is encountered.
 func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 	if x == nil {
 		return WriteVaruint32(dst, 0)
@@ -117,9 +118,9 @@ func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 		case string:
 			typeErr = WriteVaruint32(dst, EntityDataString)
 			valueErr = WriteString(dst, v)
-		case ItemStack:
-			typeErr = WriteVaruint32(dst, EntityDataItem)
-			valueErr = WriteItem(dst, v)
+		case map[string]interface{}:
+			typeErr = WriteVaruint32(dst, EntityDataCompoundTag)
+			valueErr = nbt.NewEncoder(dst).Encode(v)
 		case BlockPos:
 			typeErr = WriteVaruint32(dst, EntityDataBlockPos)
 			valueErr = WriteBlockPosition(dst, v)

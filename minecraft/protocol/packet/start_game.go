@@ -208,7 +208,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.FromWorldTemplate)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WorldTemplateSettingsLocked)
 	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
-	_ = protocol.WriteString(buf, protocol.CurrentVersion)
+	_ = protocol.WriteString(buf, "*")
 	_ = protocol.WriteString(buf, pk.LevelID)
 	_ = protocol.WriteString(buf, pk.WorldName)
 	_ = protocol.WriteString(buf, pk.TemplateContentIdentity)
