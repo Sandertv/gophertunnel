@@ -120,7 +120,7 @@ func (s *dumpState) encodeTagValue(val interface{}) string {
 			actualVal := v.Interface()
 
 			s.currentIndent++
-			b.WriteString(fmt.Sprintf("%v\"%v\": %v(%v),\n", s.indent(), k.String(), s.encodeTagType(actualVal), s.encodeTagValue(actualVal)))
+			b.WriteString(fmt.Sprintf("%v'%v': %v(%v),\n", s.indent(), k.String(), s.encodeTagType(actualVal), s.encodeTagValue(actualVal)))
 			s.currentIndent--
 		}
 		b.WriteString(s.indent() + "}")
