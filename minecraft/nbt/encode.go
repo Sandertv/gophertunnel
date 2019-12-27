@@ -35,9 +35,9 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: writer, Encoding: NetworkLittleEndian}
 }
 
-// NewEncoderVariant returns a new encoder for the output stream writer passed using a specific encoding. It
-// is identical to calling NewEncoder and setting the Encoding field manually.
-func NewEncoderVariant(w io.Writer, encoding Encoding) *Encoder {
+// NewEncoderWithEncoding returns a new encoder for the output stream writer passed using a specific encoding.
+// It is identical to calling NewEncoder and setting the Encoding field manually.
+func NewEncoderWithEncoding(w io.Writer, encoding Encoding) *Encoder {
 	enc := NewEncoder(w)
 	enc.Encoding = encoding
 	return enc

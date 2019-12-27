@@ -27,8 +27,8 @@ func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{Encoding: NetworkLittleEndian, r: newOffsetReader(r)}
 }
 
-// NewDecoderVariant returns a new Decoder for the input stream reader passed with a specific encoding.
-func NewDecoderVariant(r io.Reader, encoding Encoding) *Decoder {
+// NewDecoderWithEncoding returns a new Decoder for the input stream reader passed with a specific encoding.
+func NewDecoderWithEncoding(r io.Reader, encoding Encoding) *Decoder {
 	return &Decoder{Encoding: encoding, r: newOffsetReader(r)}
 }
 
