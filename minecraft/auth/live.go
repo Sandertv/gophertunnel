@@ -124,11 +124,8 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 	}
 	_ = resp.Body.Close()
 	location, err := resp.Location()
-	if err != nil {
-		return nil, fmt.Errorf("final response had no location: %v", err)
-	} else if location.String() == "" {
-		// The Location was empty, meaning authentication failed.
-		return nil, fmt.Errorf("incorrect login or password passed")
+	if err != nil || location.String() == "" {
+		return nil, fmt.Errorf("incorrect username/email or password")
 	}
 
 	location.RawQuery = location.Fragment
