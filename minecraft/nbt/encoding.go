@@ -6,9 +6,9 @@ import (
 	"unsafe"
 )
 
-// Variant is a specific variant of NBT. In general, there are three variants of NBT, which are all the same
-// except for the way basic types are written.
-type Variant interface {
+// Encoding is an encoding variant of NBT. In general, there are three different encodings of NBT, which are
+// all the same except for the way basic types are written.
+type Encoding interface {
 	Int16(r *offsetReader) (int16, error)
 	Int32(r *offsetReader) (int32, error)
 	Int64(r *offsetReader) (int64, error)

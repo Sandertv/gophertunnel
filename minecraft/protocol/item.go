@@ -77,7 +77,7 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 				return fmt.Errorf("%v: invalid NBT count %v", callFrame(), legacyNBTLength)
 			}
 			nbtData := src.Next(int(legacyNBTLength))
-			if err := nbt.UnmarshalVariant(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
+			if err := nbt.UnmarshalEncoding(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
 				return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
 			}
 		}

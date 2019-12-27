@@ -7,18 +7,18 @@ import (
 	"strings"
 )
 
-// Dump returns a human readable decoded version of a serialised slice of NBT encoded using the variant that
+// Dump returns a human readable decoded version of a serialised slice of NBT encoded using the encoding that
 // is passed.
 // Types are printed using the names present in the doc.go file and nested tags are indented using a single
 // tab.
 // Due to the nature of NBT, TAG_Compounds will not be printed in the same order. A different result is to be
 // expected every time Dump is called, due to the random ordering.
 //
-// If the serialised NBT data passed was not parsable using the variant that was passed, an error is returned
+// If the serialised NBT data passed is not parsable using the encoding that was passed, an error is returned
 // and the resulting string will always be empty.
-func Dump(data []byte, variant Variant) (string, error) {
+func Dump(data []byte, encoding Encoding) (string, error) {
 	var m map[string]interface{}
-	if err := UnmarshalVariant(data, &m, variant); err != nil {
+	if err := UnmarshalEncoding(data, &m, encoding); err != nil {
 		return "", fmt.Errorf("error decoding NBT: %v", err)
 	}
 	s := &dumpState{}

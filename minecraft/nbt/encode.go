@@ -13,9 +13,9 @@ import (
 
 // Encoder writes NBT objects to an NBT output stream.
 type Encoder struct {
-	// Variant is the variant to use for encoding the objects passed. By default, the variant is set to
+	// Encoding is the variant to use for encoding the objects passed. By default, the variant is set to
 	// NetworkLittleEndian, which is the variant used for network NBT.
-	Variant Variant
+	Encoding Encoding
 
 	w     *offsetWriter
 	depth int
@@ -32,13 +32,14 @@ func NewEncoder(w io.Writer) *Encoder {
 			return err
 		}}
 	}
-	return &Encoder{w: writer, Variant: NetworkLittleEndian}
+	return &Encoder{w: writer, Encoding: NetworkLittleEndian}
 }
 
-// NewEncoderVariant returns a new encoder for the output stream writer passed using a specific variant.
-func NewEncoderVariant(w io.Writer, variant Variant) *Encoder {
+// NewEncoderVariant returns a new encoder for the output stream writer passed using a specific encoding. It
+// is identical to calling NewEncoder and setting the Encoding field manually.
+func NewEncoderVariant(w io.Writer, encoding Encoding) *Encoder {
 	enc := NewEncoder(w)
-	enc.Variant = variant
+	enc.Encoding = encoding
 	return enc
 }
 
@@ -50,7 +51,7 @@ func (e *Encoder) Encode(v interface{}) error {
 }
 
 // Marshal encodes an object to its NBT representation and returns it as a byte slice. It uses the
-// NetworkLittleEndian NBT format. To use a specific format, use MarshalVariant.
+// NetworkLittleEndian NBT encoding. To use a specific encoding, use MarshalEncoding.
 //
 // The Go value passed must be one of the values below, and structs, maps and slices may only have types that
 // are found in the list below.
@@ -75,14 +76,14 @@ func (e *Encoder) Encode(v interface{}) error {
 // filled by the decoding of the data passed. Suffixing the 'nbt' struct tag with ',omitempty' will prevent
 // the field from being encoded if it is equal to its default value.
 func Marshal(v interface{}) ([]byte, error) {
-	return MarshalVariant(v, NetworkLittleEndian)
+	return MarshalEncoding(v, NetworkLittleEndian)
 }
 
-// MarshalVariant encodes an object to its NBT representation and returns it as a byte slice. Its
-// functionality is identical to that of Marshal, except it accepts any NBT variant.
-func MarshalVariant(v interface{}, variant Variant) ([]byte, error) {
+// MarshalEncoding encodes an object to its NBT representation and returns it as a byte slice. Its
+// functionality is identical to that of Marshal, except it accepts any NBT encoding.
+func MarshalEncoding(v interface{}, encoding Encoding) ([]byte, error) {
 	b := bufferPool.Get().(*bytes.Buffer)
-	err := (&Encoder{w: &offsetWriter{Writer: b, WriteByte: b.WriteByte}, Variant: variant}).Encode(v)
+	err := (&Encoder{w: &offsetWriter{Writer: b, WriteByte: b.WriteByte}, Encoding: encoding}).Encode(v)
 	data := append([]byte(nil), b.Bytes()...)
 
 	// Make sure to reset the buffer before putting it back in the pool.
@@ -132,26 +133,26 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 		return e.w.WriteByte(byte(val.Uint()))
 
 	case reflect.Int16:
-		return e.Variant.WriteInt16(e.w, int16(val.Int()))
+		return e.Encoding.WriteInt16(e.w, int16(val.Int()))
 
 	case reflect.Int32:
-		return e.Variant.WriteInt32(e.w, int32(val.Int()))
+		return e.Encoding.WriteInt32(e.w, int32(val.Int()))
 
 	case reflect.Int64:
-		return e.Variant.WriteInt64(e.w, int64(val.Int()))
+		return e.Encoding.WriteInt64(e.w, int64(val.Int()))
 
 	case reflect.Float32:
-		return e.Variant.WriteFloat32(e.w, float32(val.Float()))
+		return e.Encoding.WriteFloat32(e.w, float32(val.Float()))
 
 	case reflect.Float64:
-		return e.Variant.WriteFloat64(e.w, val.Float())
+		return e.Encoding.WriteFloat64(e.w, val.Float())
 
 	case reflect.Array:
 		switch val.Type().Elem().Kind() {
 
 		case reflect.Uint8:
 			n := val.Cap()
-			if err := e.Variant.WriteInt32(e.w, int32(n)); err != nil {
+			if err := e.Encoding.WriteInt32(e.w, int32(n)); err != nil {
 				return err
 			}
 			data := make([]byte, n)
@@ -165,22 +166,22 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 
 		case reflect.Int32:
 			n := val.Cap()
-			if err := e.Variant.WriteInt32(e.w, int32(n)); err != nil {
+			if err := e.Encoding.WriteInt32(e.w, int32(n)); err != nil {
 				return err
 			}
 			for i := 0; i < n; i++ {
-				if err := e.Variant.WriteInt32(e.w, int32(val.Index(i).Int())); err != nil {
+				if err := e.Encoding.WriteInt32(e.w, int32(val.Index(i).Int())); err != nil {
 					return err
 				}
 			}
 
 		case reflect.Int64:
 			n := val.Cap()
-			if err := e.Variant.WriteInt32(e.w, int32(n)); err != nil {
+			if err := e.Encoding.WriteInt32(e.w, int32(n)); err != nil {
 				return err
 			}
 			for i := 0; i < n; i++ {
-				if err := e.Variant.WriteInt64(e.w, val.Index(i).Int()); err != nil {
+				if err := e.Encoding.WriteInt64(e.w, val.Index(i).Int()); err != nil {
 					return err
 				}
 			}
@@ -191,7 +192,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 		if !utf8.ValidString(s) {
 			return InvalidStringError{Off: e.w.off, String: s, Err: errors.New("string does not exist out of utf8 only")}
 		}
-		return e.Variant.WriteString(e.w, s)
+		return e.Encoding.WriteString(e.w, s)
 
 	case reflect.Slice:
 		e.depth++
@@ -214,7 +215,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 		if err := e.w.WriteByte(listType); err != nil {
 			return FailedWriteError{Off: e.w.off, Op: "WriteSlice", Err: err}
 		}
-		if err := e.Variant.WriteInt32(e.w, int32(val.Len())); err != nil {
+		if err := e.Encoding.WriteInt32(e.w, int32(val.Len())); err != nil {
 			return err
 		}
 		for i := 0; i < val.Len(); i++ {
@@ -296,5 +297,5 @@ func (e *Encoder) writeTag(tagType byte, tagName string) error {
 	if err := e.w.WriteByte(tagType); err != nil {
 		return err
 	}
-	return e.Variant.WriteString(e.w, tagName)
+	return e.Encoding.WriteString(e.w, tagName)
 }

@@ -14,9 +14,9 @@ import (
 
 // Decoder reads NBT objects from an NBT input stream.
 type Decoder struct {
-	// Variant is the variant to use for decoding the NBT passed. By default, the variant is set to
+	// Encoding is the variant to use for decoding the NBT passed. By default, the variant is set to
 	// NetworkLittleEndian, which is the variant used for network NBT.
-	Variant Variant
+	Encoding Encoding
 
 	r     *offsetReader
 	depth int
@@ -24,12 +24,12 @@ type Decoder struct {
 
 // NewDecoder returns a new Decoder for the input stream reader passed.
 func NewDecoder(r io.Reader) *Decoder {
-	return &Decoder{Variant: NetworkLittleEndian, r: newOffsetReader(r)}
+	return &Decoder{Encoding: NetworkLittleEndian, r: newOffsetReader(r)}
 }
 
-// NewDecoderVariant returns a new Decoder for the input stream reader passed with a specific variant.
-func NewDecoderVariant(r io.Reader, variant Variant) *Decoder {
-	return &Decoder{Variant: variant, r: newOffsetReader(r)}
+// NewDecoderVariant returns a new Decoder for the input stream reader passed with a specific encoding.
+func NewDecoderVariant(r io.Reader, encoding Encoding) *Decoder {
+	return &Decoder{Encoding: encoding, r: newOffsetReader(r)}
 }
 
 // Decode reads the next NBT object from the input stream and stores it into the pointer to an object passed.
@@ -47,7 +47,7 @@ func (d *Decoder) Decode(v interface{}) error {
 }
 
 // Unmarshal decodes a slice of NBT data into a pointer to a Go values passed. Marshal will use the
-// NetworkLittleEndian NBT format by default. To use a specific format, use UnmarshalVariant.
+// NetworkLittleEndian encoding by default. To use a specific encoding, use UnmarshalEncoding.
 //
 // The Go value passed must be a pointer to a value. Anything else will return an error before decoding.
 // The following NBT tags are decoded in the Go value passed as such:
@@ -74,14 +74,14 @@ func (d *Decoder) Decode(v interface{}) error {
 // a field that some tag should be decoded in. Setting the struct tag to '-' means that field will never be
 // filled by the decoding of the data passed.
 func Unmarshal(data []byte, v interface{}) error {
-	return UnmarshalVariant(data, v, NetworkLittleEndian)
+	return UnmarshalEncoding(data, v, NetworkLittleEndian)
 }
 
-// UnmarshalVariant decodes a slice of NBT data into a pointer to a Go values passed using the NBT variant
-// passed. Its functionality is identical to that of Unmarshal.
-func UnmarshalVariant(data []byte, v interface{}, variant Variant) error {
+// UnmarshalEncoding decodes a slice of NBT data into a pointer to a Go values passed using the NBT encoding
+// passed. Its functionality is identical to that of Unmarshal, except that it allows a specific encoding.
+func UnmarshalEncoding(data []byte, v interface{}, encoding Encoding) error {
 	buf := bytes.NewBuffer(data)
-	return (&Decoder{Variant: variant, r: &offsetReader{
+	return (&Decoder{Encoding: encoding, r: &offsetReader{
 		Reader:   buf,
 		ReadByte: buf.ReadByte,
 		Next:     buf.Next,
@@ -127,7 +127,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetUint(uint64(value))
 
 	case tagInt16:
-		value, err := d.Variant.Int16(d.r)
+		value, err := d.Encoding.Int16(d.r)
 		if err != nil {
 			return err
 		}
@@ -142,7 +142,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetInt(int64(value))
 
 	case tagInt32:
-		value, err := d.Variant.Int32(d.r)
+		value, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
@@ -157,7 +157,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetInt(int64(value))
 
 	case tagInt64:
-		value, err := d.Variant.Int64(d.r)
+		value, err := d.Encoding.Int64(d.r)
 		if err != nil {
 			return err
 		}
@@ -172,7 +172,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetInt(int64(value))
 
 	case tagFloat32:
-		value, err := d.Variant.Float32(d.r)
+		value, err := d.Encoding.Float32(d.r)
 		if err != nil {
 			return err
 		}
@@ -187,7 +187,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetFloat(float64(value))
 
 	case tagFloat64:
-		value, err := d.Variant.Float64(d.r)
+		value, err := d.Encoding.Float64(d.r)
 		if err != nil {
 			return err
 		}
@@ -202,7 +202,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetFloat(value)
 
 	case tagString:
-		value, err := d.Variant.String(d.r)
+		value, err := d.Encoding.String(d.r)
 		if err != nil {
 			return err
 		}
@@ -220,7 +220,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.SetString(value)
 
 	case tagByteArray:
-		length, err := d.Variant.Int32(d.r)
+		length, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
@@ -246,13 +246,13 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.Set(value)
 
 	case tagInt32Array:
-		length, err := d.Variant.Int32(d.r)
+		length, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
 		value := reflect.New(reflect.ArrayOf(int(length), int32Type)).Elem()
 		for i := int32(0); i < length; i++ {
-			v, err := d.Variant.Int32(d.r)
+			v, err := d.Encoding.Int32(d.r)
 			if err != nil {
 				return err
 			}
@@ -272,13 +272,13 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		val.Set(value)
 
 	case tagInt64Array:
-		length, err := d.Variant.Int32(d.r)
+		length, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
 		value := reflect.New(reflect.ArrayOf(int(length), int64Type)).Elem()
 		for i := int32(0); i < length; i++ {
-			v, err := d.Variant.Int64(d.r)
+			v, err := d.Encoding.Int64(d.r)
 			if err != nil {
 				return err
 			}
@@ -306,7 +306,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		if !tagExists(listType) {
 			return UnknownTagError{Off: d.r.off, TagType: listType, Op: "Slice"}
 		}
-		length, err := d.Variant.Int32(d.r)
+		length, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
@@ -435,7 +435,7 @@ func (d *Decoder) tag() (tagType byte, tagName string, err error) {
 	if d.depth >= maximumNestingDepth {
 		return 0, "", MaximumDepthReachedError{}
 	}
-	if d.r.off >= maximumNetworkOffset && d.Variant == NetworkLittleEndian {
+	if d.r.off >= maximumNetworkOffset && d.Encoding == NetworkLittleEndian {
 		return 0, "", MaximumBytesReadError{}
 	}
 	tagType, err = d.r.ReadByte()
@@ -444,7 +444,7 @@ func (d *Decoder) tag() (tagType byte, tagName string, err error) {
 	}
 	if tagType != tagEnd {
 		// Only read a tag name if the tag's type is not TAG_End.
-		tagName, err = d.Variant.String(d.r)
+		tagName, err = d.Encoding.String(d.r)
 	}
 	return
 }
