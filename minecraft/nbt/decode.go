@@ -51,7 +51,7 @@ func (d *Decoder) Decode(v interface{}) error {
 //
 // The Go value passed must be a pointer to a value. Anything else will return an error before decoding.
 // The following NBT tags are decoded in the Go value passed as such:
-//   TAG_Byte: byte/uint8(/interface{})
+//   TAG_Byte: byte/uint8(/interface{}) or bool
 //   TAG_Short: int16(/interface{})
 //   TAG_Int: int32(/interface{})
 //   TAG_Long: int64(/interface{})
@@ -117,6 +117,12 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			return BufferOverrunError{Op: "Byte"}
 		}
 		if val.Kind() != reflect.Uint8 {
+			if val.Kind() == reflect.Bool {
+				if value != 0 {
+					val.SetBool(true)
+				}
+				return nil
+			}
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
 				// Empty interface.
 				val.Set(reflect.ValueOf(value))
@@ -232,7 +238,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		for i := int32(0); i < length; i++ {
 			value.Index(int(i)).SetUint(uint64(data[i]))
 		}
-		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Uint8 {
+		if val.Kind() != reflect.Array {
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
 				// Empty interface.
 				val.Set(value)

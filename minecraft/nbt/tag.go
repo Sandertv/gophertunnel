@@ -70,7 +70,7 @@ func tagExists(tag byte) bool {
 // is returned.
 func tagFromType(p reflect.Type) byte {
 	switch p.Kind() {
-	case reflect.Uint8:
+	case reflect.Uint8, reflect.Bool:
 		return tagByte
 	case reflect.Int16:
 		return tagInt16

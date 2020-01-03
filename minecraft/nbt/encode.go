@@ -58,6 +58,7 @@ func (e *Encoder) Encode(v interface{}) error {
 //
 // The following Go types are converted to tags as such:
 //   byte/uint8: TAG_Byte
+//   bool: TAG_Byte
 //   int16: TAG_Short
 //   int32: TAG_Int
 //   int64: TAG_Long
@@ -131,6 +132,12 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 	switch vk := kind; vk {
 	case reflect.Uint8:
 		return e.w.WriteByte(byte(val.Uint()))
+
+	case reflect.Bool:
+		if val.Bool() {
+			return e.w.WriteByte(1)
+		}
+		return e.w.WriteByte(0)
 
 	case reflect.Int16:
 		return e.Encoding.WriteInt16(e.w, int16(val.Int()))

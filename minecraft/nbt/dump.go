@@ -76,7 +76,7 @@ func (s *dumpState) encodeTagType(val interface{}) string {
 		return "TAG_List<" + s.encodeTagType(elemType) + ">"
 	case reflect.Array:
 		switch t.Elem().Kind() {
-		case reflect.Uint8:
+		case reflect.Uint8, reflect.Bool:
 			return "TAG_ByteArray"
 		case reflect.Int32:
 			return "TAG_IntArray"

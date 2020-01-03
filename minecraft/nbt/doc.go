@@ -8,6 +8,7 @@
 //
 // The package encodes and decodes the following Go types with the following NBT tags.
 //   byte/uint8: TAG_Byte
+//   bool: TAG_Byte
 //   int16: TAG_Short
 //   int32: TAG_Int
 //   int64: TAG_Long
