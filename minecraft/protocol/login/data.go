@@ -223,6 +223,14 @@ func (data ClientData) Validate() error {
 			return fmt.Errorf("SkinGeometry base64 decoded was not a valid JSON string: %v", err)
 		}
 	}
+	if b, err := base64.StdEncoding.DecodeString(data.SkinResourcePatch); err != nil {
+		return fmt.Errorf("SkinResourcePatch was not a valid base64 string: %v", err)
+	} else {
+		m := make(map[string]interface{})
+		if err := json.Unmarshal(b, &m); err != nil {
+			return fmt.Errorf("SkinResourcePatch base64 decoded was not a valid JSON string: %v", err)
+		}
+	}
 	if data.SkinID == "" {
 		return fmt.Errorf("SkinID must not be an empty string")
 	}
