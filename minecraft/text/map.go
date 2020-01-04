@@ -19,6 +19,7 @@ const (
 	purple     = "§d"
 	yellow     = "§e"
 	white      = "§f"
+	darkYellow = "§g"
 
 	obfuscated    = "§k"
 	bold          = "§l"
@@ -45,6 +46,7 @@ const (
 	ansiPurple     = "\x1b[38;5;207m"
 	ansiYellow     = "\x1b[38;5;227m"
 	ansiWhite      = "\x1b[38;5;231m"
+	ansiDarkYellow = "\x1b[38;5;226m"
 
 	ansiObfuscated    = ""
 	ansiBold          = "\x1b[1m"
@@ -71,6 +73,7 @@ var m = map[string]string{
 	purple:        ansiPurple,
 	yellow:        ansiYellow,
 	white:         ansiWhite,
+	darkYellow:    ansiDarkYellow,
 	obfuscated:    ansiObfuscated,
 	bold:          ansiBold,
 	strikethrough: ansiStrikethrough,

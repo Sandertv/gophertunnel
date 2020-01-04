@@ -111,6 +111,11 @@ func White() FormatFunc {
 	return formatFunc(white, reset)
 }
 
+// DarkYellow returns a dark yellow formatter.
+func DarkYellow() FormatFunc {
+	return formatFunc(darkYellow, reset)
+}
+
 // Obfuscated returns an obfuscated formatter.
 func Obfuscated() FormatFunc {
 	return formatFunc(obfuscated, reset)
