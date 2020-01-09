@@ -12,6 +12,14 @@ const (
 	InventoryActionSourceTODO      = 99999
 )
 
+const (
+	WindowIDInventory = 0
+	WindowIDOffHand   = 119
+	WindowIDArmour    = 120
+	WindowIDCreative  = 121
+	WindowIDUI        = 124
+)
+
 // InventoryAction represents a single action that took place during an inventory transaction. On itself, this
 // inventory action is always unbalanced: It must be combined with other actions in an inventory transaction
 // to form a balanced transaction.
