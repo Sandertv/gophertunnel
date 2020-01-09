@@ -152,7 +152,6 @@ func (listener *Listener) Addr() net.Addr {
 
 // Close closes the listener and the underlying net.Listener. Pending calls to Accept will fail immediately.
 func (listener *Listener) Close() error {
-	close(listener.incoming)
 	return listener.listener.Close()
 }
 
@@ -182,6 +181,7 @@ func (listener *Listener) updatePongData() {
 func (listener *Listener) listen() {
 	listener.updatePongData()
 	defer func() {
+		close(listener.incoming)
 		_ = listener.Close()
 	}()
 	for {
