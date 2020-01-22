@@ -196,7 +196,7 @@ func (conn *Conn) StartGame(data GameData) error {
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
-	timeout := time.After(time.Second * 15)
+	timeout := time.After(time.Second * 30)
 	select {
 	case <-conn.spawn:
 		// Conn was spawned successfully.
