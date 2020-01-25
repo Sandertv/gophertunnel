@@ -18,6 +18,9 @@ func Register(command Command) {
 // command is nil and the bool is false.
 func ByAlias(alias string) (Command, bool) {
 	command, ok := commands.Load(alias)
+	if !ok {
+		return Command{}, false
+	}
 	return command.(Command), ok
 }
 
