@@ -278,11 +278,8 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.Time),
 		protocol.Varint32(buf, &pk.EnchantmentSeed),
 		nbt.NewDecoder(buf).Decode(&pk.Blocks),
+		protocol.Varuint32(buf, &itemCount),
 	); err != nil {
-		return err
-	}
-
-	if err := protocol.Varuint32(buf, &itemCount); err != nil {
 		return err
 	}
 	pk.Items = make([]protocol.ItemEntry, itemCount)

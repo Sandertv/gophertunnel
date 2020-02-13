@@ -118,6 +118,10 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	c := make(chan struct{})
 	go listenConn(conn, dialer.ErrorLog, c)
 
+	if conn.clientData.AnimatedImageData == nil {
+		conn.clientData.AnimatedImageData = make([]login.SkinAnimation, 0)
+	}
+
 	var request []byte
 	if dialer.Email == "" {
 		// We haven't logged into the user's XBL account. We create a login request with only one token

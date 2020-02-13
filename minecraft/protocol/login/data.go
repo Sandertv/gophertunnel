@@ -66,27 +66,7 @@ func (data IdentityData) Validate() error {
 type ClientData struct {
 	// AnimatedImageData is a list of image data for animations. Each of the elements in this slice holds the
 	// image data of a single frame of the animation.
-	AnimatedImageData []struct {
-		// Frames is the amount of frames of the animation. The number of Frames here specifies how many
-		// frames may be found in the Image data.
-		Frames float64
-		// Image is a base64 encoded byte slice of ImageWidth * ImageHeight bytes. It is an RGBA ordered byte
-		// representation of the animation image pixels. The ImageData contains FrameCount images in it, which
-		// each represent one stage of the animation. The actual part of the skin that this field holds
-		// depends on the Type, where SkinAnimationHead holds only the head and its hat, whereas the other
-		// animations hold the entire body of the skin.
-		Image string
-		// ImageHeight and ImageWidth are the dimensions of the animated image. Note that the size of this
-		// image is not always 32/64/128.
-		ImageHeight, ImageWidth int
-		// Type is the type of the animation, which defines what part of the body the Image data holds. It is
-		// one of the following:
-		// 0 -> 'None', doesn't typically occur.
-		// 1 -> Face animation.
-		// 2 -> 32x32 Body animation.
-		// 3 -> 128x128 Body animation.
-		Type int
-	}
+	AnimatedImageData []SkinAnimation
 	// CapeData is a base64 encoded string of cape data. This is usually an empty string, as skins typically
 	// don't carry capes themselves.
 	CapeData string
@@ -153,9 +133,17 @@ type ClientData struct {
 	SkinID string `json:"SkinId"`
 	// SkinImageHeight and SkinImageWidth are the dimensions of the skin's image data.
 	SkinImageHeight, SkinImageWidth int
-	// SkinResourcePatch is a base64 encoded string which holds JSON data. The content of the JSON data seems
-	// to point to the geometry of the skin, including the animated geometry, but I'm not sure on its exact
-	// function.
+	// SkinResourcePatch is a base64 encoded string which holds JSON data. The content of the JSON data points
+	// to the assets that should be used to shape the skin. An example with a head animation can be found
+	// below.
+	// {
+	//   "geometry" : {
+	//      "animated_face" : "geometry.animated_face_persona_d1625e47f4c9399f_0_1",
+	//      "default" : "geometry.persona_d1625e47f4c9399f_0_1"
+	//   }
+	// }
+	// A skin resource patch must be present at all times. The minimum required data that the field must hold
+	// is {"geometry": {"default": "geometry.persona_d1625e47f4c9399f_0_1"}}
 	SkinResourcePatch string
 	// ThirdPartyName is the username of the player. This username should not be used however. The DisplayName
 	// sent in the IdentityData should be preferred over this.
@@ -168,6 +156,30 @@ type ClientData struct {
 	ThirdPartyNameOnly bool
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
+}
+
+// SkinAnimation is an animation that may be present. It is applied on top of the skin default and is cycled
+// through client-side.
+type SkinAnimation struct {
+	// Frames is the amount of frames of the animation. The number of Frames here specifies how many
+	// frames may be found in the Image data.
+	Frames float64
+	// Image is a base64 encoded byte slice of ImageWidth * ImageHeight bytes. It is an RGBA ordered byte
+	// representation of the animation image pixels. The ImageData contains FrameCount images in it, which
+	// each represent one stage of the animation. The actual part of the skin that this field holds
+	// depends on the Type, where SkinAnimationHead holds only the head and its hat, whereas the other
+	// animations hold the entire body of the skin.
+	Image string
+	// ImageHeight and ImageWidth are the dimensions of the animated image. Note that the size of this
+	// image is not always 32/64/128.
+	ImageHeight, ImageWidth int
+	// Type is the type of the animation, which defines what part of the body the Image data holds. It is
+	// one of the following:
+	// 0 -> 'None', doesn't typically occur.
+	// 1 -> Face animation.
+	// 2 -> 32x32 Body animation.
+	// 3 -> 128x128 Body animation.
+	Type int
 }
 
 // checkVersion is used to check if a version is an actual valid version. It must only contain numbers and
