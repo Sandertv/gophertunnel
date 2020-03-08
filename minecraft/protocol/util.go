@@ -52,7 +52,7 @@ func callFrame() string {
 	return fmt.Sprintf("%v/%v", frame.Function, frame.Line)
 }
 
-// wrap wraps a callframe around an error and returns the new error.
+// wrap wraps a call frame around an error and returns the new error.
 func wrap(e error) error {
 	if e == nil {
 		return nil

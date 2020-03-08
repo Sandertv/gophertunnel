@@ -105,7 +105,7 @@ func RequestXSTSTokenUserOnly(liveToken *TokenPair) (*XSTSToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	return xstsTokenWithoutDeviceAndTitle(c, userToken.Token, key)
+	return xstsTokenWithoutDeviceAndTitle(c, userToken.Token)
 }
 
 // RequestXSTSToken requests an XSTS token using the passed Live token pair. The token pair must be valid
@@ -270,7 +270,7 @@ func titleToken(c *http.Client, accessToken, deviceToken string, key *ecdsa.Priv
 
 // xstsTokenWithoutDeviceAndTitle sends a POST request to the xblAuthorizeURL using the user token passed. It
 // fetches it without requiring the device and title token.
-func xstsTokenWithoutDeviceAndTitle(c *http.Client, userToken string, key *ecdsa.PrivateKey) (token *XSTSToken, err error) {
+func xstsTokenWithoutDeviceAndTitle(c *http.Client, userToken string) (token *XSTSToken, err error) {
 	data, _ := json.Marshal(map[string]interface{}{
 		// RelyingParty MUST be this URL to produce an XSTS token which may be used for Minecraft
 		// authentication.

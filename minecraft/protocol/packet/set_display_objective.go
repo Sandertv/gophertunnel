@@ -5,6 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+//noinspection SpellCheckingInspection
 const (
 	ScoreboardSlotList      = "list"
 	ScoreboardSlotSidebar   = "sidebar"

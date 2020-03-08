@@ -12,7 +12,7 @@ func UUID(src *bytes.Buffer, id *uuid.UUID) error {
 	if _, err := src.Read(b); err != nil {
 		return fmt.Errorf("%v: need exactly 16 bytes to decode a UUID", callFrame())
 	}
-	*id = uuid.UUID(reverseUUIDBytes(b))
+	*id = reverseUUIDBytes(b)
 	return nil
 }
 

@@ -6,7 +6,7 @@ import (
 )
 
 // GameRulesChanged is sent by the server to the client to update client-side game rules, such as game rules
-// like the 'showcoordinates' game rule.
+// like the 'showCoordinates' game rule.
 type GameRulesChanged struct {
 	// GameRules defines game rules changed with their respective values. The value of these game rules may be
 	// either 'bool', 'int32' or 'float32'.

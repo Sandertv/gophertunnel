@@ -104,6 +104,7 @@ func RequestLiveToken(login, password string) (*TokenPair, error) {
 	c.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	}
+	//noinspection SpellCheckingInspection
 	postData := url.Values{
 		"login":        []string{login},
 		"passwd":       []string{password},

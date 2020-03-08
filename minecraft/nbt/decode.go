@@ -175,7 +175,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			}
 			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
 		}
-		val.SetInt(int64(value))
+		val.SetInt(value)
 
 	case tagFloat32:
 		value, err := d.Encoding.Float32(d.r)
@@ -288,7 +288,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			if err != nil {
 				return err
 			}
-			value.Index(int(i)).SetInt(int64(v))
+			value.Index(int(i)).SetInt(v)
 		}
 		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int64 {
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {

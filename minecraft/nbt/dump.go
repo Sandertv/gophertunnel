@@ -91,11 +91,12 @@ func (s *dumpState) encodeTagType(val interface{}) string {
 // encodeTagValue operates recursively: If lists or compounds are nested, encodeTagValue will include all
 // nested tags.
 func (s *dumpState) encodeTagValue(val interface{}) string {
-	const hextable = "0123456789abcdef"
+	//noinspection SpellCheckingInspection
+	const hexTable = "0123456789abcdef"
 
 	switch v := val.(type) {
 	case byte:
-		return "0x" + string([]byte{hextable[v>>4], hextable[v&0x0f]})
+		return "0x" + string([]byte{hexTable[v>>4], hexTable[v&0x0f]})
 	case int16:
 		return strconv.Itoa(int(v))
 	case int32:
@@ -110,13 +111,13 @@ func (s *dumpState) encodeTagValue(val interface{}) string {
 		return v
 	}
 	t := reflect.TypeOf(val)
-	reflVal := reflect.ValueOf(val)
+	reflectVal := reflect.ValueOf(val)
 	switch t.Kind() {
 	case reflect.Map:
 		b := strings.Builder{}
 		b.WriteString("{\n")
-		for _, k := range reflVal.MapKeys() {
-			v := reflVal.MapIndex(k)
+		for _, k := range reflectVal.MapKeys() {
+			v := reflectVal.MapIndex(k)
 			actualVal := v.Interface()
 
 			s.currentIndent++
@@ -128,8 +129,8 @@ func (s *dumpState) encodeTagValue(val interface{}) string {
 	case reflect.Slice:
 		b := strings.Builder{}
 		b.WriteString("{\n")
-		for i := 0; i < reflVal.Len(); i++ {
-			v := reflVal.Index(i)
+		for i := 0; i < reflectVal.Len(); i++ {
+			v := reflectVal.Index(i)
 			actualVal := v.Interface()
 
 			s.currentIndent++
@@ -142,21 +143,21 @@ func (s *dumpState) encodeTagValue(val interface{}) string {
 		switch t.Elem().Kind() {
 		case reflect.Uint8:
 			b := strings.Builder{}
-			for i := 0; i < reflVal.Len(); i++ {
-				v := reflVal.Index(i).Uint()
+			for i := 0; i < reflectVal.Len(); i++ {
+				v := reflectVal.Index(i).Uint()
 				b.WriteString("0x")
-				b.WriteString(string([]byte{hextable[v>>4], hextable[v&0x0f]}))
-				if i != reflVal.Len()-1 {
+				b.WriteString(string([]byte{hexTable[v>>4], hexTable[v&0x0f]}))
+				if i != reflectVal.Len()-1 {
 					b.WriteByte(' ')
 				}
 			}
 			return b.String()
 		case reflect.Int32, reflect.Int64:
 			b := strings.Builder{}
-			for i := 0; i < reflVal.Len(); i++ {
-				v := reflVal.Index(i).Int()
+			for i := 0; i < reflectVal.Len(); i++ {
+				v := reflectVal.Index(i).Int()
 				b.WriteString(strconv.FormatInt(v, 10))
-				if i != reflVal.Len()-1 {
+				if i != reflectVal.Len()-1 {
 					b.WriteByte(' ')
 				}
 			}

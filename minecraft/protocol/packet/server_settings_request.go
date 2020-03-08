@@ -14,11 +14,11 @@ func (*ServerSettingsRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (*ServerSettingsRequest) Marshal(buf *bytes.Buffer) {
+func (*ServerSettingsRequest) Marshal(*bytes.Buffer) {
 
 }
 
 // Unmarshal ...
-func (*ServerSettingsRequest) Unmarshal(buf *bytes.Buffer) error {
+func (*ServerSettingsRequest) Unmarshal(*bytes.Buffer) error {
 	return nil
 }

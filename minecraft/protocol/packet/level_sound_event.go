@@ -7,6 +7,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+//noinspection SpellCheckingInspection
 const (
 	SoundEventItemUseOn = iota
 	SoundEventHit

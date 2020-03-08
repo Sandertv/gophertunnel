@@ -75,7 +75,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 // encoder.buf, so any data currently set in that buffer will also be returned.
 func (encoder *Encoder) compress(data []byte) ([]byte, error) {
 	writer := zlib.NewWriter(encoder.buf)
-	if _, err := writer.Write(encoder.compressed.Bytes()); err != nil {
+	if _, err := writer.Write(data); err != nil {
 		return nil, fmt.Errorf("error writing zlib data: %v", err)
 	}
 	if err := writer.Close(); err != nil {

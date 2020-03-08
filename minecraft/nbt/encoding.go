@@ -37,6 +37,10 @@ var LittleEndian littleEndian
 // used only on Minecraft Java Edition.
 var BigEndian bigEndian
 
+var _ = BigEndian
+var _ = LittleEndian
+var _ = NetworkLittleEndian
+
 type networkLittleEndian struct{}
 
 // WriteInt16 ...

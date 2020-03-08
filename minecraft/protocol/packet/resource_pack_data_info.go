@@ -6,6 +6,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+//noinspection SpellCheckingInspection
 const (
 	ResourcePackTypeResource = iota + 1
 	ResourcePackTypeBehaviour

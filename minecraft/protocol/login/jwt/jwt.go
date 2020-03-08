@@ -12,6 +12,7 @@ import (
 	"time"
 )
 
+//noinspection SpellCheckingInspection
 const (
 	// MojangPublicKey is the public key used by Mojang to sign one of the claims in a chain, indicating that
 	// the player was logged into XBOX Live.
@@ -43,7 +44,7 @@ func Verify(jwt []byte, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 
 	// Header validation.
 	header := &Header{}
-	if err := json.Unmarshal([]byte(rawHeader), header); err != nil {
+	if err := json.Unmarshal(rawHeader, header); err != nil {
 		return false, fmt.Errorf("error decoding header: %v", err)
 	}
 	if publicKey.Y == nil {

@@ -256,21 +256,21 @@ func (data *ReleaseItemTransactionData) Unmarshal(buf *bytes.Buffer) error {
 }
 
 // Marshal ...
-func (*NormalTransactionData) Marshal(buf *bytes.Buffer) {
+func (*NormalTransactionData) Marshal(*bytes.Buffer) {
 	// No payload.
 }
 
 // Unmarshal ...
-func (*NormalTransactionData) Unmarshal(buf *bytes.Buffer) error {
+func (*NormalTransactionData) Unmarshal(*bytes.Buffer) error {
 	return nil
 }
 
 // Marshal ...
-func (*MismatchTransactionData) Marshal(buf *bytes.Buffer) {
+func (*MismatchTransactionData) Marshal(*bytes.Buffer) {
 	// No payload.
 }
 
 // Unmarshal ...
-func (*MismatchTransactionData) Unmarshal(buf *bytes.Buffer) error {
+func (*MismatchTransactionData) Unmarshal(*bytes.Buffer) error {
 	return nil
 }

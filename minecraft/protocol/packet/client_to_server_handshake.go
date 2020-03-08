@@ -17,11 +17,11 @@ func (*ClientToServerHandshake) ID() uint32 {
 }
 
 // Marshal ...
-func (*ClientToServerHandshake) Marshal(buf *bytes.Buffer) {
+func (*ClientToServerHandshake) Marshal(*bytes.Buffer) {
 
 }
 
 // Unmarshal ...
-func (*ClientToServerHandshake) Unmarshal(buf *bytes.Buffer) error {
+func (*ClientToServerHandshake) Unmarshal(*bytes.Buffer) error {
 	return nil
 }

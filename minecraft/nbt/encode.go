@@ -146,7 +146,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 		return e.Encoding.WriteInt32(e.w, int32(val.Int()))
 
 	case reflect.Int64:
-		return e.Encoding.WriteInt64(e.w, int64(val.Int()))
+		return e.Encoding.WriteInt64(e.w, val.Int())
 
 	case reflect.Float32:
 		return e.Encoding.WriteFloat32(e.w, float32(val.Float()))
