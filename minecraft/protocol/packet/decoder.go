@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"compress/zlib"
+	"crypto/aes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
@@ -13,6 +14,7 @@ import (
 // multiple zlib compressed packets.
 type Decoder struct {
 	buf    []byte
+	zlib   io.ReadCloser
 	reader io.Reader
 
 	encrypt *encrypt
@@ -33,7 +35,8 @@ func NewDecoder(reader io.Reader) *Decoder {
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
-	decoder.encrypt = newEncrypt(keyBytes)
+	block, _ := aes.NewCipher(keyBytes[:])
+	decoder.encrypt = newEncrypt(keyBytes, newCFB8Decrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -59,14 +62,14 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	}
 	data := decoder.buf[:n]
 	if data[0] != header {
-		return nil, fmt.Errorf("error reading batch: invalid packet header %x: expected %x", data[0], header)
+		return nil, fmt.Errorf("error reading packet: invalid packet header %x: expected %x", data[0], header)
 	}
 	data = data[1:]
 	if decoder.encrypt != nil {
 		decoder.encrypt.decrypt(data)
 		if err := decoder.encrypt.verify(data); err != nil {
 			// The packet was not encrypted properly.
-			return nil, fmt.Errorf("error reading batch: %v", err)
+			return nil, fmt.Errorf("error verifying packet: %v", err)
 		}
 	}
 
@@ -92,14 +95,23 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 // decompress zlib decompresses the data passed and returns it as a byte slice.
 func (decoder *Decoder) decompress(data []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(data)
-	zlibReader, err := zlib.NewReader(buf)
-	if err != nil {
+	if err := decoder.init(buf); err != nil {
 		return nil, fmt.Errorf("error decompressing data: %v", err)
 	}
-	_ = zlibReader.Close()
-	raw, err := ioutil.ReadAll(zlibReader)
+	_ = decoder.zlib.Close()
+	raw, err := ioutil.ReadAll(decoder.zlib)
 	if err != nil {
 		return nil, fmt.Errorf("error reading decompressed data: %v", err)
 	}
 	return raw, nil
+}
+
+// init initialises the zlib reader if it wasn't already.
+func (decoder *Decoder) init(buf *bytes.Buffer) (err error) {
+	if decoder.zlib == nil {
+		decoder.zlib, err = zlib.NewReader(buf)
+		return
+	}
+	// The reader was already initialised, so we reset it to the buffer passed.
+	return decoder.zlib.(zlib.Resetter).Reset(buf, nil)
 }

@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"compress/zlib"
+	"crypto/aes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
@@ -11,6 +12,7 @@ import (
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
 type Encoder struct {
+	zlib       *zlib.Writer
 	writer     io.Writer
 	buf        *bytes.Buffer
 	compressed *bytes.Buffer
@@ -22,6 +24,7 @@ type Encoder struct {
 // sent with a single call to io.Writer.Write().
 func NewEncoder(writer io.Writer) *Encoder {
 	return &Encoder{
+		zlib:       zlib.NewWriter(writer),
 		writer:     writer,
 		buf:        bytes.NewBuffer(make([]byte, 0, 1024*1024*2)),
 		compressed: bytes.NewBuffer(make([]byte, 0, 1024*1024*3)),
@@ -31,7 +34,8 @@ func NewEncoder(writer io.Writer) *Encoder {
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
-	encoder.encrypt = newEncrypt(keyBytes)
+	block, _ := aes.NewCipher(keyBytes[:])
+	encoder.encrypt = newEncrypt(keyBytes, newCFB8Encrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is zlib compressed and
@@ -55,7 +59,8 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 			return fmt.Errorf("error writing packet payload: %v", err)
 		}
 	}
-	// We compress the data and write the full data to the io.Writer.
+	// We compress the data and write the full data to the io.Writer. The data returned includes the header
+	// we wrote at the start.
 	b, err := encoder.compress(encoder.compressed.Bytes())
 	if err != nil {
 		return err
@@ -74,11 +79,11 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 // compressed zlib compressed the data passed and returns it in a byte slice. It returns the full content of
 // encoder.buf, so any data currently set in that buffer will also be returned.
 func (encoder *Encoder) compress(data []byte) ([]byte, error) {
-	writer := zlib.NewWriter(encoder.buf)
-	if _, err := writer.Write(data); err != nil {
+	encoder.zlib.Reset(encoder.buf)
+	if _, err := encoder.zlib.Write(encoder.compressed.Bytes()); err != nil {
 		return nil, fmt.Errorf("error writing zlib data: %v", err)
 	}
-	if err := writer.Close(); err != nil {
+	if err := encoder.zlib.Close(); err != nil {
 		return nil, fmt.Errorf("error closing zlib writer: %v", err)
 	}
 	return encoder.buf.Bytes(), nil
