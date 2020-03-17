@@ -26,9 +26,10 @@ type Interact struct {
 	// TargetEntityRuntimeID is the runtime ID of the entity that the player interacted with. This is empty
 	// for the InteractActionOpenInventory action type.
 	TargetEntityRuntimeID uint64
-	// MouseOverPosition was the position relative to the entity moused over over which the player hovered
-	// with its mouse/touch. It is only set if ActionType is InteractActionMouseOverEntity.
-	MouseOverPosition mgl32.Vec3
+	// Position associated with the ActionType above. For the InteractActionMouseOverEntity, this is the
+	// position relative to the entity moused over over which the player hovered with its mouse/touch. For the
+	// InteractActionLeaveVehicle, this is the position that the player spawns at after leaving the vehicle.
+	Position mgl32.Vec3
 }
 
 // ID ...
@@ -41,8 +42,8 @@ func (pk *Interact) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
 	_ = protocol.WriteVaruint64(buf, pk.TargetEntityRuntimeID)
 	switch pk.ActionType {
-	case InteractActionMouseOverEntity:
-		_ = protocol.WriteVec3(buf, pk.MouseOverPosition)
+	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
+		_ = protocol.WriteVec3(buf, pk.Position)
 	}
 }
 
@@ -55,8 +56,8 @@ func (pk *Interact) Unmarshal(buf *bytes.Buffer) error {
 		return err
 	}
 	switch pk.ActionType {
-	case InteractActionMouseOverEntity:
-		return protocol.Vec3(buf, &pk.MouseOverPosition)
+	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
+		return protocol.Vec3(buf, &pk.Position)
 	}
 	return nil
 }
