@@ -3,10 +3,6 @@ package main
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/script"
-	"github.com/yuin/gluamapper"
-	"github.com/yuin/gopher-lua"
 	"io/ioutil"
 	"log"
 	"os"
@@ -14,21 +10,6 @@ import (
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
-// It has scripting functionality, in the sense that Lua code may be written in the stdin to send packets,
-// either to the server or to the client.
-// The Lua code may be either:
-// single.line(), or
-// "
-// multi()
-// line()
-// "
-// Currently, two functions are supported, one for sending packets to the client, and one for sending packets
-// to the server:
-// client.send("PacketName", {PacketField = "Something"})
-// server.send("PacketName", {PacketField = true})
-// The packets that may be sent are all packets that may be found in the protocol/packet package, with the
-// name being the exact name of the packet struct, for example 'Text'. The fields must be fields found in the
-// packet.
 func main() {
 	config := readConfig()
 
@@ -73,39 +54,7 @@ func main() {
 		}()
 		g.Wait()
 
-		s := script.New()
-		s.SetModule(script.NewModule("client").
-			Func("send", func(L *lua.LState) int {
-				str := L.CheckString(1)
-				table := L.CheckTable(2)
-				pk := packet.PacketsByName[str]()
-				if err := gluamapper.Map(table, pk); err != nil {
-					panic(err)
-				}
-				if err := conn.WritePacket(pk); err != nil {
-					panic(err)
-				}
-				return 0
-			}),
-		)
-		s.SetModule(script.NewModule("server").
-			Func("send", func(L *lua.LState) int {
-				str := L.CheckString(1)
-				table := L.CheckTable(2)
-				pk := packet.PacketsByName[str]()
-				if err := gluamapper.Map(table, pk); err != nil {
-					panic(err)
-				}
-				if err := serverConn.WritePacket(pk); err != nil {
-					panic(err)
-				}
-				return 0
-			}),
-		)
-		s.RunStdin()
-
 		go func() {
-			defer s.Close()
 			defer listener.Disconnect(conn, "connection lost")
 			defer serverConn.Close()
 			for {

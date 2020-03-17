@@ -105,5 +105,4 @@ func main() {
 
 ## Proxy
 A MITM proxy program is implemented in the main.go file. It uses the gophertunnel libraries to create a proxy
-that provides user authentication and proxying a connection to another server. It also implements basic 'live
-scripting': Lua code that is directly interpreted from the stdin.
+that provides user authentication and proxying a connection to another server.
