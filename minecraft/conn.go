@@ -756,6 +756,10 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
 		return fmt.Errorf("error sending client cache status: %v", err)
 	}
+	if err := conn.WritePacket(&packet.NetworkSettings{CompressionThreshold: 512}); err != nil {
+		return fmt.Errorf("error sending network settings: %v", err)
+	}
+
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 
