@@ -23,7 +23,7 @@ const (
 // MoveActorDelta is sent by the server to move an entity by a given delta. The packet is specifically
 // optimised to save as much space as possible, by only writing non-zero fields.
 type MoveActorDelta struct {
-	// Flags is a list of flags that specify what data is in the packet
+	// Flags is a list of flags that specify what data is in the packet.
 	Flags uint16
 	// EntityRuntimeID is the runtime ID of the entity that is being moved. The packet works provided a
 	// non-player entity with this runtime ID is present.
