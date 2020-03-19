@@ -598,6 +598,9 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 func (conn *Conn) handleClientToServerHandshake() error {
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
+	if err := conn.WritePacket(&packet.NetworkSettings{CompressionThreshold: 512}); err != nil {
+		return fmt.Errorf("error sending network settings: %v", err)
+	}
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)
 	}
@@ -756,10 +759,6 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
 		return fmt.Errorf("error sending client cache status: %v", err)
 	}
-	if err := conn.WritePacket(&packet.NetworkSettings{CompressionThreshold: 512}); err != nil {
-		return fmt.Errorf("error sending network settings: %v", err)
-	}
-
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 
