@@ -564,7 +564,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		_ = conn.Close()
-		return fmt.Errorf("incompatible protocol: expected protocol = %v, client protocol = %v", protocol.CurrentProtocol, pk.ClientProtocol)
+		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
 	publicKey, authenticated, err := login.Verify(pk.ConnectionRequest)

@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
-	"reflect"
 	"time"
 )
 
@@ -78,7 +77,9 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 		if err != nil {
 			return identityData, clientData, fmt.Errorf("error parsing payload from claim: %v", err)
 		}
-		if err := json.Unmarshal(payload, &container); err != nil {
+		dec := json.NewDecoder(bytes.NewBuffer(payload))
+		dec.DisallowUnknownFields()
+		if err := dec.Decode(&container); err != nil {
 			return identityData, clientData, fmt.Errorf("error JSON decoding claim payload: %v", err)
 		}
 		// If the extra data decoded is not equal to the identity data (in other words, not empty), we set the
@@ -103,15 +104,10 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 		return identityData, clientData, fmt.Errorf("error reading payload from raw token: %v", err)
 	}
 	// Finally we decode the data in the client data.
-	if err := json.Unmarshal(payload, &clientData); err != nil {
+	dec := json.NewDecoder(bytes.NewBuffer(payload))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&clientData); err != nil {
 		return identityData, clientData, fmt.Errorf("error decoding raw token payload JSON: %v", err)
-	}
-
-	// We JSON encode our ClientData struct again and check it against the original data to see if there is
-	// any data we missed.
-	if !equalJSON(payload, clientData) {
-		data, _ := json.Marshal(clientData)
-		return identityData, clientData, fmt.Errorf("original raw token payload is not equal to the parsed data: \n	payload: %v\n	decoded: %v", string(payload), string(data))
 	}
 
 	return identityData, clientData, nil
@@ -193,7 +189,14 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 
 // identityDataContainer is used to decode identity data found in a JWT claim into an IdentityData struct.
 type identityDataContainer struct {
-	ExtraData IdentityData `json:"extraData"`
+	ExtraData            IdentityData `json:"extraData"`
+	CertificateAuthority bool         `json:"certificateAuthority"`
+	Exp                  int          `json:"exp"`
+	Nbf                  int          `json:"nbf"`
+	Iat                  int          `json:"iat"`
+	RandomNonce          int          `json:"randomNonce"`
+	Iss                  string       `json:"iss"`
+	IdentityPublicKey    string       `json:"identityPublicKey"`
 }
 
 // chain reads a certificate chain from the buffer passed and returns each claim found in the chain.
@@ -213,15 +216,4 @@ func chain(buf *bytes.Buffer) (Chain, error) {
 		return nil, fmt.Errorf("connection request had no claims in the chain")
 	}
 	return request.Chain, nil
-}
-
-// equalJSON checks if the raw JSON passed and the JSON encoded representation of the decoded value passed are
-// considered equal.
-func equalJSON(original []byte, decoded interface{}) bool {
-	originalData := map[string]interface{}{}
-	_ = json.Unmarshal(original, &originalData)
-	encoded, _ := json.Marshal(decoded)
-	decodedData := map[string]interface{}{}
-	_ = json.Unmarshal(encoded, &decodedData)
-	return reflect.DeepEqual(originalData, decodedData)
 }

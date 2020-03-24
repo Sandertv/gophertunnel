@@ -17,7 +17,7 @@ import (
 // by Mojang, and can thus be trusted.
 type IdentityData struct {
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
-	// logged in with the XBOX Live account.
+	// logged in with the XBOX Live account. It is empty if the user is not logged into its XBL account.
 	XUID string
 	// Identity is the UUID of the player, which will also remain consistent for as long as the user is logged
 	// into its XBOX Live account.
@@ -25,6 +25,9 @@ type IdentityData struct {
 	// DisplayName is the username of the player, which may be changed by the user. It should for that reason
 	// not be used as a key to store information.
 	DisplayName string `json:"displayName"`
+	// TitleID is a numerical ID present only if the user is logged into XBL. It holds the title ID (XBL
+	// related) of the version that the player is on. This is 896928775 for Win10 and 1739947436 for mobile.
+	TitleID string `json:"titleId,omitempty"`
 }
 
 // checkUsername is used to check if a username is valid according to the Microsoft specification: "You can
