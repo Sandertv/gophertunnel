@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -839,7 +840,7 @@ func (conn *Conn) startGame() {
 		EntityUniqueID:                  data.EntityUniqueID,
 		EntityRuntimeID:                 data.EntityRuntimeID,
 		PlayerGameMode:                  data.PlayerGameMode,
-		PlayerPosition:                  data.PlayerPosition,
+		PlayerPosition:                  data.PlayerPosition.Add(mgl32.Vec3{0, 1.62}), // Add the offset pos.
 		Pitch:                           data.Pitch,
 		Yaw:                             data.Yaw,
 		Dimension:                       data.Dimension,
@@ -854,7 +855,7 @@ func (conn *Conn) startGame() {
 		MultiPlayerGame:                 true,
 		MultiPlayerCorrelationID:        uuid.Must(uuid.NewRandom()).String(),
 		CommandsEnabled:                 true,
-		WorldName:                       conn.gameData.WorldName,
+		WorldName:                       data.WorldName,
 		LANBroadcastEnabled:             true,
 		ServerAuthoritativeOverMovement: data.ServerAuthoritativeMovement,
 		WorldGameMode:                   data.WorldGameMode,
@@ -1013,7 +1014,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		EntityUniqueID:              pk.EntityUniqueID,
 		EntityRuntimeID:             pk.EntityRuntimeID,
 		PlayerGameMode:              pk.PlayerGameMode,
-		PlayerPosition:              pk.PlayerPosition,
+		PlayerPosition:              pk.PlayerPosition.Sub(mgl32.Vec3{0, 1.62}), // Subtract offset position.
 		Pitch:                       pk.Pitch,
 		Yaw:                         pk.Yaw,
 		Dimension:                   pk.Dimension,
