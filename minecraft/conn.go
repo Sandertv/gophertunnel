@@ -837,6 +837,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 func (conn *Conn) startGame() {
 	data := conn.gameData
 	_ = conn.WritePacket(&packet.StartGame{
+		Difficulty:                      data.Difficulty,
 		EntityUniqueID:                  data.EntityUniqueID,
 		EntityRuntimeID:                 data.EntityRuntimeID,
 		PlayerGameMode:                  data.PlayerGameMode,
@@ -1010,6 +1011,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
+		Difficulty:                  pk.Difficulty,
 		WorldName:                   pk.WorldName,
 		EntityUniqueID:              pk.EntityUniqueID,
 		EntityRuntimeID:             pk.EntityRuntimeID,

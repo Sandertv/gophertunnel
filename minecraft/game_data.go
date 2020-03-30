@@ -14,6 +14,9 @@ type GameData struct {
 	// If WorldName is left empty, the name of the Listener will be used to show above the player list
 	// in-game.
 	WorldName string
+	// Difficulty is the difficulty of the world that the player spawns in. A difficulty of 0, peaceful, means
+	// the player will automatically regenerate health and hunger.
+	Difficulty int32
 	// EntityUniqueID is the unique ID of the player. The unique ID is unique for the entire world and is
 	// often used in packets. Most servers send an EntityUniqueID equal to the EntityRuntimeID.
 	EntityUniqueID int64
