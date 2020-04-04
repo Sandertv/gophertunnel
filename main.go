@@ -121,6 +121,8 @@ func readConfig() config {
 		c.Connection.LocalAddress = "0.0.0.0:19132"
 	}
 	data, _ = toml.Marshal(c)
-	_ = ioutil.WriteFile("config.toml", data, 0644)
+	if err := ioutil.WriteFile("config.toml", data, 0644); err != nil {
+		log.Fatalf("error writing config file: %v", err)
+	}
 	return c
 }
