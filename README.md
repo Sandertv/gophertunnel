@@ -17,9 +17,6 @@ to Minecraft Bedrock Edition servers and listening for Minecraft Bedrock Edition
 * package [minecraft/auth](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/auth?tab=doc): A package implementing
 Microsoft, XBOX Live and Minecraft account authentication.
 
-* package [minecraft/cmd](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/cmd?tab=doc) A package implementing a
-basic command system for Minecraft.
-
 * package [minecraft/nbt](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/nbt?tab=doc): A package implementing the
 Minecraft NBT format. Three variants of the format are implemented: The Java Edition variant (Big Endian) and
 the Bedrock Edition variants (Little Endian, both with and without varints)
