@@ -65,7 +65,10 @@ func Verify(requestString []byte) (publicKey *ecdsa.PublicKey, authenticated boo
 // Decode does not verify the request passed. For that reason, login.Verify() should be called on that same
 // string before login.Decode().
 func Decode(requestString []byte) (IdentityData, ClientData, error) {
+	var empty IdentityData
 	identityData, clientData := IdentityData{}, ClientData{}
+	haveData := false
+
 	buf := bytes.NewBuffer(requestString)
 	chain, err := chain(buf)
 	if err != nil {
@@ -83,10 +86,13 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 			return identityData, clientData, fmt.Errorf("error JSON decoding claim payload: %v", err)
 		}
 		// If the extra data decoded is not equal to the identity data (in other words, not empty), we set the
-		// data and break out of the loop.
-		if container.ExtraData != identityData {
+		// data.
+		if container.ExtraData != empty {
+			if haveData {
+				return identityData, clientData, fmt.Errorf("connection request has two structures of identity data: only one JWT may have identity data")
+			}
 			identityData = container.ExtraData
-			break
+			haveData = true
 		}
 	}
 
