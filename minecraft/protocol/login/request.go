@@ -113,7 +113,7 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 	dec := json.NewDecoder(bytes.NewBuffer(payload))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&clientData); err != nil {
-		return identityData, clientData, fmt.Errorf("error decoding raw token payload JSON: %v", err)
+		return identityData, clientData, fmt.Errorf("error decoding raw token payload JSON: %v (%v)", err, string(payload))
 	}
 
 	return identityData, clientData, nil
