@@ -2,6 +2,7 @@ package packet
 
 import (
 	"bytes"
+	"encoding/binary"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -33,6 +34,7 @@ func (pk *PlayerSkin) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteSerialisedSkin(buf, pk.Skin)
 	_ = protocol.WriteString(buf, pk.NewSkinName)
 	_ = protocol.WriteString(buf, pk.OldSkinName)
+	_ = binary.Write(buf, binary.LittleEndian, pk.Skin.Trusted)
 }
 
 // Unmarshal ...
@@ -42,5 +44,6 @@ func (pk *PlayerSkin) Unmarshal(buf *bytes.Buffer) error {
 		protocol.SerialisedSkin(buf, &pk.Skin),
 		protocol.String(buf, &pk.NewSkinName),
 		protocol.String(buf, &pk.OldSkinName),
+		binary.Read(buf, binary.LittleEndian, &pk.Skin.Trusted),
 	)
 }
