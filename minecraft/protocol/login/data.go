@@ -193,8 +193,8 @@ type PersonaPiece struct {
 	// - persona_eyes
 	// - persona_facial_hair
 	PieceType string
-	// ProductID is a UUID that identifies the piece when it comes to purchases. It is only non-zero for
-	// pieces that have the 'IsDefault' field set to true.
+	// ProductID is a UUID that identifies the piece when it comes to purchases. It is empty for pieces that
+	// have the 'IsDefault' field set to true.
 	ProductID string `json:"ProductId"`
 }
 
