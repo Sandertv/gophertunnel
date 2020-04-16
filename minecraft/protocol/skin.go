@@ -116,7 +116,7 @@ func WriteSerialisedSkin(dst *bytes.Buffer, x Skin) error {
 			return err
 		}
 	}
-	return binary.Write(dst, binary.LittleEndian, x.Trusted)
+	return nil
 }
 
 // SerialisedSkin reads a Skin x from Buffer src.
@@ -171,9 +171,6 @@ func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 		if err := SkinPieceTint(src, &x.PieceTintColours[i]); err != nil {
 			return err
 		}
-	}
-	if err := binary.Read(src, binary.LittleEndian, &x.Trusted); err != nil {
-		return err
 	}
 	return x.validate()
 }
