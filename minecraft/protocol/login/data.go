@@ -26,7 +26,11 @@ type IdentityData struct {
 	// not be used as a key to store information.
 	DisplayName string `json:"displayName"`
 	// TitleID is a numerical ID present only if the user is logged into XBL. It holds the title ID (XBL
-	// related) of the version that the player is on. This is 896928775 for Win10 and 1739947436 for mobile.
+	// related) of the version that the player is on. Some of these IDs may be found below.
+	// Win10: 896928775
+	// Mobile: 1739947436
+	// Nintendo: 2047319603
+	// Note that these IDs are protected using XBOX Live, making the spoofing of this data very difficult.
 	TitleID string `json:"titleId,omitempty"`
 }
 

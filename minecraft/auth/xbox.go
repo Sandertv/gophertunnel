@@ -105,7 +105,15 @@ func RequestXSTSTokenUserOnly(liveToken *TokenPair) (*XSTSToken, error) {
 	if err != nil {
 		return nil, err
 	}
-	return xstsTokenWithoutDeviceAndTitle(c, userToken.Token)
+	dToken, err := deviceToken(c, key)
+	if err != nil {
+		return nil, err
+	}
+	tToken, err := titleToken(c, liveToken.access, dToken.Token, key)
+	if err != nil {
+		return nil, err
+	}
+	return xstsToken(c, userToken.Token, dToken.Token, tToken.Token, key)
 }
 
 // RequestXSTSToken requests an XSTS token using the passed Live token pair. The token pair must be valid
