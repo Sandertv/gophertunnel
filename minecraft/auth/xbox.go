@@ -85,37 +85,6 @@ type XSTSToken struct {
 	}
 }
 
-// RequestXSTSTokenUserOnly requests an XSTS token using the Live token pair passed. RequestXSTSTokenUserOnly
-// returns an error if the live token is no longer valid, and must be refreshed.
-// RequestXSTSTokenUserOnly, unlike RequestXSTSToken, requests an XSTS token using only a User token obtained
-// using the Live token pair.
-func RequestXSTSTokenUserOnly(liveToken *TokenPair) (*XSTSToken, error) {
-	if !liveToken.Valid() {
-		return nil, fmt.Errorf("live token is no longer valid")
-	}
-	c := &http.Client{}
-	defer c.CloseIdleConnections()
-	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
-	// requests, and to sign these requests.
-	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
-	// All following requests here use the same ECDSA private key. This is required, and failing to do so
-	// means that the signature of the second request will be refused.
-	userToken, err := userToken(c, liveToken.access, key)
-	if err != nil {
-		return nil, err
-	}
-	dToken, err := deviceToken(c, key)
-	if err != nil {
-		return nil, err
-	}
-	tToken, err := titleToken(c, liveToken.access, dToken.Token, key)
-	if err != nil {
-		return nil, err
-	}
-	return xstsToken(c, userToken.Token, dToken.Token, tToken.Token, key)
-}
-
 // RequestXSTSToken requests an XSTS token using the passed Live token pair. The token pair must be valid
 // when passed in. RequestXSTSToken will not attempt to refresh the token pair if it not valid.
 // RequestXSTSToken obtains the XSTS token by using the UserToken, DeviceToken and TitleToken. It appears only

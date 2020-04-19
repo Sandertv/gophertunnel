@@ -189,7 +189,7 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live token: %v", err)
 	}
-	xsts, err := auth.RequestXSTSTokenUserOnly(liveToken)
+	xsts, err := auth.RequestXSTSToken(liveToken)
 	if err != nil {
 		return "", fmt.Errorf("error obtaining XSTS token: %v", err)
 	}
