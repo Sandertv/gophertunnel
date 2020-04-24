@@ -59,7 +59,7 @@ func (*PlayerAction) ID() uint32 {
 func (pk *PlayerAction) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	_ = protocol.WriteVarint32(buf, pk.ActionType)
-	_ = protocol.WriteBlockPosition(buf, pk.BlockPosition)
+	_ = protocol.WriteUBlockPosition(buf, pk.BlockPosition)
 	_ = protocol.WriteVarint32(buf, pk.BlockFace)
 }
 
@@ -68,7 +68,7 @@ func (pk *PlayerAction) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint64(buf, &pk.EntityRuntimeID),
 		protocol.Varint32(buf, &pk.ActionType),
-		protocol.BlockPosition(buf, &pk.BlockPosition),
+		protocol.UBlockPosition(buf, &pk.BlockPosition),
 		protocol.Varint32(buf, &pk.BlockFace),
 	)
 }
