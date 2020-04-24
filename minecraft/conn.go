@@ -12,7 +12,6 @@ import (
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
-	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
@@ -215,7 +214,7 @@ func (conn *Conn) StartGame(data GameData) error {
 func (conn *Conn) DoSpawn() error {
 	conn.waitingForSpawn.Store(true)
 
-	timeout := time.After(time.Second * 15)
+	timeout := time.After(time.Second * 30)
 	select {
 	case <-conn.spawn:
 		// Conn was spawned successfully.
@@ -399,16 +398,6 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 // SetWriteDeadline is a stub function to implement net.Conn. It has no functionality.
 func (conn *Conn) SetWriteDeadline(time.Time) error {
 	return nil
-}
-
-// SimulatePacketLoss makes the connection simulate packet loss, with a loss chance passed. It will start
-// to discard packets randomly depending on the loss chance, both for sending and for receiving packets.
-// The function panics if a loss change is higher than 1 or lower than 0.
-func (conn *Conn) SimulatePacketLoss(lossChance float64) {
-	if lossChance > 1 || lossChance < 0 {
-		panic(fmt.Sprintf("packet loss must be between 0-1, but got %v", lossChance))
-	}
-	conn.conn.(*raknet.Conn).SimulatePacketLoss(lossChance)
 }
 
 // ClientCacheEnabled checks if the connection has the client blob cache enabled. If true, the server may send
