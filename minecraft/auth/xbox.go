@@ -8,6 +8,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -349,16 +350,15 @@ func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	// Append the signature to the other 12 bytes, and encode the signature with standard base64 encoding.
 	sig := append(buf.Bytes(), signature...)
 	request.Header.Set("Signature", base64.StdEncoding.EncodeToString(sig))
+	fmt.Println(hex.EncodeToString(sig))
+
+	// 0000000101d61b35df71c480bff714c7a27f792e1a4db426ce5f95a15cc25e85d3a267d75418954b0c1acc37b9fa273d5d4929a2994a55659360e8287168c89daccdcdc8df7f8e03f6fc9bef
+
+	// 000000010373cd14e6c1a6804d43bcb3275cb49afdf724507fa66d1caef1dc915815a0083fa4de579e6df24fd705988f018c689f1e659454ecbec39006d8224eb2205296e0023be99c47f811
 }
 
 // timestamp returns a Windows specific timestamp. It has a certain offset from Unix time which must be
 // accounted for. The timestamp is otherwise an UTC timestamp.
 func timestamp() int64 {
-	t := time.Now().UTC()
-	milliseconds := int64(t.Nanosecond() / int(time.Millisecond))
-	seconds := int64(t.Second())
-	result := seconds + 11644473600
-	result *= 10000000
-	result += milliseconds * 10
-	return result
+	return (time.Now().Unix() + 11644473600) * 10000000
 }
