@@ -139,8 +139,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
 		// we are not aware of the identity data ourselves yet.
 		conn.identityData = identityData
-
-		fmt.Println(identityData)
 	}
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
 		return nil, err
