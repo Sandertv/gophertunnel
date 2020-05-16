@@ -148,6 +148,8 @@ func (listener *Listener) StatusProvider(p ServerStatusProvider) {
 	listener.mu.Lock()
 	listener.p = p
 	listener.mu.Unlock()
+
+	listener.updatePongData()
 }
 
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
