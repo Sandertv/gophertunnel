@@ -35,6 +35,9 @@ type Listener struct {
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
+	// ShowVersion specifies if the supported Minecraft version should be shown in the MOTD of the server. If
+	// set to false, if set to true, the lowest supported version will be displayed.
+	ShowVersion bool
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -139,8 +142,8 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 }
 
 // StatusProvider sets a server status provider to dynamically provide the status of the server.
-// StatusProvider will disable the automatic player count and will overwrite the ServerName and MaximumPlayers
-// field of the Listener.
+// StatusProvider will overwrite the status shown in the server list through the MaximumPlayers field and the
+// current connected players.
 func (listener *Listener) StatusProvider(p ServerStatusProvider) {
 	listener.mu.Lock()
 	listener.p = p
@@ -197,10 +200,15 @@ func (listener *Listener) updatePongData() {
 		serverName, maxCount, current = motd, int32(max), int32(online)
 	}
 
+	var ver string
+	if listener.ShowVersion {
+		ver = protocol.CurrentVersion
+	}
+
 	rakListener := listener.listener.(*raknet.Listener)
 
 	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
-		serverName, protocol.CurrentProtocol, protocol.CurrentVersion, current, maxCount, rakListener.ID(),
+		serverName, protocol.CurrentProtocol, ver, current, maxCount, rakListener.ID(),
 		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
