@@ -10,6 +10,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"sync/atomic"
 )
 
@@ -56,6 +57,9 @@ type Listener struct {
 
 	hijackingPong atomic.Value
 	incoming      chan *Conn
+
+	mu sync.Mutex
+	p  ServerStatusProvider
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -134,6 +138,15 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	return conn.Close()
 }
 
+// StatusProvider sets a server status provider to dynamically provide the status of the server.
+// StatusProvider will disable the automatic player count and will overwrite the ServerName and MaximumPlayers
+// field of the Listener.
+func (listener *Listener) StatusProvider(p ServerStatusProvider) {
+	listener.mu.Lock()
+	listener.p = p
+	listener.mu.Unlock()
+}
+
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
 // continuously update its pong data by hijacking the pong data of the server at the address.
 // The hijack will last until the listener is shut down.
@@ -161,17 +174,33 @@ func (listener *Listener) updatePongData() {
 	if listener.hijackingPong.Load().(bool) {
 		return
 	}
-	maxCount := int32(listener.MaximumPlayers)
-	current := atomic.LoadInt32(listener.playerCount)
-	if maxCount == 0 {
-		// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
-		// plus 1, so that new players can always join.
-		maxCount = current + 1
+
+	listener.mu.Lock()
+	m := listener.p
+	listener.mu.Unlock()
+
+	var (
+		maxCount, current int32
+		serverName        string
+	)
+	if m == nil {
+		maxCount = int32(listener.MaximumPlayers)
+		serverName = listener.ServerName
+		current = atomic.LoadInt32(listener.playerCount)
+		if maxCount == 0 {
+			// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
+			// plus 1, so that new players can always join.
+			maxCount = current + 1
+		}
+	} else {
+		motd, online, max := m.ServerStatus()
+		serverName, maxCount, current = motd, int32(max), int32(online)
 	}
+
 	rakListener := listener.listener.(*raknet.Listener)
 
 	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
-		listener.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, current, maxCount, rakListener.ID(),
+		serverName, protocol.CurrentProtocol, protocol.CurrentVersion, current, maxCount, rakListener.ID(),
 		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
