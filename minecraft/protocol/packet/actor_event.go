@@ -8,11 +8,11 @@ import (
 
 const (
 	_ = iota
-	_
+	ActorEventJump
 	ActorEventHurt
 	ActorEventDeath
-	ActorEventArmSwing
-	_
+	ActorEventStartAttack
+	ActorEventStopAttack
 	ActorEventTameFail
 	ActorEventTameSucceed
 	ActorEventShakeDry
@@ -24,23 +24,23 @@ const (
 	ActorEventFishHookTease
 	ActorEventSquidInkCloud
 	ActorEventZombieVillagerCure
-	_
+	ActorEventPlayAmbientSound
 	ActorEventRespawn
 	ActorEventIronGolemOfferFlower
 	ActorEventIronGolemWithdrawFlower
 	ActorEventLookingForPartner
-	_
-	_
+	ActorEventHappyVillager
+	ActorEventAngryVillager
 	ActorEventWitchSpell
 	ActorEventFirework
-	_
+	ActorEventFoundPartner
 	ActorEventSilverfishSpawn
-	_
+	ActorEventGuardianAttack
 	ActorEventWitchDrinkPotion
 	ActorEventWitchThrowPotion
 	ActorEventMinecartTNTPrimeFuse
-	_
-	_
+	ActorEventCreeperPrimeFuse
+	ActorEventAirSupplyExpired
 	ActorEventPlayerAddXPLevels
 	ActorEventElderGuardianCurse
 	ActorEventAgentArmSwing
@@ -56,12 +56,17 @@ const (
 	ActorEventDeathSmokeCloud
 	ActorEventCompleteTrade
 	ActorEventRemoveLeash
-	_
+	ActorEventLlamaCaravanUpdated
 	ActorEventConsumeToken
 	ActorEventPlayerCheckTreasureHunterAchievement
 	ActorEventEntitySpawn
 	ActorEventDragonBreath
 	ActorEventItemEntityMerge
+	ActorEventStartSwimming
+	ActorEventBalloonPop
+	ActorEventTreasureHunt
+	ActorEventSummonAgent
+	ActorEventCrossbowCharged
 )
 
 // ActorEvent is sent by the server when a particular event happens that has to do with an entity. Some of
