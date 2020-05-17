@@ -19,18 +19,19 @@ const (
 	PlayerActionStopSprint
 	PlayerActionStartSneak
 	PlayerActionStopSneak
-	PlayerActionDimensionChangeRequest
+	PlayerActionDimensionChangeRequest // Deprecated.
 	PlayerActionDimensionChangeDone
 	PlayerActionStartGlide
 	PlayerActionStopGlide
 	PlayerActionBuildDenied
 	PlayerActionContinueBreak
-	_
+	PlayerActionChangeSkin
 	PlayerActionSetEnchantmentSeed
 	PlayerActionStartSwimming
 	PlayerActionStopSwimming
 	PlayerActionStartSpinAttack
 	PlayerActionStopSpinAttack
+	PlayerActionStartBuildingBlock
 )
 
 // PlayerAction is sent by the client when it executes any action, for example starting to sprint, swim,
