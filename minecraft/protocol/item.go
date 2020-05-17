@@ -42,6 +42,9 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
+		x.MetadataValue = 0
+		x.Count = 0
+		x.CanBePlacedOn, x.CanBreak = nil, nil
 		return nil
 	}
 	var auxValue int32
