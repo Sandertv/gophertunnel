@@ -12,6 +12,7 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
+	"time"
 )
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -60,6 +61,7 @@ type Listener struct {
 
 	hijackingPong atomic.Value
 	incoming      chan *Conn
+	close         chan struct{}
 
 	mu sync.Mutex
 	p  ServerStatusProvider
@@ -98,6 +100,7 @@ func (listener *Listener) Listen(network, address string) error {
 	}
 	listener.listener = netListener
 	listener.incoming = make(chan *Conn)
+	listener.close = make(chan struct{})
 	listener.hijackingPong.Store(false)
 	listener.playerCount = &count
 
@@ -150,6 +153,18 @@ func (listener *Listener) StatusProvider(p ServerStatusProvider) {
 	listener.mu.Unlock()
 
 	listener.updatePongData()
+	go func() {
+		ticker := time.NewTicker(time.Second * 3)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				listener.updatePongData()
+			case <-listener.close:
+				return
+			}
+		}
+	}()
 }
 
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
@@ -221,6 +236,7 @@ func (listener *Listener) listen() {
 	listener.updatePongData()
 	defer func() {
 		close(listener.incoming)
+		close(listener.close)
 		_ = listener.Close()
 	}()
 	for {
