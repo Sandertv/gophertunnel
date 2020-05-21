@@ -47,12 +47,13 @@ const (
 	ActorEventEnderDragonDeath
 	ActorEventDustParticles
 	ActorEventArrowShake
-	// ...
-	ActorEventEatingItem = 57
 )
 
 const (
-	ActorEventBabyAnimalFeed = iota + 60
+	ActorEventEatingItem = iota + 57
+	_
+	_
+	ActorEventBabyAnimalFeed
 	ActorEventDeathSmokeCloud
 	ActorEventCompleteTrade
 	ActorEventRemoveLeash

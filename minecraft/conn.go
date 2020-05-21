@@ -60,6 +60,7 @@ type Conn struct {
 	identityData login.IdentityData
 	clientData   login.ClientData
 	gameData     GameData
+	chunkRadius  int
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -129,18 +130,19 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	}
 	closeCtx, cancel := context.WithCancel(context.Background())
 	conn := &Conn{
-		conn:       netConn,
-		encoder:    packet.NewEncoder(netConn),
-		decoder:    packet.NewDecoder(netConn),
-		pool:       packet.NewPool(),
-		packets:    make(chan []byte, 32),
-		writeBuf:   bytes.NewBuffer(make([]byte, 0, 1024)),
-		close:      cancel,
-		closeCtx:   closeCtx,
-		spawn:      make(chan bool),
-		privateKey: key,
-		salt:       make([]byte, 16),
-		log:        log,
+		conn:        netConn,
+		encoder:     packet.NewEncoder(netConn),
+		decoder:     packet.NewDecoder(netConn),
+		pool:        packet.NewPool(),
+		packets:     make(chan []byte, 32),
+		writeBuf:    bytes.NewBuffer(make([]byte, 0, 1024)),
+		close:       cancel,
+		closeCtx:    closeCtx,
+		spawn:       make(chan bool),
+		privateKey:  key,
+		salt:        make([]byte, 16),
+		log:         log,
+		chunkRadius: 16,
 	}
 	conn.disconnectMessage.Store("")
 	conn.waitingForSpawn.Store(false)
@@ -407,6 +409,13 @@ func (conn *Conn) ClientCacheEnabled() bool {
 	return conn.cacheEnabled
 }
 
+// ChunkRadius returns the initial chunk radius of the connection. For connections obtained through a
+// Listener, this is the radius that the client requested. For connections obtained through a Dialer, this
+// is the radius that the server approved upon.
+func (conn *Conn) ChunkRadius() int {
+	return conn.chunkRadius
+}
+
 // parsePacket parses a packet from the data passed and returns it, if successful. If the packet could not be
 // parsed successfully, nil and an error is returned.
 func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, error) {
@@ -511,7 +520,7 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	case *packet.ResourcePackChunkRequest:
 		return conn.handleResourcePackChunkRequest(pk)
 	case *packet.RequestChunkRadius:
-		return conn.handleRequestChunkRadius()
+		return conn.handleRequestChunkRadius(pk)
 	case *packet.SetLocalPlayerAsInitialised:
 		return conn.handleSetLocalPlayerAsInitialised(pk)
 
@@ -531,7 +540,7 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	case *packet.StartGame:
 		return conn.handleStartGame(pk)
 	case *packet.ChunkRadiusUpdated:
-		return conn.handleChunkRadiusUpdated()
+		return conn.handleChunkRadiusUpdated(pk)
 	case *packet.Disconnect:
 		_ = conn.Close()
 		conn.disconnectMessage.Store(pk.Message)
@@ -1020,14 +1029,18 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.loggedIn = true
 
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
-	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
+	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: int32(conn.chunkRadius)})
 }
 
 // handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
 // of the connection, and spawns the player.
-func (conn *Conn) handleRequestChunkRadius() error {
+func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error {
+	if pk.ChunkRadius < 1 {
+		return fmt.Errorf("requested chunk radius must be at least 1, got %v", pk.ChunkRadius)
+	}
 	conn.expect(packet.IDSetLocalPlayerAsInitialised)
-	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 16})
+	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: pk.ChunkRadius})
+	conn.chunkRadius = int(pk.ChunkRadius)
 
 	// The client crashes when not sending all biomes, due to achievements assuming all biomes are present.
 	//noinspection SpellCheckingInspection
@@ -1042,8 +1055,12 @@ func (conn *Conn) handleRequestChunkRadius() error {
 
 // handleChunkRadiusUpdated handles an incoming ChunkRadiusUpdated packet, which updates the initial chunk
 // radius of the connection.
-func (conn *Conn) handleChunkRadiusUpdated() error {
+func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error {
+	if pk.ChunkRadius < 1 {
+		return fmt.Errorf("new chunk radius must be at least 1, got %v", pk.ChunkRadius)
+	}
 	conn.expect(packet.IDPlayStatus)
+	conn.chunkRadius = int(pk.ChunkRadius)
 	return nil
 }
 
