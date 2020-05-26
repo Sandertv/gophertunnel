@@ -245,34 +245,6 @@ func titleToken(c *http.Client, accessToken, deviceToken string, key *ecdsa.Priv
 	return token, json.NewDecoder(resp.Body).Decode(token)
 }
 
-// xstsTokenWithoutDeviceAndTitle sends a POST request to the xblAuthorizeURL using the user token passed. It
-// fetches it without requiring the device and title token.
-func xstsTokenWithoutDeviceAndTitle(c *http.Client, userToken string) (token *XSTSToken, err error) {
-	data, _ := json.Marshal(map[string]interface{}{
-		// RelyingParty MUST be this URL to produce an XSTS token which may be used for Minecraft
-		// authentication.
-		"RelyingParty": "https://multiplayer.minecraft.net/",
-		"TokenType":    "JWT",
-		"Properties": map[string]interface{}{
-			"UserTokens": []string{userToken},
-			"SandboxId":  "RETAIL",
-		},
-	})
-	request, _ := http.NewRequest("POST", xblAuthorizeURL, bytes.NewReader(data))
-	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	request.Header.Set("x-xbl-contract-version", "1")
-
-	resp, err := c.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("POST %v: %v", xblAuthorizeURL, err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	token = &XSTSToken{}
-	return token, json.NewDecoder(resp.Body).Decode(token)
-}
-
 // xstsToken sends a POST request to xblAuthorizeURL using the user, device and title token passed, and the
 // ECDSA private key to sign the request. The device token, title token and signature are not mandatory to
 // produce a valid XSTS token, but we require them here just in case.

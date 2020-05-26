@@ -42,7 +42,7 @@ func Verify(requestString []byte) (publicKey *ecdsa.PublicKey, authenticated boo
 		if err != nil {
 			return nil, false, fmt.Errorf("error verifying claim: %v", err)
 		}
-		if hasKey == true {
+		if hasKey {
 			// If the claim we just verified had the Mojang public key in it, we set the authenticated
 			// bool to true.
 			authenticated = true

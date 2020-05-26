@@ -392,7 +392,7 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 		// actually reached.
 		conn.readDeadline = time.After(time.Hour * 1000000)
 	} else {
-		conn.readDeadline = time.After(t.Sub(time.Now()))
+		conn.readDeadline = time.After(time.Until(t))
 	}
 	return nil
 }
