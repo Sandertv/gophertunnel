@@ -59,8 +59,8 @@ const (
 // The client sends this packet when the ServerAuthoritativeOverMovement field in the StartGame packet is set
 // to true, instead of the MovePlayer packet. The client will send this packet once every tick.
 type PlayerAuthInput struct {
-	// Yaw and Pitch hold the rotation that the player reports it has.
-	Yaw, Pitch float32
+	// Pitch and Yaw hold the rotation that the player reports it has.
+	Pitch, Yaw float32
 	// Position holds the position that the player reports it has.
 	Position mgl32.Vec3
 	// MoveVector is a Vec2 that specifies the direction in which the player moved, as a combination of X/Z
@@ -89,8 +89,8 @@ func (pk *PlayerAuthInput) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerAuthInput) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteFloat32(buf, pk.Yaw)
 	_ = protocol.WriteFloat32(buf, pk.Pitch)
+	_ = protocol.WriteFloat32(buf, pk.Yaw)
 	_ = protocol.WriteVec3(buf, pk.Position)
 	_ = protocol.WriteVec2(buf, pk.MoveVector)
 	_ = protocol.WriteFloat32(buf, pk.HeadYaw)
