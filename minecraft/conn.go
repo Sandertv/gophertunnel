@@ -753,9 +753,6 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 		}
 	}
 	conn.expect(packet.IDStartGame)
-	if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
-		return fmt.Errorf("error sending client cache status: %v", err)
-	}
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 
@@ -1082,6 +1079,9 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	switch pk.Status {
 	case packet.PlayStatusLoginSuccess:
 		// The next packet we expect is the ResourcePacksInfo packet.
+		if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
+			return fmt.Errorf("error sending client cache status: %v", err)
+		}
 		conn.expect(packet.IDResourcePacksInfo)
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
