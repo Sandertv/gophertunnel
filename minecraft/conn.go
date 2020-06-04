@@ -542,8 +542,8 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	case *packet.ChunkRadiusUpdated:
 		return conn.handleChunkRadiusUpdated(pk)
 	case *packet.Disconnect:
-		_ = conn.Close()
 		conn.disconnectMessage.Store(pk.Message)
+		_ = conn.Close()
 	}
 	return nil
 }

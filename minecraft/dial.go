@@ -104,7 +104,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.decoder.DisableBatchPacketLimit()
 
-	if dialer.ClientData.SkinData != "" {
+	if dialer.ClientData.SkinID != "" {
 		// If a custom client data struct was set, we change the default.
 		conn.clientData = dialer.ClientData
 	}
@@ -133,6 +133,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer.
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
+
 	} else {
 		request = login.Encode(chainData, conn.clientData, key)
 		identityData, _, _ := login.Decode(request)
@@ -232,7 +233,7 @@ func defaultClientData(address string) login.ClientData {
 // client is not authenticated and if no identity data was provided.
 func defaultIdentityData() login.IdentityData {
 	return login.IdentityData{
-		Identity:    uuid.Must(uuid.NewRandom()).String(),
+		Identity:    "ceb3bb87-53db-37fe-b935-6ff9bf71b4e6",
 		DisplayName: "Steve",
 	}
 }

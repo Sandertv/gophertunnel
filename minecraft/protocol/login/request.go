@@ -138,9 +138,9 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
 	// contains the x5u from the first claim currently in the chain.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
 		"certificateAuthority": true,
-		"exp":                  time.Now().Unix() + int64(time.Hour*6),
+		"exp":                  time.Now().Add(time.Hour * 6).Unix(),
 		"identityPublicKey":    nextHeader.X5U,
-		"nbf":                  time.Now().Unix() - int64(time.Hour*6),
+		"nbf":                  time.Now().Add(-time.Hour * 6).Unix(),
 	}, key)
 
 	// We add our own claim at the start of the chain.
@@ -170,20 +170,18 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	// We create a new self signed claim with both the x5u and the identity public key as our public key
 	// data.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
-		"certificateAuthority": true,
-		"exp":                  time.Now().Unix() + int64(time.Hour),
-		"identityPublicKey":    keyData,
-		"nbf":                  time.Now().Unix() - int64(time.Hour),
-		"extraData":            identityData,
+		"exp":               time.Now().Add(time.Hour * 6).Unix(),
+		"identityPublicKey": keyData,
+		"nbf":               time.Now().Add(-time.Hour * 6).Unix(),
+		"extraData":         identityData,
 	}, key)
 	request := &request{Chain: Chain{string(claim)}}
 
-	loginChainBytes, _ := json.Marshal(request)
-	loginChain := string(loginChainBytes)
+	loginChain, _ := json.Marshal(request)
 
 	buf := bytes.NewBuffer(nil)
 	_ = binary.Write(buf, binary.LittleEndian, int32(len(loginChain)))
-	_, _ = buf.WriteString(loginChain)
+	_, _ = buf.Write(loginChain)
 
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
