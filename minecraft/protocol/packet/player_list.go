@@ -45,6 +45,11 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 			panic(fmt.Sprintf("invalid player list action type %v", pk.ActionType))
 		}
 	}
+	if pk.ActionType == PlayerListActionAdd {
+		for _, entry := range pk.Entries {
+			_ = binary.Write(buf, binary.LittleEndian, entry.Skin.Trusted)
+		}
+	}
 }
 
 // Unmarshal ...
@@ -69,6 +74,14 @@ func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
 			}
 		default:
 			return fmt.Errorf("unknown player list action type %v", pk.ActionType)
+		}
+	}
+	if pk.ActionType == PlayerListActionAdd {
+		for i := uint32(0); i < count; i++ {
+			if err := binary.Read(buf, binary.LittleEndian, &pk.Entries[i].Skin.Trusted); err != nil {
+				// These booleans at the end are optional, they might not be there.
+				return nil
+			}
 		}
 	}
 	return nil

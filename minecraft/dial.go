@@ -104,7 +104,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.decoder.DisableBatchPacketLimit()
 
-	if dialer.ClientData.SkinData != "" {
+	if dialer.ClientData.SkinID != "" {
 		// If a custom client data struct was set, we change the default.
 		conn.clientData = dialer.ClientData
 	}
@@ -121,12 +121,19 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	if conn.clientData.AnimatedImageData == nil {
 		conn.clientData.AnimatedImageData = make([]login.SkinAnimation, 0)
 	}
+	if conn.clientData.PersonaPieces == nil {
+		conn.clientData.PersonaPieces = make([]login.PersonaPiece, 0)
+	}
+	if conn.clientData.PieceTintColours == nil {
+		conn.clientData.PieceTintColours = make([]login.PersonaPieceTintColour, 0)
+	}
 
 	var request []byte
 	if dialer.Email == "" {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer.
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
+
 	} else {
 		request = login.Encode(chainData, conn.clientData, key)
 		identityData, _, _ := login.Decode(request)
@@ -189,7 +196,7 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live token: %v", err)
 	}
-	xsts, err := auth.RequestXSTSTokenUserOnly(liveToken)
+	xsts, err := auth.RequestXSTSToken(liveToken)
 	if err != nil {
 		return "", fmt.Errorf("error obtaining XSTS token: %v", err)
 	}
@@ -226,7 +233,7 @@ func defaultClientData(address string) login.ClientData {
 // client is not authenticated and if no identity data was provided.
 func defaultIdentityData() login.IdentityData {
 	return login.IdentityData{
-		Identity:    uuid.Must(uuid.NewRandom()).String(),
+		Identity:    "ceb3bb87-53db-37fe-b935-6ff9bf71b4e6",
 		DisplayName: "Steve",
 	}
 }

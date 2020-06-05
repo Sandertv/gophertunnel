@@ -49,6 +49,20 @@ type Skin struct {
 	// FullSkinID is an ID that represents the skin in full. The actual functionality is unknown: The client
 	// does not seem to send a value for this.
 	FullSkinID string
+	// SkinColour is a hex representation (including #) of the base colour of the skin. An example of the
+	// colour sent here is '#b37b62'.
+	SkinColour string
+	// ArmSize is the size of the arms of the player's model. This is either 'wide' (generally for male skins)
+	// or 'slim' (generally for female skins).
+	ArmSize string
+	// PersonaPieces is a list of all persona pieces that the skin is composed of.
+	PersonaPieces []PersonaPiece
+	// PieceTintColours is a list of specific tint colours for (some of) the persona pieces found in the list
+	// above.
+	PieceTintColours []PersonaPieceTintColour
+	// Trusted specifies if the skin is 'trusted'. No code should rely on this field, as any proxy or client
+	// can easily change it.
+	Trusted bool
 }
 
 // WriteSerialisedSkin writes a Skin x to Buffer dst. WriteSerialisedSkin panics if the fields of the skin
@@ -72,7 +86,7 @@ func WriteSerialisedSkin(dst *bytes.Buffer, x Skin) error {
 			return err
 		}
 	}
-	return chainErr(
+	if err := chainErr(
 		binary.Write(dst, binary.LittleEndian, x.CapeImageWidth),
 		binary.Write(dst, binary.LittleEndian, x.CapeImageHeight),
 		WriteByteSlice(dst, x.CapeData),
@@ -83,12 +97,32 @@ func WriteSerialisedSkin(dst *bytes.Buffer, x Skin) error {
 		binary.Write(dst, binary.LittleEndian, x.PersonaCapeOnClassicSkin),
 		WriteString(dst, x.CapeID),
 		WriteString(dst, x.FullSkinID),
-	)
+		WriteString(dst, x.ArmSize),
+		WriteString(dst, x.SkinColour),
+		binary.Write(dst, binary.LittleEndian, uint32(len(x.PersonaPieces))),
+	); err != nil {
+		return err
+	}
+	for _, piece := range x.PersonaPieces {
+		if err := WriteSkinPiece(dst, piece); err != nil {
+			return err
+		}
+	}
+	if err := binary.Write(dst, binary.LittleEndian, uint32(len(x.PieceTintColours))); err != nil {
+		return err
+	}
+	for _, tint := range x.PieceTintColours {
+		if err := WriteSkinPieceTint(dst, tint); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // SerialisedSkin reads a Skin x from Buffer src.
 func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 	var animationCount uint32
+	var c uint32
 	if err := chainErr(
 		String(src, &x.SkinID),
 		ByteSlice(src, &x.SkinResourcePatch),
@@ -98,12 +132,6 @@ func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 		binary.Read(src, binary.LittleEndian, &animationCount),
 	); err != nil {
 		return err
-	}
-	if animationCount > 64 {
-		return LimitHitError{
-			Limit: 64,
-			Type:  "skin animation",
-		}
 	}
 	x.Animations = make([]SkinAnimation, animationCount)
 
@@ -123,10 +151,27 @@ func SerialisedSkin(src *bytes.Buffer, x *Skin) error {
 		binary.Read(src, binary.LittleEndian, &x.PersonaCapeOnClassicSkin),
 		String(src, &x.CapeID),
 		String(src, &x.FullSkinID),
+		String(src, &x.ArmSize),
+		String(src, &x.SkinColour),
+		binary.Read(src, binary.LittleEndian, &c),
 	); err != nil {
 		return err
 	}
-
+	x.PersonaPieces = make([]PersonaPiece, c)
+	for i := uint32(0); i < c; i++ {
+		if err := SkinPiece(src, &x.PersonaPieces[i]); err != nil {
+			return err
+		}
+	}
+	if err := binary.Read(src, binary.LittleEndian, &c); err != nil {
+		return err
+	}
+	x.PieceTintColours = make([]PersonaPieceTintColour, c)
+	for i := uint32(0); i < c; i++ {
+		if err := SkinPieceTint(src, &x.PieceTintColours[i]); err != nil {
+			return err
+		}
+	}
 	return x.validate()
 }
 
@@ -194,4 +239,105 @@ func Animation(src *bytes.Buffer, x *SkinAnimation) error {
 		binary.Read(src, binary.LittleEndian, &x.AnimationType),
 		Float32(src, &x.FrameCount),
 	)
+}
+
+// PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
+type PersonaPiece struct {
+	// PieceId is a UUID that identifies the piece itself, which is unique for each separate piece.
+	PieceID string
+	// PieceType holds the type of the piece. Several types I was able to find immediately are listed below.
+	// - persona_skeleton
+	// - persona_body
+	// - persona_skin
+	// - persona_bottom
+	// - persona_feet
+	// - persona_top
+	// - persona_mouth
+	// - persona_hair
+	// - persona_eyes
+	// - persona_facial_hair
+	PieceType string
+	// PackID is a UUID that identifies the pack that the persona piece belongs to.
+	PackID string
+	// Default specifies if the piece is one of the default pieces. This is true when the piece is one of
+	// those that a Steve or Alex skin have.
+	Default bool
+	// ProductID is a UUID that identifies the piece when it comes to purchases. It is empty for pieces that
+	// have the 'Default' field set to true.
+	ProductID string
+}
+
+// WriteSkinPiece writes a PersonaPiece x to Buffer dst.
+func WriteSkinPiece(dst *bytes.Buffer, x PersonaPiece) error {
+	return chainErr(
+		WriteString(dst, x.PieceID),
+		WriteString(dst, x.PieceType),
+		WriteString(dst, x.PackID),
+		binary.Write(dst, binary.LittleEndian, x.Default),
+		WriteString(dst, x.ProductID),
+	)
+}
+
+// SkinPiece reads a PersonaPiece x from Buffer src.
+func SkinPiece(src *bytes.Buffer, x *PersonaPiece) error {
+	return chainErr(
+		String(src, &x.PieceID),
+		String(src, &x.PieceType),
+		String(src, &x.PackID),
+		binary.Read(src, binary.LittleEndian, &x.Default),
+		String(src, &x.ProductID),
+	)
+}
+
+// PersonaPieceTintColour describes the tint colours of a specific piece of a persona skin.
+type PersonaPieceTintColour struct {
+	// PieceType is the type of the persona skin piece that this tint colour concerns. The piece type must
+	// always be present in the persona pieces list, but not each piece type has a tint colour sent.
+	// Pieces that do have a tint colour that I was able to find immediately are listed below.
+	// - persona_mouth
+	// - persona_eyes
+	// - persona_hair
+	PieceType string
+	// Colours is a list four colours written in hex notation (note, that unlike the SkinColour field in
+	// the ClientData struct, this is actually ARGB, not just RGB).
+	// The colours refer to different parts of the skin piece. The 'persona_eyes' may have the following
+	// colours: ["#ffa12722","#ff2f1f0f","#ff3aafd9","#0"]
+	// The first hex colour represents the tint colour of the iris, the second hex colour represents the
+	// eyebrows and the third represents the sclera. The fourth is #0 because there are only 3 parts of the
+	// persona_eyes skin piece.
+	Colours []string
+}
+
+// WriteSkinPieceTint writes a PersonaPieceTintColour x to Buffer dst.
+func WriteSkinPieceTint(dst *bytes.Buffer, x PersonaPieceTintColour) error {
+	if err := chainErr(
+		WriteString(dst, x.PieceType),
+		binary.Write(dst, binary.LittleEndian, uint32(len(x.Colours))),
+	); err != nil {
+		return err
+	}
+	for _, c := range x.Colours {
+		if err := WriteString(dst, c); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// SkinPieceTint reads a PersonaPieceTintColour x from Buffer src.
+func SkinPieceTint(src *bytes.Buffer, x *PersonaPieceTintColour) error {
+	var c uint32
+	if err := chainErr(
+		String(src, &x.PieceType),
+		binary.Read(src, binary.LittleEndian, &c),
+	); err != nil {
+		return err
+	}
+	x.Colours = make([]string, c)
+	for i := uint32(0); i < c; i++ {
+		if err := String(src, &x.Colours[i]); err != nil {
+			return err
+		}
+	}
+	return nil
 }

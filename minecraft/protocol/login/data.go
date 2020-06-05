@@ -26,7 +26,11 @@ type IdentityData struct {
 	// not be used as a key to store information.
 	DisplayName string `json:"displayName"`
 	// TitleID is a numerical ID present only if the user is logged into XBL. It holds the title ID (XBL
-	// related) of the version that the player is on. This is 896928775 for Win10 and 1739947436 for mobile.
+	// related) of the version that the player is on. Some of these IDs may be found below.
+	// Win10: 896928775
+	// Mobile: 1739947436
+	// Nintendo: 2047319603
+	// Note that these IDs are protected using XBOX Live, making the spoofing of this data very difficult.
 	TitleID string `json:"titleId,omitempty"`
 }
 
@@ -148,6 +152,17 @@ type ClientData struct {
 	// A skin resource patch must be present at all times. The minimum required data that the field must hold
 	// is {"geometry": {"default": "geometry.persona_d1625e47f4c9399f_0_1"}}
 	SkinResourcePatch string
+	// SkinColour is a hex representation (including #) of the base colour of the skin. An example of the
+	// colour sent here is '#b37b62'.
+	SkinColour string `json:"SkinColor"`
+	// ArmSize is the size of the arms of the player's model. This is either 'wide' (generally for male skins)
+	// or 'slim' (generally for female skins).
+	ArmSize string
+	// PersonaPieces is a list of all persona pieces that the skin is composed of.
+	PersonaPieces []PersonaPiece
+	// PieceTintColours is a list of specific tint colours for (some of) the persona pieces found in the list
+	// above.
+	PieceTintColours []PersonaPieceTintColour `json:"PieceTintColors"`
 	// ThirdPartyName is the username of the player. This username should not be used however. The DisplayName
 	// sent in the IdentityData should be preferred over this.
 	ThirdPartyName string
@@ -159,6 +174,51 @@ type ClientData struct {
 	ThirdPartyNameOnly bool
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
+}
+
+// PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
+type PersonaPiece struct {
+	// Default specifies if the piece is one of the default pieces. This is true when the piece is one of
+	// those that a Steve or Alex skin have.
+	Default bool `json:"IsDefault"`
+	// PackID is a UUID that identifies the pack that the persona piece belongs to.
+	PackID string `json:"PackId"`
+	// PieceId is a UUID that identifies the piece itself, which is unique for each separate piece.
+	PieceID string `json:"PieceId"`
+	// PieceType holds the type of the piece. Several types I was able to find immediately are listed below.
+	// - persona_skeleton
+	// - persona_body
+	// - persona_skin
+	// - persona_bottom
+	// - persona_feet
+	// - persona_top
+	// - persona_mouth
+	// - persona_hair
+	// - persona_eyes
+	// - persona_facial_hair
+	PieceType string
+	// ProductID is a UUID that identifies the piece when it comes to purchases. It is empty for pieces that
+	// have the 'IsDefault' field set to true.
+	ProductID string `json:"ProductId"`
+}
+
+// PersonaPieceTintColour describes the tint colours of a specific piece of a persona skin.
+type PersonaPieceTintColour struct {
+	// Colours is an array of four colours written in hex notation (note, that unlike the SkinColor field in
+	// the ClientData struct, this is actually ARGB, not just RGB).
+	// The colours refer to different parts of the skin piece. The 'persona_eyes' may have the following
+	// colours: ["#ffa12722","#ff2f1f0f","#ff3aafd9","#0"]
+	// The first hex colour represents the tint colour of the iris, the second hex colour represents the
+	// eyebrows and the third represents the sclera. The fourth is #0 because there are only 3 parts of the
+	// persona_eyes skin piece.
+	Colours [4]string `json:"Colors"`
+	// PieceType is the type of the persona skin piece that this tint colour concerns. The piece type must
+	// always be present in the persona pieces list, but not each piece type has a tint colour sent.
+	// Pieces that do have a tint colour that I was able to find immediately are listed below.
+	// - persona_mouth
+	// - persona_eyes
+	// - persona_hair
+	PieceType string
 }
 
 // SkinAnimation is an animation that may be present. It is applied on top of the skin default and is cycled

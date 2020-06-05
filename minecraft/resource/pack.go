@@ -237,6 +237,9 @@ func createTempArchive(path string) (*os.File, error) {
 	}
 	writer := zip.NewWriter(temp)
 	if err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
 		relPath, err := filepath.Rel(path, filePath)
 		if err != nil {
 			return fmt.Errorf("error finding relative path: %v", err)

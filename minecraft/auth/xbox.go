@@ -85,29 +85,6 @@ type XSTSToken struct {
 	}
 }
 
-// RequestXSTSTokenUserOnly requests an XSTS token using the Live token pair passed. RequestXSTSTokenUserOnly
-// returns an error if the live token is no longer valid, and must be refreshed.
-// RequestXSTSTokenUserOnly, unlike RequestXSTSToken, requests an XSTS token using only a User token obtained
-// using the Live token pair.
-func RequestXSTSTokenUserOnly(liveToken *TokenPair) (*XSTSToken, error) {
-	if !liveToken.Valid() {
-		return nil, fmt.Errorf("live token is no longer valid")
-	}
-	c := &http.Client{}
-	defer c.CloseIdleConnections()
-	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
-	// requests, and to sign these requests.
-	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
-	// All following requests here use the same ECDSA private key. This is required, and failing to do so
-	// means that the signature of the second request will be refused.
-	userToken, err := userToken(c, liveToken.access, key)
-	if err != nil {
-		return nil, err
-	}
-	return xstsTokenWithoutDeviceAndTitle(c, userToken.Token)
-}
-
 // RequestXSTSToken requests an XSTS token using the passed Live token pair. The token pair must be valid
 // when passed in. RequestXSTSToken will not attempt to refresh the token pair if it not valid.
 // RequestXSTSToken obtains the XSTS token by using the UserToken, DeviceToken and TitleToken. It appears only
@@ -268,34 +245,6 @@ func titleToken(c *http.Client, accessToken, deviceToken string, key *ecdsa.Priv
 	return token, json.NewDecoder(resp.Body).Decode(token)
 }
 
-// xstsTokenWithoutDeviceAndTitle sends a POST request to the xblAuthorizeURL using the user token passed. It
-// fetches it without requiring the device and title token.
-func xstsTokenWithoutDeviceAndTitle(c *http.Client, userToken string) (token *XSTSToken, err error) {
-	data, _ := json.Marshal(map[string]interface{}{
-		// RelyingParty MUST be this URL to produce an XSTS token which may be used for Minecraft
-		// authentication.
-		"RelyingParty": "https://multiplayer.minecraft.net/",
-		"TokenType":    "JWT",
-		"Properties": map[string]interface{}{
-			"UserTokens": []string{userToken},
-			"SandboxId":  "RETAIL",
-		},
-	})
-	request, _ := http.NewRequest("POST", xblAuthorizeURL, bytes.NewReader(data))
-	request.Header.Set("Content-Type", "application/json; charset=UTF-8")
-	request.Header.Set("x-xbl-contract-version", "1")
-
-	resp, err := c.Do(request)
-	if err != nil {
-		return nil, fmt.Errorf("POST %v: %v", xblAuthorizeURL, err)
-	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
-	token = &XSTSToken{}
-	return token, json.NewDecoder(resp.Body).Decode(token)
-}
-
 // xstsToken sends a POST request to xblAuthorizeURL using the user, device and title token passed, and the
 // ECDSA private key to sign the request. The device token, title token and signature are not mandatory to
 // produce a valid XSTS token, but we require them here just in case.
@@ -335,7 +284,7 @@ func xstsToken(c *http.Client, userToken, deviceToken, titleToken string, key *e
 // sign signs the request passed containing the body passed. It signs the request using the ECDSA private key
 // passed. If the request has a 'ProofKey' field in the Properties field, that key must be passed here.
 func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
-	currentTime := timestamp()
+	currentTime := windowsTimestamp()
 	hash := sha256.New()
 
 	// Signature policy version (0, 0, 0, 1) + 0 byte.
@@ -374,14 +323,8 @@ func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	request.Header.Set("Signature", base64.StdEncoding.EncodeToString(sig))
 }
 
-// timestamp returns a Windows specific timestamp. It has a certain offset from Unix time which must be
-// accounted for. The timestamp is otherwise an UTC timestamp.
-func timestamp() int64 {
-	t := time.Now().UTC()
-	milliseconds := int64(t.Nanosecond() / int(time.Millisecond))
-	seconds := int64(t.Second())
-	result := seconds + 11644473600
-	result *= 10000000
-	result += milliseconds * 10
-	return result
+// windowsTimestamp returns a Windows specific timestamp. It has a certain offset from Unix time which must be
+// accounted for.
+func windowsTimestamp() int64 {
+	return (time.Now().Unix() + 11644473600) * 10000000
 }

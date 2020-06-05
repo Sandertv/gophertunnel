@@ -5,8 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// ItemFrameDropItem is sent by the server to make the item in an item frame drop out of the frame
-// client-side.
+// ItemFrameDropItem is sent by the client when it takes an item out of an item frame.
 type ItemFrameDropItem struct {
 	// Position is the position of the item frame that had its item dropped. There must be a 'block entity'
 	// present at this position.

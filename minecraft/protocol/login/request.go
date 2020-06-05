@@ -42,7 +42,7 @@ func Verify(requestString []byte) (publicKey *ecdsa.PublicKey, authenticated boo
 		if err != nil {
 			return nil, false, fmt.Errorf("error verifying claim: %v", err)
 		}
-		if hasKey == true {
+		if hasKey {
 			// If the claim we just verified had the Mojang public key in it, we set the authenticated
 			// bool to true.
 			authenticated = true
@@ -65,7 +65,10 @@ func Verify(requestString []byte) (publicKey *ecdsa.PublicKey, authenticated boo
 // Decode does not verify the request passed. For that reason, login.Verify() should be called on that same
 // string before login.Decode().
 func Decode(requestString []byte) (IdentityData, ClientData, error) {
+	var empty IdentityData
 	identityData, clientData := IdentityData{}, ClientData{}
+	haveData := false
+
 	buf := bytes.NewBuffer(requestString)
 	chain, err := chain(buf)
 	if err != nil {
@@ -83,10 +86,13 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 			return identityData, clientData, fmt.Errorf("error JSON decoding claim payload: %v", err)
 		}
 		// If the extra data decoded is not equal to the identity data (in other words, not empty), we set the
-		// data and break out of the loop.
-		if container.ExtraData != identityData {
+		// data.
+		if container.ExtraData != empty {
+			if haveData {
+				return identityData, clientData, fmt.Errorf("connection request has two structures of identity data: only one JWT may have identity data")
+			}
 			identityData = container.ExtraData
-			break
+			haveData = true
 		}
 	}
 
@@ -107,7 +113,7 @@ func Decode(requestString []byte) (IdentityData, ClientData, error) {
 	dec := json.NewDecoder(bytes.NewBuffer(payload))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&clientData); err != nil {
-		return identityData, clientData, fmt.Errorf("error decoding raw token payload JSON: %v", err)
+		return identityData, clientData, fmt.Errorf("error decoding raw token payload JSON: %v (%v)", err, string(payload))
 	}
 
 	return identityData, clientData, nil
@@ -132,9 +138,9 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
 	// contains the x5u from the first claim currently in the chain.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
 		"certificateAuthority": true,
-		"exp":                  time.Now().Unix() + int64(time.Hour*6),
+		"exp":                  time.Now().Add(time.Hour * 6).Unix(),
 		"identityPublicKey":    nextHeader.X5U,
-		"nbf":                  time.Now().Unix() - int64(time.Hour*6),
+		"nbf":                  time.Now().Add(-time.Hour * 6).Unix(),
 	}, key)
 
 	// We add our own claim at the start of the chain.
@@ -164,20 +170,18 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	// We create a new self signed claim with both the x5u and the identity public key as our public key
 	// data.
 	claim, _ := jwt.New(jwt.Header{Algorithm: "ES384", X5U: keyData}, map[string]interface{}{
-		"certificateAuthority": true,
-		"exp":                  time.Now().Unix() + int64(time.Hour),
-		"identityPublicKey":    keyData,
-		"nbf":                  time.Now().Unix() - int64(time.Hour),
-		"extraData":            identityData,
+		"exp":               time.Now().Add(time.Hour * 6).Unix(),
+		"identityPublicKey": keyData,
+		"nbf":               time.Now().Add(-time.Hour * 6).Unix(),
+		"extraData":         identityData,
 	}, key)
 	request := &request{Chain: Chain{string(claim)}}
 
-	loginChainBytes, _ := json.Marshal(request)
-	loginChain := string(loginChainBytes)
+	loginChain, _ := json.Marshal(request)
 
 	buf := bytes.NewBuffer(nil)
 	_ = binary.Write(buf, binary.LittleEndian, int32(len(loginChain)))
-	_, _ = buf.WriteString(loginChain)
+	_, _ = buf.Write(loginChain)
 
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
