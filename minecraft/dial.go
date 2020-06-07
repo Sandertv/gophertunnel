@@ -233,7 +233,7 @@ func defaultClientData(address string) login.ClientData {
 // client is not authenticated and if no identity data was provided.
 func defaultIdentityData() login.IdentityData {
 	return login.IdentityData{
-		Identity:    "ceb3bb87-53db-37fe-b935-6ff9bf71b4e6",
+		Identity:    uuid.New().String(),
 		DisplayName: "Steve",
 	}
 }
