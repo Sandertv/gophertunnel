@@ -51,9 +51,8 @@ type MovePlayer struct {
 	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
 	// which is one of the constants above.
 	TeleportCause int32
-	// TeleportItem is the item network ID of the item type that was used to teleport. It is only non-zero if
-	// the teleport cause was an item.
-	TeleportItem int32
+	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
+	TeleportSourceEntityType int32
 }
 
 // ID ...
