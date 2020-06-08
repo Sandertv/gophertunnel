@@ -72,7 +72,7 @@ func (pk *MovePlayer) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
 		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportCause)
-		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportItem)
+		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportSourceEntityType)
 	}
 }
 
@@ -93,7 +93,7 @@ func (pk *MovePlayer) Unmarshal(buf *bytes.Buffer) error {
 	if pk.Mode == MoveModeTeleport {
 		return chainErr(
 			binary.Read(buf, binary.LittleEndian, &pk.TeleportCause),
-			binary.Read(buf, binary.LittleEndian, &pk.TeleportItem),
+			binary.Read(buf, binary.LittleEndian, &pk.TeleportSourceEntityType),
 		)
 	}
 	return nil
