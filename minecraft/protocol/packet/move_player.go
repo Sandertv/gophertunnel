@@ -51,9 +51,8 @@ type MovePlayer struct {
 	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
 	// which is one of the constants above.
 	TeleportCause int32
-	// TeleportItem is the item network ID of the item type that was used to teleport. It is only non-zero if
-	// the teleport cause was an item.
-	TeleportItem int32
+	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
+	TeleportSourceEntityType int32
 }
 
 // ID ...
@@ -73,7 +72,7 @@ func (pk *MovePlayer) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
 		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportCause)
-		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportItem)
+		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportSourceEntityType)
 	}
 }
 
@@ -94,7 +93,7 @@ func (pk *MovePlayer) Unmarshal(buf *bytes.Buffer) error {
 	if pk.Mode == MoveModeTeleport {
 		return chainErr(
 			binary.Read(buf, binary.LittleEndian, &pk.TeleportCause),
-			binary.Read(buf, binary.LittleEndian, &pk.TeleportItem),
+			binary.Read(buf, binary.LittleEndian, &pk.TeleportSourceEntityType),
 		)
 	}
 	return nil
