@@ -56,7 +56,7 @@ const (
 
 // PlayerAuthInput is sent by the client to allow for server authoritative movement. It is used to synchronise
 // the player input with the position server-side.
-// The client sends this packet when the ServerAuthoritativeOverMovement field in the StartGame packet is set
+// The client sends this packet when the ServerAuthoritativeMovement field in the StartGame packet is set
 // to true, instead of the MovePlayer packet. The client will send this packet once every tick.
 type PlayerAuthInput struct {
 	// Pitch and Yaw hold the rotation that the player reports it has.

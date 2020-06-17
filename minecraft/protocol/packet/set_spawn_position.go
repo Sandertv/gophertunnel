@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,10 +18,15 @@ type SetSpawnPosition struct {
 	// also changed.
 	SpawnType int32
 	// Position is the new position of the spawn that was set. If SpawnType is SpawnTypeWorld, compasses will
-	// point to this position.
+	// point to this position. As of 1.16, Position is always the position of the player.
 	Position protocol.BlockPos
-	// SpawnForced specifies if the spawn is forced.
-	SpawnForced bool
+	// Dimension is the ID of the dimension that had its spawn updated. This is specifically relevant for
+	// behaviour added in 1.16 such as the respawn anchor, which allows setting the spawn in a specific
+	// dimension.
+	Dimension int32
+	// SpawnPosition is a new field added in 1.16. It holds the spawn position of the world. This spawn
+	// position is {-2147483648, -2147483648, -2147483648} for a default spawn position.
+	SpawnPosition protocol.BlockPos
 }
 
 // ID ...
@@ -34,7 +38,8 @@ func (*SetSpawnPosition) ID() uint32 {
 func (pk *SetSpawnPosition) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVarint32(buf, pk.SpawnType)
 	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = binary.Write(buf, binary.LittleEndian, pk.SpawnForced)
+	_ = protocol.WriteVarint32(buf, pk.Dimension)
+	_ = protocol.WriteUBlockPosition(buf, pk.SpawnPosition)
 }
 
 // Unmarshal ...
@@ -42,6 +47,7 @@ func (pk *SetSpawnPosition) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varint32(buf, &pk.SpawnType),
 		protocol.UBlockPosition(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.SpawnForced),
+		protocol.Varint32(buf, &pk.Dimension),
+		protocol.UBlockPosition(buf, &pk.SpawnPosition),
 	)
 }

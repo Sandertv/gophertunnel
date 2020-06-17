@@ -3,7 +3,6 @@ package packet
 import (
 	"bytes"
 	"compress/flate"
-	"compress/zlib"
 	"crypto/aes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -114,5 +113,5 @@ func (decoder *Decoder) init(buf *bytes.Buffer) (err error) {
 		return
 	}
 	// The reader was already initialised, so we reset it to the buffer passed.
-	return decoder.decompressor.(zlib.Resetter).Reset(buf, nil)
+	return decoder.decompressor.(flate.Resetter).Reset(buf, nil)
 }

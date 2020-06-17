@@ -29,6 +29,9 @@ type EntityLink struct {
 	// Immediate is set to immediately dismount an entity from another. This should be set when the mount of
 	// an entity is killed.
 	Immediate bool
+	// RiderInitiated specifies if the link was created by the rider, for example the player starting to ride
+	// a horse by itself. This is generally true in vanilla environment for players.
+	RiderInitiated bool
 }
 
 // EntityLinkAction reads a single entity link (action) from buffer src.
@@ -38,6 +41,7 @@ func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
 		Varint64(src, &x.RiderEntityUniqueID),
 		binary.Read(src, binary.LittleEndian, &x.Type),
 		binary.Read(src, binary.LittleEndian, &x.Immediate),
+		binary.Read(src, binary.LittleEndian, &x.RiderInitiated),
 	)
 }
 
@@ -66,6 +70,7 @@ func WriteEntityLinkAction(dst *bytes.Buffer, x EntityLink) error {
 		WriteVarint64(dst, x.RiderEntityUniqueID),
 		binary.Write(dst, binary.LittleEndian, x.Type),
 		binary.Write(dst, binary.LittleEndian, x.Immediate),
+		binary.Write(dst, binary.LittleEndian, x.RiderInitiated),
 	)
 }
 

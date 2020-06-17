@@ -136,15 +136,15 @@ func NewPool() Pool {
 		IDUpdateSoftEnum:              &UpdateSoftEnum{},
 		IDNetworkStackLatency:         &NetworkStackLatency{},
 		// ---
-		IDScriptCustomEvent:             &ScriptCustomEvent{},
-		IDSpawnParticleEffect:           &SpawnParticleEffect{},
-		IDAvailableActorIdentifiers:     &AvailableActorIdentifiers{},
-		IDNetworkChunkPublisherUpdate:   &NetworkChunkPublisherUpdate{},
-		IDBiomeDefinitionList:           &BiomeDefinitionList{},
-		IDLevelSoundEvent:               &LevelSoundEvent{},
-		IDLevelEventGeneric:             &LevelEventGeneric{},
-		IDLecternUpdate:                 &LecternUpdate{},
-		IDVideoStreamConnect:            &VideoStreamConnect{},
+		IDScriptCustomEvent:           &ScriptCustomEvent{},
+		IDSpawnParticleEffect:         &SpawnParticleEffect{},
+		IDAvailableActorIdentifiers:   &AvailableActorIdentifiers{},
+		IDNetworkChunkPublisherUpdate: &NetworkChunkPublisherUpdate{},
+		IDBiomeDefinitionList:         &BiomeDefinitionList{},
+		IDLevelSoundEvent:             &LevelSoundEvent{},
+		IDLevelEventGeneric:           &LevelEventGeneric{},
+		IDLecternUpdate:               &LecternUpdate{},
+		// ---
 		IDAddEntity:                     &AddEntity{},
 		IDRemoveEntity:                  &RemoveEntity{},
 		IDClientCacheStatus:             &ClientCacheStatus{},
@@ -163,6 +163,18 @@ func NewPool() Pool {
 		IDCompletedUsingItem:            &CompletedUsingItem{},
 		IDNetworkSettings:               &NetworkSettings{},
 		IDPlayerAuthInput:               &PlayerAuthInput{},
+		IDCreativeContent:               &CreativeContent{},
+		// ...
+		IDItemStackRequest:     &ItemStackRequest{},
+		IDItemStackResponse:    &ItemStackResponse{},
+		IDPlayerArmourDamage:   &PlayerArmourDamage{},
+		IDCodeBuilder:          &CodeBuilder{},
+		IDUpdatePlayerGameType: &UpdatePlayerGameType{},
+		IDEmoteList:            &EmoteList{},
+		// ...
+		// ...
+		IDDebugInfo:              &DebugInfo{},
+		IDPacketViolationWarning: &PacketViolationWarning{},
 	}
 	for id, pk := range registeredPackets {
 		p[id] = pk()

@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"bytes"
+	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -16,7 +17,6 @@ const (
 	WindowIDInventory = 0
 	WindowIDOffHand   = 119
 	WindowIDArmour    = 120
-	WindowIDCreative  = 121
 	WindowIDUI        = 124
 )
 
@@ -40,10 +40,14 @@ type InventoryAction struct {
 	// NewItem is the new item that was put in the InventorySlot that the OldItem was in. It must be checked
 	// in combination with other inventory actions to ensure that the transaction is balanced.
 	NewItem ItemStack
+	// StackNetworkID is the unique network ID of the new stack. This is always 0 when an InventoryTransaction
+	// packet is sent by the client. It is also always 0 when the HasNetworkIDs field in the
+	// InventoryTransaction packet is set to false.
+	StackNetworkID int32
 }
 
 // InvAction reads an inventory action from buffer src.
-func InvAction(src *bytes.Buffer, action *InventoryAction) error {
+func InvAction(src *bytes.Buffer, action *InventoryAction, netIDs bool) error {
 	if err := Varuint32(src, &action.SourceType); err != nil {
 		return wrap(err)
 	}
@@ -57,15 +61,21 @@ func InvAction(src *bytes.Buffer, action *InventoryAction) error {
 			return wrap(err)
 		}
 	}
-	return chainErr(
+	if err := chainErr(
 		Varuint32(src, &action.InventorySlot),
 		Item(src, &action.OldItem),
 		Item(src, &action.NewItem),
-	)
+	); err != nil {
+		return err
+	}
+	if netIDs {
+		return Varint32(src, &action.StackNetworkID)
+	}
+	return nil
 }
 
 // WriteInvAction writes an inventory action to buffer dst.
-func WriteInvAction(dst *bytes.Buffer, action InventoryAction) error {
+func WriteInvAction(dst *bytes.Buffer, action InventoryAction, netIDs bool) error {
 	if err := WriteVaruint32(dst, action.SourceType); err != nil {
 		return wrap(err)
 	}
@@ -79,11 +89,17 @@ func WriteInvAction(dst *bytes.Buffer, action InventoryAction) error {
 			return wrap(err)
 		}
 	}
-	return chainErr(
+	if err := chainErr(
 		WriteVaruint32(dst, action.InventorySlot),
 		WriteItem(dst, action.OldItem),
 		WriteItem(dst, action.NewItem),
-	)
+	); err != nil {
+		return err
+	}
+	if netIDs {
+		return WriteVarint32(dst, action.StackNetworkID)
+	}
+	return nil
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
@@ -272,5 +288,43 @@ func (*MismatchTransactionData) Marshal(*bytes.Buffer) {
 
 // Unmarshal ...
 func (*MismatchTransactionData) Unmarshal(*bytes.Buffer) error {
+	return nil
+}
+
+// LegacySetItemSlot represents a slot that was changed during an InventoryTransaction. These slots have to
+// have their values set accordingly for actions such as when dropping an item out of the hotbar, where the
+// ivnentory container and the slot that had its item dropped is passed.
+type LegacySetItemSlot struct {
+	ContainerID byte
+	Slots       []byte
+}
+
+// WriteSetItemSlot writes a LegacySetItemSlot x to Buffer dst.
+func WriteSetItemSlot(dst *bytes.Buffer, x LegacySetItemSlot) error {
+	dst.WriteByte(x.ContainerID)
+	if err := WriteVaruint32(dst, uint32(len(x.Slots))); err != nil {
+		return err
+	}
+	for _, slot := range x.Slots {
+		dst.WriteByte(slot)
+	}
+	return nil
+}
+
+// SetItemSlot reads a LegacySetItemSlot x from Buffer src.
+func SetItemSlot(src *bytes.Buffer, x *LegacySetItemSlot) error {
+	if err := binary.Read(src, binary.LittleEndian, &x.ContainerID); err != nil {
+		return wrap(err)
+	}
+	var length uint32
+	if err := Varuint32(src, &length); err != nil {
+		return err
+	}
+	x.Slots = make([]byte, length)
+	for i := uint32(0); i < length; i++ {
+		if err := binary.Read(src, binary.LittleEndian, &x.Slots[i]); err != nil {
+			return wrap(err)
+		}
+	}
 	return nil
 }

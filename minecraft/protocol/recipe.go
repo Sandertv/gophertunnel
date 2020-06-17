@@ -41,33 +41,45 @@ func PotContainerChangeRecipe(src *bytes.Buffer, x *PotionContainerChangeRecipe)
 
 // PotionRecipe represents a potion mixing recipe which may be used in a brewing stand.
 type PotionRecipe struct {
-	// InputPotionMetadataValue is the type of the potion to be put in. This is typically the ID of the
-	// awkward potion (or water bottle to create an awkward potion). Note that these values are the metadata
-	// values of a potion.
-	InputPotionMetadataValue int32
+	// InputPotionID is the item ID of the potion to be put in.
+	InputPotionID int32
+	// InputPotionMetadata is the type of the potion to be put in. This is typically the meta of the
+	// awkward potion (or water bottle to create an awkward potion).
+	InputPotionMetadata int32
 	// ReagentItemID is the item ID of the item that needs to be added to the brewing stand in order to brew
 	// the output potion.
 	ReagentItemID int32
-	// OutputPotionMetadataValue is the type of the potion that is obtained as a result of brewing the input
-	// potion with the reagent item. Note that these values are the metadata values of a potion.
-	OutputPotionMetadataValue int32
+	// ReagentItemMetadata is the metadata value of the item that needs to be added to the brewing stand in
+	// order to brew the output potion.
+	ReagentItemMetadata int32
+	// OutputPotionID is the item ID of the potion obtained as a result of the brewing recipe.
+	OutputPotionID int32
+	// OutputPotionMetadata is the type of the potion that is obtained as a result of brewing the input
+	// potion with the reagent item.
+	OutputPotionMetadata int32
 }
 
 // WritePotRecipe writes a PotionRecipe x to Buffer dst.
 func WritePotRecipe(dst *bytes.Buffer, x PotionRecipe) error {
 	return chainErr(
-		WriteVarint32(dst, x.InputPotionMetadataValue),
+		WriteVarint32(dst, x.InputPotionID),
+		WriteVarint32(dst, x.InputPotionMetadata),
 		WriteVarint32(dst, x.ReagentItemID),
-		WriteVarint32(dst, x.OutputPotionMetadataValue),
+		WriteVarint32(dst, x.ReagentItemMetadata),
+		WriteVarint32(dst, x.OutputPotionID),
+		WriteVarint32(dst, x.OutputPotionMetadata),
 	)
 }
 
 // PotRecipe reads a PotionRecipe x from Buffer src.
 func PotRecipe(src *bytes.Buffer, x *PotionRecipe) error {
 	return chainErr(
-		Varint32(src, &x.InputPotionMetadataValue),
+		Varint32(src, &x.InputPotionID),
+		Varint32(src, &x.InputPotionMetadata),
 		Varint32(src, &x.ReagentItemID),
-		Varint32(src, &x.OutputPotionMetadataValue),
+		Varint32(src, &x.ReagentItemMetadata),
+		Varint32(src, &x.OutputPotionID),
+		Varint32(src, &x.OutputPotionMetadata),
 	)
 }
 
@@ -107,9 +119,21 @@ type ShapelessRecipe struct {
 	UUID uuid.UUID
 	// Block is the block name that is required to craft the output of the recipe. The block is not prefixed
 	// with 'minecraft:', so it will look like 'crafting_table' as an example.
+	// The available blocks are:
+	// - crafting_table
+	// - cartography_table
+	// - stonecutter
+	// - furnace
+	// - blast_furnace
+	// - smoker
+	// - campfire
 	Block string
 	// Priority ...
 	Priority int32
+	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// network ID. Recommended is to just increment a variable for each unique recipe registered.
+	// This field must never be 0.
+	RecipeNetworkID uint32
 }
 
 // ShulkerBoxRecipe is a shapeless recipe made specifically for shulker box crafting, so that they don't lose
@@ -144,6 +168,10 @@ type ShapedRecipe struct {
 	Block string
 	// Priority ...
 	Priority int32
+	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// network ID. Recommended is to just increment a variable for each unique recipe registered.
+	// This field must never be 0.
+	RecipeNetworkID uint32
 }
 
 // ShapedChemistryRecipe is a recipe specifically made for chemistry related features, which exist only in the
@@ -172,6 +200,10 @@ type MultiRecipe struct {
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
 	// packet is not used.
 	UUID uuid.UUID
+	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// network ID. Recommended is to just increment a variable for each unique recipe registered.
+	// This field must never be 0.
+	RecipeNetworkID uint32
 }
 
 // Marshal ...
@@ -284,11 +316,15 @@ func (recipe *FurnaceDataRecipe) Unmarshal(buf *bytes.Buffer) error {
 // Marshal ...
 func (recipe *MultiRecipe) Marshal(buf *bytes.Buffer) {
 	_ = WriteUUID(buf, recipe.UUID)
+	_ = WriteVaruint32(buf, recipe.RecipeNetworkID)
 }
 
 // Unmarshal ...
 func (recipe *MultiRecipe) Unmarshal(buf *bytes.Buffer) error {
-	return UUID(buf, &recipe.UUID)
+	return chainErr(
+		UUID(buf, &recipe.UUID),
+		Varuint32(buf, &recipe.RecipeNetworkID),
+	)
 }
 
 // marshalShaped ...
@@ -312,6 +348,7 @@ func marshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) {
 	_ = WriteUUID(buf, recipe.UUID)
 	_ = WriteString(buf, recipe.Block)
 	_ = WriteVarint32(buf, recipe.Priority)
+	_ = WriteVaruint32(buf, recipe.RecipeNetworkID)
 }
 
 // unmarshalShaped ...
@@ -355,6 +392,7 @@ func unmarshalShaped(buf *bytes.Buffer, recipe *ShapedRecipe) error {
 		UUID(buf, &recipe.UUID),
 		String(buf, &recipe.Block),
 		Varint32(buf, &recipe.Priority),
+		Varuint32(buf, &recipe.RecipeNetworkID),
 	)
 }
 
@@ -372,6 +410,7 @@ func marshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) {
 	_ = WriteUUID(buf, recipe.UUID)
 	_ = WriteString(buf, recipe.Block)
 	_ = WriteVarint32(buf, recipe.Priority)
+	_ = WriteVaruint32(buf, recipe.RecipeNetworkID)
 }
 
 // unmarshalShapeless ...
@@ -408,5 +447,6 @@ func unmarshalShapeless(buf *bytes.Buffer, recipe *ShapelessRecipe) error {
 		UUID(buf, &recipe.UUID),
 		String(buf, &recipe.Block),
 		Varint32(buf, &recipe.Priority),
+		Varuint32(buf, &recipe.RecipeNetworkID),
 	)
 }

@@ -8,6 +8,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	SpawnBiomeTypeDefault = iota
+	SpawnBiomeTypeUserDefined
+)
+
 // StartGame is sent by the server to send information about the world the player will be spawned in. It
 // contains information about the position the player spawns in, and information about the world in general
 // such as its game rules.
@@ -36,6 +41,12 @@ type StartGame struct {
 	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
 	// here.
 	WorldSeed int32
+	// SpawnBiomeType specifies if the biome that the player spawns in is user defined (through behaviour
+	// packs) or builtin. See the constants above.
+	SpawnBiomeType int16
+	// UserDefinedBiomeName is a readable name of the biome that the player spawned in, such as 'plains'. This
+	// might be a custom biome name if any custom biomes are present through behaviour packs.
+	UserDefinedBiomeName string
 	// Dimension is the ID of the dimension that the player spawns in. It is a value from 0-2, with 0 being
 	// the overworld, 1 being the nether and 2 being the end.
 	Dimension int32
@@ -66,6 +77,9 @@ type StartGame struct {
 	// EducationFeaturesEnabled specifies if the world has education edition features enabled, such as the
 	// blocks or entities specific to education edition.
 	EducationFeaturesEnabled bool
+	// EducationProductID is a UUID used to identify the education edition server instance. It is generally
+	// unique for education edition servers.
+	EducationProductID string
 	// RainLevel is the level specifying the intensity of the rain falling. When set to 0, no rain falls at
 	// all.
 	RainLevel float32
@@ -133,6 +147,14 @@ type StartGame struct {
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
+	// LimitedWorldWidth and LimitedWorldDepth are the dimensions of the world if the world is a limited
+	// world. For unlimited worlds, these may simply be left as 0.
+	LimitedWorldWidth, LimitedWorldDepth int32
+	// NewNether specifies if the server runs with the new nether introduced in the 1.16 update.
+	NewNether bool
+	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
+	// should always be set to false.
+	ForceExperimentalGameplay bool
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -145,9 +167,12 @@ type StartGame struct {
 	// Trial specifies if the world was a trial world, meaning features are limited and there is a time limit
 	// on the world.
 	Trial bool
-	// ServerAuthoritativeOverMovement specifies if the server is authoritative over the movement of the
-	// player, meaning it controls the movement of it.
-	ServerAuthoritativeOverMovement bool
+	// ServerAuthoritativeMovement specifies if the server is authoritative over the movement of the player,
+	// meaning it controls the movement of it.
+	// In reality, the only thing that changes when this field is set to true is the packet sent by the player
+	// when it moves. When set to true, it will send the PlayerAuthInput packet instead of the MovePlayer
+	// packet.
+	ServerAuthoritativeMovement bool
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
 	// EnchantmentSeed is the seed used to seed the random used to produce enchantments in the enchantment
@@ -162,6 +187,10 @@ type StartGame struct {
 	// MultiPlayerCorrelationID is a unique ID specifying the multi-player session of the player. A random
 	// UUID should be filled out for this field.
 	MultiPlayerCorrelationID string
+	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
+	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
+	// some extent been preserved, but will eventually be removed.
+	ServerAuthoritativeInventory bool
 }
 
 // ID ...
@@ -178,6 +207,8 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteFloat32(buf, pk.Pitch)
 	_ = protocol.WriteFloat32(buf, pk.Yaw)
 	_ = protocol.WriteVarint32(buf, pk.WorldSeed)
+	_ = binary.Write(buf, binary.LittleEndian, pk.SpawnBiomeType)
+	_ = protocol.WriteString(buf, pk.UserDefinedBiomeName)
 	_ = protocol.WriteVarint32(buf, pk.Dimension)
 	_ = protocol.WriteVarint32(buf, pk.Generator)
 	_ = protocol.WriteVarint32(buf, pk.WorldGameMode)
@@ -187,6 +218,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVarint32(buf, pk.DayCycleLockTime)
 	_ = protocol.WriteVarint32(buf, pk.EducationEditionOffer)
 	_ = binary.Write(buf, binary.LittleEndian, pk.EducationFeaturesEnabled)
+	_ = protocol.WriteString(buf, pk.EducationProductID)
 	_ = protocol.WriteFloat32(buf, pk.RainLevel)
 	_ = protocol.WriteFloat32(buf, pk.LightningLevel)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ConfirmedPlatformLockedContent)
@@ -208,12 +240,16 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.FromWorldTemplate)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WorldTemplateSettingsLocked)
 	_ = binary.Write(buf, binary.LittleEndian, pk.OnlySpawnV1Villagers)
-	_ = protocol.WriteString(buf, "*")
+	_ = protocol.WriteString(buf, pk.BaseGameVersion)
+	_ = binary.Write(buf, binary.LittleEndian, pk.LimitedWorldWidth)
+	_ = binary.Write(buf, binary.LittleEndian, pk.LimitedWorldDepth)
+	_ = binary.Write(buf, binary.LittleEndian, pk.NewNether)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ForceExperimentalGameplay)
 	_ = protocol.WriteString(buf, pk.LevelID)
 	_ = protocol.WriteString(buf, pk.WorldName)
 	_ = protocol.WriteString(buf, pk.TemplateContentIdentity)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Trial)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ServerAuthoritativeOverMovement)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ServerAuthoritativeMovement)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Time)
 	_ = protocol.WriteVarint32(buf, pk.EnchantmentSeed)
 	_ = nbt.NewEncoder(buf).Encode(pk.Blocks)
@@ -223,6 +259,7 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 		_ = binary.Write(buf, binary.LittleEndian, item.LegacyID)
 	}
 	_ = protocol.WriteString(buf, pk.MultiPlayerCorrelationID)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ServerAuthoritativeInventory)
 }
 
 // Unmarshal ...
@@ -239,6 +276,8 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		protocol.Float32(buf, &pk.Pitch),
 		protocol.Float32(buf, &pk.Yaw),
 		protocol.Varint32(buf, &pk.WorldSeed),
+		binary.Read(buf, binary.LittleEndian, &pk.SpawnBiomeType),
+		protocol.String(buf, &pk.UserDefinedBiomeName),
 		protocol.Varint32(buf, &pk.Dimension),
 		protocol.Varint32(buf, &pk.Generator),
 		protocol.Varint32(buf, &pk.WorldGameMode),
@@ -248,6 +287,7 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		protocol.Varint32(buf, &pk.DayCycleLockTime),
 		protocol.Varint32(buf, &pk.EducationEditionOffer),
 		binary.Read(buf, binary.LittleEndian, &pk.EducationFeaturesEnabled),
+		protocol.String(buf, &pk.EducationProductID),
 		protocol.Float32(buf, &pk.RainLevel),
 		protocol.Float32(buf, &pk.LightningLevel),
 		binary.Read(buf, binary.LittleEndian, &pk.ConfirmedPlatformLockedContent),
@@ -270,11 +310,15 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.WorldTemplateSettingsLocked),
 		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
 		protocol.String(buf, &pk.BaseGameVersion),
+		binary.Read(buf, binary.LittleEndian, &pk.LimitedWorldWidth),
+		binary.Read(buf, binary.LittleEndian, &pk.LimitedWorldDepth),
+		binary.Read(buf, binary.LittleEndian, &pk.NewNether),
+		binary.Read(buf, binary.LittleEndian, &pk.ForceExperimentalGameplay),
 		protocol.String(buf, &pk.LevelID),
 		protocol.String(buf, &pk.WorldName),
 		protocol.String(buf, &pk.TemplateContentIdentity),
 		binary.Read(buf, binary.LittleEndian, &pk.Trial),
-		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeOverMovement),
+		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeMovement),
 		binary.Read(buf, binary.LittleEndian, &pk.Time),
 		protocol.Varint32(buf, &pk.EnchantmentSeed),
 		nbt.NewDecoder(buf).Decode(&pk.Blocks),
@@ -293,5 +337,8 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		}
 		pk.Items[i] = item
 	}
-	return protocol.String(buf, &pk.MultiPlayerCorrelationID)
+	return chainErr(
+		protocol.String(buf, &pk.MultiPlayerCorrelationID),
+		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeInventory),
+	)
 }

@@ -14,7 +14,7 @@ type InventoryContent struct {
 	WindowID uint32
 	// Content is the new content of the inventory. The length of this slice must be equal to the full size of
 	// the inventory window updated.
-	Content []protocol.ItemStack
+	Content []protocol.ItemInstance
 }
 
 // ID ...
@@ -27,7 +27,7 @@ func (pk *InventoryContent) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.WindowID)
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Content)))
 	for _, item := range pk.Content {
-		_ = protocol.WriteItem(buf, item)
+		_ = protocol.WriteItemInst(buf, item)
 	}
 }
 
@@ -40,9 +40,9 @@ func (pk *InventoryContent) Unmarshal(buf *bytes.Buffer) error {
 	); err != nil {
 		return err
 	}
-	pk.Content = make([]protocol.ItemStack, length)
+	pk.Content = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.Item(buf, &pk.Content[i]); err != nil {
+		if err := protocol.ItemInst(buf, &pk.Content[i]); err != nil {
 			return err
 		}
 	}
