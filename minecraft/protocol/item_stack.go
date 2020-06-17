@@ -147,10 +147,9 @@ type StackResponseContainerInfo struct {
 
 // StackResponseSlotInfo holds information on what item stack should be present in a specific slot.
 type StackResponseSlotInfo struct {
-	// SlotA and SlotB seem to be the same value every time: The slot that was actually changed. I'm not sure
-	// if this is some serialisation mistake or if the fields actually have different values under specific
-	// circumstances.
-	SlotA, SlotB byte
+	// Slot and HotbarSlot seem to be the same value every time: The slot that was actually changed. I'm not
+	// sure if these slots ever differ.
+	Slot, HotbarSlot byte
 	// Count is the total count of the item stack. This count will be shown client-side after the response is
 	// sent to the client.
 	Count byte
@@ -238,12 +237,12 @@ func StackContainerInfo(src *bytes.Buffer, x *StackResponseContainerInfo) error 
 
 // WriteStackSlotInfo writes a StackResponseSlotInfo x to Buffer dst.
 func WriteStackSlotInfo(dst *bytes.Buffer, x StackResponseSlotInfo) error {
-	if x.SlotA != x.SlotB {
-		panic(fmt.Errorf("%v: SlotA and SlotB had different values: %v vs %v", callFrame(), x.SlotA, x.SlotB))
+	if x.Slot != x.HotbarSlot {
+		panic(fmt.Errorf("%v: Slot and HotbarSlot had different values: %v vs %v", callFrame(), x.Slot, x.HotbarSlot))
 	}
 	return chainErr(
-		binary.Write(dst, binary.LittleEndian, x.SlotA),
-		binary.Write(dst, binary.LittleEndian, x.SlotB),
+		binary.Write(dst, binary.LittleEndian, x.Slot),
+		binary.Write(dst, binary.LittleEndian, x.HotbarSlot),
 		binary.Write(dst, binary.LittleEndian, x.Count),
 		WriteVarint32(dst, x.StackNetworkID),
 	)
@@ -252,15 +251,15 @@ func WriteStackSlotInfo(dst *bytes.Buffer, x StackResponseSlotInfo) error {
 // StackSlotInfo reads a StackResponseSlotInfo x from Buffer src.
 func StackSlotInfo(src *bytes.Buffer, x *StackResponseSlotInfo) error {
 	if err := chainErr(
-		binary.Read(src, binary.LittleEndian, &x.SlotA),
-		binary.Read(src, binary.LittleEndian, &x.SlotB),
+		binary.Read(src, binary.LittleEndian, &x.Slot),
+		binary.Read(src, binary.LittleEndian, &x.HotbarSlot),
 		binary.Read(src, binary.LittleEndian, &x.Count),
 		Varint32(src, &x.StackNetworkID),
 	); err != nil {
 		return err
 	}
-	if x.SlotA != x.SlotB {
-		return fmt.Errorf("%v: SlotA and SlotB had different values: %v vs %v", callFrame(), x.SlotA, x.SlotB)
+	if x.Slot != x.HotbarSlot {
+		return fmt.Errorf("%v: Slot and HotbarSlot had different values: %v vs %v", callFrame(), x.Slot, x.HotbarSlot)
 	}
 	return nil
 }
