@@ -69,9 +69,5 @@ func (pk *PositionTrackingDBServerBroadcast) Unmarshal(buf *bytes.Buffer) error 
 	if err := protocol.Varint32(buf, &pk.TrackingID); err != nil {
 		return err
 	}
-	pk.SerialisedData = buf.Next(math.MaxInt32)
-
-	fmt.Println(pk.BroadcastAction)
-	fmt.Println(nbt.Dump(pk.SerialisedData, nbt.NetworkLittleEndian))
 	return nil
 }
