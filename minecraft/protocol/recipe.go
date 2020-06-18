@@ -130,7 +130,7 @@ type ShapelessRecipe struct {
 	Block string
 	// Priority ...
 	Priority int32
-	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
 	RecipeNetworkID uint32
@@ -168,7 +168,7 @@ type ShapedRecipe struct {
 	Block string
 	// Priority ...
 	Priority int32
-	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
 	RecipeNetworkID uint32
@@ -200,7 +200,7 @@ type MultiRecipe struct {
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
 	// packet is not used.
 	UUID uuid.UUID
-	// CreativeItemNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
 	RecipeNetworkID uint32

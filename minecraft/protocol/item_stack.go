@@ -402,7 +402,7 @@ type ConsumeStackRequestAction struct {
 // the slot sent by the client here.
 // Note that before this is sent, an action for consuming all items in the crafting table/grid is sent. Items
 // that are not fully consumed when used for a recipe should not be destroyed there, but instead, should be
-// turned in their respective resulting items.
+// turned into their respective resulting items.
 type CreateStackRequestAction struct {
 	// ResultsSlot is the slot in the inventory in which the results of the crafting ingredients are to be
 	// placed.
@@ -451,9 +451,11 @@ func (a *BeaconPaymentStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
 
 // CraftRecipeStackRequestAction is sent by the client the moment it begins crafting an item. This is the
 // first action sent, before the Consume and Create item stack request actions.
+// This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
+// crafting, where the old item is consumed.
 type CraftRecipeStackRequestAction struct {
-	// CreativeItemNetworkID is the network ID of the recipe that is about to be crafted. This network ID matches
-	// one of the recipes sent in the CraftingData packet, where each of the recipes have a CreativeItemNetworkID as
+	// RecipeNetworkID is the network ID of the recipe that is about to be crafted. This network ID matches
+	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
 }
@@ -494,6 +496,8 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
 
 // CraftResultsDeprecatedAction is an additional, deprecated packet sent by the client after crafting. It
 // holds the final results and the amount of times the recipe was crafted.
+// This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
+// crafting, where the old item is consumed.
 type CraftResultsDeprecatedAction struct {
 	ResultItems  []ItemStack
 	TimesCrafted byte
