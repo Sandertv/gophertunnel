@@ -165,16 +165,16 @@ func NewPool() Pool {
 		IDPlayerAuthInput:               &PlayerAuthInput{},
 		IDCreativeContent:               &CreativeContent{},
 		// ...
-		IDItemStackRequest:     &ItemStackRequest{},
-		IDItemStackResponse:    &ItemStackResponse{},
-		IDPlayerArmourDamage:   &PlayerArmourDamage{},
-		IDCodeBuilder:          &CodeBuilder{},
-		IDUpdatePlayerGameType: &UpdatePlayerGameType{},
-		IDEmoteList:            &EmoteList{},
-		// ...
-		// ...
-		IDDebugInfo:              &DebugInfo{},
-		IDPacketViolationWarning: &PacketViolationWarning{},
+		IDItemStackRequest:                  &ItemStackRequest{},
+		IDItemStackResponse:                 &ItemStackResponse{},
+		IDPlayerArmourDamage:                &PlayerArmourDamage{},
+		IDCodeBuilder:                       &CodeBuilder{},
+		IDUpdatePlayerGameType:              &UpdatePlayerGameType{},
+		IDEmoteList:                         &EmoteList{},
+		IDPositionTrackingDBServerBroadcast: &PositionTrackingDBServerBroadcast{},
+		IDPositionTrackingDBClientRequest:   &PositionTrackingDBClientRequest{},
+		IDDebugInfo:                         &DebugInfo{},
+		IDPacketViolationWarning:            &PacketViolationWarning{},
 	}
 	for id, pk := range registeredPackets {
 		p[id] = pk()
