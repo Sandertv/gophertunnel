@@ -53,7 +53,9 @@ func WriteStackRequest(dst *bytes.Buffer, x ItemStackRequest) error {
 			id = StackRequestActionCraftRecipeAuto
 		case *CraftCreativeStackRequestAction:
 			id = StackRequestActionCraftCreative
-		case *CraftResultsDeprecatedAction:
+		case *CraftNonImplementedStackRequestAction:
+			id = StackRequestActionCraftNonImplementedDeprecated
+		case *CraftResultsDeprecatedStackRequestAction:
 			id = StackRequestActionCraftResultsDeprecated
 		default:
 			panic(fmt.Sprintf("unknown item stack request action type %T", action))
@@ -108,8 +110,10 @@ func StackRequest(src *bytes.Buffer, x *ItemStackRequest) error {
 			action = &AutoCraftRecipeStackRequestAction{}
 		case StackRequestActionCraftCreative:
 			action = &CraftCreativeStackRequestAction{}
+		case StackRequestActionCraftNonImplementedDeprecated:
+			action = &CraftNonImplementedStackRequestAction{}
 		case StackRequestActionCraftResultsDeprecated:
-			action = &CraftResultsDeprecatedAction{}
+			action = &CraftResultsDeprecatedStackRequestAction{}
 		default:
 			return fmt.Errorf("unknown stack request action %v", id)
 		}
@@ -494,17 +498,27 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
 	return Varuint32(buf, &a.CreativeItemNetworkID)
 }
 
-// CraftResultsDeprecatedAction is an additional, deprecated packet sent by the client after crafting. It
-// holds the final results and the amount of times the recipe was crafted.
+// CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
+// in the new system. These include, for example, anvils.
+type CraftNonImplementedStackRequestAction struct{}
+
+// Marshal ...
+func (*CraftNonImplementedStackRequestAction) Marshal(*bytes.Buffer) {}
+
+// Unmarshal ...
+func (*CraftNonImplementedStackRequestAction) Unmarshal(*bytes.Buffer) error { return nil }
+
+// CraftResultsDeprecatedStackRequestAction is an additional, deprecated packet sent by the client after
+// crafting. It holds the final results and the amount of times the recipe was crafted. It shouldn't be used.
 // This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
 // crafting, where the old item is consumed.
-type CraftResultsDeprecatedAction struct {
+type CraftResultsDeprecatedStackRequestAction struct {
 	ResultItems  []ItemStack
 	TimesCrafted byte
 }
 
 // Marshal ...
-func (a *CraftResultsDeprecatedAction) Marshal(buf *bytes.Buffer) {
+func (a *CraftResultsDeprecatedStackRequestAction) Marshal(buf *bytes.Buffer) {
 	_ = WriteVaruint32(buf, uint32(len(a.ResultItems)))
 	for _, i := range a.ResultItems {
 		_ = WriteItem(buf, i)
@@ -513,7 +527,7 @@ func (a *CraftResultsDeprecatedAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *CraftResultsDeprecatedAction) Unmarshal(buf *bytes.Buffer) error {
+func (a *CraftResultsDeprecatedStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
 	var l uint32
 	if err := Varuint32(buf, &l); err != nil {
 		return err
