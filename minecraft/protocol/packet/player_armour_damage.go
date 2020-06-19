@@ -25,8 +25,6 @@ func (pk *PlayerArmourDamage) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerArmourDamage) Marshal(buf *bytes.Buffer) {
-	pk.HelmetDamage, pk.ChestplateDamage, pk.LeggingsDamage, pk.BootsDamage = 0, 0, 0, 0
-
 	var flags byte
 	if pk.HelmetDamage != 0 {
 		flags |= 0b0001
@@ -57,6 +55,7 @@ func (pk *PlayerArmourDamage) Marshal(buf *bytes.Buffer) {
 
 // Unmarshal ...
 func (pk *PlayerArmourDamage) Unmarshal(buf *bytes.Buffer) error {
+	pk.HelmetDamage, pk.ChestplateDamage, pk.LeggingsDamage, pk.BootsDamage = 0, 0, 0, 0
 	bitset, err := buf.ReadByte()
 	if err != nil {
 		return err
