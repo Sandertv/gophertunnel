@@ -88,15 +88,15 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	return nil
 }
 
-// compress compressor compresses the data passed using the writer passed and returns it in a byte slice. It returns
+// compress compresses the data passed using the writer passed and returns it in a byte slice. It returns
 // the full content of encoder.buf, so any data currently set in that buffer will also be returned.
 func (encoder *Encoder) compress(w *flate.Writer, data []byte) ([]byte, error) {
 	w.Reset(encoder.buf)
 	if _, err := w.Write(data); err != nil {
-		return nil, fmt.Errorf("error writing compressor data: %v", err)
+		return nil, fmt.Errorf("error writing compressed data: %v", err)
 	}
 	if err := w.Close(); err != nil {
-		return nil, fmt.Errorf("error closing compressor writer: %v", err)
+		return nil, fmt.Errorf("error closing compressor: %v", err)
 	}
 	return encoder.buf.Bytes(), nil
 }
