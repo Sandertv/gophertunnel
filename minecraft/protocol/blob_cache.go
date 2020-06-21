@@ -10,7 +10,7 @@ import (
 type CacheBlob struct {
 	// Hash is the hash of the blob. The hash is computed using xxHash, and must be deterministic for the same
 	// chunk data.
-	Hash int64
+	Hash uint64
 	// Payload is the data of the blob. When sent, the client will associate the Hash of the blob with the
 	// Payload in it.
 	Payload []byte

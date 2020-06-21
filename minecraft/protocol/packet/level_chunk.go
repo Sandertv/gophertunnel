@@ -26,7 +26,7 @@ type LevelChunk struct {
 	// with the first SubChunkCount hashes being those of the sub chunks and the last one that of the biome
 	// of the chunk.
 	// If CacheEnabled is set to false, BlobHashes can be left empty.
-	BlobHashes []int64
+	BlobHashes []uint64
 	// RawPayload is a serialised string of chunk data. The data held depends on if CacheEnabled is set to
 	// true. If set to false, the payload is composed of multiple sub-chunks, each of which carry a version
 	// which indicates the way they are serialised, followed by biomes, border blocks and tile entities. If
@@ -69,7 +69,7 @@ func (pk *LevelChunk) Unmarshal(buf *bytes.Buffer) error {
 		if err := protocol.Varuint32(buf, &count); err != nil {
 			return err
 		}
-		pk.BlobHashes = make([]int64, count)
+		pk.BlobHashes = make([]uint64, count)
 		for i := uint32(0); i < count; i++ {
 			if err := binary.Read(buf, binary.LittleEndian, &pk.BlobHashes[i]); err != nil {
 				return err
