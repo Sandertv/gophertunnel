@@ -16,7 +16,8 @@ const (
 	TextTypeSystem
 	TextTypeWhisper
 	TextTypeAnnouncement
-	TextTypeJSON
+	TextTypeObject
+	TextTypeObjectWhisper
 )
 
 // Text is sent by the client to the server to send chat messages, and by the server to the client to forward
@@ -61,7 +62,7 @@ func (pk *Text) Marshal(buf *bytes.Buffer) {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
 		_ = protocol.WriteString(buf, pk.SourceName)
 		_ = protocol.WriteString(buf, pk.Message)
-	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeJSON:
+	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
 		_ = protocol.WriteString(buf, pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		_ = protocol.WriteString(buf, pk.Message)
@@ -90,7 +91,7 @@ func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
 		); err != nil {
 			return err
 		}
-	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeJSON:
+	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
 		if err := protocol.String(buf, &pk.Message); err != nil {
 			return err
 		}

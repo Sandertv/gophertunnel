@@ -63,4 +63,8 @@ type GameData struct {
 	// meaning it will send PlayerAuthInput packets instead of MovePlayer packets, which the server should
 	// verify.
 	ServerAuthoritativeMovement bool
+	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
+	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
+	// some extent been preserved, but will eventually be removed.
+	ServerAuthoritativeInventory bool
 }

@@ -17,7 +17,7 @@ type StructureTemplateDataRequest struct {
 	// Settings is a struct of settings that should be used for exporting the structure. These settings are
 	// identical to the last sent in the StructureBlockUpdate packet by the client.
 	Settings protocol.StructureSettings
-	// Byte1 ...
+	// ContainerID ...
 	Byte1 byte
 }
 

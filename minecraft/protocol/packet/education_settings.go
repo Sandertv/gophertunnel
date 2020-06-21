@@ -12,6 +12,13 @@ type EducationSettings struct {
 	// CodeBuilderDefaultURI is the default URI that the code builder is ran on. Using this, a Code Builder
 	// program can make code directly affect the server.
 	CodeBuilderDefaultURI string
+	// CodeBuilderTitle is the title of the code builder shown when connected to the CodeBuilderDefaultURI.
+	CodeBuilderTitle string
+	// CanResizeCodeBuilder specifies if clients connected to the world should be able to resize the code
+	// builder when it is opened.
+	CanResizeCodeBuilder bool
+	// OptionalOverrideURI ...
+	OptionalOverrideURI bool
 	// HasQuiz specifies if the world has a quiz connected to it.
 	HasQuiz bool
 }

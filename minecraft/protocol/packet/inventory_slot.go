@@ -17,7 +17,7 @@ type InventorySlot struct {
 	Slot uint32
 	// NewItem is the item to be put in the slot at Slot. It will overwrite any item that may currently
 	// be present in that slot.
-	NewItem protocol.ItemStack
+	NewItem protocol.ItemInstance
 }
 
 // ID ...
@@ -29,7 +29,7 @@ func (*InventorySlot) ID() uint32 {
 func (pk *InventorySlot) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint32(buf, pk.WindowID)
 	_ = protocol.WriteVaruint32(buf, pk.Slot)
-	_ = protocol.WriteItem(buf, pk.NewItem)
+	_ = protocol.WriteItemInst(buf, pk.NewItem)
 }
 
 // Unmarshal ...
@@ -37,6 +37,6 @@ func (pk *InventorySlot) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.Varuint32(buf, &pk.WindowID),
 		protocol.Varuint32(buf, &pk.Slot),
-		protocol.Item(buf, &pk.NewItem),
+		protocol.ItemInst(buf, &pk.NewItem),
 	)
 }

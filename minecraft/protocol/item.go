@@ -7,6 +7,42 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
+// ItemInstance represents a unique instance of an item stack. These instances carry a specific network ID
+// that is persistent for the stack.
+type ItemInstance struct {
+	// StackNetworkID is the network ID of the item stack. If the stack is empty, 0 is always written for this
+	// field. If not, the field should be set to 1 if the server authoritative inventories are disabled in the
+	// StartGame packet, or to a unique stack ID if it is enabled.
+	StackNetworkID int32
+	// Stack is the actual item stack of the item instance.
+	Stack ItemStack
+}
+
+// ItemInst reads an ItemInstance x from Buffer src.
+func ItemInst(src *bytes.Buffer, x *ItemInstance) error {
+	if err := chainErr(
+		Varint32(src, &x.StackNetworkID),
+		Item(src, &x.Stack),
+	); err != nil {
+		return err
+	}
+	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
+		return fmt.Errorf("stack %#v is empty but network ID %v is non-zero", x.Stack, x.StackNetworkID)
+	}
+	return nil
+}
+
+// WriteItemInst writes an ItemInstance x to Buffer dst.
+func WriteItemInst(dst *bytes.Buffer, x ItemInstance) error {
+	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
+		panic(fmt.Sprintf("stack %#v is empty but network ID %v is non-zero", x.Stack, x.StackNetworkID))
+	}
+	return chainErr(
+		WriteVarint32(dst, x.StackNetworkID),
+		WriteItem(dst, x.Stack),
+	)
+}
+
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that
 // define its type.
 type ItemStack struct {
@@ -54,38 +90,32 @@ func Item(src *bytes.Buffer, x *ItemStack) error {
 	x.MetadataValue = int16(auxValue >> 8)
 	x.Count = int16(auxValue & 0xff)
 
-	var legacyNBTLength int16
-	if err := binary.Read(src, binary.LittleEndian, &legacyNBTLength); err != nil {
+	var userDataMarker int16
+	if err := binary.Read(src, binary.LittleEndian, &userDataMarker); err != nil {
 		return wrap(err)
 	}
-	if legacyNBTLength != 0 {
-		if legacyNBTLength == -1 {
-			var nbtCount byte
-			if err := binary.Read(src, binary.LittleEndian, &nbtCount); err != nil {
-				return wrap(err)
+	if userDataMarker == -1 {
+		var userDataVersion uint8
+		if err := binary.Read(src, binary.LittleEndian, &userDataVersion); err != nil {
+			return wrap(err)
+		}
+		switch userDataVersion {
+		case 1:
+			if err := nbt.NewDecoder(src).Decode(&x.NBTData); err != nil {
+				return fmt.Errorf("%v: error decoding user data NBT: %v", callFrame(), err)
 			}
-			if nbtCount != 1 {
-				// The NBT count seems to be always 1, so we return an error if it is not, just so we know there can
-				// be more than one.
-				return fmt.Errorf("%v: expected NBT count to be 1, got %v", callFrame(), nbtCount)
-			}
-			decoder := nbt.NewDecoder(src)
-			for i := byte(0); i < nbtCount; i++ {
-				if err := decoder.Decode(&x.NBTData); err != nil {
-					return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
-				}
-			}
-		} else {
-			if legacyNBTLength < 0 {
-				return fmt.Errorf("%v: invalid NBT count %v", callFrame(), legacyNBTLength)
-			}
-			nbtData := src.Next(int(legacyNBTLength))
-			if err := nbt.UnmarshalEncoding(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
-				return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
-			}
+		default:
+			return fmt.Errorf("%v: unexpected item user data version %v", callFrame(), userDataVersion)
+		}
+	} else if userDataMarker != 0 {
+		if userDataMarker < 0 {
+			return fmt.Errorf("%v: invalid NBT length %v", callFrame(), userDataMarker)
+		}
+		nbtData := src.Next(int(userDataMarker))
+		if err := nbt.UnmarshalEncoding(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
+			return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
 		}
 	}
-
 	var count int32
 	if err := Varint32(src, &count); err != nil {
 		return wrap(err)
@@ -140,11 +170,11 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 		return wrap(err)
 	}
 	if len(x.NBTData) != 0 {
-		// Write a fixed -1, which used to be the NBT length.
+		// Write the item user data marker.
 		if err := binary.Write(dst, binary.LittleEndian, int16(-1)); err != nil {
 			return wrap(err)
 		}
-		// NBT Count, which is always one in our case.
+		// NBT version.
 		if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
 			return wrap(err)
 		}
@@ -154,7 +184,7 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 		}
 		_, _ = dst.Write(b)
 	} else {
-		// There's no NBT to write, so we just write 0 and continue with the rest.
+		// If we write 0 for the marker, we don't have to write an empty compound tag.
 		if err := binary.Write(dst, binary.LittleEndian, int16(0)); err != nil {
 			return wrap(err)
 		}

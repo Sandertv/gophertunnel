@@ -2,7 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"compress/zlib"
+	"compress/flate"
 	"crypto/aes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -11,11 +11,11 @@ import (
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
-// multiple zlib compressed packets.
+// multiple compressed packets.
 type Decoder struct {
-	buf    []byte
-	zlib   io.ReadCloser
-	reader io.Reader
+	buf          []byte
+	decompressor io.ReadCloser
+	reader       io.Reader
 
 	encrypt *encrypt
 
@@ -92,26 +92,26 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	return
 }
 
-// decompress zlib decompresses the data passed and returns it as a byte slice.
+// decompress decompresses the data passed and returns it as a byte slice.
 func (decoder *Decoder) decompress(data []byte) ([]byte, error) {
 	buf := bytes.NewBuffer(data)
 	if err := decoder.init(buf); err != nil {
 		return nil, fmt.Errorf("error decompressing data: %v", err)
 	}
-	_ = decoder.zlib.Close()
-	raw, err := ioutil.ReadAll(decoder.zlib)
+	_ = decoder.decompressor.Close()
+	raw, err := ioutil.ReadAll(decoder.decompressor)
 	if err != nil {
 		return nil, fmt.Errorf("error reading decompressed data: %v", err)
 	}
 	return raw, nil
 }
 
-// init initialises the zlib reader if it wasn't already.
+// init initialises the decompression reader if it wasn't already.
 func (decoder *Decoder) init(buf *bytes.Buffer) (err error) {
-	if decoder.zlib == nil {
-		decoder.zlib, err = zlib.NewReader(buf)
+	if decoder.decompressor == nil {
+		decoder.decompressor = flate.NewReader(buf)
 		return
 	}
 	// The reader was already initialised, so we reset it to the buffer passed.
-	return decoder.zlib.(zlib.Resetter).Reset(buf, nil)
+	return decoder.decompressor.(flate.Resetter).Reset(buf, nil)
 }

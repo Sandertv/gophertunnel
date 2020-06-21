@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
@@ -93,7 +94,12 @@ func RequestXSTSToken(liveToken *TokenPair) (*XSTSToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	c := &http.Client{}
+	c := &http.Client{Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient,
+			InsecureSkipVerify: true,
+		},
+	}}
 	defer c.CloseIdleConnections()
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.

@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -117,6 +118,8 @@ type Conn struct {
 	closeCtx          context.Context
 	close             context.CancelFunc
 	disconnectMessage atomic.Value
+
+	sendPacketViolations bool
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -439,13 +442,33 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, 
 		// the reader.
 		pk = &packet.Unknown{PacketID: header.PacketID}
 	}
+	var violationErr string
+	defer func() {
+		if violationErr != "" && conn.sendPacketViolations {
+			// The server sent an invalid packet. We reply with a PacketViolationWarning holding any
+			// potentially useful information.
+			_ = conn.WritePacket(&packet.PacketViolationWarning{
+				Type:             packet.ViolationTypeMalformed,
+				Severity:         packet.ViolationSeverityWarning,
+				PacketID:         int32(header.PacketID),
+				ViolationContext: violationErr,
+			})
+		}
+	}()
+
 	if err := pk.Unmarshal(buf); err != nil {
+		violationErr = fmt.Sprintf("error decoding packet %T from %v: %v", pk, conn.RemoteAddr(), err)
 		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
 		// we return to reading a new packet.
-		return nil, fmt.Errorf("error decoding packet %T: %v", pk, err)
+		return nil, errors.New(violationErr)
 	}
 	if buf.Len() != 0 {
-		conn.log.Printf("%v unread bytes left in packet %T%v from %v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], conn.RemoteAddr(), buf.Bytes(), data)
+		violationErr = fmt.Sprintf("%v unread bytes left in packet %T%v from %v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], conn.RemoteAddr(), buf.Bytes(), data)
+		return nil, errors.New(violationErr)
+	}
+	if violation, ok := pk.(*packet.PacketViolationWarning); ok && conn.sendPacketViolations {
+		errPacket, _ := conn.pool[uint32(violation.PacketID)]
+		return nil, fmt.Errorf("gophertunnel packet violation (type = %v for packet %T): %v (severity = %v)", violation.Type, errPacket, violation.ViolationContext, violation.Severity)
 	}
 	return pk, nil
 }
@@ -832,29 +855,30 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 func (conn *Conn) startGame() {
 	data := conn.gameData
 	_ = conn.WritePacket(&packet.StartGame{
-		Difficulty:                      data.Difficulty,
-		EntityUniqueID:                  data.EntityUniqueID,
-		EntityRuntimeID:                 data.EntityRuntimeID,
-		PlayerGameMode:                  data.PlayerGameMode,
-		PlayerPosition:                  data.PlayerPosition.Add(mgl32.Vec3{0, 1.62}), // Add the offset pos.
-		Pitch:                           data.Pitch,
-		Yaw:                             data.Yaw,
-		Dimension:                       data.Dimension,
-		WorldSpawn:                      data.WorldSpawn,
-		GameRules:                       data.GameRules,
-		Time:                            data.Time,
-		Blocks:                          data.Blocks,
-		Items:                           data.Items,
-		AchievementsDisabled:            true,
-		Generator:                       1,
-		EducationFeaturesEnabled:        true,
-		MultiPlayerGame:                 true,
-		MultiPlayerCorrelationID:        uuid.Must(uuid.NewRandom()).String(),
-		CommandsEnabled:                 true,
-		WorldName:                       data.WorldName,
-		LANBroadcastEnabled:             true,
-		ServerAuthoritativeOverMovement: data.ServerAuthoritativeMovement,
-		WorldGameMode:                   data.WorldGameMode,
+		Difficulty:                   data.Difficulty,
+		EntityUniqueID:               data.EntityUniqueID,
+		EntityRuntimeID:              data.EntityRuntimeID,
+		PlayerGameMode:               data.PlayerGameMode,
+		PlayerPosition:               data.PlayerPosition.Add(mgl32.Vec3{0, 1.62}), // Add the offset pos.
+		Pitch:                        data.Pitch,
+		Yaw:                          data.Yaw,
+		Dimension:                    data.Dimension,
+		WorldSpawn:                   data.WorldSpawn,
+		GameRules:                    data.GameRules,
+		Time:                         data.Time,
+		Blocks:                       data.Blocks,
+		Items:                        data.Items,
+		AchievementsDisabled:         true,
+		Generator:                    1,
+		EducationFeaturesEnabled:     true,
+		MultiPlayerGame:              true,
+		MultiPlayerCorrelationID:     uuid.Must(uuid.NewRandom()).String(),
+		CommandsEnabled:              true,
+		WorldName:                    data.WorldName,
+		LANBroadcastEnabled:          true,
+		ServerAuthoritativeMovement:  data.ServerAuthoritativeMovement,
+		WorldGameMode:                data.WorldGameMode,
+		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1006,22 +1030,23 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
-		Difficulty:                  pk.Difficulty,
-		WorldName:                   pk.WorldName,
-		EntityUniqueID:              pk.EntityUniqueID,
-		EntityRuntimeID:             pk.EntityRuntimeID,
-		PlayerGameMode:              pk.PlayerGameMode,
-		PlayerPosition:              pk.PlayerPosition.Sub(mgl32.Vec3{0, 1.62}), // Subtract offset position.
-		Pitch:                       pk.Pitch,
-		Yaw:                         pk.Yaw,
-		Dimension:                   pk.Dimension,
-		WorldSpawn:                  pk.WorldSpawn,
-		GameRules:                   pk.GameRules,
-		Time:                        pk.Time,
-		Blocks:                      pk.Blocks,
-		Items:                       pk.Items,
-		ServerAuthoritativeMovement: pk.ServerAuthoritativeOverMovement,
-		WorldGameMode:               pk.WorldGameMode,
+		Difficulty:                   pk.Difficulty,
+		WorldName:                    pk.WorldName,
+		EntityUniqueID:               pk.EntityUniqueID,
+		EntityRuntimeID:              pk.EntityRuntimeID,
+		PlayerGameMode:               pk.PlayerGameMode,
+		PlayerPosition:               pk.PlayerPosition.Sub(mgl32.Vec3{0, 1.62}), // Subtract offset position.
+		Pitch:                        pk.Pitch,
+		Yaw:                          pk.Yaw,
+		Dimension:                    pk.Dimension,
+		WorldSpawn:                   pk.WorldSpawn,
+		GameRules:                    pk.GameRules,
+		Time:                         pk.Time,
+		Blocks:                       pk.Blocks,
+		Items:                        pk.Items,
+		ServerAuthoritativeMovement:  pk.ServerAuthoritativeMovement,
+		WorldGameMode:                pk.WorldGameMode,
+		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
 	}
 	conn.loggedIn = true
 

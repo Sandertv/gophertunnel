@@ -126,7 +126,7 @@ const (
 	IDLevelSoundEvent
 	IDLevelEventGeneric
 	IDLecternUpdate
-	IDVideoStreamConnect
+	_ // VideoStreamConnect, removed in 1.16.
 	IDAddEntity
 	IDRemoveEntity
 	IDClientCacheStatus
@@ -145,4 +145,16 @@ const (
 	IDCompletedUsingItem
 	IDNetworkSettings
 	IDPlayerAuthInput
+	IDCreativeContent
+	IDPlayerEnchantOptions
+	IDItemStackRequest
+	IDItemStackResponse
+	IDPlayerArmourDamage
+	IDCodeBuilder
+	IDUpdatePlayerGameType
+	IDEmoteList
+	IDPositionTrackingDBServerBroadcast
+	IDPositionTrackingDBClientRequest
+	IDDebugInfo
+	IDPacketViolationWarning
 )
