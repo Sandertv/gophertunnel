@@ -338,7 +338,23 @@ type PlaceStackRequestAction struct {
 // SwapStackRequestAction is sent by the client to swap the item in its cursor with an item present in another
 // container. The two item stacks swap places.
 type SwapStackRequestAction struct {
-	transferStackRequestAction
+	// Source and Destination point to the source slot from which Count of the item stack were taken and the
+	// destination slot to which this item was moved.
+	Source, Destination StackRequestSlotInfo
+}
+
+// Marshal ...
+func (a *SwapStackRequestAction) Marshal(buf *bytes.Buffer) {
+	_ = WriteStackReqSlotInfo(buf, a.Source)
+	_ = WriteStackReqSlotInfo(buf, a.Destination)
+}
+
+// Unmarshal ...
+func (a *SwapStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
+	return chainErr(
+		StackReqSlotInfo(buf, &a.Source),
+		StackReqSlotInfo(buf, &a.Destination),
+	)
 }
 
 // DropStackRequestAction is sent by the client when it drops an item out of the inventory when it has its
