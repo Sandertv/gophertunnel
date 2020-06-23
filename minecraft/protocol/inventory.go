@@ -293,7 +293,7 @@ func (*MismatchTransactionData) Unmarshal(*bytes.Buffer) error {
 
 // LegacySetItemSlot represents a slot that was changed during an InventoryTransaction. These slots have to
 // have their values set accordingly for actions such as when dropping an item out of the hotbar, where the
-// ivnentory container and the slot that had its item dropped is passed.
+// inventory container and the slot that had its item dropped is passed.
 type LegacySetItemSlot struct {
 	ContainerID byte
 	Slots       []byte

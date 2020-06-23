@@ -443,10 +443,10 @@ func (a *CreateStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
 type LabTableCombineStackRequestAction struct{}
 
 // Marshal ...
-func (a *LabTableCombineStackRequestAction) Marshal(buf *bytes.Buffer) {}
+func (a *LabTableCombineStackRequestAction) Marshal(*bytes.Buffer) {}
 
 // Unmarshal ...
-func (a *LabTableCombineStackRequestAction) Unmarshal(buf *bytes.Buffer) error { return nil }
+func (a *LabTableCombineStackRequestAction) Unmarshal(*bytes.Buffer) error { return nil }
 
 // BeaconPaymentStackRequestAction is sent by the client when it submits an item to enable effects from a
 // beacon. These items will have been moved into the beacon item slot in advance.

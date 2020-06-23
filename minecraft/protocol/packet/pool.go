@@ -6,6 +6,7 @@ import (
 
 // Register registers a function that returns a packet for a specific ID. Packets with this ID coming in from
 // connections will resolve to the packet returned by the function passed.
+//noinspection GoUnusedExportedFunction
 func Register(id uint32, pk func() Packet) {
 	registeredPackets[id] = pk
 }
