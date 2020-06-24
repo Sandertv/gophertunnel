@@ -245,6 +245,10 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.LimitedWorldDepth)
 	_ = binary.Write(buf, binary.LittleEndian, pk.NewNether)
 	_ = binary.Write(buf, binary.LittleEndian, pk.ForceExperimentalGameplay)
+	if pk.ForceExperimentalGameplay {
+		// Thanks for this useful field Mojang.
+		_ = binary.Write(buf, binary.LittleEndian, pk.ForceExperimentalGameplay)
+	}
 	_ = protocol.WriteString(buf, pk.LevelID)
 	_ = protocol.WriteString(buf, pk.WorldName)
 	_ = protocol.WriteString(buf, pk.TemplateContentIdentity)
@@ -314,6 +318,13 @@ func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
 		binary.Read(buf, binary.LittleEndian, &pk.LimitedWorldDepth),
 		binary.Read(buf, binary.LittleEndian, &pk.NewNether),
 		binary.Read(buf, binary.LittleEndian, &pk.ForceExperimentalGameplay),
+	); err != nil {
+		return err
+	}
+	if pk.ForceExperimentalGameplay {
+		_ = binary.Read(buf, binary.LittleEndian, &pk.ForceExperimentalGameplay)
+	}
+	if err := chainErr(
 		protocol.String(buf, &pk.LevelID),
 		protocol.String(buf, &pk.WorldName),
 		protocol.String(buf, &pk.TemplateContentIdentity),
