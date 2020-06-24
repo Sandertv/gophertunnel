@@ -17,8 +17,8 @@ type EducationSettings struct {
 	// CanResizeCodeBuilder specifies if clients connected to the world should be able to resize the code
 	// builder when it is opened.
 	CanResizeCodeBuilder bool
-	// OptionalOverrideURI ...
-	OptionalOverrideURI bool
+	// OverrideURI ...
+	OverrideURI string
 	// HasQuiz specifies if the world has a quiz connected to it.
 	HasQuiz bool
 }
@@ -31,13 +31,30 @@ func (*EducationSettings) ID() uint32 {
 // Marshal ...
 func (pk *EducationSettings) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.CodeBuilderDefaultURI)
+	_ = protocol.WriteString(buf, pk.CodeBuilderTitle)
+	_ = binary.Write(buf, binary.LittleEndian, pk.CanResizeCodeBuilder)
+	_ = binary.Write(buf, binary.LittleEndian, pk.OverrideURI != "")
+	if pk.OverrideURI != "" {
+		_ = protocol.WriteString(buf, pk.OverrideURI)
+	}
 	_ = binary.Write(buf, binary.LittleEndian, pk.HasQuiz)
 }
 
 // Unmarshal ...
 func (pk *EducationSettings) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
+	var hasOverrideURI bool
+	if err := chainErr(
 		protocol.String(buf, &pk.CodeBuilderDefaultURI),
-		binary.Read(buf, binary.LittleEndian, &pk.HasQuiz),
-	)
+		protocol.String(buf, &pk.CodeBuilderTitle),
+		binary.Read(buf, binary.LittleEndian, &pk.CanResizeCodeBuilder),
+		binary.Read(buf, binary.LittleEndian, &hasOverrideURI),
+	); err != nil {
+		return err
+	}
+	if hasOverrideURI {
+		if err := protocol.String(buf, &pk.OverrideURI); err != nil {
+			return err
+		}
+	}
+	return binary.Read(buf, binary.LittleEndian, &pk.HasQuiz)
 }
