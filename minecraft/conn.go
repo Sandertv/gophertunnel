@@ -137,7 +137,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		encoder:     packet.NewEncoder(netConn),
 		decoder:     packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		packets:     make(chan []byte, 32),
+		packets:     make(chan []byte, 256),
 		writeBuf:    bytes.NewBuffer(make([]byte, 0, 1024)),
 		close:       cancel,
 		closeCtx:    closeCtx,
@@ -265,20 +265,28 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
-read:
 	if data, ok := conn.takePushedBackPacket(); ok {
 		pk, err := conn.parsePacket(data, false)
 		if err != nil {
 			conn.log.Println(err)
-			goto read
+			return conn.ReadPacket()
 		}
 		return pk, nil
 	}
-	pk, _, tryNext, err := conn.readPacket()
-	if tryNext {
-		goto read
+
+	select {
+	case data := <-conn.packets:
+		pk, err := conn.parsePacket(data, true)
+		if err != nil {
+			conn.log.Println(err)
+			return conn.ReadPacket()
+		}
+		return pk, nil
+	case <-conn.readDeadline:
+		return nil, fmt.Errorf("error reading packet: read timeout")
+	case <-conn.closeCtx.Done():
+		return nil, fmt.Errorf("error reading packet: connection closed")
 	}
-	return pk, err
 }
 
 // readPacket reads a new packet from the Conn, depending on the packet ID that is found in front of the
@@ -479,10 +487,10 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, 
 func (conn *Conn) takePushedBackPacket() ([]byte, bool) {
 	conn.pushedBackPacketsLock.Lock()
 	defer conn.pushedBackPacketsLock.Unlock()
+
 	if len(conn.pushedBackPackets) == 0 {
 		return nil, false
 	}
-
 	data := conn.pushedBackPackets[0]
 	conn.pushedBackPackets = conn.pushedBackPackets[1:]
 	return data, true
