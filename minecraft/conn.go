@@ -48,7 +48,8 @@ var exemptedPacks = []exemptedResourcePack{
 }
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
-// methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
+// methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, except for the
+// ReadPacket function. (See its documentation.)
 type Conn struct {
 	conn        net.Conn
 	log         *log.Logger
