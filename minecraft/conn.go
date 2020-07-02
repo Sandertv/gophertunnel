@@ -61,8 +61,11 @@ type Conn struct {
 
 	identityData login.IdentityData
 	clientData   login.ClientData
-	gameData     GameData
-	chunkRadius  int
+	// authenticated represents if player's login data
+	// was verified to be signed with Mojang's key.
+	authenticated bool
+	gameData      GameData
+	chunkRadius   int
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -181,6 +184,12 @@ func (conn *Conn) IdentityData() login.IdentityData {
 // that by the caller.
 func (conn *Conn) ClientData() login.ClientData {
 	return conn.clientData
+}
+
+// Authenticated returns the value representing if player's login data
+// was verified to be signed with Mojang's key.
+func (conn *Conn) Authenticated() bool {
+	return conn.authenticated
 }
 
 // GameData returns specific game data set to the connection for the player to be initialised with. If the
@@ -605,6 +614,8 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if !authenticated && conn.authEnabled {
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
+	conn.authenticated = authenticated
+
 	conn.identityData, conn.clientData, err = login.Decode(pk.ConnectionRequest)
 	if err != nil {
 		return fmt.Errorf("error decoding login request: %v", err)
