@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
@@ -421,6 +422,18 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 // SetWriteDeadline is a stub function to implement net.Conn. It has no functionality.
 func (conn *Conn) SetWriteDeadline(time.Time) error {
 	return nil
+}
+
+// Latency returns the last measured latency between both ends of the connection in milliseconds.
+// It's only supported when using raknet as network. For other network types it will return -1.
+// In raknet the latency is updated every 4 seconds. The latency returned is the time it takes to send
+// one packet from one end to the other end of the connection. It is not the round-trip time.
+func (conn *Conn) Latency() int {
+	//noinspection SpellCheckingInspection
+	if raknetConn, ok := conn.conn.(*raknet.Conn); ok {
+		return raknetConn.Latency()
+	}
+	return -1
 }
 
 // ClientCacheEnabled checks if the connection has the client blob cache enabled. If true, the server may send
