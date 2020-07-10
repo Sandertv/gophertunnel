@@ -41,6 +41,7 @@ import (
 )
 
 func main() {
+    // Connect to the server.
     conn, err := minecraft.Dialer{
         Email: "some@email.address",
         Password: "password",
@@ -48,16 +49,19 @@ func main() {
     if err != nil {
         panic(err)
     }
+    // Make the client spawn in the world.
+    if err := conn.DoSpawn(); err != nil {
+		panic(err)
+	}
     defer conn.Close()
     for {
+        // Example: Read a packet from the connection.
     	pk, err := conn.ReadPacket()
     	if err != nil {
     		break
     	}
-    	// Handle the incoming packet.
-    	_ = pk
     	
-    	// Send a packet to the server.
+    	// Example: Send a packet to the server in response to the previous packet.
     	if err := conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 32}); err != nil {
     		break
     	}
@@ -72,6 +76,7 @@ package main
 import (
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft"
+    "github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 func main() {
@@ -89,11 +94,22 @@ func main() {
 		go func() {
 			// Process the connection on another goroutine as you would with TCP connections.
 			defer conn.Close()
+
+            // Make the client connecting spawn.
+            if err := conn.StartGame(minecraft.GameData{/* World data here */}); err != nil {
+				panic(err)
+			}
+
 			for {
-				// Read a packet from the client.
+				// Example: Read a packet from the client.
 				if _, err := conn.(*minecraft.Conn).ReadPacket(); err != nil {
 					return
-				}
+				} 
+        
+                // Example: Send a packet to the client in response to the previous packet.
+                if err := conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 32}); err != nil {
+                    break
+                }
 			}
 		}()
 	}
