@@ -103,7 +103,7 @@ func main() {
 
 			for {
 				// Example: Read a packet from the client.
-				if _, err := conn.(*minecraft.Conn).ReadPacket(); err != nil {
+				if _, err := conn.ReadPacket(); err != nil {
 					return
 				}
 
