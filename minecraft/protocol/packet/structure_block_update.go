@@ -7,11 +7,17 @@ import (
 )
 
 const (
-	StructureBlockData = iota + 1
+	StructureBlockData = iota
 	StructureBlockSave
 	StructureBlockLoad
 	StructureBlockCorner
+	_
 	StructureBlockExport
+)
+
+const (
+	StructureRedstoneSaveModeMemory = iota
+	StructureRedstoneSaveModeDisk
 )
 
 // StructureBlockUpdate is sent by the client when it updates a structure block using the in-game UI. The
@@ -24,26 +30,28 @@ type StructureBlockUpdate struct {
 	// StructureName is the name of the structure that was set in the structure block's UI. This is the name
 	// used to export the structure to a file.
 	StructureName string
-	// CustomDataTagName is the name of a function to run, usually used during natural generation. A
-	// description can be found here: https://minecraft.gamepedia.com/Structure_Block#Data.
-	CustomDataTagName string
+	// DataField is the name of a function to run, usually used during natural generation. A description can
+	// be found here: https://minecraft.gamepedia.com/Structure_Block#Data.
+	DataField string
 	// IncludePlayers specifies if the 'Include Players' toggle has been enabled, meaning players are also
 	// exported by the structure block.
 	IncludePlayers bool
-	// DetectStructureSizeAndPosition specifies if the size and position of the selection of the structure
-	// block should be detected using another structure block. Currently, this field is inaccessible in the
-	// game. It is likely to be added in v1.13.
-	DetectStructureSizeAndPosition bool
-	// StructureBlockType is the type of the structure block updated. In Bedrock Edition v1.12, this will
-	// always be '5': The 3D Export structure block. According to the Minecraft wiki, v1.13 adds other types
-	// of structure blocks to the game, so expect changes once that happens.
-	// A list of structure block types that will be used can be found in the constants above.
+	// ShowBoundingBox specifies if the structure block should have its bounds outlined. A thin line will
+	// encapsulate the bounds of the structure if set to true.
+	ShowBoundingBox bool
+	// StructureBlockType is the type of the structure block updated. A list of structure block types that
+	// will be used can be found in the constants above.
 	StructureBlockType int32
 	// Settings is a struct of settings that should be used for exporting the structure. These settings are
 	// identical to the last sent in the StructureBlockUpdate packet by the client.
 	Settings protocol.StructureSettings
-	// Bool1 ...
-	Bool1 bool
+	// RedstoneSaveMode is the mode that should be used to save the structure when used with redstone. In
+	// Java Edition, this is always stored in memory, but in Bedrock Edition it can be stored either to disk
+	// or memory. See the constants above for the options.
+	RedstoneSaveMode int32
+	// ShouldTrigger specifies if the structure block should be triggered immediately after this packet
+	// reaches the server.
+	ShouldTrigger bool
 }
 
 // ID ...
@@ -55,12 +63,13 @@ func (*StructureBlockUpdate) ID() uint32 {
 func (pk *StructureBlockUpdate) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteUBlockPosition(buf, pk.Position)
 	_ = protocol.WriteString(buf, pk.StructureName)
-	_ = protocol.WriteString(buf, pk.CustomDataTagName)
+	_ = protocol.WriteString(buf, pk.DataField)
 	_ = binary.Write(buf, binary.LittleEndian, pk.IncludePlayers)
-	_ = binary.Write(buf, binary.LittleEndian, pk.DetectStructureSizeAndPosition)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ShowBoundingBox)
 	_ = protocol.WriteVarint32(buf, pk.StructureBlockType)
 	_ = protocol.WriteStructSettings(buf, pk.Settings)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Bool1)
+	_ = protocol.WriteVarint32(buf, pk.RedstoneSaveMode)
+	_ = binary.Write(buf, binary.LittleEndian, pk.ShouldTrigger)
 }
 
 // Unmarshal ...
@@ -68,11 +77,12 @@ func (pk *StructureBlockUpdate) Unmarshal(buf *bytes.Buffer) error {
 	return chainErr(
 		protocol.UBlockPosition(buf, &pk.Position),
 		protocol.String(buf, &pk.StructureName),
-		protocol.String(buf, &pk.CustomDataTagName),
+		protocol.String(buf, &pk.DataField),
 		binary.Read(buf, binary.LittleEndian, &pk.IncludePlayers),
-		binary.Read(buf, binary.LittleEndian, &pk.DetectStructureSizeAndPosition),
+		binary.Read(buf, binary.LittleEndian, &pk.ShowBoundingBox),
 		protocol.Varint32(buf, &pk.StructureBlockType),
 		protocol.StructSettings(buf, &pk.Settings),
-		binary.Read(buf, binary.LittleEndian, &pk.Bool1),
+		protocol.Varint32(buf, &pk.RedstoneSaveMode),
+		binary.Read(buf, binary.LittleEndian, &pk.ShouldTrigger),
 	)
 }
