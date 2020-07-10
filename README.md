@@ -41,31 +41,31 @@ import (
 )
 
 func main() {
-    // Connect to the server.
-    conn, err := minecraft.Dialer{
-        Email: "some@email.address",
-        Password: "password",
-    }.Dial("raknet", "mco.mineplex.com:19132")
-    if err != nil {
-        panic(err)
-    }
-    // Make the client spawn in the world.
-    if err := conn.DoSpawn(); err != nil {
+	// Connect to the server.
+	conn, err := minecraft.Dialer{
+		Email:    "some@email.address",
+		Password: "password",
+	}.Dial("raknet", "mco.mineplex.com:19132")
+	if err != nil {
 		panic(err)
 	}
-    defer conn.Close()
-    for {
-        // Example: Read a packet from the connection.
-    	pk, err := conn.ReadPacket()
-    	if err != nil {
-    		break
-    	}
-    	
-    	// Example: Send a packet to the server in response to the previous packet.
-    	if err := conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 32}); err != nil {
-    		break
-    	}
-    }
+	// Make the client spawn in the world.
+	if err := conn.DoSpawn(); err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+	for {
+		// Example: Read a packet from the connection.
+		pk, err := conn.ReadPacket()
+		if err != nil {
+			break
+		}
+
+		// Example: Send a packet to the server in response to the previous packet.
+		if err := conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 32}); err != nil {
+			break
+		}
+	}
 }
 ```
 
@@ -74,9 +74,8 @@ Creating a Minecraft listener that can accept incoming clients and adapts the MO
 package main
 
 import (
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft"
-    "github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 func main() {
@@ -87,16 +86,18 @@ func main() {
 	_ = listener.HijackPong("mco.mineplex.com:19132")
 
 	for {
-		conn, err := listener.Accept()
+		c, err := listener.Accept()
 		if err != nil {
 			return
 		}
+		conn := c.(*minecraft.Conn)
+
 		go func() {
 			// Process the connection on another goroutine as you would with TCP connections.
 			defer conn.Close()
 
-            // Make the client connecting spawn.
-            if err := conn.StartGame(minecraft.GameData{/* World data here */}); err != nil {
+			// Make the client connecting spawn.
+			if err := conn.StartGame(minecraft.GameData{ /* World data here */ }); err != nil {
 				panic(err)
 			}
 
@@ -104,12 +105,12 @@ func main() {
 				// Example: Read a packet from the client.
 				if _, err := conn.(*minecraft.Conn).ReadPacket(); err != nil {
 					return
-				} 
-        
-                // Example: Send a packet to the client in response to the previous packet.
-                if err := conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 32}); err != nil {
-                    break
-                }
+				}
+
+				// Example: Send a packet to the client in response to the previous packet.
+				if err := conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: 32}); err != nil {
+					break
+				}
 			}
 		}()
 	}
