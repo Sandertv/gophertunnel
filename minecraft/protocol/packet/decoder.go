@@ -2,9 +2,9 @@ package packet
 
 import (
 	"bytes"
-	"compress/flate"
 	"crypto/aes"
 	"fmt"
+	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 	"io/ioutil"

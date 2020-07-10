@@ -2,9 +2,9 @@ package packet
 
 import (
 	"bytes"
-	"compress/flate"
 	"crypto/aes"
 	"fmt"
+	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
@@ -12,11 +12,9 @@ import (
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
 type Encoder struct {
-	compressor    *flate.Writer
-	noCompression *flate.Writer
-	writer        io.Writer
-	buf           *bytes.Buffer
-	compressed    *bytes.Buffer
+	compressor, mediumCompressor, noCompression *flate.Writer
+	writer                                      io.Writer
+	buf, compressed                             *bytes.Buffer
 
 	encrypt *encrypt
 }
@@ -26,12 +24,14 @@ type Encoder struct {
 func NewEncoder(writer io.Writer) *Encoder {
 	w, _ := flate.NewWriter(writer, flate.NoCompression)
 	w2, _ := flate.NewWriter(writer, flate.DefaultCompression)
+	w3, _ := flate.NewWriter(writer, 3)
 	return &Encoder{
-		compressor:    w2,
-		writer:        writer,
-		buf:           bytes.NewBuffer(make([]byte, 0, 1024*1024*2)),
-		compressed:    bytes.NewBuffer(make([]byte, 0, 1024*1024*3)),
-		noCompression: w,
+		noCompression:    w,
+		compressor:       w2,
+		mediumCompressor: w3,
+		writer:           writer,
+		buf:              bytes.NewBuffer(make([]byte, 0, 1024*1024*2)),
+		compressed:       bytes.NewBuffer(make([]byte, 0, 1024*1024*3)),
 	}
 }
 
@@ -67,6 +67,8 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	var w *flate.Writer
 	if encoder.compressed.Len() <= 512 {
 		w = encoder.noCompression
+	} else if encoder.compressed.Len() <= 8192 {
+		w = encoder.mediumCompressor
 	} else {
 		w = encoder.compressor
 	}
