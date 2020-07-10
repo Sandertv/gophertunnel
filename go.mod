@@ -7,6 +7,6 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/klauspost/compress v1.10.10
 	github.com/pelletier/go-toml v1.6.0
-	github.com/sandertv/go-raknet v1.7.5
+	github.com/sandertv/go-raknet v1.7.6
 	golang.org/x/text v0.3.2
 )
