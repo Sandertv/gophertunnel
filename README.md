@@ -83,7 +83,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	_ = listener.HijackPong("mco.mineplex.com:19132")
 
 	for {
 		c, err := listener.Accept()
