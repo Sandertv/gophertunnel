@@ -1128,6 +1128,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		}
 		// The next packet we expect is the ResourcePacksInfo packet.
 		conn.expect(packet.IDResourcePacksInfo)
+		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
 		return fmt.Errorf("client outdated")
