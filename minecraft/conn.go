@@ -372,7 +372,7 @@ func (conn *Conn) Flush() error {
 			return fmt.Errorf("error encoding packet batch: %v", err)
 		}
 		// Reset the send slice so that we don't accidentally send the same packets.
-		conn.bufferedSend = nil
+		conn.bufferedSend = conn.bufferedSend[:0]
 	}
 	return nil
 }

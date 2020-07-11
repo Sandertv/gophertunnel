@@ -24,7 +24,7 @@ type Encoder struct {
 func NewEncoder(writer io.Writer) *Encoder {
 	w, _ := flate.NewWriter(writer, flate.NoCompression)
 	w2, _ := flate.NewWriter(writer, flate.DefaultCompression)
-	w3, _ := flate.NewWriter(writer, 3)
+	w3, _ := flate.NewWriter(writer, 4)
 	return &Encoder{
 		noCompression:    w,
 		compressor:       w2,
