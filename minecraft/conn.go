@@ -1155,7 +1155,6 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	default:
 		return fmt.Errorf("unknown play status in PlayStatus packet %v", pk.Status)
 	}
-	return nil
 }
 
 // enableEncryption enables encryption on the server side over the connection. It sends an unencrypted
