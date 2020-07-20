@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
@@ -421,6 +422,15 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 // SetWriteDeadline is a stub function to implement net.Conn. It has no functionality.
 func (conn *Conn) SetWriteDeadline(time.Time) error {
 	return nil
+}
+
+// Latency returns a rolling average of latency between the sending and the receiving end of the connection.
+// The latency returned is updated continuously and is half the round trip time (RTT).
+func (conn *Conn) Latency() time.Duration {
+	if c, ok := conn.conn.(*raknet.Conn); ok {
+		return c.Latency()
+	}
+	panic(fmt.Sprintf("unexpected connection type %T", conn.conn))
 }
 
 // ClientCacheEnabled checks if the connection has the client blob cache enabled. If true, the server may send
