@@ -180,7 +180,7 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 		}
 		b, err := nbt.Marshal(x.NBTData)
 		if err != nil {
-			return fmt.Errorf("%v: error writing NBT: %v", callFrame(), err)
+			panic(fmt.Errorf("error writing item NBT of %#v: %w", x, err))
 		}
 		_, _ = dst.Write(b)
 	} else {
