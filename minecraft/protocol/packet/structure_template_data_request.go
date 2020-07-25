@@ -6,8 +6,13 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// StructureTemplateDataRequest is sent by the client to request data of a structure. It is currently unused:
-// The client never sends this packet.
+const (
+	StructureTemplateRequestExportFromSave = iota + 1
+	StructureTemplateRequestExportFromLoad
+	StructureTemplateRequestQuerySavedStructure
+)
+
+// StructureTemplateDataRequest is sent by the client to request data of a structure.
 type StructureTemplateDataRequest struct {
 	// StructureName is the name of the structure that was set in the structure block's UI. This is the name
 	// used to export the structure to a file.
@@ -17,8 +22,9 @@ type StructureTemplateDataRequest struct {
 	// Settings is a struct of settings that should be used for exporting the structure. These settings are
 	// identical to the last sent in the StructureBlockUpdate packet by the client.
 	Settings protocol.StructureSettings
-	// ContainerID ...
-	Byte1 byte
+	// RequestType specifies the type of template data request that the player sent. It is one of the
+	// constants found above.
+	RequestType byte
 }
 
 // ID ...
@@ -31,7 +37,7 @@ func (pk *StructureTemplateDataRequest) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteString(buf, pk.StructureName)
 	_ = protocol.WriteUBlockPosition(buf, pk.Position)
 	_ = protocol.WriteStructSettings(buf, pk.Settings)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Byte1)
+	_ = binary.Write(buf, binary.LittleEndian, pk.RequestType)
 }
 
 // Unmarshal ...
@@ -40,6 +46,6 @@ func (pk *StructureTemplateDataRequest) Unmarshal(buf *bytes.Buffer) error {
 		protocol.String(buf, &pk.StructureName),
 		protocol.UBlockPosition(buf, &pk.Position),
 		protocol.StructSettings(buf, &pk.Settings),
-		binary.Read(buf, binary.LittleEndian, &pk.Byte1),
+		binary.Read(buf, binary.LittleEndian, &pk.RequestType),
 	)
 }
