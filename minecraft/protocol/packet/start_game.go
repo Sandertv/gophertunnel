@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -256,7 +257,9 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.ServerAuthoritativeMovement)
 	_ = binary.Write(buf, binary.LittleEndian, pk.Time)
 	_ = protocol.WriteVarint32(buf, pk.EnchantmentSeed)
-	_ = nbt.NewEncoder(buf).Encode(pk.Blocks)
+	if err := nbt.NewEncoder(buf).Encode(pk.Blocks); err != nil {
+		panic(fmt.Errorf("cannot encode block palette: %w", err))
+	}
 	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Items)))
 	for _, item := range pk.Items {
 		_ = protocol.WriteString(buf, item.Name)

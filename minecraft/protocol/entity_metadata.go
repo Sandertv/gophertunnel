@@ -121,6 +121,9 @@ func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
 		case map[string]interface{}:
 			typeErr = WriteVaruint32(dst, EntityDataCompoundTag)
 			valueErr = nbt.NewEncoder(dst).Encode(v)
+			if valueErr != nil {
+				panic(fmt.Errorf("cannot encode entity metadata: %w", valueErr))
+			}
 		case BlockPos:
 			typeErr = WriteVaruint32(dst, EntityDataBlockPos)
 			valueErr = WriteBlockPosition(dst, v)
