@@ -5,7 +5,7 @@ package resource
 
 // Manifest contains all the basic information about the pack that Minecraft needs to identify it.
 type Manifest struct {
-	// FormatVersion defines the current version of the manifest. This is currently always 1.
+	// FormatVersion defines the current version of the manifest. This is currently always 2.
 	FormatVersion int `json:"format_version"`
 	// Header is the header of a resource pack. It contains information that applies to the entire resource
 	// pack, such as the name of the resource pack.
