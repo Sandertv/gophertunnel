@@ -244,6 +244,21 @@ func createTempArchive(path string) (*os.File, error) {
 		if err != nil {
 			return fmt.Errorf("error finding relative path: %v", err)
 		}
+		// Make sure to replace backslashes with forward slashes as Go zip only allows that.
+		relPath = strings.Replace(relPath, `\`, "/", -1)
+		// Always ignore '.' as it is not a real file/folder.
+		if relPath == "." {
+			return nil
+		}
+		s, err := os.Stat(filePath)
+		if err != nil {
+			return fmt.Errorf("error getting stat of file path %v: %w", filePath, err)
+		}
+		if s.IsDir() {
+			// This is a directory: Go zip requires you add forward slashes at the end to create directories.
+			_, _ = writer.Create(relPath + "/")
+			return nil
+		}
 		f, err := writer.Create(relPath)
 		if err != nil {
 			return fmt.Errorf("error creating new zip file: %v", err)
