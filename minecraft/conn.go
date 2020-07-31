@@ -853,7 +853,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			return err
 		}
 	case packet.PackResponseAllPacksDownloaded:
-		pk := &packet.ResourcePackStack{TexturePackRequired: conn.texturePacksRequired}
+		pk := &packet.ResourcePackStack{BaseGameVersion: protocol.CurrentVersion}
 		for _, pack := range conn.resourcePacks {
 			resourcePack := protocol.StackResourcePack{UUID: pack.UUID(), Version: pack.Version()}
 			// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
