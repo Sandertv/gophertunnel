@@ -6,6 +6,7 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
@@ -219,19 +220,25 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 // passed, which is sent by default, if no other client data is set.
 func defaultClientData(address string) login.ClientData {
 	rand2.Seed(time.Now().Unix())
+	p, _ := json.Marshal(map[string]interface{}{
+		"geometry": map[string]interface{}{
+			"default": "Standard_Custom",
+		},
+	})
 	return login.ClientData{
-		ClientRandomID:  rand2.Int63(),
-		DeviceOS:        protocol.DeviceWin10,
-		GameVersion:     protocol.CurrentVersion,
-		DeviceID:        uuid.Must(uuid.NewRandom()).String(),
-		LanguageCode:    "en_GB",
-		ThirdPartyName:  "Steve",
-		SelfSignedID:    uuid.Must(uuid.NewRandom()).String(),
-		ServerAddress:   address,
-		SkinID:          uuid.Must(uuid.NewRandom()).String(),
-		SkinData:        base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0, 0, 0, 255}, 32*64)),
-		SkinImageWidth:  64,
-		SkinImageHeight: 32,
+		ClientRandomID:    rand2.Int63(),
+		DeviceOS:          protocol.DeviceWin10,
+		GameVersion:       protocol.CurrentVersion,
+		DeviceID:          uuid.Must(uuid.NewRandom()).String(),
+		LanguageCode:      "en_GB",
+		ThirdPartyName:    "Steve",
+		SelfSignedID:      uuid.Must(uuid.NewRandom()).String(),
+		ServerAddress:     address,
+		SkinID:            uuid.Must(uuid.NewRandom()).String(),
+		SkinData:          base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0, 0, 0, 255}, 32*64)),
+		SkinResourcePatch: base64.StdEncoding.EncodeToString(p),
+		SkinImageWidth:    64,
+		SkinImageHeight:   32,
 	}
 }
 
