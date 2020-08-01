@@ -8,13 +8,14 @@ import (
 
 //noinspection SpellCheckingInspection
 const (
-	ResourcePackTypeResource = iota + 1
-	ResourcePackTypeBehaviour
-	ResourcePackTypeWorldTemplate
-	ResourcePackTypeAddon
-	ResourcePackTypeSkins
+	ResourcePackTypeAddon = iota + 1
 	ResourcePackTypeCached
 	ResourcePackTypeCopyProtected
+	ResourcePackTypeBehaviour
+	ResourcePackTypePersonaPiece
+	ResourcePackTypeResources
+	ResourcePackTypeSkins
+	ResourcePackTypeWorldTemplate
 )
 
 // ResourcePackDataInfo is sent by the server to the client to inform the client about the data contained in
