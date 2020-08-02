@@ -19,12 +19,12 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"go.uber.org/atomic"
 	"io"
 	"log"
 	"net"
 	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -99,7 +99,7 @@ type Conn struct {
 	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
 	// the world: It is completing a sequence that will result in the spawning.
 	spawn           chan bool
-	waitingForSpawn atomic.Value
+	waitingForSpawn atomic.Bool
 
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
@@ -122,7 +122,7 @@ type Conn struct {
 
 	closeCtx          context.Context
 	close             context.CancelFunc
-	disconnectMessage atomic.Value
+	disconnectMessage atomic.String
 
 	sendPacketViolations bool
 }
@@ -152,8 +152,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		log:         log,
 		chunkRadius: 16,
 	}
-	conn.disconnectMessage.Store("")
-	conn.waitingForSpawn.Store(false)
 	conn.expectedIDs.Store([]uint32{packet.IDLogin})
 	_, _ = rand.Read(conn.salt)
 
@@ -238,7 +236,7 @@ func (conn *Conn) DoSpawn() error {
 	case <-timeout:
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.closeCtx.Done():
-		if conn.disconnectMessage.Load().(string) != "" {
+		if conn.disconnectMessage.Load() != "" {
 			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
 		}
 		return fmt.Errorf("connection closed")
@@ -525,7 +523,7 @@ func (conn *Conn) handleIncoming(data []byte) error {
 		return nil
 	}
 
-	if !conn.loggedIn || conn.waitingForSpawn.Load().(bool) {
+	if !conn.loggedIn || conn.waitingForSpawn.Load() {
 		pk, rawPk, tryNext, err := conn.readPacket()
 		if tryNext {
 			// Some non-critical error occurred that was already logged to the logger. We simply stop handling

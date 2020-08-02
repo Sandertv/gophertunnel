@@ -157,7 +157,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		return conn, nil
 	case <-conn.closeCtx.Done():
 		// The connection was closed before we even were fully 'connected', so we return an error.
-		if conn.disconnectMessage.Load().(string) != "" {
+		if conn.disconnectMessage.Load() != "" {
 			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
 		}
 		return nil, fmt.Errorf("connection timeout")

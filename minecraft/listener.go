@@ -6,12 +6,12 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"go.uber.org/atomic"
 	"io/ioutil"
 	"log"
 	"net"
 	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -42,6 +42,8 @@ type Listener struct {
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
+	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
+	// Listener.AddResourcePack() to add a resource pack after having called Listener.Listen().
 	ResourcePacks []*resource.Pack
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
@@ -60,11 +62,11 @@ type Listener struct {
 
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
-	playerCount *int32
+	playerCount atomic.Int32
 
 	listener net.Listener
 
-	hijackingPong atomic.Value
+	hijackingPong atomic.Bool
 	incoming      chan *Conn
 	close         chan struct{}
 
@@ -95,8 +97,6 @@ func (listener *Listener) Listen(network, address string) error {
 	if err != nil {
 		return err
 	}
-	var count int32
-
 	if listener.ErrorLog == nil {
 		listener.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
@@ -106,8 +106,6 @@ func (listener *Listener) Listen(network, address string) error {
 	listener.listener = netListener
 	listener.incoming = make(chan *Conn)
 	listener.close = make(chan struct{})
-	listener.hijackingPong.Store(false)
-	listener.playerCount = &count
 
 	// Actually start listening.
 	go listener.listen()
@@ -172,6 +170,14 @@ func (listener *Listener) StatusProvider(p ServerStatusProvider) {
 	}()
 }
 
+// AddResourcePack adds the resource.Pack passed to the list of resource packs that a player can download
+// when it joins the server. AddResourcePack ensures the pack is added in a thread-safe way.
+func (listener *Listener) AddResourcePack(p *resource.Pack) {
+	listener.mu.Lock()
+	listener.ResourcePacks = append(listener.ResourcePacks, p)
+	listener.mu.Unlock()
+}
+
 // HijackPong hijacks the pong response from a server at an address passed. The listener passed will
 // continuously update its pong data by hijacking the pong data of the server at the address.
 // The hijack will last until the listener is shut down.
@@ -196,7 +202,7 @@ func (listener *Listener) Close() error {
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
-	if listener.hijackingPong.Load().(bool) {
+	if listener.hijackingPong.Load() {
 		return
 	}
 
@@ -211,7 +217,7 @@ func (listener *Listener) updatePongData() {
 	if m == nil {
 		maxCount = int32(listener.MaximumPlayers)
 		serverName = listener.ServerName
-		current = atomic.LoadInt32(listener.playerCount)
+		current = listener.playerCount.Load()
 		if maxCount == 0 {
 			// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
 			// plus 1, so that new players can always join.
@@ -258,6 +264,7 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
+	listener.mu.Lock()
 	conn := newConn(netConn, nil, listener.ErrorLog)
 	conn.packetFunc = listener.PacketFunc
 	conn.texturePacksRequired = listener.TexturePacksRequired
@@ -265,14 +272,15 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.gameData.WorldName = listener.ServerName
 	conn.authEnabled = !listener.AuthenticationDisabled
 	conn.sendPacketViolations = listener.SendPacketViolations
+	listener.mu.Unlock()
 
-	if atomic.LoadInt32(listener.playerCount) == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
+	if listener.playerCount.Load() == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 		_ = conn.Close()
 		return
 	}
-	atomic.AddInt32(listener.playerCount, 1)
+	listener.playerCount.Add(1)
 	listener.updatePongData()
 
 	go listener.handleConn(conn)
@@ -283,7 +291,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 func (listener *Listener) handleConn(conn *Conn) {
 	defer func() {
 		_ = conn.Close()
-		atomic.AddInt32(listener.playerCount, -1)
+		listener.playerCount.Add(-1)
 		listener.updatePongData()
 	}()
 	for {

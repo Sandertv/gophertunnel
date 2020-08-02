@@ -8,5 +8,6 @@ require (
 	github.com/klauspost/compress v1.10.10
 	github.com/pelletier/go-toml v1.6.0
 	github.com/sandertv/go-raknet v1.7.6
+	go.uber.org/atomic v1.6.0
 	golang.org/x/text v0.3.2
 )
