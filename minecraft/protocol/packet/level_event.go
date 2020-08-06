@@ -54,7 +54,7 @@ const (
 	EventParticleEyeDespawn          = 2003
 	EventParticleSpawn               = 2004
 	EventParticleCropGrowth          = 2005
-	EventSoundGuardianCurse          = 2006
+	EventParticleSoundGuardianCurse  = 2006
 	EventParticleDeathSmoke          = 2007
 	EventParticleBlockForceField     = 2008
 	EventParticleProjectileHit       = 2009
