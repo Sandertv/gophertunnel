@@ -7,20 +7,22 @@ import (
 )
 
 const (
-	EventSoundClick     = 1000
-	EventSoundClickFail = 1001
-	EventSoundShoot     = 1002
-	EventSoundDoor      = 1003
-	EventSoundFizz      = 1004
-	EventSoundIgnite    = 1005
-
-	EventSoundGhast      = 1007
-	EventSoundGhastShoot = 1008
-	EventSoundBlazeShoot = 1009
-	EventSoundDoorBump   = 1010
+	EventSoundClick         = 1000
+	EventSoundClickFail     = 1001
+	EventSoundShoot         = 1002
+	EventSoundDoor          = 1003
+	EventSoundFizz          = 1004
+	EventSoundIgnite        = 1005
+	EventSoundPlayRecording = 1006
+	EventSoundGhast         = 1007
+	EventSoundGhastShoot    = 1008
+	EventSoundBlazeShoot    = 1009
+	EventSoundDoorBump      = 1010
 
 	EventSoundDoorCrash = 1012
 
+	EventSoundZombieInfected   = 1016
+	EventSoundZombieConverted  = 1017
 	EventSoundEndermanTeleport = 1018
 
 	EventSoundAnvilBreak = 1020
@@ -46,26 +48,41 @@ const (
 	EventSoundArmourStandFall  = 1062
 	EventSoundArmourStandPlace = 1063
 
-	EventParticleShoot      = 2000
-	EventParticleDestroy    = 2001
-	EventParticleSplash     = 2002
-	EventParticleEyeDespawn = 2003
-	EventParticleSpawn      = 2004
+	EventParticleShoot               = 2000
+	EventParticleDestroy             = 2001
+	EventParticleSplash              = 2002
+	EventParticleEyeDespawn          = 2003
+	EventParticleSpawn               = 2004
+	EventParticleCropGrowth          = 2005
+	EventSoundGuardianCurse          = 2006
+	EventParticleDeathSmoke          = 2007
+	EventParticleBlockForceField     = 2008
+	EventParticleProjectileHit       = 2009
+	EventParticleDragonEggTeleport   = 2010
+	EventParticleCropEaten           = 2011
+	EventParticleCritical            = 2012
+	EventParticleEndermanTeleport    = 2013
+	EventParticlePunchBlock          = 2014
+	EventParticleBubble              = 2015
+	EventParticleEvaporate           = 2016
+	EventParticleDestroyArmorStand   = 2017
+	EventParticleBreakingEgg         = 2018
+	EventParticleDestroyEgg          = 2019
+	EventParticleEvaporateWater      = 2020
+	EventParticleDestroyBlockNoSound = 2021
+	EventParticleKnockbackRoar       = 2022
+	EventParticleTeleportTrail       = 2023
+	EventParticlePointCloud          = 2024
+	EventParticleExplosion           = 2025
+	EventParticleBlockExplosion      = 2026
 
-	EventGuardianCurse = 2006
-
-	EventParticleBlockForceField   = 2008
-	EventParticleProjectileHit     = 2009
-	EventParticleDragonEggTeleport = 2010
-
-	EventParticleEndermanTeleport = 2013
-	EventParticlePunchBlock       = 2014
-
-	EventStartRain    = 3001
-	EventStartThunder = 3002
-	EventStopRain     = 3003
-	EventStopThunder  = 3004
-	EventPauseGame    = 3005
+	EventStartRain           = 3001
+	EventStartThunder        = 3002
+	EventStopRain            = 3003
+	EventStopThunder         = 3004
+	EventPauseGame           = 3005
+	EventSimulationTimeStep  = 3006
+	EventSimulationTimeScale = 3007
 
 	EventRedstoneTrigger     = 3500
 	EventCauldronExplode     = 3501
@@ -77,13 +94,19 @@ const (
 	EventCauldronTakeWater   = 3507
 	EventCauldronAddDye      = 3508
 	EventCauldronCleanBanner = 3509
+	EventCauldronFlush       = 3510
+	EventAgentSpawnEffect    = 3511
+	EventCauldronFillLava    = 3512
+	EventCauldronTakeLava    = 3513
 
-	EventBlockStartBreak = 3600
-	EventBlockStopBreak  = 3601
+	EventBlockStartBreak     = 3600
+	EventBlockStopBreak      = 3601
+	EventUpdateBlockCracking = 3602
 
 	EventSetData = 4000
 
 	EventPlayersSleeping = 9800
+	EventJumpPrevented   = 9810
 
 	EventAddParticleMask = 0x4000
 )
