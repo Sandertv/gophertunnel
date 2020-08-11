@@ -121,13 +121,14 @@ Gophertunnel supports only one version at a time. Generally, a new minor version
 supports a new Minecraft version that was not previously supported. A list of the recommended gophertunnel
 versions for past Minecraft versions is listed below.
 
-| Version | Tag     |
-|---------|---------|
-| 1.16.0  | Latest  |
-| 1.14.60 | v1.6.5  |
-| 1.14.0  | v1.3.20 |
-| 1.13.0  | v1.3.5  |
-| 1.12.0  | v1.2.11 |
+| Version | Tag      |
+|---------|----------|
+| 1.16.20 | Latest   |
+| 1.16.0  | v1.7.11  |
+| 1.14.60 | v1.6.5   |
+| 1.14.0  | v1.3.20  |
+| 1.13.0  | v1.3.5   |
+| 1.12.0  | v1.2.11  |
 
 ## Proxy
 A MITM proxy program is implemented in the main.go file. It uses the gophertunnel libraries to create a proxy
