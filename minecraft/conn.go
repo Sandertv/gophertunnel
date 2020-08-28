@@ -132,17 +132,17 @@ type Conn struct {
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	closeCtx, cancel := context.WithCancel(context.Background())
 	conn := &Conn{
-		conn:        netConn,
 		encoder:     packet.NewEncoder(netConn),
 		decoder:     packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		packets:     make(chan []byte, 256),
 		writeBuf:    bytes.NewBuffer(make([]byte, 0, 1024)),
+		salt:        make([]byte, 16),
+		packets:     make(chan []byte, 256),
+		spawn:       make(chan bool),
+		conn:        netConn,
 		close:       cancel,
 		closeCtx:    closeCtx,
-		spawn:       make(chan bool),
 		privateKey:  key,
-		salt:        make([]byte, 16),
 		log:         log,
 		chunkRadius: 16,
 	}
