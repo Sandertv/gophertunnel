@@ -37,11 +37,9 @@ func (pk *NPCRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *NPCRequest) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.RequestType),
-		protocol.String(buf, &pk.CommandString),
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-	)
+func (pk *NPCRequest) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Uint8(&pk.RequestType)
+	r.String(&pk.CommandString)
+	r.Uint8(&pk.ActionType)
 }

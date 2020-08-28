@@ -21,10 +21,8 @@ func WriteCreativeEntry(dst *bytes.Buffer, x CreativeItem) error {
 	)
 }
 
-// CreativeEntry reads a CreativeItem x from the Buffer src.
-func CreativeEntry(src *bytes.Buffer, x *CreativeItem) error {
-	return chainErr(
-		Varuint32(src, &x.CreativeItemNetworkID),
-		Item(src, &x.Item),
-	)
+// CreativeEntry reads a CreativeItem x from Reader r.
+func CreativeEntry(r *Reader, x *CreativeItem) {
+	r.Varuint32(&x.CreativeItemNetworkID)
+	Item(r, &x.Item)
 }

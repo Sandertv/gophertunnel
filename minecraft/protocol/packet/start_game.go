@@ -270,89 +270,74 @@ func (pk *StartGame) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StartGame) Unmarshal(buf *bytes.Buffer) error {
-	if pk.GameRules == nil {
-		pk.GameRules = make(map[string]interface{})
-	}
+func (pk *StartGame) Unmarshal(r *protocol.Reader) {
+	pk.GameRules = make(map[string]interface{})
 	var itemCount uint32
-	if err := chainErr(
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Varint32(buf, &pk.PlayerGameMode),
-		protocol.Vec3(buf, &pk.PlayerPosition),
-		protocol.Float32(buf, &pk.Pitch),
-		protocol.Float32(buf, &pk.Yaw),
-		protocol.Varint32(buf, &pk.WorldSeed),
-		binary.Read(buf, binary.LittleEndian, &pk.SpawnBiomeType),
-		protocol.String(buf, &pk.UserDefinedBiomeName),
-		protocol.Varint32(buf, &pk.Dimension),
-		protocol.Varint32(buf, &pk.Generator),
-		protocol.Varint32(buf, &pk.WorldGameMode),
-		protocol.Varint32(buf, &pk.Difficulty),
-		protocol.UBlockPosition(buf, &pk.WorldSpawn),
-		binary.Read(buf, binary.LittleEndian, &pk.AchievementsDisabled),
-		protocol.Varint32(buf, &pk.DayCycleLockTime),
-		protocol.Varint32(buf, &pk.EducationEditionOffer),
-		binary.Read(buf, binary.LittleEndian, &pk.EducationFeaturesEnabled),
-		protocol.String(buf, &pk.EducationProductID),
-		protocol.Float32(buf, &pk.RainLevel),
-		protocol.Float32(buf, &pk.LightningLevel),
-		binary.Read(buf, binary.LittleEndian, &pk.ConfirmedPlatformLockedContent),
-		binary.Read(buf, binary.LittleEndian, &pk.MultiPlayerGame),
-		binary.Read(buf, binary.LittleEndian, &pk.LANBroadcastEnabled),
-		protocol.Varint32(buf, &pk.XBLBroadcastMode),
-		protocol.Varint32(buf, &pk.PlatformBroadcastMode),
-		binary.Read(buf, binary.LittleEndian, &pk.CommandsEnabled),
-		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
-		protocol.GameRules(buf, &pk.GameRules),
-		binary.Read(buf, binary.LittleEndian, &pk.BonusChestEnabled),
-		binary.Read(buf, binary.LittleEndian, &pk.StartWithMapEnabled),
-		protocol.Varint32(buf, &pk.PlayerPermissions),
-		binary.Read(buf, binary.LittleEndian, &pk.ServerChunkTickRadius),
-		binary.Read(buf, binary.LittleEndian, &pk.HasLockedBehaviourPack),
-		binary.Read(buf, binary.LittleEndian, &pk.HasLockedTexturePack),
-		binary.Read(buf, binary.LittleEndian, &pk.FromLockedWorldTemplate),
-		binary.Read(buf, binary.LittleEndian, &pk.MSAGamerTagsOnly),
-		binary.Read(buf, binary.LittleEndian, &pk.FromWorldTemplate),
-		binary.Read(buf, binary.LittleEndian, &pk.WorldTemplateSettingsLocked),
-		binary.Read(buf, binary.LittleEndian, &pk.OnlySpawnV1Villagers),
-		protocol.String(buf, &pk.BaseGameVersion),
-		binary.Read(buf, binary.LittleEndian, &pk.LimitedWorldWidth),
-		binary.Read(buf, binary.LittleEndian, &pk.LimitedWorldDepth),
-		binary.Read(buf, binary.LittleEndian, &pk.NewNether),
-		binary.Read(buf, binary.LittleEndian, &pk.ForceExperimentalGameplay),
-	); err != nil {
-		return err
-	}
+	r.Varint64(&pk.EntityUniqueID)
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Varint32(&pk.PlayerGameMode)
+	r.Vec3(&pk.PlayerPosition)
+	r.Float32(&pk.Pitch)
+	r.Float32(&pk.Yaw)
+	r.Varint32(&pk.WorldSeed)
+	r.Int16(&pk.SpawnBiomeType)
+	r.String(&pk.UserDefinedBiomeName)
+	r.Varint32(&pk.Dimension)
+	r.Varint32(&pk.Generator)
+	r.Varint32(&pk.WorldGameMode)
+	r.Varint32(&pk.Difficulty)
+	r.UBlockPos(&pk.WorldSpawn)
+	r.Bool(&pk.AchievementsDisabled)
+	r.Varint32(&pk.DayCycleLockTime)
+	r.Varint32(&pk.EducationEditionOffer)
+	r.Bool(&pk.EducationFeaturesEnabled)
+	r.String(&pk.EducationProductID)
+	r.Float32(&pk.RainLevel)
+	r.Float32(&pk.LightningLevel)
+	r.Bool(&pk.ConfirmedPlatformLockedContent)
+	r.Bool(&pk.MultiPlayerGame)
+	r.Bool(&pk.LANBroadcastEnabled)
+	r.Varint32(&pk.XBLBroadcastMode)
+	r.Varint32(&pk.PlatformBroadcastMode)
+	r.Bool(&pk.CommandsEnabled)
+	r.Bool(&pk.TexturePackRequired)
+	protocol.GameRules(r, &pk.GameRules)
+	r.Bool(&pk.BonusChestEnabled)
+	r.Bool(&pk.StartWithMapEnabled)
+	r.Varint32(&pk.PlayerPermissions)
+	r.Int32(&pk.ServerChunkTickRadius)
+	r.Bool(&pk.HasLockedBehaviourPack)
+	r.Bool(&pk.HasLockedTexturePack)
+	r.Bool(&pk.FromLockedWorldTemplate)
+	r.Bool(&pk.MSAGamerTagsOnly)
+	r.Bool(&pk.FromWorldTemplate)
+	r.Bool(&pk.WorldTemplateSettingsLocked)
+	r.Bool(&pk.OnlySpawnV1Villagers)
+	r.String(&pk.BaseGameVersion)
+	r.Int32(&pk.LimitedWorldWidth)
+	r.Int32(&pk.LimitedWorldDepth)
+	r.Bool(&pk.NewNether)
+	r.Bool(&pk.ForceExperimentalGameplay)
 	if pk.ForceExperimentalGameplay {
-		_ = binary.Read(buf, binary.LittleEndian, &pk.ForceExperimentalGameplay)
+		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
+		// is set to true.
+		r.Bool(&pk.ForceExperimentalGameplay)
 	}
-	if err := chainErr(
-		protocol.String(buf, &pk.LevelID),
-		protocol.String(buf, &pk.WorldName),
-		protocol.String(buf, &pk.TemplateContentIdentity),
-		binary.Read(buf, binary.LittleEndian, &pk.Trial),
-		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeMovement),
-		binary.Read(buf, binary.LittleEndian, &pk.Time),
-		protocol.Varint32(buf, &pk.EnchantmentSeed),
-		nbt.NewDecoder(buf).Decode(&pk.Blocks),
-		protocol.Varuint32(buf, &itemCount),
-	); err != nil {
-		return err
-	}
+	r.String(&pk.LevelID)
+	r.String(&pk.WorldName)
+	r.String(&pk.TemplateContentIdentity)
+	r.Bool(&pk.Trial)
+	r.Bool(&pk.ServerAuthoritativeMovement)
+	r.Int64(&pk.Time)
+	r.Varint32(&pk.EnchantmentSeed)
+	r.NBTList(&pk.Blocks)
+	r.Varuint32(&itemCount)
+
 	pk.Items = make([]protocol.ItemEntry, itemCount)
 	for i := uint32(0); i < itemCount; i++ {
-		item := protocol.ItemEntry{}
-		if err := chainErr(
-			protocol.String(buf, &item.Name),
-			binary.Read(buf, binary.LittleEndian, &item.LegacyID),
-		); err != nil {
-			return err
-		}
-		pk.Items[i] = item
+		r.String(&pk.Items[i].Name)
+		r.Int16(&pk.Items[i].LegacyID)
 	}
-	return chainErr(
-		protocol.String(buf, &pk.MultiPlayerCorrelationID),
-		binary.Read(buf, binary.LittleEndian, &pk.ServerAuthoritativeInventory),
-	)
+	r.String(&pk.MultiPlayerCorrelationID)
+	r.Bool(&pk.ServerAuthoritativeInventory)
 }

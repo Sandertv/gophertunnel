@@ -1,6 +1,9 @@
 package minecraft
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"fmt"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -70,8 +73,9 @@ type Listener struct {
 	incoming      chan *Conn
 	close         chan struct{}
 
-	mu sync.Mutex
-	p  ServerStatusProvider
+	mu  sync.Mutex
+	p   ServerStatusProvider
+	key *ecdsa.PrivateKey
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -80,6 +84,9 @@ type Listener struct {
 func (listener *Listener) Listen(network, address string) error {
 	var netListener net.Listener
 	var err error
+
+	listener.key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+
 	switch network {
 	case "raknet":
 		// Listen specifically for the RakNet network type, as the standard library (obviously) doesn't
@@ -265,7 +272,7 @@ func (listener *Listener) listen() {
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
 	listener.mu.Lock()
-	conn := newConn(netConn, nil, listener.ErrorLog)
+	conn := newConn(netConn, listener.key, listener.ErrorLog)
 	conn.packetFunc = listener.PacketFunc
 	conn.texturePacksRequired = listener.TexturePacksRequired
 	conn.resourcePacks = listener.ResourcePacks

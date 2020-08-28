@@ -77,24 +77,17 @@ func (pk *MovePlayer) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MovePlayer) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Float32(buf, &pk.Pitch),
-		protocol.Float32(buf, &pk.Yaw),
-		protocol.Float32(buf, &pk.HeadYaw),
-		binary.Read(buf, binary.LittleEndian, &pk.Mode),
-		binary.Read(buf, binary.LittleEndian, &pk.OnGround),
-		protocol.Varuint64(buf, &pk.RiddenEntityRuntimeID),
-	); err != nil {
-		return err
-	}
+func (pk *MovePlayer) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Vec3(&pk.Position)
+	r.Float32(&pk.Pitch)
+	r.Float32(&pk.Yaw)
+	r.Float32(&pk.HeadYaw)
+	r.Uint8(&pk.Mode)
+	r.Bool(&pk.OnGround)
+	r.Varuint64(&pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
-		return chainErr(
-			binary.Read(buf, binary.LittleEndian, &pk.TeleportCause),
-			binary.Read(buf, binary.LittleEndian, &pk.TeleportSourceEntityType),
-		)
+		r.Int32(&pk.TeleportCause)
+		r.Int32(&pk.TeleportSourceEntityType)
 	}
-	return nil
 }

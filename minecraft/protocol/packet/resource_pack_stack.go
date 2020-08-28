@@ -48,31 +48,20 @@ func (pk *ResourcePackStack) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ResourcePackStack) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
 	var length uint32
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
-		protocol.Varuint32(buf, &length),
-	); err != nil {
-		return err
-	}
+	r.Bool(&pk.TexturePackRequired)
+	r.Varuint32(&length)
+
 	pk.BehaviourPacks = make([]protocol.StackResourcePack, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.StackPack(buf, &pk.BehaviourPacks[i]); err != nil {
-			return err
-		}
+		protocol.StackPack(r, &pk.BehaviourPacks[i])
 	}
-	if err := protocol.Varuint32(buf, &length); err != nil {
-		return err
-	}
+	r.Varuint32(&length)
 	pk.TexturePacks = make([]protocol.StackResourcePack, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.StackPack(buf, &pk.TexturePacks[i]); err != nil {
-			return err
-		}
+		protocol.StackPack(r, &pk.TexturePacks[i])
 	}
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Experimental),
-		protocol.String(buf, &pk.BaseGameVersion),
-	)
+	r.Bool(&pk.Experimental)
+	r.String(&pk.BaseGameVersion)
 }

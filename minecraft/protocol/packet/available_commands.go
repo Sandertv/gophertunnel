@@ -3,7 +3,6 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"math"
 )
@@ -79,84 +78,56 @@ func (pk *AvailableCommands) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AvailableCommands) Unmarshal(buf *bytes.Buffer) error {
+func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
 	var count uint32
 
 	// First we read all the enum values.
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	enumValues := make([]string, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.String(buf, &enumValues[i]); err != nil {
-			return err
-		}
+		r.String(&enumValues[i])
 	}
 
 	// Then we read all suffixes.
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	suffixes := make([]string, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.String(buf, &suffixes[i]); err != nil {
-			return err
-		}
+		r.String(&suffixes[i])
 	}
 
 	// After that we create all enums, which are composed of pointers to the enum values above.
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	enums := make([]protocol.CommandEnum, count)
 	var optionCount uint32
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.String(buf, &enums[i].Type); err != nil {
-			return err
-		}
-		if err := protocol.Varuint32(buf, &optionCount); err != nil {
-			return err
-		}
+		r.String(&enums[i].Type)
+		r.Varuint32(&optionCount)
 		enums[i].Options = make([]string, optionCount)
 		for j := uint32(0); j < optionCount; j++ {
-			if err := enumOption(buf, &enums[i].Options[j], enumValues); err != nil {
-				return err
-			}
+			enumOption(r, &enums[i].Options[j], enumValues)
 		}
 	}
 
 	// We read all the commands, which will have their enums and suffixes set automatically. We don't yet set
 	// the dynamic enums as we haven't read them yet.
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	pk.Commands = make([]protocol.Command, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.CommandData(buf, &pk.Commands[i], enums, suffixes); err != nil {
-			return err
-		}
+		protocol.CommandData(r, &pk.Commands[i], enums, suffixes)
 	}
 
 	// We first read all soft enums of the packet.
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	softEnums := make([]protocol.CommandEnum, count)
 	for i := uint32(0); i < count; i++ {
 		softEnums[i].Dynamic = true
-		if err := protocol.String(buf, &softEnums[i].Type); err != nil {
-			return err
-		}
+		r.String(&softEnums[i].Type)
 
 		var optionCount uint32
-		if err := protocol.Varuint32(buf, &optionCount); err != nil {
-			return err
-		}
+		r.Varuint32(&optionCount)
 		softEnums[i].Options = make([]string, optionCount)
 		for j := uint32(0); j < optionCount; j++ {
-			if err := protocol.String(buf, &softEnums[i].Options[j]); err != nil {
-				return err
-			}
+			r.String(&softEnums[i].Options[j])
 		}
 	}
 
@@ -167,26 +138,18 @@ func (pk *AvailableCommands) Unmarshal(buf *bytes.Buffer) error {
 			for k, param := range overload.Parameters {
 				if param.Type&protocol.CommandArgSoftEnum != 0 {
 					offset := param.Type & 0xffff
-					if len(softEnums) <= int(offset) {
-						return fmt.Errorf("invalid soft enum offset %v, expected lower than or equal to %v", offset, len(softEnums))
-					}
+					r.LimitUint32(offset, uint32(len(softEnums))-1)
 					pk.Commands[i].Overloads[j].Parameters[k].Enum = softEnums[offset]
 				}
 			}
 		}
 	}
 
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	pk.Constraints = make([]protocol.CommandEnumConstraint, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.EnumConstraint(buf, &pk.Constraints[i], enums, enumValues); err != nil {
-			return err
-		}
+		protocol.EnumConstraint(r, &pk.Constraints[i], enums, enumValues)
 	}
-
-	return nil
 }
 
 // writeEnumOption writes an enum option to buf using the value indices passed. It is written as a
@@ -205,34 +168,23 @@ func writeEnumOption(buf *bytes.Buffer, option string, valueIndices map[string]i
 
 // enumOption reads an enum option from buf using the enum values passed. The option is written as a
 // byte/uint16/uint32, depending on the size of the enumValues slice.
-func enumOption(buf *bytes.Buffer, option *string, enumValues []string) error {
+func enumOption(r *protocol.Reader, option *string, enumValues []string) {
 	l := len(enumValues)
-	var index int
+	var index uint32
 	switch {
 	case l <= math.MaxUint8:
 		var v byte
-		if err := binary.Read(buf, binary.LittleEndian, &v); err != nil {
-			return err
-		}
-		index = int(v)
+		r.Uint8(&v)
+		index = uint32(v)
 	case l <= math.MaxUint16:
 		var v uint16
-		if err := binary.Read(buf, binary.LittleEndian, &v); err != nil {
-			return err
-		}
-		index = int(v)
+		r.Uint16(&v)
+		index = uint32(v)
 	default:
-		var v uint32
-		if err := binary.Read(buf, binary.LittleEndian, &v); err != nil {
-			return err
-		}
-		index = int(v)
+		r.Uint32(&index)
 	}
-	if len(enumValues) <= index {
-		return fmt.Errorf("invalid enum option index %v, expected lower than or equal to %v", index, len(enumValues))
-	}
+	r.LimitUint32(index, uint32(len(enumValues))-1)
 	*option = enumValues[index]
-	return nil
 }
 
 // enumValues runs through all commands set to the packet and collects enum values and a map of indices

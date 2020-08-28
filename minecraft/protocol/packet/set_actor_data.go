@@ -29,10 +29,8 @@ func (pk *SetActorData) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetActorData) Unmarshal(buf *bytes.Buffer) error {
+func (pk *SetActorData) Unmarshal(r *protocol.Reader) {
 	pk.EntityMetadata = map[uint32]interface{}{}
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.EntityMetadata(buf, &pk.EntityMetadata),
-	)
+	r.Varuint64(&pk.EntityRuntimeID)
+	protocol.EntityMetadata(r, &pk.EntityMetadata)
 }

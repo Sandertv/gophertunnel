@@ -78,34 +78,24 @@ func (pk *BookEdit) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *BookEdit) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		binary.Read(buf, binary.LittleEndian, &pk.InventorySlot),
-	); err != nil {
-		return err
-	}
+func (pk *BookEdit) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.ActionType)
+	r.Uint8(&pk.InventorySlot)
 	switch pk.ActionType {
 	case BookActionReplacePage, BookActionAddPage:
-		return chainErr(
-			binary.Read(buf, binary.LittleEndian, &pk.PageNumber),
-			protocol.String(buf, &pk.Text),
-			protocol.String(buf, &pk.PhotoName),
-		)
+		r.Uint8(&pk.PageNumber)
+		r.String(&pk.Text)
+		r.String(&pk.PhotoName)
 	case BookActionDeletePage:
-		return binary.Read(buf, binary.LittleEndian, &pk.PageNumber)
+		r.Uint8(&pk.PageNumber)
 	case BookActionSwapPages:
-		return chainErr(
-			binary.Read(buf, binary.LittleEndian, &pk.PageNumber),
-			binary.Read(buf, binary.LittleEndian, &pk.SecondaryPageNumber),
-		)
+		r.Uint8(&pk.PageNumber)
+		r.Uint8(&pk.SecondaryPageNumber)
 	case BookActionSign:
-		return chainErr(
-			protocol.String(buf, &pk.Title),
-			protocol.String(buf, &pk.Author),
-			protocol.String(buf, &pk.XUID),
-		)
+		r.String(&pk.Title)
+		r.String(&pk.Author)
+		r.String(&pk.XUID)
 	default:
-		return fmt.Errorf("invalid book edit action type %v", pk.ActionType)
+		r.UnknownEnumOption(pk.ActionType, "book edit action type")
 	}
 }

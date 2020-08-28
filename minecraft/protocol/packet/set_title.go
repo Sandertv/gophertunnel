@@ -49,12 +49,10 @@ func (pk *SetTitle) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetTitle) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint32(buf, &pk.ActionType),
-		protocol.String(buf, &pk.Text),
-		protocol.Varint32(buf, &pk.FadeInDuration),
-		protocol.Varint32(buf, &pk.RemainDuration),
-		protocol.Varint32(buf, &pk.FadeOutDuration),
-	)
+func (pk *SetTitle) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.ActionType)
+	r.String(&pk.Text)
+	r.Varint32(&pk.FadeInDuration)
+	r.Varint32(&pk.RemainDuration)
+	r.Varint32(&pk.FadeOutDuration)
 }

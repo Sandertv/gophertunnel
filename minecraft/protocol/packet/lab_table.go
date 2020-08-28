@@ -39,10 +39,8 @@ func (pk *LabTable) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LabTable) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		protocol.BlockPosition(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.ReactionType),
-	)
+func (pk *LabTable) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.ActionType)
+	r.BlockPos(&pk.Position)
+	r.Uint8(&pk.ReactionType)
 }

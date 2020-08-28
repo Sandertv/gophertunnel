@@ -32,10 +32,8 @@ func (pk *PlayerHotBar) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerHotBar) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint32(buf, &pk.SelectedHotBarSlot),
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-		binary.Read(buf, binary.LittleEndian, &pk.SelectHotBarSlot),
-	)
+func (pk *PlayerHotBar) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.SelectedHotBarSlot)
+	r.Uint8(&pk.WindowID)
+	r.Bool(&pk.SelectHotBarSlot)
 }

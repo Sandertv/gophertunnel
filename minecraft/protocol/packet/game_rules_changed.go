@@ -27,7 +27,7 @@ func (pk *GameRulesChanged) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *GameRulesChanged) Unmarshal(buf *bytes.Buffer) error {
+func (pk *GameRulesChanged) Unmarshal(r *protocol.Reader) {
 	pk.GameRules = make(map[string]interface{})
-	return protocol.GameRules(buf, &pk.GameRules)
+	protocol.GameRules(r, &pk.GameRules)
 }

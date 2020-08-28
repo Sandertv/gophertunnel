@@ -33,13 +33,7 @@ func (pk *ShowStoreOffer) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ShowStoreOffer) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.OfferID),
-		binary.Read(buf, binary.LittleEndian, &pk.ShowAll),
-	)
+func (pk *ShowStoreOffer) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.OfferID)
+	r.Bool(&pk.ShowAll)
 }
-
-// 8d6194c2-0ea5-4072-adba-a26c32538f23
-// 04ef0d00-0a30-45cb-a9a8-33b1d3747667
-// client.send("ShowStoreOffer", {OfferID = "04ef0d00-0a30-45cb-a9a8-33b1d3747667"})

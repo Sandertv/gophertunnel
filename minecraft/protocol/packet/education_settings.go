@@ -41,20 +41,14 @@ func (pk *EducationSettings) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *EducationSettings) Unmarshal(buf *bytes.Buffer) error {
+func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
 	var hasOverrideURI bool
-	if err := chainErr(
-		protocol.String(buf, &pk.CodeBuilderDefaultURI),
-		protocol.String(buf, &pk.CodeBuilderTitle),
-		binary.Read(buf, binary.LittleEndian, &pk.CanResizeCodeBuilder),
-		binary.Read(buf, binary.LittleEndian, &hasOverrideURI),
-	); err != nil {
-		return err
-	}
+	r.String(&pk.CodeBuilderDefaultURI)
+	r.String(&pk.CodeBuilderTitle)
+	r.Bool(&pk.CanResizeCodeBuilder)
+	r.Bool(&hasOverrideURI)
 	if hasOverrideURI {
-		if err := protocol.String(buf, &pk.OverrideURI); err != nil {
-			return err
-		}
+		r.String(&pk.OverrideURI)
 	}
-	return binary.Read(buf, binary.LittleEndian, &pk.HasQuiz)
+	r.Bool(&pk.HasQuiz)
 }

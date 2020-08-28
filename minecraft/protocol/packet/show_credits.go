@@ -28,9 +28,7 @@ func (pk *ShowCredits) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ShowCredits) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.PlayerRuntimeID),
-		protocol.Varint32(buf, &pk.StatusType),
-	)
+func (pk *ShowCredits) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.PlayerRuntimeID)
+	r.Varint32(&pk.StatusType)
 }

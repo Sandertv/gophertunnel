@@ -32,19 +32,13 @@ func (pk *InventoryContent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *InventoryContent) Unmarshal(buf *bytes.Buffer) error {
+func (pk *InventoryContent) Unmarshal(r *protocol.Reader) {
 	var length uint32
-	if err := chainErr(
-		protocol.Varuint32(buf, &pk.WindowID),
-		protocol.Varuint32(buf, &length),
-	); err != nil {
-		return err
-	}
+	r.Varuint32(&pk.WindowID)
+	r.Varuint32(&length)
+
 	pk.Content = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.ItemInst(buf, &pk.Content[i]); err != nil {
-			return err
-		}
+		protocol.ItemInst(r, &pk.Content[i])
 	}
-	return nil
 }

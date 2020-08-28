@@ -29,9 +29,7 @@ func (pk *SetActorMotion) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetActorMotion) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Vec3(buf, &pk.Velocity),
-	)
+func (pk *SetActorMotion) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Vec3(&pk.Velocity)
 }

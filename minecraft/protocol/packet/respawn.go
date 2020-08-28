@@ -45,10 +45,8 @@ func (pk *Respawn) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Respawn) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Vec3(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.State),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-	)
+func (pk *Respawn) Unmarshal(r *protocol.Reader) {
+	r.Vec3(&pk.Position)
+	r.Uint8(&pk.State)
+	r.Varuint64(&pk.EntityRuntimeID)
 }

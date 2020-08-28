@@ -30,10 +30,8 @@ func (pk *BlockActorData) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *BlockActorData) Unmarshal(buf *bytes.Buffer) error {
+func (pk *BlockActorData) Unmarshal(r *protocol.Reader) {
 	pk.NBTData = make(map[string]interface{})
-	return chainErr(
-		protocol.UBlockPosition(buf, &pk.Position),
-		nbt.NewDecoder(buf).Decode(&pk.NBTData),
-	)
+	r.UBlockPos(&pk.Position)
+	r.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
 }

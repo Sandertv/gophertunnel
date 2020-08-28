@@ -110,29 +110,27 @@ func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddPlayer) Unmarshal(buf *bytes.Buffer) error {
+func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	pk.EntityMetadata = map[uint32]interface{}{}
-	return chainErr(
-		protocol.UUID(buf, &pk.UUID),
-		protocol.String(buf, &pk.Username),
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.String(buf, &pk.PlatformChatID),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Vec3(buf, &pk.Velocity),
-		protocol.Float32(buf, &pk.Pitch),
-		protocol.Float32(buf, &pk.Yaw),
-		protocol.Float32(buf, &pk.HeadYaw),
-		protocol.Item(buf, &pk.HeldItem),
-		protocol.EntityMetadata(buf, &pk.EntityMetadata),
-		protocol.Varuint32(buf, &pk.Flags),
-		protocol.Varuint32(buf, &pk.CommandPermissionLevel),
-		protocol.Varuint32(buf, &pk.ActionPermissions),
-		protocol.Varuint32(buf, &pk.PermissionLevel),
-		protocol.Varuint32(buf, &pk.CustomStoredPermissions),
-		binary.Read(buf, binary.LittleEndian, &pk.PlayerUniqueID),
-		protocol.EntityLinks(buf, &pk.EntityLinks),
-		protocol.String(buf, &pk.DeviceID),
-		binary.Read(buf, binary.LittleEndian, &pk.BuildPlatform),
-	)
+	r.UUID(&pk.UUID)
+	r.String(&pk.Username)
+	r.Varint64(&pk.EntityUniqueID)
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.String(&pk.PlatformChatID)
+	r.Vec3(&pk.Position)
+	r.Vec3(&pk.Velocity)
+	r.Float32(&pk.Pitch)
+	r.Float32(&pk.Yaw)
+	r.Float32(&pk.HeadYaw)
+	protocol.Item(r, &pk.HeldItem)
+	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.Varuint32(&pk.Flags)
+	r.Varuint32(&pk.CommandPermissionLevel)
+	r.Varuint32(&pk.ActionPermissions)
+	r.Varuint32(&pk.PermissionLevel)
+	r.Varuint32(&pk.CustomStoredPermissions)
+	r.Int64(&pk.PlayerUniqueID)
+	protocol.EntityLinks(r, &pk.EntityLinks)
+	r.String(&pk.DeviceID)
+	r.Int32(&pk.BuildPlatform)
 }

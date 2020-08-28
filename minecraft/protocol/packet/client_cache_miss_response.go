@@ -28,16 +28,12 @@ func (pk *ClientCacheMissResponse) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ClientCacheMissResponse) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ClientCacheMissResponse) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	pk.Blobs = make([]protocol.CacheBlob, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.Blob(buf, &pk.Blobs[i]); err != nil {
-			return err
-		}
+		protocol.Blob(r, &pk.Blobs[i])
 	}
-	return nil
+	return
 }

@@ -57,17 +57,15 @@ func WritePackInfo(buf *bytes.Buffer, x ResourcePackInfo) error {
 	)
 }
 
-// PackInfo reads a resource pack info entry from the bytes.Buffer passed.
-func PackInfo(buf *bytes.Buffer, x *ResourcePackInfo) error {
-	return chainErr(
-		String(buf, &x.UUID),
-		String(buf, &x.Version),
-		binary.Read(buf, binary.LittleEndian, &x.Size),
-		String(buf, &x.ContentKey),
-		String(buf, &x.SubPackName),
-		String(buf, &x.ContentIdentity),
-		binary.Read(buf, binary.LittleEndian, &x.HasScripts),
-	)
+// PackInfo reads a ResourcePackInfo x from Reader r.
+func PackInfo(r *Reader, x *ResourcePackInfo) {
+	r.String(&x.UUID)
+	r.String(&x.Version)
+	r.Uint64(&x.Size)
+	r.String(&x.ContentKey)
+	r.String(&x.SubPackName)
+	r.String(&x.ContentIdentity)
+	r.Bool(&x.HasScripts)
 }
 
 // WriteStackPack writes a StackResourcePack x to Buffer buf.
@@ -79,11 +77,9 @@ func WriteStackPack(buf *bytes.Buffer, x StackResourcePack) error {
 	)
 }
 
-// StackPack reads a StackResourcePack x to Buffer buf.
-func StackPack(buf *bytes.Buffer, x *StackResourcePack) error {
-	return chainErr(
-		String(buf, &x.UUID),
-		String(buf, &x.Version),
-		String(buf, &x.SubPackName),
-	)
+// StackPack reads a StackResourcePack x from Reader r.
+func StackPack(r *Reader, x *StackResourcePack) {
+	r.String(&x.UUID)
+	r.String(&x.Version)
+	r.String(&x.SubPackName)
 }

@@ -24,6 +24,6 @@ func (pk *SetLastHurtBy) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetLastHurtBy) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.EntityType)
+func (pk *SetLastHurtBy) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.EntityType)
 }

@@ -23,6 +23,6 @@ func (pk *RiderJump) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *RiderJump) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.JumpStrength)
+func (pk *RiderJump) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.JumpStrength)
 }

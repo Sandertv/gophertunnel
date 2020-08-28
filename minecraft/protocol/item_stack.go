@@ -66,24 +66,18 @@ func WriteStackRequest(dst *bytes.Buffer, x ItemStackRequest) error {
 	return nil
 }
 
-// StackRequest reads an ItemStackRequest x from Buffer src.
-func StackRequest(src *bytes.Buffer, x *ItemStackRequest) error {
+// StackRequest reads an ItemStackRequest x from Reader r.
+func StackRequest(r *Reader, x *ItemStackRequest) {
 	var count uint32
-	if err := Varint32(src, &x.RequestID); err != nil {
-		return err
-	}
-	if err := Varuint32(src, &count); err != nil {
-		return err
-	}
-	if count > mediumLimit {
-		return LimitHitError{Limit: mediumLimit, Type: "ItemStackRequest"}
-	}
+	r.Varint32(&x.RequestID)
+	r.Varuint32(&count)
+	r.LimitUint32(count, mediumLimit)
+
 	x.Actions = make([]StackRequestAction, count)
 	for i := uint32(0); i < count; i++ {
-		id, err := src.ReadByte()
-		if err != nil {
-			return wrap(err)
-		}
+		var id uint8
+		r.Uint8(&id)
+
 		var action StackRequestAction
 		switch id {
 		case StackRequestActionTake:
@@ -115,14 +109,11 @@ func StackRequest(src *bytes.Buffer, x *ItemStackRequest) error {
 		case StackRequestActionCraftResultsDeprecated:
 			action = &CraftResultsDeprecatedStackRequestAction{}
 		default:
-			return fmt.Errorf("unknown stack request action %v", id)
+			r.UnknownEnumOption(id, "stack request action type")
 		}
-		if err := action.Unmarshal(src); err != nil {
-			return err
-		}
+		action.Unmarshal(r)
 		x.Actions[i] = action
 	}
-	return nil
 }
 
 // ItemStackResponse is a response to an individual ItemStackRequest.
@@ -183,28 +174,20 @@ func WriteStackResponse(dst *bytes.Buffer, x ItemStackResponse) error {
 	return nil
 }
 
-// StackResponse reads an ItemStackResponse x from Buffer src.
-func StackResponse(src *bytes.Buffer, x *ItemStackResponse) error {
-	if err := chainErr(
-		binary.Read(src, binary.LittleEndian, &x.Success),
-		Varint32(src, &x.RequestID),
-	); err != nil {
-		return err
-	}
-	if !x.Success {
-		return nil
-	}
+// StackResponse reads an ItemStackResponse x from Reader r.
+func StackResponse(r *Reader, x *ItemStackResponse) {
 	var l uint32
-	if err := Varuint32(src, &l); err != nil {
-		return err
+	r.Bool(&x.Success)
+	r.Varint32(&x.RequestID)
+	if !x.Success {
+		return
 	}
+	r.Varuint32(&l)
+
 	x.ContainerInfo = make([]StackResponseContainerInfo, l)
 	for i := uint32(0); i < l; i++ {
-		if err := StackContainerInfo(src, &x.ContainerInfo[i]); err != nil {
-			return err
-		}
+		StackContainerInfo(r, &x.ContainerInfo[i])
 	}
-	return nil
 }
 
 // WriteStackContainerInfo writes a StackResponseContainerInfo x to Buffer dst.
@@ -221,22 +204,16 @@ func WriteStackContainerInfo(dst *bytes.Buffer, x StackResponseContainerInfo) er
 	return nil
 }
 
-// StackContainerInfo reads a StackResponseContainerInfo x from Buffer src.
-func StackContainerInfo(src *bytes.Buffer, x *StackResponseContainerInfo) error {
-	if err := binary.Read(src, binary.LittleEndian, &x.ContainerID); err != nil {
-		return err
-	}
+// StackContainerInfo reads a StackResponseContainerInfo x from Reader r.
+func StackContainerInfo(r *Reader, x *StackResponseContainerInfo) {
 	var l uint32
-	if err := Varuint32(src, &l); err != nil {
-		return err
-	}
+	r.Uint8(&x.ContainerID)
+	r.Varuint32(&l)
+
 	x.SlotInfo = make([]StackResponseSlotInfo, l)
 	for i := uint32(0); i < l; i++ {
-		if err := StackSlotInfo(src, &x.SlotInfo[i]); err != nil {
-			return err
-		}
+		StackSlotInfo(r, &x.SlotInfo[i])
 	}
-	return nil
 }
 
 // WriteStackSlotInfo writes a StackResponseSlotInfo x to Buffer dst.
@@ -252,20 +229,15 @@ func WriteStackSlotInfo(dst *bytes.Buffer, x StackResponseSlotInfo) error {
 	)
 }
 
-// StackSlotInfo reads a StackResponseSlotInfo x from Buffer src.
-func StackSlotInfo(src *bytes.Buffer, x *StackResponseSlotInfo) error {
-	if err := chainErr(
-		binary.Read(src, binary.LittleEndian, &x.Slot),
-		binary.Read(src, binary.LittleEndian, &x.HotbarSlot),
-		binary.Read(src, binary.LittleEndian, &x.Count),
-		Varint32(src, &x.StackNetworkID),
-	); err != nil {
-		return err
-	}
+// StackSlotInfo reads a StackResponseSlotInfo x from Reader r.
+func StackSlotInfo(r *Reader, x *StackResponseSlotInfo) {
+	r.Uint8(&x.Slot)
+	r.Uint8(&x.HotbarSlot)
+	r.Uint8(&x.Count)
+	r.Varint32(&x.StackNetworkID)
 	if x.Slot != x.HotbarSlot {
-		return fmt.Errorf("%v: Slot and HotbarSlot had different values: %v vs %v", callFrame(), x.Slot, x.HotbarSlot)
+		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
-	return nil
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
@@ -274,9 +246,9 @@ func StackSlotInfo(src *bytes.Buffer, x *StackResponseSlotInfo) error {
 type StackRequestAction interface {
 	// Marshal encodes the stack request action its binary representation into buf.
 	Marshal(buf *bytes.Buffer)
-	// Unmarshal decodes a serialised stack request action object in buf into the InventoryTransactionData
-	// instance.
-	Unmarshal(buf *bytes.Buffer) error
+	// Unmarshal decodes a serialised stack request action object from Reader r into the
+	// InventoryTransactionData instance.
+	Unmarshal(r *Reader)
 }
 
 const (
@@ -314,12 +286,10 @@ func (a *transferStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *transferStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &a.Count),
-		StackReqSlotInfo(buf, &a.Source),
-		StackReqSlotInfo(buf, &a.Destination),
-	)
+func (a *transferStackRequestAction) Unmarshal(r *Reader) {
+	r.Uint8(&a.Count)
+	StackReqSlotInfo(r, &a.Source)
+	StackReqSlotInfo(r, &a.Destination)
 }
 
 // TakeStackRequestAction is sent by the client to the server to take x amount of items from one slot in a
@@ -350,11 +320,9 @@ func (a *SwapStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *SwapStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		StackReqSlotInfo(buf, &a.Source),
-		StackReqSlotInfo(buf, &a.Destination),
-	)
+func (a *SwapStackRequestAction) Unmarshal(r *Reader) {
+	StackReqSlotInfo(r, &a.Source)
+	StackReqSlotInfo(r, &a.Destination)
 }
 
 // DropStackRequestAction is sent by the client when it drops an item out of the inventory when it has its
@@ -379,12 +347,10 @@ func (a *DropStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *DropStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &a.Count),
-		StackReqSlotInfo(buf, &a.Source),
-		binary.Read(buf, binary.LittleEndian, &a.Randomly),
-	)
+func (a *DropStackRequestAction) Unmarshal(r *Reader) {
+	r.Uint8(&a.Count)
+	StackReqSlotInfo(r, &a.Source)
+	r.Bool(&a.Randomly)
 }
 
 // DestroyStackRequestAction is sent by the client when it destroys an item in creative mode by moving it
@@ -404,11 +370,9 @@ func (a *DestroyStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *DestroyStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &a.Count),
-		StackReqSlotInfo(buf, &a.Source),
-	)
+func (a *DestroyStackRequestAction) Unmarshal(r *Reader) {
+	r.Uint8(&a.Count)
+	StackReqSlotInfo(r, &a.Source)
 }
 
 // ConsumeStackRequestAction is sent by the client when it uses an item to craft another item. The original
@@ -435,8 +399,8 @@ func (a *CreateStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *CreateStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &a.ResultsSlot)
+func (a *CreateStackRequestAction) Unmarshal(r *Reader) {
+	r.Uint8(&a.ResultsSlot)
 }
 
 // LabTableCombineStackRequestAction is sent by the client when it uses a lab table to combine item stacks.
@@ -446,7 +410,7 @@ type LabTableCombineStackRequestAction struct{}
 func (a *LabTableCombineStackRequestAction) Marshal(*bytes.Buffer) {}
 
 // Unmarshal ...
-func (a *LabTableCombineStackRequestAction) Unmarshal(*bytes.Buffer) error { return nil }
+func (a *LabTableCombineStackRequestAction) Unmarshal(*Reader) {}
 
 // BeaconPaymentStackRequestAction is sent by the client when it submits an item to enable effects from a
 // beacon. These items will have been moved into the beacon item slot in advance.
@@ -462,11 +426,9 @@ func (a *BeaconPaymentStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *BeaconPaymentStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		Varint32(buf, &a.PrimaryEffect),
-		Varint32(buf, &a.SecondaryEffect),
-	)
+func (a *BeaconPaymentStackRequestAction) Unmarshal(r *Reader) {
+	r.Varint32(&a.PrimaryEffect)
+	r.Varint32(&a.SecondaryEffect)
 }
 
 // CraftRecipeStackRequestAction is sent by the client the moment it begins crafting an item. This is the
@@ -486,8 +448,8 @@ func (a *CraftRecipeStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *CraftRecipeStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return Varuint32(buf, &a.RecipeNetworkID)
+func (a *CraftRecipeStackRequestAction) Unmarshal(r *Reader) {
+	r.Varuint32(&a.RecipeNetworkID)
 }
 
 // AutoCraftRecipeStackRequestAction is sent by the client similarly to the CraftRecipeStackRequestAction. The
@@ -510,8 +472,8 @@ func (a *CraftCreativeStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *CraftCreativeStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
-	return Varuint32(buf, &a.CreativeItemNetworkID)
+func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
+	r.Varuint32(&a.CreativeItemNetworkID)
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
@@ -522,7 +484,7 @@ type CraftNonImplementedStackRequestAction struct{}
 func (*CraftNonImplementedStackRequestAction) Marshal(*bytes.Buffer) {}
 
 // Unmarshal ...
-func (*CraftNonImplementedStackRequestAction) Unmarshal(*bytes.Buffer) error { return nil }
+func (*CraftNonImplementedStackRequestAction) Unmarshal(*Reader) {}
 
 // CraftResultsDeprecatedStackRequestAction is an additional, deprecated packet sent by the client after
 // crafting. It holds the final results and the amount of times the recipe was crafted. It shouldn't be used.
@@ -543,21 +505,16 @@ func (a *CraftResultsDeprecatedStackRequestAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (a *CraftResultsDeprecatedStackRequestAction) Unmarshal(buf *bytes.Buffer) error {
+func (a *CraftResultsDeprecatedStackRequestAction) Unmarshal(r *Reader) {
 	var l uint32
-	if err := Varuint32(buf, &l); err != nil {
-		return err
-	}
-	if l > higherLimit/2 {
-		return LimitHitError{Limit: higherLimit / 2, Type: "CraftResultsDeprecated ResultItems"}
-	}
+	r.Varuint32(&l)
+	r.LimitUint32(l, mediumLimit*2)
+
 	a.ResultItems = make([]ItemStack, l)
 	for i := uint32(0); i < l; i++ {
-		if err := Item(buf, &a.ResultItems[i]); err != nil {
-			return err
-		}
+		Item(r, &a.ResultItems[i])
 	}
-	return binary.Read(buf, binary.LittleEndian, &a.TimesCrafted)
+	r.Uint8(&a.TimesCrafted)
 }
 
 // StackRequestSlotInfo holds information on a specific slot client-side.
@@ -581,11 +538,9 @@ func WriteStackReqSlotInfo(dst *bytes.Buffer, x StackRequestSlotInfo) error {
 	)
 }
 
-// StackReqSlotInfo reads a StackRequestSlotInfo x from Buffer src.
-func StackReqSlotInfo(src *bytes.Buffer, x *StackRequestSlotInfo) error {
-	return chainErr(
-		binary.Read(src, binary.LittleEndian, &x.ContainerID),
-		binary.Read(src, binary.LittleEndian, &x.Slot),
-		Varint32(src, &x.StackNetworkID),
-	)
+// StackReqSlotInfo reads a StackRequestSlotInfo x from Reader r.
+func StackReqSlotInfo(r *Reader, x *StackRequestSlotInfo) {
+	r.Uint8(&x.ContainerID)
+	r.Uint8(&x.Slot)
+	r.Varint32(&x.StackNetworkID)
 }

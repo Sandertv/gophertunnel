@@ -29,9 +29,7 @@ func (pk *UpdateAttributes) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdateAttributes) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Attributes(buf, &pk.Attributes),
-	)
+func (pk *UpdateAttributes) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	protocol.Attributes(r, &pk.Attributes)
 }

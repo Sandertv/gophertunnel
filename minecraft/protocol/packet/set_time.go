@@ -25,6 +25,6 @@ func (pk *SetTime) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetTime) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.Time)
+func (pk *SetTime) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.Time)
 }

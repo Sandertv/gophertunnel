@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -132,23 +130,19 @@ type Conn struct {
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
-	if key == nil {
-		// If no key is passed, we generate one in this function and use it instead.
-		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	}
 	closeCtx, cancel := context.WithCancel(context.Background())
 	conn := &Conn{
-		conn:        netConn,
 		encoder:     packet.NewEncoder(netConn),
 		decoder:     packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		packets:     make(chan []byte, 256),
 		writeBuf:    bytes.NewBuffer(make([]byte, 0, 1024)),
+		salt:        make([]byte, 16),
+		packets:     make(chan []byte, 256),
+		spawn:       make(chan bool),
+		conn:        netConn,
 		close:       cancel,
 		closeCtx:    closeCtx,
-		spawn:       make(chan bool),
 		privateKey:  key,
-		salt:        make([]byte, 16),
 		log:         log,
 		chunkRadius: 16,
 	}
@@ -447,10 +441,10 @@ func (conn *Conn) ChunkRadius() int {
 
 // parsePacket parses a packet from the data passed and returns it, if successful. If the packet could not be
 // parsed successfully, nil and an error is returned.
-func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, error) {
+func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (pk packet.Packet, err error) {
 	buf := bytes.NewBuffer(data)
 	header := &packet.Header{}
-	if err := header.Read(buf); err != nil {
+	if err = header.Read(buf); err != nil {
 		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
 		// we return to reading a new packet.
 		return nil, fmt.Errorf("error reading packet header: %v", err)
@@ -461,45 +455,29 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (packet.Packet, 
 			conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
 		}
 	}
+	var ok bool
 	// Attempt to fetch the packet with the right packet ID from the pool.
-	pk, ok := conn.pool[header.PacketID]
+	pk, ok = conn.pool[header.PacketID]
 	if !ok {
-		// We haven't implemented this packet ID, so we return an unknown packet which could be used by
-		// the reader.
+		// No packet with the ID. This may be a custom packet of some sorts or not
 		pk = &packet.Unknown{PacketID: header.PacketID}
 	}
-	var violationErr string
+
+	r := protocol.NewReader(buf.Bytes())
 	defer func() {
-		if violationErr != "" && conn.sendPacketViolations {
-			// The server sent an invalid packet. We reply with a PacketViolationWarning holding any
-			// potentially useful information.
-			_ = conn.WritePacket(&packet.PacketViolationWarning{
-				Type:             packet.ViolationTypeMalformed,
-				Severity:         packet.ViolationSeverityWarning,
-				PacketID:         int32(header.PacketID),
-				ViolationContext: violationErr,
-			})
+		if recoveredErr := recover(); recoveredErr != nil {
+			err = fmt.Errorf("%T: %w", pk, recoveredErr.(error))
 		}
 	}()
+	pk.Unmarshal(r)
 
-	if err := pk.Unmarshal(buf); err != nil {
-		violationErr = fmt.Sprintf("error decoding packet %T from %v: %v", pk, conn.RemoteAddr(), err)
-		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
-		// we return to reading a new packet.
-		return nil, errors.New(violationErr)
+	if r.Len() != 0 {
+		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, r.Len(), r.Bytes())
 	}
-	if buf.Len() != 0 {
-		violationErr = fmt.Sprintf("%v unread bytes left in packet %T%v from %v: 0x%x (full payload: 0x%x)\n", buf.Len(), pk, fmt.Sprintf("%+v", pk)[1:], conn.RemoteAddr(), buf.Bytes(), data)
-		return nil, errors.New(violationErr)
-	}
-	if violation, ok := pk.(*packet.PacketViolationWarning); ok && conn.sendPacketViolations {
-		errPacket, _ := conn.pool[uint32(violation.PacketID)]
-		return nil, fmt.Errorf("gophertunnel packet violation (type = %v for packet %T): %v (severity = %v)", violation.Type, errPacket, violation.ViolationContext, violation.Severity)
-	}
-	return pk, nil
+	return pk, err
 }
 
-// takePushedBackPacketLocked locks the pushed back packets lock and takes the next packet from the list of
+// takePushedBackPacket locks the pushed back packets lock and takes the next packet from the list of
 // pushed back packets. If none was found, it returns false, and if one was found, the data and true is
 // returned.
 func (conn *Conn) takePushedBackPacket() ([]byte, bool) {

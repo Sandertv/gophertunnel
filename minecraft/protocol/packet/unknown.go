@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // Unknown is an implementation of the Packet interface for unknown/unimplemented packets. It holds the packet
@@ -26,13 +27,11 @@ func (pk *Unknown) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Unknown) Unmarshal(buf *bytes.Buffer) error {
-	pk.Payload = buf.Bytes()
-	buf.Reset()
-	return nil
+func (pk *Unknown) Unmarshal(r *protocol.Reader) {
+	r.Leftover(&pk.Payload)
 }
 
-// String implements a hex representation of an unknown packet, so that it is easier to read an identify
+// String implements a hex representation of an unknown packet, so that it is easier to read and identify
 // unknown incoming packets.
 func (pk *Unknown) String() string {
 	return fmt.Sprintf("{ID:0x%x Payload:0x%x}", pk.PacketID, pk.Payload)

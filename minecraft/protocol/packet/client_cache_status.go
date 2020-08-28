@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // ClientCacheStatus is sent by the client to the server at the start of the game. It is sent to let the
@@ -25,6 +26,6 @@ func (pk *ClientCacheStatus) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ClientCacheStatus) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &pk.Enabled)
+func (pk *ClientCacheStatus) Unmarshal(r *protocol.Reader) {
+	r.Bool(&pk.Enabled)
 }

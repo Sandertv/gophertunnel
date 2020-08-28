@@ -31,16 +31,12 @@ func (pk *PlayerEnchantOptions) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerEnchantOptions) Unmarshal(buf *bytes.Buffer) error {
+func (pk *PlayerEnchantOptions) Unmarshal(r *protocol.Reader) {
 	var l uint32
-	if err := protocol.Varuint32(buf, &l); err != nil {
-		return err
-	}
+
+	r.Varuint32(&l)
 	pk.Options = make([]protocol.EnchantmentOption, l)
 	for i := uint32(0); i < l; i++ {
-		if err := protocol.EnchantOption(buf, &pk.Options[i]); err != nil {
-			return err
-		}
+		protocol.EnchantOption(r, &pk.Options[i])
 	}
-	return nil
 }

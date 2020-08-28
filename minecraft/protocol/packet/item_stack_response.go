@@ -30,16 +30,11 @@ func (pk *ItemStackResponse) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ItemStackResponse) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ItemStackResponse) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	pk.Responses = make([]protocol.ItemStackResponse, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.StackResponse(buf, &pk.Responses[i]); err != nil {
-			return err
-		}
+		protocol.StackResponse(r, &pk.Responses[i])
 	}
-	return nil
 }

@@ -78,28 +78,21 @@ func WriteScoreEntry(dst *bytes.Buffer, x ScoreboardEntry, modify bool) error {
 	return nil
 }
 
-// ScoreEntry reads a ScoreboardEntry x from Buffer src. It reads the display information if modify is true,
+// ScoreEntry reads a ScoreboardEntry x from Reader r. It reads the display information if modify is true,
 // as expected when the SetScore packet is sent to modify entries.
-func ScoreEntry(src *bytes.Buffer, x *ScoreboardEntry, modify bool) error {
-	if err := chainErr(
-		Varint64(src, &x.EntryID),
-		String(src, &x.ObjectiveName),
-		binary.Read(src, binary.LittleEndian, &x.Score),
-	); err != nil {
-		return err
-	}
+func ScoreEntry(r *Reader, x *ScoreboardEntry, modify bool) {
+	r.Varint64(&x.EntryID)
+	r.String(&x.ObjectiveName)
+	r.Int32(&x.Score)
 	if modify {
-		if err := binary.Read(src, binary.LittleEndian, &x.IdentityType); err != nil {
-			return err
-		}
+		r.Uint8(&x.IdentityType)
 		switch x.IdentityType {
 		case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-			return Varint64(src, &x.EntityUniqueID)
+			r.Varint64(&x.EntityUniqueID)
 		case ScoreboardIdentityFakePlayer:
-			return String(src, &x.DisplayName)
+			r.String(&x.DisplayName)
 		default:
-			return fmt.Errorf("unknown scoreboard identity type %v", x.IdentityType)
+			r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
 		}
 	}
-	return nil
 }

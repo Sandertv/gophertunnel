@@ -29,9 +29,7 @@ func (pk *StopSound) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StopSound) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.SoundName),
-		binary.Read(buf, binary.LittleEndian, &pk.StopAll),
-	)
+func (pk *StopSound) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.SoundName)
+	r.Bool(&pk.StopAll)
 }

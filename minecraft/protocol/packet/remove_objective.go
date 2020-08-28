@@ -24,6 +24,6 @@ func (pk *RemoveObjective) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *RemoveObjective) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.ObjectiveName)
+func (pk *RemoveObjective) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.ObjectiveName)
 }

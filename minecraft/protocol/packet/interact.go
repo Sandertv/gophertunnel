@@ -48,16 +48,11 @@ func (pk *Interact) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Interact) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		protocol.Varuint64(buf, &pk.TargetEntityRuntimeID),
-	); err != nil {
-		return err
-	}
+func (pk *Interact) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.ActionType)
+	r.Varuint64(&pk.TargetEntityRuntimeID)
 	switch pk.ActionType {
 	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
-		return protocol.Vec3(buf, &pk.Position)
+		r.Vec3(&pk.Position)
 	}
-	return nil
 }

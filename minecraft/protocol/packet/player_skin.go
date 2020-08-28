@@ -38,12 +38,10 @@ func (pk *PlayerSkin) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerSkin) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.UUID(buf, &pk.UUID),
-		protocol.SerialisedSkin(buf, &pk.Skin),
-		protocol.String(buf, &pk.NewSkinName),
-		protocol.String(buf, &pk.OldSkinName),
-		binary.Read(buf, binary.LittleEndian, &pk.Skin.Trusted),
-	)
+func (pk *PlayerSkin) Unmarshal(r *protocol.Reader) {
+	r.UUID(&pk.UUID)
+	protocol.SerialisedSkin(r, &pk.Skin)
+	r.String(&pk.NewSkinName)
+	r.String(&pk.OldSkinName)
+	r.Bool(&pk.Skin.Trusted)
 }

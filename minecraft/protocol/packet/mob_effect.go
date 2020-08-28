@@ -81,13 +81,11 @@ func (pk *MobEffect) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MobEffect) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.Operation),
-		protocol.Varint32(buf, &pk.EffectType),
-		protocol.Varint32(buf, &pk.Amplifier),
-		binary.Read(buf, binary.LittleEndian, &pk.Particles),
-		protocol.Varint32(buf, &pk.Duration),
-	)
+func (pk *MobEffect) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Uint8(&pk.Operation)
+	r.Varint32(&pk.EffectType)
+	r.Varint32(&pk.Amplifier)
+	r.Bool(&pk.Particles)
+	r.Varint32(&pk.Duration)
 }

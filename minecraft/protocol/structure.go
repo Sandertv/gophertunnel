@@ -59,21 +59,19 @@ type StructureSettings struct {
 	Pivot mgl32.Vec3
 }
 
-// StructSettings reads StructureSettings x from Buffer src.
-func StructSettings(src *bytes.Buffer, x *StructureSettings) error {
-	return chainErr(
-		String(src, &x.PaletteName),
-		binary.Read(src, binary.LittleEndian, &x.IgnoreEntities),
-		binary.Read(src, binary.LittleEndian, &x.IgnoreBlocks),
-		UBlockPosition(src, &x.Size),
-		UBlockPosition(src, &x.Offset),
-		Varint64(src, &x.LastEditingPlayerUniqueID),
-		binary.Read(src, binary.LittleEndian, &x.Rotation),
-		binary.Read(src, binary.LittleEndian, &x.Mirror),
-		Float32(src, &x.Integrity),
-		binary.Read(src, binary.LittleEndian, &x.Seed),
-		Vec3(src, &x.Pivot),
-	)
+// StructSettings reads StructureSettings x from Reader r.
+func StructSettings(r *Reader, x *StructureSettings) {
+	r.String(&x.PaletteName)
+	r.Bool(&x.IgnoreEntities)
+	r.Bool(&x.IgnoreBlocks)
+	r.UBlockPos(&x.Size)
+	r.UBlockPos(&x.Offset)
+	r.Varint64(&x.LastEditingPlayerUniqueID)
+	r.Uint8(&x.Rotation)
+	r.Uint8(&x.Mirror)
+	r.Float32(&x.Integrity)
+	r.Uint32(&x.Seed)
+	r.Vec3(&x.Pivot)
 }
 
 // WriteStructSettings writes StructureSettings x to Buffer dst.

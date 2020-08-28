@@ -26,9 +26,7 @@ func (pk *DebugInfo) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *DebugInfo) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint64(buf, &pk.PlayerUniqueID),
-		protocol.ByteSlice(buf, &pk.Data),
-	)
+func (pk *DebugInfo) Unmarshal(r *protocol.Reader) {
+	r.Varint64(&pk.PlayerUniqueID)
+	r.ByteSlice(&pk.Data)
 }

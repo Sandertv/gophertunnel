@@ -25,6 +25,6 @@ func (pk *SetActorLink) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetActorLink) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.EntityLinkAction(buf, &pk.EntityLink)
+func (pk *SetActorLink) Unmarshal(r *protocol.Reader) {
+	protocol.EntityLinkAction(r, &pk.EntityLink)
 }

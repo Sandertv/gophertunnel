@@ -28,9 +28,7 @@ func (pk *Camera) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Camera) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint64(buf, &pk.CameraEntityUniqueID),
-		protocol.Varint64(buf, &pk.TargetPlayerUniqueID),
-	)
+func (pk *Camera) Unmarshal(r *protocol.Reader) {
+	r.Varint64(&pk.CameraEntityUniqueID)
+	r.Varint64(&pk.TargetPlayerUniqueID)
 }

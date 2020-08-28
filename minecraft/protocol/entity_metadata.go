@@ -20,71 +20,57 @@ const (
 	EntityDataVec3
 )
 
-// EntityMetadata reads an entity metadata list from buffer src into map x. The types in the map will be one
+// EntityMetadata reads an entity metadata list from Reader r into map x. The types in the map will be one
 // of byte, int16, int32, float32, string, map[string]interface{}, BlockPos, int64 or mgl32.Vec3.
-func EntityMetadata(src *bytes.Buffer, x *map[uint32]interface{}) error {
+func EntityMetadata(r *Reader, x *map[uint32]interface{}) {
 	var count uint32
-	var err error
-	if err = Varuint32(src, &count); err != nil {
-		return wrap(err)
-	}
-	if count > mediumLimit {
-		return LimitHitError{Limit: mediumLimit, Type: "entity metadata"}
-	}
+	r.Varuint32(&count)
+	r.LimitUint32(count, mediumLimit)
 	for i := uint32(0); i < count; i++ {
 		var key, dataType uint32
-		if err = Varuint32(src, &key); err != nil {
-			return wrap(err)
-		}
-		if err = Varuint32(src, &dataType); err != nil {
-			return wrap(err)
-		}
+		r.Varuint32(&key)
+		r.Varuint32(&dataType)
 		switch dataType {
 		case EntityDataByte:
 			var v byte
-			err = binary.Read(src, binary.LittleEndian, &v)
+			r.Uint8(&v)
 			(*x)[key] = v
 		case EntityDataInt16:
 			var v int16
-			err = binary.Read(src, binary.LittleEndian, &v)
+			r.Int16(&v)
 			(*x)[key] = v
 		case EntityDataInt32:
 			var v int32
-			err = Varint32(src, &v)
+			r.Varint32(&v)
 			(*x)[key] = v
 		case EntityDataFloat32:
 			var v float32
-			err = Float32(src, &v)
+			r.Float32(&v)
 			(*x)[key] = v
 		case EntityDataString:
 			var v string
-			err = String(src, &v)
+			r.String(&v)
 			(*x)[key] = v
 		case EntityDataCompoundTag:
 			var v map[string]interface{}
-			err = nbt.NewDecoder(src).Decode(&v)
+			r.NBT(&v, nbt.NetworkLittleEndian)
 			(*x)[key] = v
 		case EntityDataBlockPos:
 			var v BlockPos
-			err = BlockPosition(src, &v)
+			r.BlockPos(&v)
 			(*x)[key] = v
 		case EntityDataInt64:
 			var v int64
-			err = Varint64(src, &v)
+			r.Varint64(&v)
 			(*x)[key] = v
 		case EntityDataVec3:
 			var v mgl32.Vec3
-			err = Vec3(src, &v)
+			r.Vec3(&v)
 			(*x)[key] = v
 		default:
-			return fmt.Errorf("unknown entity data type %v", dataType)
-		}
-		if err != nil {
-			// If the error from reading the entity data property was not nil, we return right away.
-			return wrap(err)
+			r.UnknownEnumOption(dataType, "entity metadata")
 		}
 	}
-	return nil
 }
 
 // WriteEntityMetadata writes an entity metadata list x to buffer dst. The types held by the map must be one

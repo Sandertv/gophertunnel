@@ -328,13 +328,11 @@ func (pk *LevelSoundEvent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LevelSoundEvent) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint32(buf, &pk.SoundType),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Varint32(buf, &pk.ExtraData),
-		protocol.String(buf, &pk.EntityType),
-		binary.Read(buf, binary.LittleEndian, &pk.BabyMob),
-		binary.Read(buf, binary.LittleEndian, &pk.DisableRelativeVolume),
-	)
+func (pk *LevelSoundEvent) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.SoundType)
+	r.Vec3(&pk.Position)
+	r.Varint32(&pk.ExtraData)
+	r.String(&pk.EntityType)
+	r.Bool(&pk.BabyMob)
+	r.Bool(&pk.DisableRelativeVolume)
 }

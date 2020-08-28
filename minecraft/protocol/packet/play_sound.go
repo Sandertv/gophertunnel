@@ -37,20 +37,12 @@ func (pk *PlaySound) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlaySound) Unmarshal(buf *bytes.Buffer) error {
-	b := protocol.BlockPos{}
-	if err := chainErr(
-		protocol.String(buf, &pk.SoundName),
-		protocol.BlockPosition(buf, &b),
-		protocol.Float32(buf, &pk.Volume),
-		protocol.Float32(buf, &pk.Pitch),
-	); err != nil {
-		return err
-	}
-	pk.Position = mgl32.Vec3{
-		float32(b[0]) / 8,
-		float32(b[1]) / 8,
-		float32(b[2]) / 8,
-	}
-	return nil
+func (pk *PlaySound) Unmarshal(r *protocol.Reader) {
+	var b protocol.BlockPos
+	r.String(&pk.SoundName)
+	r.BlockPos(&b)
+	r.Float32(&pk.Volume)
+	r.Float32(&pk.Pitch)
+
+	pk.Position = mgl32.Vec3{float32(b[0]) / 8, float32(b[1]) / 8, float32(b[2]) / 8}
 }

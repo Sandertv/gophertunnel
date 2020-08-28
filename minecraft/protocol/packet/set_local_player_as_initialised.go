@@ -25,6 +25,6 @@ func (pk *SetLocalPlayerAsInitialised) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetLocalPlayerAsInitialised) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varuint64(buf, &pk.EntityRuntimeID)
+func (pk *SetLocalPlayerAsInitialised) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
 }

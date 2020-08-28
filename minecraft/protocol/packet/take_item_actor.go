@@ -28,9 +28,7 @@ func (pk *TakeItemActor) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *TakeItemActor) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.ItemEntityRuntimeID),
-		protocol.Varuint64(buf, &pk.TakerEntityRuntimeID),
-	)
+func (pk *TakeItemActor) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.ItemEntityRuntimeID)
+	r.Varuint64(&pk.TakerEntityRuntimeID)
 }

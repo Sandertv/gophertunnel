@@ -1,6 +1,9 @@
 package packet
 
-import "bytes"
+import (
+	"bytes"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
+)
 
 // ServerSettingsRequest is sent by the client to request the settings specific to the server. These settings
 // are shown in a separate tab client-side, and have the same structure as a custom form.
@@ -14,11 +17,7 @@ func (*ServerSettingsRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (*ServerSettingsRequest) Marshal(*bytes.Buffer) {
-
-}
+func (*ServerSettingsRequest) Marshal(*bytes.Buffer) {}
 
 // Unmarshal ...
-func (*ServerSettingsRequest) Unmarshal(*bytes.Buffer) error {
-	return nil
-}
+func (*ServerSettingsRequest) Unmarshal(*protocol.Reader) {}

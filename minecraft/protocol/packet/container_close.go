@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // ContainerClose is sent by the server to close a container the player currently has opened, which was opened
@@ -25,6 +26,6 @@ func (pk *ContainerClose) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ContainerClose) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &pk.WindowID)
+func (pk *ContainerClose) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.WindowID)
 }

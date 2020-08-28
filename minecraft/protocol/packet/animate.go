@@ -41,15 +41,10 @@ func (pk *Animate) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Animate) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		protocol.Varint32(buf, &pk.ActionType),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-	); err != nil {
-		return err
-	}
+func (pk *Animate) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.ActionType)
+	r.Varuint64(&pk.EntityRuntimeID)
 	if pk.ActionType&0x80 != 0 {
-		return protocol.Float32(buf, &pk.BoatRowingTime)
+		r.Float32(&pk.BoatRowingTime)
 	}
-	return nil
 }

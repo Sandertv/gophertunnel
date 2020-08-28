@@ -30,9 +30,7 @@ func (pk *Login) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Login) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.BigEndian, &pk.ClientProtocol),
-		protocol.ByteSlice(buf, &pk.ConnectionRequest),
-	)
+func (pk *Login) Unmarshal(r *protocol.Reader) {
+	r.BEInt32(&pk.ClientProtocol)
+	r.ByteSlice(&pk.ConnectionRequest)
 }

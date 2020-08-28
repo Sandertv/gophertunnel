@@ -25,6 +25,6 @@ func (pk *RequestChunkRadius) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *RequestChunkRadius) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.ChunkRadius)
+func (pk *RequestChunkRadius) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.ChunkRadius)
 }

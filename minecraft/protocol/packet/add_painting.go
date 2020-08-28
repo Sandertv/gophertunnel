@@ -41,12 +41,10 @@ func (pk *AddPainting) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddPainting) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Varint32(buf, &pk.Direction),
-		protocol.String(buf, &pk.Title),
-	)
+func (pk *AddPainting) Unmarshal(r *protocol.Reader) {
+	r.Varint64(&pk.EntityUniqueID)
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Vec3(&pk.Position)
+	r.Varint32(&pk.Direction)
+	r.String(&pk.Title)
 }

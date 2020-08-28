@@ -45,10 +45,8 @@ func (pk *ChangeDimension) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ChangeDimension) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint32(buf, &pk.Dimension),
-		protocol.Vec3(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.Respawn),
-	)
+func (pk *ChangeDimension) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.Dimension)
+	r.Vec3(&pk.Position)
+	r.Bool(&pk.Respawn)
 }

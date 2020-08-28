@@ -53,36 +53,25 @@ func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerList) Unmarshal(buf *bytes.Buffer) error {
+func (pk *PlayerList) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		protocol.Varuint32(buf, &count),
-	); err != nil {
-		return err
-	}
+	r.Uint8(&pk.ActionType)
+	r.Varuint32(&count)
+
 	pk.Entries = make([]protocol.PlayerListEntry, count)
 	for i := uint32(0); i < count; i++ {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			if err := protocol.PlayerAddEntry(buf, &pk.Entries[i]); err != nil {
-				return err
-			}
+			protocol.PlayerAddEntry(r, &pk.Entries[i])
 		case PlayerListActionRemove:
-			if err := protocol.PlayerRemoveEntry(buf, &pk.Entries[i]); err != nil {
-				return err
-			}
+			protocol.PlayerRemoveEntry(r, &pk.Entries[i])
 		default:
-			return fmt.Errorf("unknown player list action type %v", pk.ActionType)
+			r.UnknownEnumOption(pk.ActionType, "player list action type")
 		}
 	}
 	if pk.ActionType == PlayerListActionAdd {
 		for i := uint32(0); i < count; i++ {
-			if err := binary.Read(buf, binary.LittleEndian, &pk.Entries[i].Skin.Trusted); err != nil {
-				// These booleans at the end are optional, they might not be there.
-				return nil
-			}
+			r.Bool(&pk.Entries[i].Skin.Trusted)
 		}
 	}
-	return nil
 }

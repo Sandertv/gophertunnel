@@ -33,10 +33,8 @@ func (pk *ActorFall) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ActorFall) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Float32(buf, &pk.FallDistance),
-		binary.Read(buf, binary.LittleEndian, &pk.InVoid),
-	)
+func (pk *ActorFall) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Float32(&pk.FallDistance)
+	r.Bool(&pk.InVoid)
 }

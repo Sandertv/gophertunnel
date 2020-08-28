@@ -83,30 +83,20 @@ func (pk *CommandBlockUpdate) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *CommandBlockUpdate) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.Block); err != nil {
-		return err
-	}
+func (pk *CommandBlockUpdate) Unmarshal(r *protocol.Reader) {
+	r.Bool(&pk.Block)
 	if pk.Block {
-		if err := chainErr(
-			protocol.UBlockPosition(buf, &pk.Position),
-			protocol.Varuint32(buf, &pk.Mode),
-			binary.Read(buf, binary.LittleEndian, &pk.NeedsRedstone),
-			binary.Read(buf, binary.LittleEndian, &pk.Conditional),
-		); err != nil {
-			return err
-		}
+		r.UBlockPos(&pk.Position)
+		r.Varuint32(&pk.Mode)
+		r.Bool(&pk.NeedsRedstone)
+		r.Bool(&pk.Conditional)
 	} else {
-		if err := protocol.Varuint64(buf, &pk.MinecartEntityRuntimeID); err != nil {
-			return err
-		}
+		r.Varuint64(&pk.MinecartEntityRuntimeID)
 	}
-	return chainErr(
-		protocol.String(buf, &pk.Command),
-		protocol.String(buf, &pk.LastOutput),
-		protocol.String(buf, &pk.Name),
-		binary.Read(buf, binary.LittleEndian, &pk.ShouldTrackOutput),
-		binary.Read(buf, binary.LittleEndian, &pk.TickDelay),
-		binary.Read(buf, binary.LittleEndian, &pk.ExecuteOnFirstTick),
-	)
+	r.String(&pk.Command)
+	r.String(&pk.LastOutput)
+	r.String(&pk.Name)
+	r.Bool(&pk.ShouldTrackOutput)
+	r.Int32(&pk.TickDelay)
+	r.Bool(&pk.ExecuteOnFirstTick)
 }

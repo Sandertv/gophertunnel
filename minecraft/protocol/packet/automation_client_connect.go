@@ -25,6 +25,6 @@ func (pk *AutomationClientConnect) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AutomationClientConnect) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.ServerURI)
+func (pk *AutomationClientConnect) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.ServerURI)
 }

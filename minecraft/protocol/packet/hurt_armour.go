@@ -29,9 +29,7 @@ func (pk *HurtArmour) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *HurtArmour) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint32(buf, &pk.Cause),
-		protocol.Varint32(buf, &pk.Damage),
-	)
+func (pk *HurtArmour) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.Cause)
+	r.Varint32(&pk.Damage)
 }

@@ -3,7 +3,6 @@ package packet
 import (
 	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"math"
 )
 
 // LevelEventGeneric is sent by the server to send a 'generic' level event to the client. This packet sends an
@@ -97,10 +96,7 @@ func (pk *LevelEventGeneric) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LevelEventGeneric) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.Varint32(buf, &pk.EventID); err != nil {
-		return err
-	}
-	pk.SerialisedEventData = buf.Next(math.MaxInt32)
-	return nil
+func (pk *LevelEventGeneric) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.EventID)
+	r.Leftover(&pk.SerialisedEventData)
 }

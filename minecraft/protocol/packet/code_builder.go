@@ -29,9 +29,7 @@ func (pk *CodeBuilder) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *CodeBuilder) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.URL),
-		binary.Read(buf, binary.LittleEndian, &pk.ShouldOpenCodeBuilder),
-	)
+func (pk *CodeBuilder) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.URL)
+	r.Bool(&pk.ShouldOpenCodeBuilder)
 }

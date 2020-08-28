@@ -2,19 +2,8 @@ package protocol
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/google/uuid"
 )
-
-// UUID reads a little endian UUID from buffer src into UUID id.
-func UUID(src *bytes.Buffer, id *uuid.UUID) error {
-	b := make([]byte, 16)
-	if _, err := src.Read(b); err != nil {
-		return fmt.Errorf("%v: need exactly 16 bytes to decode a UUID", callFrame())
-	}
-	*id = reverseUUIDBytes(b)
-	return nil
-}
 
 // WriteUUID writes a little endian UUID id to buffer dst.
 func WriteUUID(dst *bytes.Buffer, id uuid.UUID) error {

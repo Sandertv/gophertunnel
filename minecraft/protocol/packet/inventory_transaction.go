@@ -3,7 +3,6 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -83,39 +82,27 @@ func (pk *InventoryTransaction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *InventoryTransaction) Unmarshal(buf *bytes.Buffer) error {
+func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
 	var length, transactionType uint32
-	if err := protocol.Varint32(buf, &pk.LegacyRequestID); err != nil {
-		return err
-	}
+	r.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
-		if err := protocol.Varuint32(buf, &length); err != nil {
-			return err
-		}
+		r.Varuint32(&length)
+
 		pk.LegacySetItemSlots = make([]protocol.LegacySetItemSlot, length)
 		for i := uint32(0); i < length; i++ {
-			if err := protocol.SetItemSlot(buf, &pk.LegacySetItemSlots[i]); err != nil {
-				return err
-			}
+			protocol.SetItemSlot(r, &pk.LegacySetItemSlots[i])
 		}
 	}
-	if err := chainErr(
-		protocol.Varuint32(buf, &transactionType),
-		binary.Read(buf, binary.LittleEndian, &pk.HasNetworkIDs),
-		protocol.Varuint32(buf, &length),
-	); err != nil {
-		return err
-	}
-	if length > 512 {
-		return protocol.LimitHitError{Type: "inventory transaction", Limit: 512}
-	}
+	r.Varuint32(&transactionType)
+	r.Bool(&pk.HasNetworkIDs)
+	r.Varuint32(&length)
+	r.LimitUint32(length, 512)
+
 	pk.Actions = make([]protocol.InventoryAction, length)
 	for i := uint32(0); i < length; i++ {
 		// Each InventoryTransaction packet has a list of actions at the start, with a transaction data object
 		// after that, depending on the transaction type.
-		if err := protocol.InvAction(buf, &pk.Actions[i], pk.HasNetworkIDs); err != nil {
-			return err
-		}
+		protocol.InvAction(r, &pk.Actions[i], pk.HasNetworkIDs)
 	}
 	switch transactionType {
 	case InventoryTransactionTypeNormal:
@@ -129,8 +116,7 @@ func (pk *InventoryTransaction) Unmarshal(buf *bytes.Buffer) error {
 	case InventoryTransactionTypeReleaseItem:
 		pk.TransactionData = &protocol.ReleaseItemTransactionData{}
 	default:
-		// We don't try to decode transactions that have some transaction type we don't know.
-		return fmt.Errorf("unknown inventory transaction type %v", transactionType)
+		r.UnknownEnumOption(transactionType, "inventory transaction type")
 	}
-	return pk.TransactionData.Unmarshal(buf)
+	pk.TransactionData.Unmarshal(r)
 }

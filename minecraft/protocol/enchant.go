@@ -37,14 +37,12 @@ func WriteEnchantOption(dst *bytes.Buffer, x EnchantmentOption) error {
 	)
 }
 
-// EnchantOption reads an EnchantmentOption x from Buffer src.
-func EnchantOption(src *bytes.Buffer, x *EnchantmentOption) error {
-	return chainErr(
-		Varuint32(src, &x.Cost),
-		ItemEnchants(src, &x.Enchantments),
-		String(src, &x.Name),
-		Varuint32(src, &x.RecipeNetworkID),
-	)
+// EnchantOption reads an EnchantmentOption x from Reader r.
+func EnchantOption(r *Reader, x *EnchantmentOption) {
+	r.Varuint32(&x.Cost)
+	ItemEnchants(r, &x.Enchantments)
+	r.String(&x.Name)
+	r.Varuint32(&x.RecipeNetworkID)
 }
 
 const (
@@ -110,24 +108,17 @@ func WriteItemEnchants(dst *bytes.Buffer, x ItemEnchantments) error {
 	return nil
 }
 
-// ItemEnchants reads an ItemEnchantments x from Buffer src.
-func ItemEnchants(src *bytes.Buffer, x *ItemEnchantments) error {
-	if err := binary.Read(src, binary.LittleEndian, &x.Slot); err != nil {
-		return err
-	}
+// ItemEnchants reads an ItemEnchantments x from Reader r.
+func ItemEnchants(r *Reader, x *ItemEnchantments) {
+	var l uint32
+	r.Int32(&x.Slot)
 	for i := 0; i < 3; i++ {
-		var l uint32
-		if err := Varuint32(src, &l); err != nil {
-			return err
-		}
+		r.Varuint32(&l)
 		x.Enchantments[i] = make([]EnchantmentInstance, l)
 		for j := uint32(0); j < l; j++ {
-			if err := Enchant(src, &x.Enchantments[i][j]); err != nil {
-				return err
-			}
+			Enchant(r, &x.Enchantments[i][j])
 		}
 	}
-	return nil
 }
 
 // EnchantmentInstance represents a single enchantment instance with the type of the enchantment and its
@@ -145,9 +136,7 @@ func WriteEnchant(dst *bytes.Buffer, x EnchantmentInstance) error {
 }
 
 // Enchant reads an EnchantmentInstance x from Buffer src.
-func Enchant(src *bytes.Buffer, x *EnchantmentInstance) error {
-	return chainErr(
-		binary.Read(src, binary.LittleEndian, &x.Type),
-		binary.Read(src, binary.LittleEndian, &x.Level),
-	)
+func Enchant(r *Reader, x *EnchantmentInstance) {
+	r.Uint8(&x.Type)
+	r.Uint8(&x.Level)
 }

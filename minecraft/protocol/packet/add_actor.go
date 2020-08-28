@@ -67,19 +67,17 @@ func (pk *AddActor) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddActor) Unmarshal(buf *bytes.Buffer) error {
+func (pk *AddActor) Unmarshal(r *protocol.Reader) {
 	pk.EntityMetadata = map[uint32]interface{}{}
-	return chainErr(
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.String(buf, &pk.EntityType),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Vec3(buf, &pk.Velocity),
-		protocol.Float32(buf, &pk.Pitch),
-		protocol.Float32(buf, &pk.Yaw),
-		protocol.Float32(buf, &pk.HeadYaw),
-		protocol.InitialAttributes(buf, &pk.Attributes),
-		protocol.EntityMetadata(buf, &pk.EntityMetadata),
-		protocol.EntityLinks(buf, &pk.EntityLinks),
-	)
+	r.Varint64(&pk.EntityUniqueID)
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.String(&pk.EntityType)
+	r.Vec3(&pk.Position)
+	r.Vec3(&pk.Velocity)
+	r.Float32(&pk.Pitch)
+	r.Float32(&pk.Yaw)
+	r.Float32(&pk.HeadYaw)
+	protocol.InitialAttributes(r, &pk.Attributes)
+	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	protocol.EntityLinks(r, &pk.EntityLinks)
 }

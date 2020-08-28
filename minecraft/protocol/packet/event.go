@@ -30,8 +30,8 @@ type Event struct {
 	EntityRuntimeID uint64
 	// EventType is the type of the event to be called. It is one of the constants that may be found above.
 	EventType int32
-	// TODO: Find out what the unknown byte in the Event packet represents.
-	Unknown byte
+	// UsePlayerID ... TODO: Figure out what this is for.
+	UsePlayerID byte
 }
 
 // ID ...
@@ -43,21 +43,16 @@ func (*Event) ID() uint32 {
 func (pk *Event) Marshal(buf *bytes.Buffer) {
 	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
 	_ = protocol.WriteVarint32(buf, pk.EventType)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Unknown)
+	_ = binary.Write(buf, binary.LittleEndian, pk.UsePlayerID)
 
-	// TODO: Figure out which events in the Event packet carry what additional fields.
+	// TODO: Add fields for all Event types.
 }
 
 // Unmarshal ...
-func (pk *Event) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Varint32(buf, &pk.EventType),
-		binary.Read(buf, binary.LittleEndian, &pk.Unknown),
-	); err != nil {
-		return err
-	}
-	// TODO: Figure out which events in the Event packet carry what additional fields.
+func (pk *Event) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Varint32(&pk.EventType)
+	r.Uint8(&pk.UsePlayerID)
 
-	return nil
+	// TODO: Add fields for all Event types.
 }

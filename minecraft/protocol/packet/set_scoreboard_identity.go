@@ -43,24 +43,16 @@ func (pk *SetScoreboardIdentity) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetScoreboardIdentity) Unmarshal(buf *bytes.Buffer) error {
+func (pk *SetScoreboardIdentity) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		protocol.Varuint32(buf, &count),
-	); err != nil {
-		return err
-	}
+	r.Uint8(&pk.ActionType)
+	r.Varuint32(&count)
+
 	pk.Entries = make([]protocol.ScoreboardIdentityEntry, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.Varint64(buf, &pk.Entries[i].EntryID); err != nil {
-			return err
-		}
+		r.Varint64(&pk.Entries[i].EntryID)
 		if pk.ActionType == ScoreboardIdentityActionRegister {
-			if err := protocol.Varint64(buf, &pk.Entries[i].EntityUniqueID); err != nil {
-				return err
-			}
+			r.Varint64(&pk.Entries[i].EntityUniqueID)
 		}
 	}
-	return nil
 }

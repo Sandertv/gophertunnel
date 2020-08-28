@@ -42,12 +42,10 @@ func (pk *MobEquipment) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MobEquipment) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Item(buf, &pk.NewItem),
-		binary.Read(buf, binary.LittleEndian, &pk.InventorySlot),
-		binary.Read(buf, binary.LittleEndian, &pk.HotBarSlot),
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-	)
+func (pk *MobEquipment) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	protocol.Item(r, &pk.NewItem)
+	r.Uint8(&pk.InventorySlot)
+	r.Uint8(&pk.HotBarSlot)
+	r.Uint8(&pk.WindowID)
 }

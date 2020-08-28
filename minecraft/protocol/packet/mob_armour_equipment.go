@@ -39,12 +39,10 @@ func (pk *MobArmourEquipment) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MobArmourEquipment) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Item(buf, &pk.Helmet),
-		protocol.Item(buf, &pk.Chestplate),
-		protocol.Item(buf, &pk.Leggings),
-		protocol.Item(buf, &pk.Boots),
-	)
+func (pk *MobArmourEquipment) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	protocol.Item(r, &pk.Helmet)
+	protocol.Item(r, &pk.Chestplate)
+	protocol.Item(r, &pk.Leggings)
+	protocol.Item(r, &pk.Boots)
 }
