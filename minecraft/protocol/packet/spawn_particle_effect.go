@@ -41,11 +41,9 @@ func (pk *SpawnParticleEffect) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SpawnParticleEffect) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Dimension),
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.String(buf, &pk.ParticleName),
-	)
+func (pk *SpawnParticleEffect) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.Dimension)
+	r.Varint64(&pk.EntityUniqueID)
+	r.Vec3(&pk.Position)
+	r.String(&pk.ParticleName)
 }

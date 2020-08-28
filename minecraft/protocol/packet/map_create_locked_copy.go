@@ -28,9 +28,7 @@ func (pk *MapCreateLockedCopy) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MapCreateLockedCopy) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint64(buf, &pk.OriginalMapID),
-		protocol.Varint64(buf, &pk.NewMapID),
-	)
+func (pk *MapCreateLockedCopy) Unmarshal(r *protocol.Reader) {
+	r.Varint64(&pk.OriginalMapID)
+	r.Varint64(&pk.NewMapID)
 }

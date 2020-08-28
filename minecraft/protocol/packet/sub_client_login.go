@@ -28,6 +28,6 @@ func (pk *SubClientLogin) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SubClientLogin) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.ByteSlice(buf, &pk.ConnectionRequest)
+func (pk *SubClientLogin) Unmarshal(r *protocol.Reader) {
+	r.ByteSlice(&pk.ConnectionRequest)
 }

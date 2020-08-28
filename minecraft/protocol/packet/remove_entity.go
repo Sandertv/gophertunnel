@@ -23,6 +23,6 @@ func (pk *RemoveEntity) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *RemoveEntity) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varuint64(buf, &pk.EntityNetworkID)
+func (pk *RemoveEntity) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityNetworkID)
 }

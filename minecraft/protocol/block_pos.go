@@ -23,18 +23,6 @@ func (pos BlockPos) Z() int32 {
 	return pos[2]
 }
 
-// BlockPosition reads a BlockPos from Buffer src and stores it to the BlockPos pointer passed.
-func BlockPosition(src *bytes.Buffer, x *BlockPos) error {
-	if err := chainErr(
-		Varint32(src, &(*x)[0]),
-		Varint32(src, &(*x)[1]),
-		Varint32(src, &(*x)[2]),
-	); err != nil {
-		return wrap(err)
-	}
-	return nil
-}
-
 // WriteBlockPosition writes a BlockPos x to Buffer dst, composed of 3 varint32s.
 func WriteBlockPosition(dst *bytes.Buffer, x BlockPos) error {
 	return chainErr(
@@ -42,21 +30,6 @@ func WriteBlockPosition(dst *bytes.Buffer, x BlockPos) error {
 		WriteVarint32(dst, x[1]),
 		WriteVarint32(dst, x[2]),
 	)
-}
-
-// UBlockPosition reads an unsigned BlockPos from Buffer src and stores it to the BlockPos pointer passed. The
-// difference between this and BlockPosition is that the Y coordinate is read as a varuint32.
-func UBlockPosition(src *bytes.Buffer, x *BlockPos) error {
-	var v uint32
-	if err := chainErr(
-		Varint32(src, &(*x)[0]),
-		Varuint32(src, &v),
-		Varint32(src, &(*x)[2]),
-	); err != nil {
-		return wrap(err)
-	}
-	(*x)[1] = int32(v)
-	return nil
 }
 
 // WriteUBlockPosition writes an unsigned BlockPos x to Buffer dst, composed of a varint32, varuint32 and a

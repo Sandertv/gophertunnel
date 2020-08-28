@@ -18,18 +18,13 @@ type ItemInstance struct {
 	Stack ItemStack
 }
 
-// ItemInst reads an ItemInstance x from Buffer src.
-func ItemInst(src *bytes.Buffer, x *ItemInstance) error {
-	if err := chainErr(
-		Varint32(src, &x.StackNetworkID),
-		Item(src, &x.Stack),
-	); err != nil {
-		return err
-	}
+// ItemInst reads an ItemInstance x from Reader r.
+func ItemInst(r *Reader, x *ItemInstance) {
+	r.Varint32(&x.StackNetworkID)
+	Item(r, &x.Stack)
 	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
-		return fmt.Errorf("stack %#v is empty but network ID %v is non-zero", x.Stack, x.StackNetworkID)
+		r.InvalidValue(x.StackNetworkID, "stack network ID", "stack is empty but network ID is non-zero")
 	}
-	return nil
 }
 
 // WriteItemInst writes an ItemInstance x to Buffer dst.
@@ -70,91 +65,58 @@ type ItemType struct {
 }
 
 // Item reads an item stack from buffer src and stores it into item stack x.
-func Item(src *bytes.Buffer, x *ItemStack) error {
+func Item(r *Reader, x *ItemStack) {
 	x.NBTData = make(map[string]interface{})
-	if err := Varint32(src, &x.NetworkID); err != nil {
-		return wrap(err)
-	}
+	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
-		x.MetadataValue = 0
-		x.Count = 0
-		x.CanBePlacedOn, x.CanBreak = nil, nil
-		return nil
+		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
+		return
 	}
 	var auxValue int32
-	if err := Varint32(src, &auxValue); err != nil {
-		return wrap(err)
-	}
+	r.Varint32(&auxValue)
 	x.MetadataValue = int16(auxValue >> 8)
 	x.Count = int16(auxValue & 0xff)
 
 	var userDataMarker int16
-	if err := binary.Read(src, binary.LittleEndian, &userDataMarker); err != nil {
-		return wrap(err)
-	}
+	r.Int16(&userDataMarker)
+
 	if userDataMarker == -1 {
 		var userDataVersion uint8
-		if err := binary.Read(src, binary.LittleEndian, &userDataVersion); err != nil {
-			return wrap(err)
-		}
+		r.Uint8(&userDataVersion)
+
 		switch userDataVersion {
 		case 1:
-			if err := nbt.NewDecoder(src).Decode(&x.NBTData); err != nil {
-				return fmt.Errorf("%v: error decoding user data NBT: %v", callFrame(), err)
-			}
+			r.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 		default:
-			return fmt.Errorf("%v: unexpected item user data version %v", callFrame(), userDataVersion)
+			r.UnknownEnumOption(userDataVersion, "item user data version")
+			return
 		}
-	} else if userDataMarker != 0 {
-		if userDataMarker < 0 {
-			return fmt.Errorf("%v: invalid NBT length %v", callFrame(), userDataMarker)
-		}
-		nbtData := src.Next(int(userDataMarker))
-		if err := nbt.UnmarshalEncoding(nbtData, &x.NBTData, nbt.LittleEndian); err != nil {
-			return fmt.Errorf("%v: error decoding item NBT: %v", callFrame(), err)
-		}
+	} else if userDataMarker > 0 {
+		r.NBT(&x.NBTData, nbt.LittleEndian)
 	}
 	var count int32
-	if err := Varint32(src, &count); err != nil {
-		return wrap(err)
-	}
-	if count < 0 {
-		return NegativeCountError{Type: "item can be placed on"}
-	}
-	if count > higherLimit {
-		return LimitHitError{Limit: higherLimit, Type: "item can be placed on"}
-	}
+	r.Varint32(&count)
+	r.LimitInt32(count, 0, higherLimit)
+
 	x.CanBePlacedOn = make([]string, count)
 	for i := int32(0); i < count; i++ {
-		if err := String(src, &x.CanBePlacedOn[i]); err != nil {
-			return wrap(err)
-		}
+		r.String(&x.CanBePlacedOn[i])
 	}
-	if err := Varint32(src, &count); err != nil {
-		return wrap(err)
-	}
-	if count < 0 {
-		return NegativeCountError{Type: "item can break"}
-	}
-	if count > higherLimit {
-		return LimitHitError{Limit: higherLimit, Type: "item can break"}
-	}
+
+	r.Varint32(&count)
+	r.LimitInt32(count, 0, higherLimit)
+
 	x.CanBreak = make([]string, count)
 	for i := int32(0); i < count; i++ {
-		if err := String(src, &x.CanBreak[i]); err != nil {
-			return wrap(err)
-		}
+		r.String(&x.CanBreak[i])
 	}
 	const shieldID = 513
 	if x.NetworkID == shieldID {
 		var blockingTick int64
-		if err := Varint64(src, &blockingTick); err != nil {
-			return wrap(err)
-		}
+		r.Varint64(&blockingTick)
 	}
-	return nil
 }
 
 // WriteItem writes an item stack x to buffer dst.
@@ -215,27 +177,18 @@ func WriteItem(dst *bytes.Buffer, x ItemStack) error {
 	return nil
 }
 
-// RecipeIngredient reads an ItemStack x as a recipe ingredient from Buffer src.
-func RecipeIngredient(src *bytes.Buffer, x *ItemStack) error {
-	if err := Varint32(src, &x.NetworkID); err != nil {
-		return nil
-	}
+// RecipeIngredient reads an ItemStack x as a recipe ingredient from Reader r.
+func RecipeIngredient(r *Reader, x *ItemStack) {
+	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
-		return nil
+		return
 	}
 	var meta, count int32
-	if err := Varint32(src, &meta); err != nil {
-		return err
-	}
+	r.Varint32(&meta)
 	x.MetadataValue = int16(meta)
-	if err := Varint32(src, &count); err != nil {
-		return err
-	}
-	if count < 0 {
-		return NegativeCountError{Type: "recipe ingredient count"}
-	}
+	r.Varint32(&count)
+	r.LimitInt32(count, 0, mediumLimit)
 	x.Count = int16(count)
-	return nil
 }
 
 // WriteRecipeIngredient writes an ItemStack x as a recipe ingredient to Buffer dst.

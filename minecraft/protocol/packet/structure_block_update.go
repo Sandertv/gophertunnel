@@ -73,16 +73,14 @@ func (pk *StructureBlockUpdate) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StructureBlockUpdate) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.UBlockPosition(buf, &pk.Position),
-		protocol.String(buf, &pk.StructureName),
-		protocol.String(buf, &pk.DataField),
-		binary.Read(buf, binary.LittleEndian, &pk.IncludePlayers),
-		binary.Read(buf, binary.LittleEndian, &pk.ShowBoundingBox),
-		protocol.Varint32(buf, &pk.StructureBlockType),
-		protocol.StructSettings(buf, &pk.Settings),
-		protocol.Varint32(buf, &pk.RedstoneSaveMode),
-		binary.Read(buf, binary.LittleEndian, &pk.ShouldTrigger),
-	)
+func (pk *StructureBlockUpdate) Unmarshal(r *protocol.Reader) {
+	r.UBlockPos(&pk.Position)
+	r.String(&pk.StructureName)
+	r.String(&pk.DataField)
+	r.Bool(&pk.IncludePlayers)
+	r.Bool(&pk.ShowBoundingBox)
+	r.Varint32(&pk.StructureBlockType)
+	protocol.StructSettings(r, &pk.Settings)
+	r.Varint32(&pk.RedstoneSaveMode)
+	r.Bool(&pk.ShouldTrigger)
 }

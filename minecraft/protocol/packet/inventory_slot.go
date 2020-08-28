@@ -33,10 +33,8 @@ func (pk *InventorySlot) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *InventorySlot) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint32(buf, &pk.WindowID),
-		protocol.Varuint32(buf, &pk.Slot),
-		protocol.ItemInst(buf, &pk.NewItem),
-	)
+func (pk *InventorySlot) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.WindowID)
+	r.Varuint32(&pk.Slot)
+	protocol.ItemInst(r, &pk.NewItem)
 }

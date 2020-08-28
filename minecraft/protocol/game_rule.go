@@ -6,53 +6,38 @@ import (
 	"fmt"
 )
 
-// GameRules reads a map of game rules from Buffer src. It sets one of the types 'bool', 'float32' or 'uint32'
+// GameRules reads a map of game rules from Reader r. It sets one of the types 'bool', 'float32' or 'uint32'
 // to the map x, with the key being the name of the game rule.
-func GameRules(src *bytes.Buffer, x *map[string]interface{}) error {
+func GameRules(r *Reader, x *map[string]interface{}) {
 	var count uint32
-	// The amount of game rules is in a varuint32 before the game rules.
-	if err := Varuint32(src, &count); err != nil {
-		return wrap(err)
-	}
-	if count > mediumLimit {
-		return LimitHitError{Limit: mediumLimit, Type: "game rules"}
-	}
+	r.Varuint32(&count)
+	r.LimitUint32(count, mediumLimit)
+
 	for i := uint32(0); i < count; i++ {
 		// Each of the game rules holds a name and a value type, with the actual value depending on the type
 		// that it is.
 		var name string
-		if err := String(src, &name); err != nil {
-			return wrap(err)
-		}
 		var valueType uint32
-		if err := Varuint32(src, &valueType); err != nil {
-			return wrap(err)
-		}
+
+		r.String(&name)
+		r.Varuint32(&valueType)
 		switch valueType {
 		case 1:
 			var v bool
-			if err := binary.Read(src, binary.LittleEndian, &v); err != nil {
-				return wrap(err)
-			}
+			r.Bool(&v)
 			(*x)[name] = v
 		case 2:
 			var v uint32
-			if err := Varuint32(src, &v); err != nil {
-				return wrap(err)
-			}
+			r.Varuint32(&v)
 			(*x)[name] = v
 		case 3:
 			var v float32
-			if err := Float32(src, &v); err != nil {
-				return wrap(err)
-			}
+			r.Float32(&v)
 			(*x)[name] = v
 		default:
-			// We got a game rule type which doesn't exist, so we return an error immediately.
-			return fmt.Errorf("%v: unknown game rule type %v: expected one of 1, 2, or 3", callFrame(), valueType)
+			r.UnknownEnumOption(valueType, "game rule type")
 		}
 	}
-	return nil
 }
 
 // WriteGameRules writes a map of game rules x, indexed by their names to Buffer dst. The types of the map

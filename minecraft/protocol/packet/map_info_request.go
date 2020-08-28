@@ -24,6 +24,6 @@ func (pk *MapInfoRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MapInfoRequest) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint64(buf, &pk.MapID)
+func (pk *MapInfoRequest) Unmarshal(r *protocol.Reader) {
+	r.Varint64(&pk.MapID)
 }

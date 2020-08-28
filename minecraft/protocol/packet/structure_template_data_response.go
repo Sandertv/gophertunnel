@@ -46,18 +46,12 @@ func (pk *StructureTemplateDataResponse) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StructureTemplateDataResponse) Unmarshal(buf *bytes.Buffer) error {
+func (pk *StructureTemplateDataResponse) Unmarshal(r *protocol.Reader) {
 	var success bool
-	if err := chainErr(
-		protocol.String(buf, &pk.StructureName),
-		binary.Read(buf, binary.LittleEndian, &success),
-	); err != nil {
-		return err
-	}
+	r.String(&pk.StructureName)
+	r.Bool(&pk.Success)
 	if success {
-		if err := nbt.NewDecoder(buf).Decode(&pk.StructureTemplate); err != nil {
-			return err
-		}
+		r.NBT(&pk.StructureTemplate, nbt.NetworkLittleEndian)
 	}
-	return binary.Read(buf, binary.LittleEndian, &pk.ResponseType)
+	r.Uint8(&pk.ResponseType)
 }

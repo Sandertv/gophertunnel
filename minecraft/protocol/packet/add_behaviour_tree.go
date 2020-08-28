@@ -24,6 +24,6 @@ func (pk *AddBehaviourTree) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddBehaviourTree) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.BehaviourTree)
+func (pk *AddBehaviourTree) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.BehaviourTree)
 }

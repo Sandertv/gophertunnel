@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (
@@ -34,6 +35,6 @@ func (pk *PlayStatus) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayStatus) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.BigEndian, &pk.Status)
+func (pk *PlayStatus) Unmarshal(r *protocol.Reader) {
+	r.BEInt32(&pk.Status)
 }

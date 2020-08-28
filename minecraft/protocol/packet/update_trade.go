@@ -14,8 +14,8 @@ type UpdateTrade struct {
 	// WindowType is an identifier specifying the type of the window opened. In vanilla, it appears this is
 	// always filled out with 15.
 	WindowType byte
-	// UnknownInt32 ...
-	UnknownInt32 int32
+	// Size is the amount of trading options that the villager has.
+	Size int32
 	// TradeTier is the tier of the villager that the player is trading with. The tier starts at 0 with a
 	// first two offers being available, after which two additional offers are unlocked each time the tier
 	// becomes one higher.
@@ -49,7 +49,7 @@ func (*UpdateTrade) ID() uint32 {
 func (pk *UpdateTrade) Marshal(buf *bytes.Buffer) {
 	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
 	_ = binary.Write(buf, binary.LittleEndian, pk.WindowType)
-	_ = protocol.WriteVarint32(buf, pk.UnknownInt32)
+	_ = protocol.WriteVarint32(buf, pk.Size)
 	_ = protocol.WriteVarint32(buf, pk.TradeTier)
 	_ = protocol.WriteVarint64(buf, pk.VillagerUniqueID)
 	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
@@ -60,21 +60,15 @@ func (pk *UpdateTrade) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdateTrade) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-		binary.Read(buf, binary.LittleEndian, &pk.WindowType),
-		protocol.Varint32(buf, &pk.UnknownInt32),
-		protocol.Varint32(buf, &pk.TradeTier),
-		protocol.Varint64(buf, &pk.VillagerUniqueID),
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.String(buf, &pk.DisplayName),
-		binary.Read(buf, binary.LittleEndian, &pk.NewTradeUI),
-		binary.Read(buf, binary.LittleEndian, &pk.DemandBasedPrices),
-	); err != nil {
-		return err
-	}
-	pk.SerialisedOffers = make([]byte, buf.Len())
-	_, err := buf.Read(pk.SerialisedOffers)
-	return err
+func (pk *UpdateTrade) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.WindowID)
+	r.Uint8(&pk.WindowType)
+	r.Varint32(&pk.Size)
+	r.Varint32(&pk.TradeTier)
+	r.Varint64(&pk.VillagerUniqueID)
+	r.Varint64(&pk.EntityUniqueID)
+	r.String(&pk.DisplayName)
+	r.Bool(&pk.NewTradeUI)
+	r.Bool(&pk.DemandBasedPrices)
+	r.Leftover(&pk.SerialisedOffers)
 }

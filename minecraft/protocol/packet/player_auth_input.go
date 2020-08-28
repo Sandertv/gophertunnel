@@ -103,21 +103,16 @@ func (pk *PlayerAuthInput) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerAuthInput) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		protocol.Float32(buf, &pk.Pitch),
-		protocol.Float32(buf, &pk.Yaw),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Vec2(buf, &pk.MoveVector),
-		protocol.Float32(buf, &pk.HeadYaw),
-		protocol.Varuint64(buf, &pk.InputData),
-		protocol.Varuint32(buf, &pk.InputMode),
-		protocol.Varuint32(buf, &pk.PlayMode),
-	); err != nil {
-		return err
-	}
+func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
+	r.Float32(&pk.Pitch)
+	r.Float32(&pk.Yaw)
+	r.Vec3(&pk.Position)
+	r.Vec2(&pk.MoveVector)
+	r.Float32(&pk.HeadYaw)
+	r.Varuint64(&pk.InputData)
+	r.Varuint32(&pk.InputMode)
+	r.Varuint32(&pk.PlayMode)
 	if pk.PlayMode == PlayModeReality {
-		return protocol.Vec3(buf, &pk.GazeDirection)
+		r.Vec3(&pk.GazeDirection)
 	}
-	return nil
 }

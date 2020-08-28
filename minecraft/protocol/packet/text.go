@@ -76,42 +76,25 @@ func (pk *Text) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Text) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.TextType),
-		binary.Read(buf, binary.LittleEndian, &pk.NeedsTranslation),
-	); err != nil {
-		return err
-	}
+func (pk *Text) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.TextType)
+	r.Bool(&pk.NeedsTranslation)
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		if err := chainErr(
-			protocol.String(buf, &pk.SourceName),
-			protocol.String(buf, &pk.Message),
-		); err != nil {
-			return err
-		}
+		r.String(&pk.SourceName)
+		r.String(&pk.Message)
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
-		if err := protocol.String(buf, &pk.Message); err != nil {
-			return err
-		}
+		r.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		var length uint32
-		if err := chainErr(
-			protocol.String(buf, &pk.Message),
-			protocol.Varuint32(buf, &length),
-		); err != nil {
-			return err
-		}
+
+		r.String(&pk.Message)
+		r.Varuint32(&length)
 		pk.Parameters = make([]string, length)
 		for i := uint32(0); i < length; i++ {
-			if err := protocol.String(buf, &pk.Parameters[i]); err != nil {
-				return err
-			}
+			r.String(&pk.Parameters[i])
 		}
 	}
-	return chainErr(
-		protocol.String(buf, &pk.XUID),
-		protocol.String(buf, &pk.PlatformChatID),
-	)
+	r.String(&pk.XUID)
+	r.String(&pk.PlatformChatID)
 }

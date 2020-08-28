@@ -46,20 +46,14 @@ func (pk *UpdateSoftEnum) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdateSoftEnum) Unmarshal(buf *bytes.Buffer) error {
+func (pk *UpdateSoftEnum) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := chainErr(
-		protocol.String(buf, &pk.EnumType),
-		protocol.Varuint32(buf, &count),
-	); err != nil {
-		return err
-	}
+	r.String(&pk.EnumType)
+	r.Varuint32(&count)
+
 	pk.Options = make([]string, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.String(buf, &pk.Options[i]); err != nil {
-			return err
-		}
+		r.String(&pk.Options[i])
 	}
-
-	return binary.Read(buf, binary.LittleEndian, &pk.ActionType)
+	r.Uint8(&pk.ActionType)
 }

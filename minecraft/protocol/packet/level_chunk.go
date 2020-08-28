@@ -55,26 +55,18 @@ func (pk *LevelChunk) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LevelChunk) Unmarshal(buf *bytes.Buffer) error {
-	if err := chainErr(
-		protocol.Varint32(buf, &pk.ChunkX),
-		protocol.Varint32(buf, &pk.ChunkZ),
-		protocol.Varuint32(buf, &pk.SubChunkCount),
-		binary.Read(buf, binary.LittleEndian, &pk.CacheEnabled),
-	); err != nil {
-		return err
-	}
+func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.ChunkX)
+	r.Varint32(&pk.ChunkZ)
+	r.Varuint32(&pk.SubChunkCount)
+	r.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
 		var count uint32
-		if err := protocol.Varuint32(buf, &count); err != nil {
-			return err
-		}
+		r.Varuint32(&count)
 		pk.BlobHashes = make([]uint64, count)
 		for i := uint32(0); i < count; i++ {
-			if err := binary.Read(buf, binary.LittleEndian, &pk.BlobHashes[i]); err != nil {
-				return err
-			}
+			r.Uint64(&pk.BlobHashes[i])
 		}
 	}
-	return protocol.ByteSlice(buf, &pk.RawPayload)
+	r.ByteSlice(&pk.RawPayload)
 }

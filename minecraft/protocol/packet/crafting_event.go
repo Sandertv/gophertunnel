@@ -47,36 +47,23 @@ func (pk *CraftingEvent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *CraftingEvent) Unmarshal(buf *bytes.Buffer) error {
+func (pk *CraftingEvent) Unmarshal(r *protocol.Reader) {
 	var length uint32
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-		protocol.Varint32(buf, &pk.CraftingType),
-		protocol.UUID(buf, &pk.RecipeUUID),
-		protocol.Varuint32(buf, &length),
-	); err != nil {
-		return err
-	}
-	if length > 64 {
-		return protocol.LimitHitError{Type: "crafting event", Limit: 64}
-	}
+	r.Uint8(&pk.WindowID)
+	r.Varint32(&pk.CraftingType)
+	r.UUID(&pk.RecipeUUID)
+	r.Varuint32(&length)
+	r.LimitUint32(length, 64)
+
 	pk.Input = make([]protocol.ItemStack, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.Item(buf, &pk.Input[i]); err != nil {
-			return err
-		}
+		protocol.Item(r, &pk.Input[i])
 	}
-	if err := protocol.Varuint32(buf, &length); err != nil {
-		return err
-	}
-	if length > 64 {
-		return protocol.LimitHitError{Type: "crafting event", Limit: 64}
-	}
+	r.Varuint32(&length)
+	r.LimitUint32(length, 64)
+
 	pk.Output = make([]protocol.ItemStack, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.Item(buf, &pk.Output[i]); err != nil {
-			return err
-		}
+		protocol.Item(r, &pk.Output[i])
 	}
-	return nil
 }

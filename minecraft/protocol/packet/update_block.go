@@ -42,11 +42,9 @@ func (pk *UpdateBlock) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdateBlock) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.UBlockPosition(buf, &pk.Position),
-		protocol.Varuint32(buf, &pk.NewBlockRuntimeID),
-		protocol.Varuint32(buf, &pk.Flags),
-		protocol.Varuint32(buf, &pk.Layer),
-	)
+func (pk *UpdateBlock) Unmarshal(r *protocol.Reader) {
+	r.UBlockPos(&pk.Position)
+	r.Varuint32(&pk.NewBlockRuntimeID)
+	r.Varuint32(&pk.Flags)
+	r.Varuint32(&pk.Layer)
 }

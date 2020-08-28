@@ -37,10 +37,8 @@ func (pk *PlayerInput) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerInput) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Vec2(buf, &pk.Movement),
-		binary.Read(buf, binary.LittleEndian, &pk.Jumping),
-		binary.Read(buf, binary.LittleEndian, &pk.Sneaking),
-	)
+func (pk *PlayerInput) Unmarshal(r *protocol.Reader) {
+	r.Vec2(&pk.Movement)
+	r.Bool(&pk.Jumping)
+	r.Bool(&pk.Sneaking)
 }

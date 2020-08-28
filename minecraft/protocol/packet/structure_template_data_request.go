@@ -41,11 +41,9 @@ func (pk *StructureTemplateDataRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *StructureTemplateDataRequest) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.StructureName),
-		protocol.UBlockPosition(buf, &pk.Position),
-		protocol.StructSettings(buf, &pk.Settings),
-		binary.Read(buf, binary.LittleEndian, &pk.RequestType),
-	)
+func (pk *StructureTemplateDataRequest) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.StructureName)
+	r.UBlockPos(&pk.Position)
+	protocol.StructSettings(r, &pk.Settings)
+	r.Uint8(&pk.RequestType)
 }

@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // NetworkSettings is sent by the server to update a variety of network settings. These settings modify the
@@ -25,6 +26,6 @@ func (pk *NetworkSettings) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *NetworkSettings) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &pk.CompressionThreshold)
+func (pk *NetworkSettings) Unmarshal(r *protocol.Reader) {
+	r.Uint16(&pk.CompressionThreshold)
 }

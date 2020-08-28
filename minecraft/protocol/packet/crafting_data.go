@@ -68,17 +68,14 @@ func (pk *CraftingData) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *CraftingData) Unmarshal(buf *bytes.Buffer) error {
+func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 	var length uint32
-	if err := protocol.Varuint32(buf, &length); err != nil {
-		return err
-	}
+	r.Varuint32(&length)
 	pk.Recipes = make([]protocol.Recipe, length)
 	for i := uint32(0); i < length; i++ {
 		var recipeType int32
-		if err := protocol.Varint32(buf, &recipeType); err != nil {
-			return err
-		}
+		r.Varint32(&recipeType)
+
 		var recipe protocol.Recipe
 		switch recipeType {
 		case protocol.RecipeShapeless:
@@ -98,30 +95,20 @@ func (pk *CraftingData) Unmarshal(buf *bytes.Buffer) error {
 		case protocol.RecipeShapedChemistry:
 			recipe = &protocol.ShapedChemistryRecipe{}
 		default:
-			return fmt.Errorf("unknown crafting data recipe type %v", recipeType)
+			r.UnknownEnumOption(recipeType, "crafting data recipe type")
 		}
-		if err := recipe.Unmarshal(buf); err != nil {
-			return err
-		}
+		//goland:noinspection GoNilness
+		recipe.Unmarshal(r)
 		pk.Recipes[i] = recipe
 	}
-	if err := protocol.Varuint32(buf, &length); err != nil {
-		return err
-	}
+	r.Varuint32(&length)
 	pk.PotionRecipes = make([]protocol.PotionRecipe, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.PotRecipe(buf, &pk.PotionRecipes[i]); err != nil {
-			return err
-		}
+		protocol.PotRecipe(r, &pk.PotionRecipes[i])
 	}
-	if err := protocol.Varuint32(buf, &length); err != nil {
-		return err
-	}
+	r.Varuint32(&length)
 	pk.PotionContainerChangeRecipes = make([]protocol.PotionContainerChangeRecipe, length)
 	for i := uint32(0); i < length; i++ {
-		if err := protocol.PotContainerChangeRecipe(buf, &pk.PotionContainerChangeRecipes[i]); err != nil {
-			return err
-		}
+		protocol.PotContainerChangeRecipe(r, &pk.PotionContainerChangeRecipes[i])
 	}
-	return binary.Read(buf, binary.LittleEndian, &pk.ClearRecipes)
 }

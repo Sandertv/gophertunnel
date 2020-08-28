@@ -36,11 +36,9 @@ func (pk *LecternUpdate) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LecternUpdate) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Page),
-		binary.Read(buf, binary.LittleEndian, &pk.PageCount),
-		protocol.BlockPosition(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.DropBook),
-	)
+func (pk *LecternUpdate) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.Page)
+	r.Uint8(&pk.PageCount)
+	r.BlockPos(&pk.Position)
+	r.Bool(&pk.DropBook)
 }

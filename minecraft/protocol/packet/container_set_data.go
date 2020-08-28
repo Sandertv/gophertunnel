@@ -47,10 +47,8 @@ func (pk *ContainerSetData) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ContainerSetData) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-		protocol.Varint32(buf, &pk.Key),
-		protocol.Varint32(buf, &pk.Value),
-	)
+func (pk *ContainerSetData) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.WindowID)
+	r.Varint32(&pk.Key)
+	r.Varint32(&pk.Value)
 }

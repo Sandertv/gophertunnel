@@ -24,10 +24,8 @@ func WriteBlob(dst *bytes.Buffer, x CacheBlob) error {
 	)
 }
 
-// Blob reads a CacheBlob x from Buffer src.
-func Blob(src *bytes.Buffer, x *CacheBlob) error {
-	return chainErr(
-		binary.Read(src, binary.LittleEndian, &x.Hash),
-		ByteSlice(src, &x.Payload),
-	)
+// Blob reads a CacheBlob x from Reader r.
+func Blob(r *Reader, x *CacheBlob) {
+	r.Uint64(&x.Hash)
+	r.ByteSlice(&x.Payload)
 }

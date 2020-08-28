@@ -23,6 +23,6 @@ func (pk *ShowProfile) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ShowProfile) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.String(buf, &pk.XUID)
+func (pk *ShowProfile) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.XUID)
 }

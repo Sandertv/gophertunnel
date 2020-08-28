@@ -40,11 +40,9 @@ func (pk *ContainerOpen) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ContainerOpen) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.WindowID),
-		binary.Read(buf, binary.LittleEndian, &pk.ContainerType),
-		protocol.UBlockPosition(buf, &pk.ContainerPosition),
-		protocol.Varint64(buf, &pk.ContainerEntityUniqueID),
-	)
+func (pk *ContainerOpen) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.WindowID)
+	r.Uint8(&pk.ContainerType)
+	r.UBlockPos(&pk.ContainerPosition)
+	r.Varint64(&pk.ContainerEntityUniqueID)
 }

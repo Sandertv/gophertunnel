@@ -35,10 +35,8 @@ func (pk *PhotoTransfer) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PhotoTransfer) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.PhotoName),
-		protocol.ByteSlice(buf, &pk.PhotoData),
-		protocol.String(buf, &pk.BookID),
-	)
+func (pk *PhotoTransfer) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.PhotoName)
+	r.ByteSlice(&pk.PhotoData)
+	r.String(&pk.BookID)
 }

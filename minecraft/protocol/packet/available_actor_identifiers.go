@@ -2,7 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"math"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // AvailableActorIdentifiers is sent by the server at the start of the game to let the client know all
@@ -24,7 +24,6 @@ func (pk *AvailableActorIdentifiers) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AvailableActorIdentifiers) Unmarshal(buf *bytes.Buffer) error {
-	pk.SerialisedEntityIdentifiers = buf.Next(math.MaxInt32)
-	return nil
+func (pk *AvailableActorIdentifiers) Unmarshal(r *protocol.Reader) {
+	r.Leftover(&pk.SerialisedEntityIdentifiers)
 }

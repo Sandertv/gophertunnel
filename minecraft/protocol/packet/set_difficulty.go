@@ -23,6 +23,6 @@ func (pk *SetDifficulty) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetDifficulty) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varuint32(buf, &pk.Difficulty)
+func (pk *SetDifficulty) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.Difficulty)
 }

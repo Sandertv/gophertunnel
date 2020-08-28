@@ -43,11 +43,11 @@ func (pk *MoveActorAbsolute) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MoveActorAbsolute) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.Flags),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Rotation(buf, &pk.Rotation),
-	)
+func (pk *MoveActorAbsolute) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Uint8(&pk.Flags)
+	r.Vec3(&pk.Position)
+	r.ByteFloat(&pk.Rotation[0])
+	r.ByteFloat(&pk.Rotation[1])
+	r.ByteFloat(&pk.Rotation[2])
 }

@@ -52,15 +52,13 @@ func (pk *AddItemActor) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AddItemActor) Unmarshal(buf *bytes.Buffer) error {
+func (pk *AddItemActor) Unmarshal(r *protocol.Reader) {
 	pk.EntityMetadata = map[uint32]interface{}{}
-	return chainErr(
-		protocol.Varint64(buf, &pk.EntityUniqueID),
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Item(buf, &pk.Item),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Vec3(buf, &pk.Velocity),
-		protocol.EntityMetadata(buf, &pk.EntityMetadata),
-		binary.Read(buf, binary.LittleEndian, &pk.FromFishing),
-	)
+	r.Varint64(&pk.EntityUniqueID)
+	r.Varuint64(&pk.EntityRuntimeID)
+	protocol.Item(r, &pk.Item)
+	r.Vec3(&pk.Position)
+	r.Vec3(&pk.Velocity)
+	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.Bool(&pk.FromFishing)
 }

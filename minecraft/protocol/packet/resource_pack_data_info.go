@@ -60,14 +60,12 @@ func (pk *ResourcePackDataInfo) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ResourcePackDataInfo) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.UUID),
-		binary.Read(buf, binary.LittleEndian, &pk.DataChunkSize),
-		binary.Read(buf, binary.LittleEndian, &pk.ChunkCount),
-		binary.Read(buf, binary.LittleEndian, &pk.Size),
-		protocol.ByteSlice(buf, &pk.Hash),
-		binary.Read(buf, binary.LittleEndian, &pk.Premium),
-		binary.Read(buf, binary.LittleEndian, &pk.PackType),
-	)
+func (pk *ResourcePackDataInfo) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.UUID)
+	r.Uint32(&pk.DataChunkSize)
+	r.Uint32(&pk.ChunkCount)
+	r.Uint64(&pk.Size)
+	r.ByteSlice(&pk.Hash)
+	r.Bool(&pk.Premium)
+	r.Uint8(&pk.PackType)
 }

@@ -45,29 +45,20 @@ func (pk *ResourcePacksInfo) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ResourcePacksInfo) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	var length uint16
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.TexturePackRequired),
-		binary.Read(buf, binary.LittleEndian, &pk.HasScripts),
-		binary.Read(buf, binary.LittleEndian, &length),
-	); err != nil {
-		return err
-	}
+	r.Bool(&pk.TexturePackRequired)
+	r.Bool(&pk.HasScripts)
+	r.Uint16(&length)
+
 	pk.BehaviourPacks = make([]protocol.ResourcePackInfo, length)
 	for i := uint16(0); i < length; i++ {
-		if err := protocol.PackInfo(buf, &pk.BehaviourPacks[i]); err != nil {
-			return err
-		}
+		protocol.PackInfo(r, &pk.BehaviourPacks[i])
 	}
-	if err := binary.Read(buf, binary.LittleEndian, &length); err != nil {
-		return err
-	}
+
+	r.Uint16(&length)
 	pk.TexturePacks = make([]protocol.ResourcePackInfo, length)
 	for i := uint16(0); i < length; i++ {
-		if err := protocol.PackInfo(buf, &pk.TexturePacks[i]); err != nil {
-			return err
-		}
+		protocol.PackInfo(r, &pk.TexturePacks[i])
 	}
-	return nil
 }

@@ -28,9 +28,7 @@ func (pk *ModalFormRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ModalFormRequest) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint32(buf, &pk.FormID),
-		protocol.ByteSlice(buf, &pk.FormData),
-	)
+func (pk *ModalFormRequest) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.FormID)
+	r.ByteSlice(&pk.FormData)
 }

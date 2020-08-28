@@ -30,9 +30,7 @@ func (pk *SettingsCommand) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SettingsCommand) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.CommandLine),
-		binary.Read(buf, binary.LittleEndian, &pk.SuppressOutput),
-	)
+func (pk *SettingsCommand) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.CommandLine)
+	r.Bool(&pk.SuppressOutput)
 }

@@ -29,9 +29,7 @@ func (pk *UpdatePlayerGameType) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdatePlayerGameType) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint32(buf, &pk.GameType),
-		protocol.Varint64(buf, &pk.PlayerUniqueID),
-	)
+func (pk *UpdatePlayerGameType) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.GameType)
+	r.Varint64(&pk.PlayerUniqueID)
 }

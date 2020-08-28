@@ -52,19 +52,17 @@ func WritePlayerAddEntry(buf *bytes.Buffer, x PlayerListEntry) error {
 	)
 }
 
-// PlayerAddEntry reads a PlayerListEntry x from Buffer buf in a way that adds a player to the list.
-func PlayerAddEntry(buf *bytes.Buffer, x *PlayerListEntry) error {
-	return chainErr(
-		UUID(buf, &x.UUID),
-		Varint64(buf, &x.EntityUniqueID),
-		String(buf, &x.Username),
-		String(buf, &x.XUID),
-		String(buf, &x.PlatformChatID),
-		binary.Read(buf, binary.LittleEndian, &x.BuildPlatform),
-		SerialisedSkin(buf, &x.Skin),
-		binary.Read(buf, binary.LittleEndian, &x.Teacher),
-		binary.Read(buf, binary.LittleEndian, &x.Host),
-	)
+// PlayerAddEntry reads a PlayerListEntry x from Reader r in a way that adds a player to the list.
+func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
+	r.UUID(&x.UUID)
+	r.Varint64(&x.EntityUniqueID)
+	r.String(&x.Username)
+	r.String(&x.XUID)
+	r.String(&x.PlatformChatID)
+	r.Int32(&x.BuildPlatform)
+	SerialisedSkin(r, &x.Skin)
+	r.Bool(&x.Teacher)
+	r.Bool(&x.Host)
 }
 
 // WritePlayerRemoveEntry writes a PlayerListEntry x to Buffer buf in a way that removes a player from the
@@ -73,7 +71,7 @@ func WritePlayerRemoveEntry(buf *bytes.Buffer, x PlayerListEntry) error {
 	return WriteUUID(buf, x.UUID)
 }
 
-// PlayerRemoveEntry reads a PlayerListEntry x from Buffer buf in a way that removes a player from the list.
-func PlayerRemoveEntry(buf *bytes.Buffer, x *PlayerListEntry) error {
-	return UUID(buf, &x.UUID)
+// PlayerRemoveEntry reads a PlayerListEntry x from Reader r in a way that removes a player from the list.
+func PlayerRemoveEntry(r *Reader, x *PlayerListEntry) {
+	r.UUID(&x.UUID)
 }

@@ -65,11 +65,9 @@ func (pk *PlayerAction) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerAction) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.Varint32(buf, &pk.ActionType),
-		protocol.UBlockPosition(buf, &pk.BlockPosition),
-		protocol.Varint32(buf, &pk.BlockFace),
-	)
+func (pk *PlayerAction) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Varint32(&pk.ActionType)
+	r.UBlockPos(&pk.BlockPosition)
+	r.Varint32(&pk.BlockFace)
 }

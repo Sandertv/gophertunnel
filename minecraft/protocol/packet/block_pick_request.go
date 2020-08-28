@@ -32,10 +32,8 @@ func (pk *BlockPickRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *BlockPickRequest) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.BlockPosition(buf, &pk.Position),
-		binary.Read(buf, binary.LittleEndian, &pk.AddBlockNBT),
-		binary.Read(buf, binary.LittleEndian, &pk.HotBarSlot),
-	)
+func (pk *BlockPickRequest) Unmarshal(r *protocol.Reader) {
+	r.BlockPos(&pk.Position)
+	r.Bool(&pk.AddBlockNBT)
+	r.Uint8(&pk.HotBarSlot)
 }

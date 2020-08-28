@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // NetworkStackLatency is sent by the server (and the client, on development builds) to measure the latency
@@ -30,9 +31,7 @@ func (pk *NetworkStackLatency) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *NetworkStackLatency) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Timestamp),
-		binary.Read(buf, binary.LittleEndian, &pk.NeedsResponse),
-	)
+func (pk *NetworkStackLatency) Unmarshal(r *protocol.Reader) {
+	r.Int64(&pk.Timestamp)
+	r.Bool(&pk.NeedsResponse)
 }

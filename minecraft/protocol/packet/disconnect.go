@@ -31,12 +31,9 @@ func (pk *Disconnect) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Disconnect) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.HideDisconnectionScreen); err != nil {
-		return err
-	}
+func (pk *Disconnect) Unmarshal(r *protocol.Reader) {
+	r.Bool(&pk.HideDisconnectionScreen)
 	if !pk.HideDisconnectionScreen {
-		return protocol.String(buf, &pk.Message)
+		r.String(&pk.Message)
 	}
-	return nil
 }

@@ -34,9 +34,7 @@ func (pk *NetworkChunkPublisherUpdate) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *NetworkChunkPublisherUpdate) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.BlockPosition(buf, &pk.Position),
-		protocol.Varuint32(buf, &pk.Radius),
-	)
+func (pk *NetworkChunkPublisherUpdate) Unmarshal(r *protocol.Reader) {
+	r.BlockPos(&pk.Position)
+	r.Varuint32(&pk.Radius)
 }

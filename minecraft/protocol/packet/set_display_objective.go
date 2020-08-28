@@ -51,12 +51,10 @@ func (pk *SetDisplayObjective) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetDisplayObjective) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.DisplaySlot),
-		protocol.String(buf, &pk.ObjectiveName),
-		protocol.String(buf, &pk.DisplayName),
-		protocol.String(buf, &pk.CriteriaName),
-		protocol.Varint32(buf, &pk.SortOrder),
-	)
+func (pk *SetDisplayObjective) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.DisplaySlot)
+	r.String(&pk.ObjectiveName)
+	r.String(&pk.DisplayName)
+	r.String(&pk.CriteriaName)
+	r.Varint32(&pk.SortOrder)
 }

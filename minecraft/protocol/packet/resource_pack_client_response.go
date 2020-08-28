@@ -39,20 +39,13 @@ func (pk *ResourcePackClientResponse) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ResourcePackClientResponse) Unmarshal(buf *bytes.Buffer) error {
+func (pk *ResourcePackClientResponse) Unmarshal(r *protocol.Reader) {
 	var length uint16
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Response),
-		binary.Read(buf, binary.LittleEndian, &length),
-	); err != nil {
-		return err
-	}
+	r.Uint8(&pk.Response)
+	r.Uint16(&length)
+
+	pk.PacksToDownload = make([]string, length)
 	for i := uint16(0); i < length; i++ {
-		var pack string
-		if err := protocol.String(buf, &pack); err != nil {
-			return err
-		}
-		pk.PacksToDownload = append(pk.PacksToDownload, pack)
+		r.String(&pk.PacksToDownload[i])
 	}
-	return nil
 }

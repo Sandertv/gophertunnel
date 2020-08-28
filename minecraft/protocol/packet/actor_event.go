@@ -97,10 +97,8 @@ func (pk *ActorEvent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ActorEvent) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.EventType),
-		protocol.Varint32(buf, &pk.EventData),
-	)
+func (pk *ActorEvent) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Uint8(&pk.EventType)
+	r.Varint32(&pk.EventData)
 }

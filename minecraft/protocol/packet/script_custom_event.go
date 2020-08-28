@@ -29,9 +29,7 @@ func (pk *ScriptCustomEvent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ScriptCustomEvent) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.EventName),
-		protocol.ByteSlice(buf, &pk.EventData),
-	)
+func (pk *ScriptCustomEvent) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.EventName)
+	r.ByteSlice(&pk.EventData)
 }

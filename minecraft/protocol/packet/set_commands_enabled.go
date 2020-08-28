@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // SetCommandsEnabled is sent by the server to enable or disable the ability to execute commands for the
@@ -23,6 +24,6 @@ func (pk *SetCommandsEnabled) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetCommandsEnabled) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &pk.Enabled)
+func (pk *SetCommandsEnabled) Unmarshal(r *protocol.Reader) {
+	r.Bool(&pk.Enabled)
 }

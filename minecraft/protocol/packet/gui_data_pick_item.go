@@ -32,10 +32,8 @@ func (pk *GUIDataPickItem) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *GUIDataPickItem) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.ItemName),
-		protocol.String(buf, &pk.ItemEffects),
-		binary.Read(buf, binary.LittleEndian, &pk.HotBarSlot),
-	)
+func (pk *GUIDataPickItem) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.ItemName)
+	r.String(&pk.ItemEffects)
+	r.Int32(&pk.HotBarSlot)
 }

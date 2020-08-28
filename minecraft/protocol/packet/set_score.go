@@ -43,22 +43,16 @@ func (pk *SetScore) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetScore) Unmarshal(buf *bytes.Buffer) error {
+func (pk *SetScore) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.ActionType),
-		protocol.Varuint32(buf, &count),
-	); err != nil {
-		return err
-	}
+	r.Uint8(&pk.ActionType)
+	r.Varuint32(&count)
+
 	if pk.ActionType != ScoreboardActionRemove && pk.ActionType != ScoreboardActionModify {
-		return fmt.Errorf("unknown scoreboard action type %v", pk.ActionType)
+		r.UnknownEnumOption(pk.ActionType, "set score action type")
 	}
 	pk.Entries = make([]protocol.ScoreboardEntry, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.ScoreEntry(buf, &pk.Entries[i], pk.ActionType == ScoreboardActionModify); err != nil {
-			return err
-		}
+		protocol.ScoreEntry(r, &pk.Entries[i], pk.ActionType == ScoreboardActionModify)
 	}
-	return nil
 }

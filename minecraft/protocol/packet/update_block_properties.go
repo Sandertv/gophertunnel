@@ -2,7 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"math"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // UpdateBlockProperties is sent by the server to update the available block properties.
@@ -23,7 +23,6 @@ func (pk *UpdateBlockProperties) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *UpdateBlockProperties) Unmarshal(buf *bytes.Buffer) error {
-	pk.SerialisedBlockProperties = buf.Next(math.MaxInt32)
-	return nil
+func (pk *UpdateBlockProperties) Unmarshal(r *protocol.Reader) {
+	r.Leftover(&pk.SerialisedBlockProperties)
 }

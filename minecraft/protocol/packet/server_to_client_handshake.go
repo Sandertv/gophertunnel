@@ -25,6 +25,6 @@ func (pk *ServerToClientHandshake) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ServerToClientHandshake) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.ByteSlice(buf, &pk.JWT)
+func (pk *ServerToClientHandshake) Unmarshal(r *protocol.Reader) {
+	r.ByteSlice(&pk.JWT)
 }

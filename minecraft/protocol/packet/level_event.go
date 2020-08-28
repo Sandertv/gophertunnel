@@ -138,10 +138,8 @@ func (pk *LevelEvent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *LevelEvent) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varint32(buf, &pk.EventType),
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Varint32(buf, &pk.EventData),
-	)
+func (pk *LevelEvent) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.EventType)
+	r.Vec3(&pk.Position)
+	r.Varint32(&pk.EventData)
 }

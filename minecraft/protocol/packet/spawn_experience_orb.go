@@ -30,9 +30,7 @@ func (pk *SpawnExperienceOrb) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SpawnExperienceOrb) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Vec3(buf, &pk.Position),
-		protocol.Varint32(buf, &pk.ExperienceAmount),
-	)
+func (pk *SpawnExperienceOrb) Unmarshal(r *protocol.Reader) {
+	r.Vec3(&pk.Position)
+	r.Varint32(&pk.ExperienceAmount)
 }

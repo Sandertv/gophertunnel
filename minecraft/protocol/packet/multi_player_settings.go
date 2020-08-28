@@ -32,6 +32,6 @@ func (pk *MultiPlayerSettings) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MultiPlayerSettings) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.ActionType)
+func (pk *MultiPlayerSettings) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.ActionType)
 }

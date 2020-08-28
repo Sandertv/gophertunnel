@@ -88,13 +88,11 @@ func (pk *AdventureSettings) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *AdventureSettings) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint32(buf, &pk.Flags),
-		protocol.Varuint32(buf, &pk.CommandPermissionLevel),
-		protocol.Varuint32(buf, &pk.ActionPermissions),
-		protocol.Varuint32(buf, &pk.PermissionLevel),
-		protocol.Varuint32(buf, &pk.CustomStoredPermissions),
-		binary.Read(buf, binary.LittleEndian, &pk.PlayerUniqueID),
-	)
+func (pk *AdventureSettings) Unmarshal(r *protocol.Reader) {
+	r.Varuint32(&pk.Flags)
+	r.Varuint32(&pk.CommandPermissionLevel)
+	r.Varuint32(&pk.ActionPermissions)
+	r.Varuint32(&pk.PermissionLevel)
+	r.Varuint32(&pk.CustomStoredPermissions)
+	r.Int64(&pk.PlayerUniqueID)
 }

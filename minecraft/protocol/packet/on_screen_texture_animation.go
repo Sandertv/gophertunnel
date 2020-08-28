@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"encoding/binary"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // OnScreenTextureAnimation is sent by the server to show a certain animation on the screen of the player.
@@ -24,6 +25,6 @@ func (pk *OnScreenTextureAnimation) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *OnScreenTextureAnimation) Unmarshal(buf *bytes.Buffer) error {
-	return binary.Read(buf, binary.LittleEndian, &pk.AnimationType)
+func (pk *OnScreenTextureAnimation) Unmarshal(r *protocol.Reader) {
+	r.Int32(&pk.AnimationType)
 }

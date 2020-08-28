@@ -45,18 +45,16 @@ type MapDecoration struct {
 	Colour color.RGBA
 }
 
-// MapTrackedObj reads a MapTrackedObject from buf into x.
-func MapTrackedObj(buf *bytes.Buffer, x *MapTrackedObject) error {
-	if err := binary.Read(buf, binary.LittleEndian, &x.Type); err != nil {
-		return wrap(err)
-	}
+// MapTrackedObj reads a MapTrackedObject from Reader r into MapTrackedObject x.
+func MapTrackedObj(r *Reader, x *MapTrackedObject) {
+	r.Int32(&x.Type)
 	switch x.Type {
 	case MapObjectTypeEntity:
-		return wrap(Varint64(buf, &x.EntityUniqueID))
+		r.Varint64(&x.EntityUniqueID)
 	case MapObjectTypeBlock:
-		return wrap(UBlockPosition(buf, &x.BlockPosition))
+		r.UBlockPos(&x.BlockPosition)
 	default:
-		return fmt.Errorf("unknown map tracked object type %v", x.Type)
+		r.UnknownEnumOption(x.Type, "map tracked object type")
 	}
 }
 
@@ -75,16 +73,14 @@ func WriteMapTrackedObj(buf *bytes.Buffer, x MapTrackedObject) error {
 	}
 }
 
-// MapDeco reads a MapDecoration from buf into x.
-func MapDeco(buf *bytes.Buffer, x *MapDecoration) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &x.Type),
-		binary.Read(buf, binary.LittleEndian, &x.Rotation),
-		binary.Read(buf, binary.LittleEndian, &x.X),
-		binary.Read(buf, binary.LittleEndian, &x.Y),
-		String(buf, &x.Label),
-		VarRGBA(buf, &x.Colour),
-	)
+// MapDeco reads a MapDecoration from Reader r into MapDecoration x.
+func MapDeco(r *Reader, x *MapDecoration) {
+	r.Uint8(&x.Type)
+	r.Uint8(&x.Rotation)
+	r.Uint8(&x.X)
+	r.Uint8(&x.Y)
+	r.String(&x.Label)
+	VarRGBA(r, &x.Colour)
 }
 
 // WriteMapDeco writes a MapDecoration x to buf.
@@ -99,17 +95,16 @@ func WriteMapDeco(buf *bytes.Buffer, x MapDecoration) error {
 	)
 }
 
-// VarRGBA reads an RGBA value from buf into x packed into a varuint32.
-func VarRGBA(buf *bytes.Buffer, x *color.RGBA) error {
+// VarRGBA reads an RGBA value from Reader r packed into a varuint32.
+func VarRGBA(r *Reader, x *color.RGBA) {
 	var v uint32
-	err := wrap(Varuint32(buf, &v))
+	r.Varuint32(&v)
 	*x = color.RGBA{
 		R: byte(v),
 		G: byte(v >> 8),
 		B: byte(v >> 16),
 		A: byte(v >> 24),
 	}
-	return err
 }
 
 // WriteVarRGBA writes an RGBA value to buf by packing it into a varuint32.

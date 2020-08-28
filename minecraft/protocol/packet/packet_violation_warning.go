@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ViolationTypeMalformed ViolationType = iota
+	ViolationTypeMalformed = iota
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 //noinspection GoNameStartsWithPackageName
 type PacketViolationWarning struct {
 	// Type is the type of violation. It is one of the constants above.
-	Type ViolationType
+	Type int32
 	// Severity specifies the severity of the packet violation. The action the client takes after this
 	// violation depends on the severity sent.
 	Severity int32
@@ -37,33 +37,16 @@ func (*PacketViolationWarning) ID() uint32 {
 
 // Marshal ...
 func (pk *PacketViolationWarning) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, int32(pk.Type))
+	_ = protocol.WriteVarint32(buf, pk.Type)
 	_ = protocol.WriteVarint32(buf, pk.Severity)
 	_ = protocol.WriteVarint32(buf, pk.PacketID)
 	_ = protocol.WriteString(buf, pk.ViolationContext)
 }
 
 // Unmarshal ...
-func (pk *PacketViolationWarning) Unmarshal(buf *bytes.Buffer) error {
-	var t int32
-	err := chainErr(
-		protocol.Varint32(buf, &t),
-		protocol.Varint32(buf, &pk.Severity),
-		protocol.Varint32(buf, &pk.PacketID),
-		protocol.String(buf, &pk.ViolationContext),
-	)
-	pk.Type = ViolationType(t)
-	return err
-}
-
-// ViolationType implements Stringer to convert a violation type to a string.
-type ViolationType int32
-
-// String ...
-func (v ViolationType) String() string {
-	switch v {
-	case ViolationTypeMalformed:
-		return "Malformed"
-	}
-	return "Unknown"
+func (pk *PacketViolationWarning) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.Type)
+	r.Varint32(&pk.Severity)
+	r.Varint32(&pk.PacketID)
+	r.String(&pk.ViolationContext)
 }

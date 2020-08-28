@@ -54,31 +54,21 @@ func (pk *PlayerArmourDamage) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PlayerArmourDamage) Unmarshal(buf *bytes.Buffer) error {
+func (pk *PlayerArmourDamage) Unmarshal(r *protocol.Reader) {
 	pk.HelmetDamage, pk.ChestplateDamage, pk.LeggingsDamage, pk.BootsDamage = 0, 0, 0, 0
-	bitset, err := buf.ReadByte()
-	if err != nil {
-		return err
-	}
+	var bitset uint8
+
+	r.Uint8(&bitset)
 	if bitset&0b0001 != 0 {
-		if err := protocol.Varint32(buf, &pk.HelmetDamage); err != nil {
-			return err
-		}
+		r.Varint32(&pk.HelmetDamage)
 	}
 	if bitset&0b0010 != 0 {
-		if err := protocol.Varint32(buf, &pk.ChestplateDamage); err != nil {
-			return err
-		}
+		r.Varint32(&pk.ChestplateDamage)
 	}
 	if bitset&0b0100 != 0 {
-		if err := protocol.Varint32(buf, &pk.LeggingsDamage); err != nil {
-			return err
-		}
+		r.Varint32(&pk.LeggingsDamage)
 	}
 	if bitset&0b1000 != 0 {
-		if err := protocol.Varint32(buf, &pk.BootsDamage); err != nil {
-			return err
-		}
+		r.Varint32(&pk.BootsDamage)
 	}
-	return nil
 }

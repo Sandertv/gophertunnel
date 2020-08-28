@@ -2,9 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"math"
 )
 
 const (
@@ -60,13 +58,8 @@ func (pk *PositionTrackingDBServerBroadcast) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PositionTrackingDBServerBroadcast) Unmarshal(buf *bytes.Buffer) error {
-	if err := binary.Read(buf, binary.LittleEndian, &pk.BroadcastAction); err != nil {
-		return err
-	}
-	if err := protocol.Varint32(buf, &pk.TrackingID); err != nil {
-		return err
-	}
-	pk.SerialisedData = buf.Next(math.MaxInt32)
-	return nil
+func (pk *PositionTrackingDBServerBroadcast) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.BroadcastAction)
+	r.Varint32(&pk.TrackingID)
+	r.Leftover(&pk.SerialisedData)
 }

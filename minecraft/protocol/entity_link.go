@@ -34,33 +34,25 @@ type EntityLink struct {
 	RiderInitiated bool
 }
 
-// EntityLinkAction reads a single entity link (action) from buffer src.
-func EntityLinkAction(src *bytes.Buffer, x *EntityLink) error {
-	return chainErr(
-		Varint64(src, &x.RiddenEntityUniqueID),
-		Varint64(src, &x.RiderEntityUniqueID),
-		binary.Read(src, binary.LittleEndian, &x.Type),
-		binary.Read(src, binary.LittleEndian, &x.Immediate),
-		binary.Read(src, binary.LittleEndian, &x.RiderInitiated),
-	)
+// EntityLinkAction reads a single entity link (action) from Reader r.
+func EntityLinkAction(r *Reader, x *EntityLink) {
+	r.Varint64(&x.RiddenEntityUniqueID)
+	r.Varint64(&x.RiderEntityUniqueID)
+	r.Uint8(&x.Type)
+	r.Bool(&x.Immediate)
+	r.Bool(&x.RiderInitiated)
 }
 
-// EntityLinks reads a list of entity links from buffer src that are currently active.
-func EntityLinks(src *bytes.Buffer, x *[]EntityLink) error {
+// EntityLinks reads a list of entity links from Reader r that are currently active.
+func EntityLinks(r *Reader, x *[]EntityLink) {
 	var count uint32
-	if err := Varuint32(src, &count); err != nil {
-		return wrap(err)
-	}
-	if count > lowerLimit {
-		return LimitHitError{Limit: lowerLimit, Type: "entity link"}
-	}
+	r.Varuint32(&count)
+	r.LimitUint32(count, lowerLimit)
+
 	*x = make([]EntityLink, count)
 	for i := uint32(0); i < count; i++ {
-		if err := EntityLinkAction(src, &(*x)[i]); err != nil {
-			return wrap(err)
-		}
+		EntityLinkAction(r, &(*x)[i])
 	}
-	return nil
 }
 
 // WriteEntityLinkAction writes a single entity link x to buffer dst.

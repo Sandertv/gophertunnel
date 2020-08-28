@@ -24,6 +24,6 @@ func (pk *SetHealth) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetHealth) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.Health)
+func (pk *SetHealth) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.Health)
 }

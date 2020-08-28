@@ -27,9 +27,7 @@ func (pk *AnvilDamage) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ..
-func (pk *AnvilDamage) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.Damage),
-		protocol.UBlockPosition(buf, &pk.AnvilPosition),
-	)
+func (pk *AnvilDamage) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.Damage)
+	r.UBlockPos(&pk.AnvilPosition)
 }

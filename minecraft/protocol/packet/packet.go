@@ -14,7 +14,7 @@ type Packet interface {
 	Marshal(buf *bytes.Buffer)
 	// Unmarshal decodes a serialised packet in buf into the Packet instance. The serialised packet passed
 	// into Unmarshal will not have a header in it.
-	Unmarshal(buf *bytes.Buffer) error
+	Unmarshal(r *protocol.Reader)
 }
 
 // Header is the header of a packet. It exists out of a single varuint32 which is composed of a packet ID and

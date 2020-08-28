@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -37,9 +36,7 @@ func (pk *PositionTrackingDBClientRequest) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PositionTrackingDBClientRequest) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		binary.Read(buf, binary.LittleEndian, &pk.RequestAction),
-		protocol.Varint32(buf, &pk.TrackingID),
-	)
+func (pk *PositionTrackingDBClientRequest) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.RequestAction)
+	r.Varint32(&pk.TrackingID)
 }

@@ -25,6 +25,6 @@ func (pk *SetDefaultGameType) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *SetDefaultGameType) Unmarshal(buf *bytes.Buffer) error {
-	return protocol.Varint32(buf, &pk.GameType)
+func (pk *SetDefaultGameType) Unmarshal(r *protocol.Reader) {
+	r.Varint32(&pk.GameType)
 }

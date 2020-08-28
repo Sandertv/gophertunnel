@@ -27,19 +27,13 @@ func (pk *PurchaseReceipt) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *PurchaseReceipt) Unmarshal(buf *bytes.Buffer) error {
+func (pk *PurchaseReceipt) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
-	if count > 64 {
-		return protocol.LimitHitError{Type: "purchase receipt", Limit: 64}
-	}
+	r.Varuint32(&count)
+	r.LimitUint32(count, 64)
+
 	pk.Receipts = make([]string, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.String(buf, &pk.Receipts[i]); err != nil {
-			return err
-		}
+		r.String(&pk.Receipts[i])
 	}
-	return nil
 }

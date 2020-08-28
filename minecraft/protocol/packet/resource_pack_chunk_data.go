@@ -37,11 +37,9 @@ func (pk *ResourcePackChunkData) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *ResourcePackChunkData) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.UUID),
-		binary.Read(buf, binary.LittleEndian, &pk.ChunkIndex),
-		binary.Read(buf, binary.LittleEndian, &pk.DataOffset),
-		protocol.ByteSlice(buf, &pk.Data),
-	)
+func (pk *ResourcePackChunkData) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.UUID)
+	r.Uint32(&pk.ChunkIndex)
+	r.Uint64(&pk.DataOffset)
+	r.ByteSlice(&pk.Data)
 }

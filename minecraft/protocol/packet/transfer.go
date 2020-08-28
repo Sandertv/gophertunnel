@@ -27,9 +27,7 @@ func (pk *Transfer) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Transfer) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.String(buf, &pk.Address),
-		binary.Read(buf, binary.LittleEndian, &pk.Port),
-	)
+func (pk *Transfer) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.Address)
+	r.Uint16(&pk.Port)
 }

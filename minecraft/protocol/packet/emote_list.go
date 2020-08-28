@@ -2,7 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -38,22 +37,14 @@ func (pk *EmoteList) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *EmoteList) Unmarshal(buf *bytes.Buffer) error {
-	if err := protocol.Varuint64(buf, &pk.PlayerRuntimeID); err != nil {
-		return err
-	}
+func (pk *EmoteList) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
-	if count > 6 {
-		return fmt.Errorf("player can have at most 6 emotes set, got %v", count)
-	}
+	r.Varuint64(&pk.PlayerRuntimeID)
+	r.Varuint32(&count)
+	r.LimitUint32(count, 6)
+
 	pk.EmotePieces = make([]uuid.UUID, count)
 	for i := uint32(0); i < count; i++ {
-		if err := protocol.UUID(buf, &pk.EmotePieces[i]); err != nil {
-			return err
-		}
+		r.UUID(&pk.EmotePieces[i])
 	}
-	return nil
 }

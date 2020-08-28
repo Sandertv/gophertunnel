@@ -36,10 +36,8 @@ func (pk *Emote) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *Emote) Unmarshal(buf *bytes.Buffer) error {
-	return chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		protocol.String(buf, &pk.EmoteID),
-		binary.Read(buf, binary.LittleEndian, &pk.Flags),
-	)
+func (pk *Emote) Unmarshal(r *protocol.Reader) {
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.String(&pk.EmoteID)
+	r.Uint8(&pk.Flags)
 }

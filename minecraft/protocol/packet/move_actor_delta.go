@@ -66,53 +66,32 @@ func (pk *MoveActorDelta) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *MoveActorDelta) Unmarshal(buf *bytes.Buffer) error {
+func (pk *MoveActorDelta) Unmarshal(r *protocol.Reader) {
 	pk.DeltaPosition = mgl32.Vec3{}
 	pk.Rotation = mgl32.Vec3{}
+	r.Varuint64(&pk.EntityRuntimeID)
+	r.Uint16(&pk.Flags)
 
-	if err := chainErr(
-		protocol.Varuint64(buf, &pk.EntityRuntimeID),
-		binary.Read(buf, binary.LittleEndian, &pk.Flags),
-	); err != nil {
-		return err
-	}
 	var v int32
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
-		if err := protocol.Varint32(buf, &v); err != nil {
-			return err
-		}
+		r.Varint32(&v)
 		pk.DeltaPosition[0] = math.Float32frombits(uint32(v))
 	}
 	if pk.Flags&MoveActorDeltaFlagHasY != 0 {
-		if err := protocol.Varint32(buf, &v); err != nil {
-			return err
-		}
+		r.Varint32(&v)
 		pk.DeltaPosition[1] = math.Float32frombits(uint32(v))
 	}
 	if pk.Flags&MoveActorDeltaFlagHasZ != 0 {
-		if err := protocol.Varint32(buf, &v); err != nil {
-			return err
-		}
+		r.Varint32(&v)
 		pk.DeltaPosition[2] = math.Float32frombits(uint32(v))
 	}
-	var w byte
 	if pk.Flags&MoveActorDeltaFlagHasRotX != 0 {
-		if err := binary.Read(buf, binary.LittleEndian, &w); err != nil {
-			return err
-		}
-		pk.Rotation[0] = float32(w) * (360.0 / 256.0)
+		r.ByteFloat(&pk.Rotation[0])
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotY != 0 {
-		if err := binary.Read(buf, binary.LittleEndian, &w); err != nil {
-			return err
-		}
-		pk.Rotation[1] = float32(w) * (360.0 / 256.0)
+		r.ByteFloat(&pk.Rotation[1])
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotZ != 0 {
-		if err := binary.Read(buf, binary.LittleEndian, &w); err != nil {
-			return err
-		}
-		pk.Rotation[2] = float32(w) * (360.0 / 256.0)
+		r.ByteFloat(&pk.Rotation[2])
 	}
-	return nil
 }

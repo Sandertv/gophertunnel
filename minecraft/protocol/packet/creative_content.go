@@ -27,16 +27,11 @@ func (pk *CreativeContent) Marshal(buf *bytes.Buffer) {
 }
 
 // Unmarshal ...
-func (pk *CreativeContent) Unmarshal(buf *bytes.Buffer) error {
+func (pk *CreativeContent) Unmarshal(r *protocol.Reader) {
 	var count uint32
-	if err := protocol.Varuint32(buf, &count); err != nil {
-		return err
-	}
+	r.Varuint32(&count)
 	pk.Items = make([]protocol.CreativeItem, count)
 	for i := 0; i < int(count); i++ {
-		if err := protocol.CreativeEntry(buf, &pk.Items[i]); err != nil {
-			return err
-		}
+		protocol.CreativeEntry(r, &pk.Items[i])
 	}
-	return nil
 }
