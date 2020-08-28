@@ -13,7 +13,8 @@ import (
 // packets. It may be initialised using secret key bytes computed using the shared secret produced with a
 // private and a public ECDSA key.
 type encrypt struct {
-	sendCounter int64
+	sendCounter uint64
+	buf         [8]byte
 	keyBytes    [32]byte
 	stream      cipher.Stream
 }
@@ -27,13 +28,12 @@ func newEncrypt(keyBytes [32]byte, stream cipher.Stream) *encrypt {
 // encrypt encrypts the data passed, adding the packet checksum at the end of it before CFB8 encrypting it.
 func (encrypt *encrypt) encrypt(data []byte) []byte {
 	// We first write the current send counter to a buffer and use it to produce a packet checksum.
-	buf := bytes.NewBuffer(make([]byte, 0, 8))
-	_ = binary.Write(buf, binary.LittleEndian, encrypt.sendCounter)
+	binary.LittleEndian.PutUint64(encrypt.buf[:], encrypt.sendCounter)
 	encrypt.sendCounter++
 
 	// We produce a hash existing of the send counter, packet data and key bytes.
 	hash := sha256.New()
-	hash.Write(buf.Bytes()[:8])
+	hash.Write(encrypt.buf[:])
 	hash.Write(data[1:])
 	hash.Write(encrypt.keyBytes[:])
 
@@ -57,13 +57,12 @@ func (encrypt *encrypt) verify(data []byte) error {
 	sum := data[len(data)-8:]
 
 	// We first write the current send counter to a buffer and use it to produce a packet checksum.
-	buf := bytes.NewBuffer(make([]byte, 0, 8))
-	_ = binary.Write(buf, binary.LittleEndian, encrypt.sendCounter)
+	binary.LittleEndian.PutUint64(encrypt.buf[:], encrypt.sendCounter)
 	encrypt.sendCounter++
 
 	// We produce a hash existing of the send counter, packet data and key bytes.
 	hash := sha256.New()
-	hash.Write(buf.Bytes())
+	hash.Write(encrypt.buf[:])
 	hash.Write(data[:len(data)-8])
 	hash.Write(encrypt.keyBytes[:])
 	ourSum := hash.Sum(nil)[:8]
