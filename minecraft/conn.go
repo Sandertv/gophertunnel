@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
-	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -131,10 +130,6 @@ type Conn struct {
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
-	if key == nil {
-		// If no key is passed, we generate one in this function and use it instead.
-		key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-	}
 	closeCtx, cancel := context.WithCancel(context.Background())
 	conn := &Conn{
 		conn:        netConn,
