@@ -111,4 +111,5 @@ func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < length; i++ {
 		protocol.PotContainerChangeRecipe(r, &pk.PotionContainerChangeRecipes[i])
 	}
+	r.Bool(&pk.ClearRecipes)
 }

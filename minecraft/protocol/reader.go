@@ -48,8 +48,8 @@ func (r *Reader) Bool(x *bool) {
 	*x = true
 }
 
-// stringTooLong is an error set if a string decoded using the String method has a length that is too long.
-var stringTooLong = errors.New("string length overflows a 32-bit integer")
+// errStringTooLong is an error set if a string decoded using the String method has a length that is too long.
+var errStringTooLong = errors.New("string length overflows a 32-bit integer")
 
 // String reads a string from the underlying buffer.
 func (r *Reader) String(x *string) {
@@ -57,7 +57,7 @@ func (r *Reader) String(x *string) {
 	r.Varuint32(&length)
 	l := int(length)
 	if l > math.MaxInt32 {
-		r.panic(stringTooLong)
+		r.panic(errStringTooLong)
 	}
 	if r.Len() < l {
 		r.panic(io.EOF)
@@ -73,7 +73,7 @@ func (r *Reader) ByteSlice(x *[]byte) {
 	r.Varuint32(&length)
 	l := int(length)
 	if l > math.MaxInt32 {
-		r.panic(stringTooLong)
+		r.panic(errStringTooLong)
 	}
 	if r.Len() < l {
 		r.panic(io.EOF)
@@ -151,7 +151,8 @@ func (r *Reader) UUID(x *uuid.UUID) {
 	if r.Len() < 16 {
 		r.panic(io.EOF)
 	}
-	b := r.buf[r.off : r.off+16]
+	b := make([]byte, 16)
+	copy(b, r.buf[r.off:])
 	r.off += 16
 
 	// The UUIDs we read are Little Endian, but the uuid library is based on Big Endian UUIDs, so we need to
@@ -195,9 +196,9 @@ func (r *Reader) InvalidValue(value interface{}, forField, reason string) {
 	r.panicf("invalid value '%v' for %v: %v", value, forField, reason)
 }
 
-// overflow is an error set if one of the Varint methods encounters a varint that does not terminate after 5
-// or 10 bytes, depending on the data type read into.
-var overflow = errors.New("varint overflows a 64-bit integer")
+// errVarIntOverflow is an error set if one of the Varint methods encounters a varint that does not terminate
+// after 5 or 10 bytes, depending on the data type read into.
+var errVarIntOverflow = errors.New("varint overflows a 64-bit integer")
 
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
 func (r *Reader) Varint64(x *int64) {
@@ -221,7 +222,7 @@ func (r *Reader) Varint64(x *int64) {
 			return
 		}
 	}
-	r.panic(overflow)
+	r.panic(errVarIntOverflow)
 }
 
 // Varuint64 reads up to 10 bytes from the underlying buffer into a uint64.
@@ -243,7 +244,7 @@ func (r *Reader) Varuint64(x *uint64) {
 			return
 		}
 	}
-	r.panic(overflow)
+	r.panic(errVarIntOverflow)
 }
 
 // Varint32 reads up to 5 bytes from the underlying buffer into an int32.
@@ -268,7 +269,7 @@ func (r *Reader) Varint32(x *int32) {
 			return
 		}
 	}
-	r.panic(overflow)
+	r.panic(errVarIntOverflow)
 }
 
 // Varuint32 reads up to 5 bytes from the underlying buffer into a uint32.
@@ -290,7 +291,7 @@ func (r *Reader) Varuint32(x *uint32) {
 			return
 		}
 	}
-	r.panic(overflow)
+	r.panic(errVarIntOverflow)
 }
 
 // Len returns the length of the leftover buffer held by the Reader.
