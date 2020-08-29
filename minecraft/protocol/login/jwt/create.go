@@ -1,6 +1,7 @@
 package jwt
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha512"
@@ -37,6 +38,10 @@ func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) ([]by
 	if err != nil {
 		return nil, fmt.Errorf("error signing JWT payload: %v", err)
 	}
+	rBytes, sBytes := r.Bytes(), s.Bytes()
+	rBytes = append(bytes.Repeat([]byte{0}, 48-len(rBytes)), rBytes...)
+	sBytes = append(bytes.Repeat([]byte{0}, 48-len(sBytes)), sBytes...)
+
 	signatureSection := base64.RawURLEncoding.EncodeToString(append(r.Bytes(), s.Bytes()...))
 
 	// Finally we join together all sections and return it as a single string.
