@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +22,9 @@ func (*ScriptCustomEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ScriptCustomEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.EventName)
-	_ = protocol.WriteByteSlice(buf, pk.EventData)
+func (pk *ScriptCustomEvent) Marshal(w *protocol.Writer) {
+	w.String(&pk.EventName)
+	w.ByteSlice(&pk.EventData)
 }
 
 // Unmarshal ...

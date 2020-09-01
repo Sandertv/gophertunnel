@@ -1,10 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-	"encoding/binary"
-)
-
 // ResourcePackInfo represents a resource pack's info sent over network. It holds information about the
 // resource pack such as its name, description and version.
 type ResourcePackInfo struct {
@@ -44,17 +39,15 @@ type StackResourcePack struct {
 	SubPackName string
 }
 
-// WritePackInfo writes a resource pack info entry to the bytes.Buffer passed.
-func WritePackInfo(buf *bytes.Buffer, x ResourcePackInfo) error {
-	return chainErr(
-		WriteString(buf, x.UUID),
-		WriteString(buf, x.Version),
-		binary.Write(buf, binary.LittleEndian, x.Size),
-		WriteString(buf, x.ContentKey),
-		WriteString(buf, x.SubPackName),
-		WriteString(buf, x.ContentIdentity),
-		binary.Write(buf, binary.LittleEndian, x.HasScripts),
-	)
+// WritePackInfo writes a ResourcePackInfo x to Writer w.
+func WritePackInfo(w *Writer, x *ResourcePackInfo) {
+	w.String(&x.UUID)
+	w.String(&x.Version)
+	w.Uint64(&x.Size)
+	w.String(&x.ContentKey)
+	w.String(&x.SubPackName)
+	w.String(&x.ContentIdentity)
+	w.Bool(&x.HasScripts)
 }
 
 // PackInfo reads a ResourcePackInfo x from Reader r.
@@ -68,13 +61,11 @@ func PackInfo(r *Reader, x *ResourcePackInfo) {
 	r.Bool(&x.HasScripts)
 }
 
-// WriteStackPack writes a StackResourcePack x to Buffer buf.
-func WriteStackPack(buf *bytes.Buffer, x StackResourcePack) error {
-	return chainErr(
-		WriteString(buf, x.UUID),
-		WriteString(buf, x.Version),
-		WriteString(buf, x.SubPackName),
-	)
+// WriteStackPack writes a StackResourcePack x to Writer w.
+func WriteStackPack(w *Writer, x *StackResourcePack) {
+	w.String(&x.UUID)
+	w.String(&x.Version)
+	w.String(&x.SubPackName)
 }
 
 // StackPack reads a StackResourcePack x from Reader r.

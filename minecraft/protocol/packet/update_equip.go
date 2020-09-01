@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -34,12 +32,12 @@ func (*UpdateEquip) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateEquip) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowType)
-	_ = protocol.WriteVarint32(buf, pk.Size)
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_, _ = buf.Write(pk.SerialisedInventoryData)
+func (pk *UpdateEquip) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.WindowID)
+	w.Uint8(&pk.WindowType)
+	w.Varint32(&pk.Size)
+	w.Varint64(&pk.EntityUniqueID)
+	w.Bytes(&pk.SerialisedInventoryData)
 }
 
 // Unmarshal ...
@@ -48,5 +46,5 @@ func (pk *UpdateEquip) Unmarshal(r *protocol.Reader) {
 	r.Uint8(&pk.WindowType)
 	r.Varint32(&pk.Size)
 	r.Varint64(&pk.EntityUniqueID)
-	r.Leftover(&pk.SerialisedInventoryData)
+	r.Bytes(&pk.SerialisedInventoryData)
 }

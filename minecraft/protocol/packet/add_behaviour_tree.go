@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,8 +18,8 @@ func (*AddBehaviourTree) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AddBehaviourTree) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.BehaviourTree)
+func (pk *AddBehaviourTree) Marshal(w *protocol.Writer) {
+	w.String(&pk.BehaviourTree)
 }
 
 // Unmarshal ...

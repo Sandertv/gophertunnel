@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -20,8 +19,8 @@ func (*AutomationClientConnect) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AutomationClientConnect) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.ServerURI)
+func (pk *AutomationClientConnect) Marshal(w *protocol.Writer) {
+	w.String(&pk.ServerURI)
 }
 
 // Unmarshal ...

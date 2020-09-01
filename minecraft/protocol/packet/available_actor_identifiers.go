@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,11 +18,11 @@ func (*AvailableActorIdentifiers) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AvailableActorIdentifiers) Marshal(buf *bytes.Buffer) {
-	_, _ = buf.Write(pk.SerialisedEntityIdentifiers)
+func (pk *AvailableActorIdentifiers) Marshal(w *protocol.Writer) {
+	w.Bytes(&pk.SerialisedEntityIdentifiers)
 }
 
 // Unmarshal ...
 func (pk *AvailableActorIdentifiers) Unmarshal(r *protocol.Reader) {
-	r.Leftover(&pk.SerialisedEntityIdentifiers)
+	r.Bytes(&pk.SerialisedEntityIdentifiers)
 }

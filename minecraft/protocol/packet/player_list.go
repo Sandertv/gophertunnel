@@ -1,9 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -32,22 +29,23 @@ func (*PlayerList) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayerList) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Entries)))
+func (pk *PlayerList) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Entries))
+	w.Uint8(&pk.ActionType)
+	w.Varuint32(&l)
 	for _, entry := range pk.Entries {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			_ = protocol.WritePlayerAddEntry(buf, entry)
+			protocol.WritePlayerAddEntry(w, &entry)
 		case PlayerListActionRemove:
-			_ = protocol.WritePlayerRemoveEntry(buf, entry)
+			protocol.WritePlayerRemoveEntry(w, &entry)
 		default:
-			panic(fmt.Sprintf("invalid player list action type %v", pk.ActionType))
+			w.UnknownEnumOption(pk.ActionType, "player list action type")
 		}
 	}
 	if pk.ActionType == PlayerListActionAdd {
 		for _, entry := range pk.Entries {
-			_ = binary.Write(buf, binary.LittleEndian, entry.Skin.Trusted)
+			w.Bool(&entry.Skin.Trusted)
 		}
 	}
 }

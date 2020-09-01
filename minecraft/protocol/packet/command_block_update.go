@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -64,22 +62,22 @@ func (*CommandBlockUpdate) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CommandBlockUpdate) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Block)
+func (pk *CommandBlockUpdate) Marshal(w *protocol.Writer) {
+	w.Bool(&pk.Block)
 	if pk.Block {
-		_ = protocol.WriteUBlockPosition(buf, pk.Position)
-		_ = protocol.WriteVaruint32(buf, pk.Mode)
-		_ = binary.Write(buf, binary.LittleEndian, pk.NeedsRedstone)
-		_ = binary.Write(buf, binary.LittleEndian, pk.Conditional)
+		w.UBlockPos(&pk.Position)
+		w.Varuint32(&pk.Mode)
+		w.Bool(&pk.NeedsRedstone)
+		w.Bool(&pk.Conditional)
 	} else {
-		_ = protocol.WriteVaruint64(buf, pk.MinecartEntityRuntimeID)
+		w.Varuint64(&pk.MinecartEntityRuntimeID)
 	}
-	_ = protocol.WriteString(buf, pk.Command)
-	_ = protocol.WriteString(buf, pk.LastOutput)
-	_ = protocol.WriteString(buf, pk.Name)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ShouldTrackOutput)
-	_ = binary.Write(buf, binary.LittleEndian, pk.TickDelay)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ExecuteOnFirstTick)
+	w.String(&pk.Command)
+	w.String(&pk.LastOutput)
+	w.String(&pk.Name)
+	w.Bool(&pk.ShouldTrackOutput)
+	w.Int32(&pk.TickDelay)
+	w.Bool(&pk.ExecuteOnFirstTick)
 }
 
 // Unmarshal ...

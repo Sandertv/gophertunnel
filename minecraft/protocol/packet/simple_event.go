@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -24,8 +22,8 @@ func (*SimpleEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SimpleEvent) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.EventType)
+func (pk *SimpleEvent) Marshal(w *protocol.Writer) {
+	w.Int16(&pk.EventType)
 }
 
 // Unmarshal ...

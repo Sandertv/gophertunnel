@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -55,24 +53,25 @@ func (*Text) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Text) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.TextType)
-	_ = binary.Write(buf, binary.LittleEndian, pk.NeedsTranslation)
+func (pk *Text) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.TextType)
+	w.Bool(&pk.NeedsTranslation)
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		_ = protocol.WriteString(buf, pk.SourceName)
-		_ = protocol.WriteString(buf, pk.Message)
+		w.String(&pk.SourceName)
+		w.String(&pk.Message)
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
-		_ = protocol.WriteString(buf, pk.Message)
+		w.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
-		_ = protocol.WriteString(buf, pk.Message)
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.Parameters)))
+		w.String(&pk.Message)
+		l := uint32(len(pk.Parameters))
+		w.Varuint32(&l)
 		for _, x := range pk.Parameters {
-			_ = protocol.WriteString(buf, x)
+			w.String(&x)
 		}
 	}
-	_ = protocol.WriteString(buf, pk.XUID)
-	_ = protocol.WriteString(buf, pk.PlatformChatID)
+	w.String(&pk.XUID)
+	w.String(&pk.PlatformChatID)
 }
 
 // Unmarshal ...

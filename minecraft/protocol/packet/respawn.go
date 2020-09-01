@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -38,10 +36,10 @@ func (*Respawn) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Respawn) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = binary.Write(buf, binary.LittleEndian, pk.State)
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
+func (pk *Respawn) Marshal(w *protocol.Writer) {
+	w.Vec3(&pk.Position)
+	w.Uint8(&pk.State)
+	w.Varuint64(&pk.EntityRuntimeID)
 }
 
 // Unmarshal ...

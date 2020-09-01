@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -38,12 +36,12 @@ func (*Interact) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Interact) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	_ = protocol.WriteVaruint64(buf, pk.TargetEntityRuntimeID)
+func (pk *Interact) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.ActionType)
+	w.Varuint64(&pk.TargetEntityRuntimeID)
 	switch pk.ActionType {
 	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
-		_ = protocol.WriteVec3(buf, pk.Position)
+		w.Vec3(&pk.Position)
 	}
 }
 

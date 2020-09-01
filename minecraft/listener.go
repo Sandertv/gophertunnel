@@ -58,11 +58,6 @@ type Listener struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// SendPacketViolations makes the Listener send PacketViolationWarnings to clients connected when it
-	// receives packets it cannot decode properly. Additionally, it will log PacketViolationWarnings coming
-	// from the client.
-	SendPacketViolations bool
-
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount atomic.Int32
@@ -278,7 +273,6 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.resourcePacks = listener.ResourcePacks
 	conn.gameData.WorldName = listener.ServerName
 	conn.authEnabled = !listener.AuthenticationDisabled
-	conn.sendPacketViolations = listener.SendPacketViolations
 	listener.mu.Unlock()
 
 	if listener.playerCount.Load() == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
@@ -306,6 +300,7 @@ func (listener *Listener) handleConn(conn *Conn) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.decoder.Decode()
 		if err != nil {
+			fmt.Println("Hello wtf", err)
 			if !raknet.ErrConnectionClosed(err) {
 				listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
 			}

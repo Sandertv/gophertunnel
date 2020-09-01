@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -22,9 +21,9 @@ func (*Camera) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Camera) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.CameraEntityUniqueID)
-	_ = protocol.WriteVarint64(buf, pk.TargetPlayerUniqueID)
+func (pk *Camera) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.CameraEntityUniqueID)
+	w.Varint64(&pk.TargetPlayerUniqueID)
 }
 
 // Unmarshal ...

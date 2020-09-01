@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +21,9 @@ func (*CodeBuilder) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CodeBuilder) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.URL)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ShouldOpenCodeBuilder)
+func (pk *CodeBuilder) Marshal(w *protocol.Writer) {
+	w.String(&pk.URL)
+	w.Bool(&pk.ShouldOpenCodeBuilder)
 }
 
 // Unmarshal ...

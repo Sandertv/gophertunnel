@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -17,7 +16,7 @@ func (*ServerSettingsRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (*ServerSettingsRequest) Marshal(*bytes.Buffer) {}
+func (*ServerSettingsRequest) Marshal(*protocol.Writer) {}
 
 // Unmarshal ...
 func (*ServerSettingsRequest) Unmarshal(*protocol.Reader) {}

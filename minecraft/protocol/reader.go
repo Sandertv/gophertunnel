@@ -118,8 +118,8 @@ func (r *Reader) ByteFloat(x *float32) {
 	*x = float32(v) * (360.0 / 256.0)
 }
 
-// Leftover reads the leftover bytes into a byte slice from the underlying buffer.
-func (r *Reader) Leftover(p *[]byte) {
+// Bytes reads the leftover bytes into a byte slice.
+func (r *Reader) Bytes(p *[]byte) {
 	*p = r.buf[r.off:]
 	r.off += r.Len()
 }
@@ -136,9 +136,9 @@ func (r *Reader) NBT(m *map[string]interface{}, encoding nbt.Encoding) {
 }
 
 // NBTList reads a list of NBT tags from the underlying buffer.
-func (r *Reader) NBTList(m *[]interface{}) {
+func (r *Reader) NBTList(m *[]interface{}, encoding nbt.Encoding) {
 	buf := bytes.NewBuffer(r.buf[r.off:])
-	err := nbt.NewDecoder(buf).Decode(m)
+	err := nbt.NewDecoderWithEncoding(buf, encoding).Decode(m)
 	r.off += r.Len() - buf.Len()
 
 	if err != nil {
@@ -186,7 +186,7 @@ func (r *Reader) LimitInt32(value int32, min, max int32) {
 	}
 }
 
-// UnknownEnumOption assigns an unknown enum option error to the Reader.
+// UnknownEnumOption panics with an unknown enum option error.
 func (r *Reader) UnknownEnumOption(value interface{}, enum string) {
 	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
 }
@@ -198,7 +198,7 @@ func (r *Reader) InvalidValue(value interface{}, forField, reason string) {
 
 // errVarIntOverflow is an error set if one of the Varint methods encounters a varint that does not terminate
 // after 5 or 10 bytes, depending on the data type read into.
-var errVarIntOverflow = errors.New("varint overflows a 64-bit integer")
+var errVarIntOverflow = errors.New("varint overflows integer")
 
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
 func (r *Reader) Varint64(x *int64) {
@@ -299,8 +299,8 @@ func (r *Reader) Len() int {
 	return len(r.buf) - r.off
 }
 
-// Bytes returns the leftover bytes.
-func (r *Reader) Bytes() []byte {
+// Data returns the leftover bytes.
+func (r *Reader) Data() []byte {
 	return r.buf[r.off:]
 }
 

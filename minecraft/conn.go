@@ -21,6 +21,7 @@ import (
 	"io"
 	"log"
 	"net"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -60,11 +61,11 @@ type Conn struct {
 
 	identityData login.IdentityData
 	clientData   login.ClientData
-	// authenticated represents if player's login data
-	// was verified to be signed with Mojang's key.
+	// authenticated represents if player's login data was verified to be signed with Mojang's key.
 	authenticated bool
-	gameData      GameData
-	chunkRadius   int
+
+	gameData    GameData
+	chunkRadius int
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -77,19 +78,18 @@ type Conn struct {
 	// side of the connection.
 	packets chan []byte
 
-	pushedBackPacketsLock sync.Mutex
+	pushedBackPacketsMu sync.Mutex
 	// pushedBackPackets is a list of packets that were pushed back during the login sequence because they
 	// were not used by the connection yet. These packets are read the first when calling to Read or
 	// ReadPacket after being connected.
 	pushedBackPackets [][]byte
 	readDeadline      <-chan time.Time
 
-	sendMutex sync.Mutex
+	sendMu sync.Mutex
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
-	// writeBuf is used to write packets to, without having to re-allocate for each extra byte written.
-	writeBuf *bytes.Buffer
+	w            *protocol.Writer
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
@@ -103,7 +103,7 @@ type Conn struct {
 	// logged in.
 	expectedIDs atomic.Value
 
-	packMutex sync.Mutex
+	packMu sync.Mutex
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
 	resourcePacks []*resource.Pack
@@ -121,8 +121,6 @@ type Conn struct {
 	closeCtx          context.Context
 	close             context.CancelFunc
 	disconnectMessage atomic.String
-
-	sendPacketViolations bool
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -135,7 +133,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		encoder:     packet.NewEncoder(netConn),
 		decoder:     packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		writeBuf:    bytes.NewBuffer(make([]byte, 0, 1024)),
+		w:           protocol.NewWriter(),
 		salt:        make([]byte, 16),
 		packets:     make(chan []byte, 256),
 		spawn:       make(chan bool),
@@ -240,22 +238,21 @@ func (conn *Conn) DoSpawn() error {
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
 // next 20th of a second, after which the data is flushed and sent over the connection.
 func (conn *Conn) WritePacket(pk packet.Packet) error {
-	conn.sendMutex.Lock()
-	defer conn.sendMutex.Unlock()
+	conn.sendMu.Lock()
+	defer conn.sendMu.Unlock()
 
 	header := &packet.Header{PacketID: pk.ID()}
-	_ = header.Write(conn.writeBuf)
-	// Record the length of the header so we can filter it out for the packet func.
-	headerLen := conn.writeBuf.Len()
 
-	pk.Marshal(conn.writeBuf)
+	hData := bytes.NewBuffer(make([]byte, 0, 1))
+	_ = header.Write(hData)
+
+	pk.Marshal(conn.w)
 	if conn.packetFunc != nil {
-		// The packet func was set, so we call it.
-		conn.packetFunc(*header, conn.writeBuf.Bytes()[headerLen:], conn.LocalAddr(), conn.RemoteAddr())
+		conn.packetFunc(*header, conn.w.Data(), conn.LocalAddr(), conn.RemoteAddr())
 	}
-	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), conn.writeBuf.Bytes()...))
 
-	conn.writeBuf.Reset()
+	conn.bufferedSend = append(conn.bufferedSend, append(hData.Bytes(), conn.w.Data()...))
+	conn.w.Reset()
 	return nil
 }
 
@@ -324,8 +321,8 @@ func (conn *Conn) ResourcePacks() []*resource.Pack {
 // Write writes a slice of serialised packet data to the Conn. The data is buffered until the next 20th of a
 // tick, after which it is flushed to the connection. Write returns the amount of bytes written n.
 func (conn *Conn) Write(b []byte) (n int, err error) {
-	conn.sendMutex.Lock()
-	defer conn.sendMutex.Unlock()
+	conn.sendMu.Lock()
+	defer conn.sendMu.Unlock()
 
 	conn.bufferedSend = append(conn.bufferedSend, b)
 	return len(b), nil
@@ -357,8 +354,8 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // Flush flushes the packets currently buffered by the connections to the underlying net.Conn, so that they
 // are directly sent.
 func (conn *Conn) Flush() error {
-	conn.sendMutex.Lock()
-	defer conn.sendMutex.Unlock()
+	conn.sendMu.Lock()
+	defer conn.sendMu.Unlock()
 
 	if len(conn.bufferedSend) > 0 {
 		if err := conn.encoder.Encode(conn.bufferedSend); err != nil {
@@ -376,6 +373,29 @@ func (conn *Conn) Close() error {
 	conn.close()
 	_ = conn.Flush()
 	return conn.conn.Close()
+}
+
+func getFrame(skipFrames int) runtime.Frame {
+	// We need the frame at index skipFrames+2, since we never want runtime.Callers and getFrame
+	targetFrameIndex := skipFrames + 2
+
+	// Set size to targetFrameIndex+2 to ensure we have room for one more caller than we need
+	programCounters := make([]uintptr, targetFrameIndex+2)
+	n := runtime.Callers(0, programCounters)
+
+	frame := runtime.Frame{Function: "unknown"}
+	if n > 0 {
+		frames := runtime.CallersFrames(programCounters[:n])
+		for more, frameIndex := true, 0; more && frameIndex <= targetFrameIndex; frameIndex++ {
+			var frameCandidate runtime.Frame
+			frameCandidate, more = frames.Next()
+			if frameIndex == targetFrameIndex {
+				frame = frameCandidate
+			}
+		}
+	}
+
+	return frame
 }
 
 // LocalAddr returns the local address of the underlying connection.
@@ -471,8 +491,12 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (pk packet.Packe
 	}()
 	pk.Unmarshal(r)
 
+	if msg, ok := pk.(*packet.PacketViolationWarning); ok {
+		fmt.Printf("%T errored: %v %v\n", conn.pool[uint32(msg.PacketID)], msg.Type, msg.ViolationContext)
+	}
+
 	if r.Len() != 0 {
-		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, r.Len(), r.Bytes())
+		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, r.Len(), r.Data())
 	}
 	return pk, err
 }
@@ -481,8 +505,8 @@ func (conn *Conn) parsePacket(data []byte, callPacketFunc bool) (pk packet.Packe
 // pushed back packets. If none was found, it returns false, and if one was found, the data and true is
 // returned.
 func (conn *Conn) takePushedBackPacket() ([]byte, bool) {
-	conn.pushedBackPacketsLock.Lock()
-	defer conn.pushedBackPacketsLock.Unlock()
+	conn.pushedBackPacketsMu.Lock()
+	defer conn.pushedBackPacketsMu.Unlock()
 
 	if len(conn.pushedBackPackets) == 0 {
 		return nil, false
@@ -795,8 +819,8 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 			return true
 		}
 	}
-	conn.packMutex.Lock()
-	defer conn.packMutex.Unlock()
+	conn.packMu.Lock()
+	defer conn.packMu.Unlock()
 
 	for _, pack := range conn.resourcePacks {
 		if pack.UUID() == uuid && pack.Version() == version && pack.HasBehaviours() == hasBehaviours {
@@ -943,8 +967,8 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				return
 			}
 		}
-		conn.packMutex.Lock()
-		defer conn.packMutex.Unlock()
+		conn.packMu.Lock()
+		defer conn.packMu.Unlock()
 
 		if downloadingPack.buf.Len() != int(downloadingPack.size) {
 			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -41,14 +39,14 @@ func (*AddItemActor) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AddItemActor) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteItem(buf, pk.Item)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVec3(buf, pk.Velocity)
-	_ = protocol.WriteEntityMetadata(buf, pk.EntityMetadata)
-	_ = binary.Write(buf, binary.LittleEndian, pk.FromFishing)
+func (pk *AddItemActor) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.EntityUniqueID)
+	w.Varuint64(&pk.EntityRuntimeID)
+	protocol.WriteItem(w, &pk.Item)
+	w.Vec3(&pk.Position)
+	w.Vec3(&pk.Velocity)
+	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.Bool(&pk.FromFishing)
 }
 
 // Unmarshal ...

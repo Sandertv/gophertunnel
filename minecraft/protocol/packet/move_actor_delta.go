@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"math"
@@ -42,26 +40,29 @@ func (*MoveActorDelta) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MoveActorDelta) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Flags)
+func (pk *MoveActorDelta) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Uint16(&pk.Flags)
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
-		_ = protocol.WriteVarint32(buf, int32(math.Float32bits(pk.DeltaPosition[0])))
+		x := int32(math.Float32bits(pk.DeltaPosition[0]))
+		w.Varint32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasY != 0 {
-		_ = protocol.WriteVarint32(buf, int32(math.Float32bits(pk.DeltaPosition[1])))
+		x := int32(math.Float32bits(pk.DeltaPosition[1]))
+		w.Varint32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasZ != 0 {
-		_ = protocol.WriteVarint32(buf, int32(math.Float32bits(pk.DeltaPosition[2])))
+		x := int32(math.Float32bits(pk.DeltaPosition[2]))
+		w.Varint32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotX != 0 {
-		_ = binary.Write(buf, binary.LittleEndian, byte(float32(math.Mod(float64(pk.Rotation[0]/(360.0/256.0)), 360))))
+		w.ByteFloat(&pk.Rotation[0])
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotY != 0 {
-		_ = binary.Write(buf, binary.LittleEndian, byte(float32(math.Mod(float64(pk.Rotation[1]/(360.0/256.0)), 360))))
+		w.ByteFloat(&pk.Rotation[1])
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotZ != 0 {
-		_ = binary.Write(buf, binary.LittleEndian, byte(float32(math.Mod(float64(pk.Rotation[2]/(360.0/256.0)), 360))))
+		w.ByteFloat(&pk.Rotation[2])
 	}
 }
 

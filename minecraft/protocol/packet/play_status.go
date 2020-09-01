@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -30,8 +28,8 @@ func (*PlayStatus) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayStatus) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.BigEndian, pk.Status)
+func (pk *PlayStatus) Marshal(w *protocol.Writer) {
+	w.BEInt32(&pk.Status)
 }
 
 // Unmarshal ...

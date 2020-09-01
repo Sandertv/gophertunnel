@@ -1,9 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-)
-
 // Attribute is an entity attribute, that holds specific data such as the health of the entity. Each attribute
 // holds a default value, maximum and minimum value, name and its current value.
 type Attribute struct {
@@ -38,23 +34,17 @@ func Attributes(r *Reader, x *[]Attribute) {
 	}
 }
 
-// WriteAttributes writes a slice of Attributes x to buffer dst.
-func WriteAttributes(dst *bytes.Buffer, x []Attribute) error {
-	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return wrap(err)
+// WriteAttributes writes a slice of Attributes x to Writer w.
+func WriteAttributes(w *Writer, x *[]Attribute) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for _, attribute := range *x {
+		w.Float32(&attribute.Min)
+		w.Float32(&attribute.Max)
+		w.Float32(&attribute.Value)
+		w.Float32(&attribute.Default)
+		w.String(&attribute.Name)
 	}
-	for _, attribute := range x {
-		if err := chainErr(
-			WriteFloat32(dst, attribute.Min),
-			WriteFloat32(dst, attribute.Max),
-			WriteFloat32(dst, attribute.Value),
-			WriteFloat32(dst, attribute.Default),
-			WriteString(dst, attribute.Name),
-		); err != nil {
-			return wrap(err)
-		}
-	}
-	return nil
 }
 
 // InitialAttributes reads an Attribute slice from bytes.Buffer src and stores it in the pointer passed.
@@ -74,21 +64,15 @@ func InitialAttributes(r *Reader, attributes *[]Attribute) {
 	}
 }
 
-// WriteInitialAttributes writes a slice of Attributes x to buffer dst. WriteInitialAttributes is used when
+// WriteInitialAttributes writes a slice of Attributes x to Writer w. WriteInitialAttributes is used when
 // writing the attributes of a new entity. (AddEntity packet)
-func WriteInitialAttributes(dst *bytes.Buffer, x []Attribute) error {
-	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return wrap(err)
+func WriteInitialAttributes(w *Writer, x *[]Attribute) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for _, attribute := range *x {
+		w.String(&attribute.Name)
+		w.Float32(&attribute.Min)
+		w.Float32(&attribute.Value)
+		w.Float32(&attribute.Max)
 	}
-	for _, attribute := range x {
-		if err := chainErr(
-			WriteString(dst, attribute.Name),
-			WriteFloat32(dst, attribute.Min),
-			WriteFloat32(dst, attribute.Value),
-			WriteFloat32(dst, attribute.Max),
-		); err != nil {
-			return wrap(err)
-		}
-	}
-	return nil
 }

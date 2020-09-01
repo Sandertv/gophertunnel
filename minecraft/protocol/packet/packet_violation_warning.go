@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -36,11 +35,11 @@ func (*PacketViolationWarning) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PacketViolationWarning) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.Type)
-	_ = protocol.WriteVarint32(buf, pk.Severity)
-	_ = protocol.WriteVarint32(buf, pk.PacketID)
-	_ = protocol.WriteString(buf, pk.ViolationContext)
+func (pk *PacketViolationWarning) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.Type)
+	w.Varint32(&pk.Severity)
+	w.Varint32(&pk.PacketID)
+	w.String(&pk.ViolationContext)
 }
 
 // Unmarshal ...

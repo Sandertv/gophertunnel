@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -23,9 +22,9 @@ func (*SetActorMotion) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetActorMotion) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteVec3(buf, pk.Velocity)
+func (pk *SetActorMotion) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Vec3(&pk.Velocity)
 }
 
 // Unmarshal ...

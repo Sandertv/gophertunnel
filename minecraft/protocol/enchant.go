@@ -1,10 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-	"encoding/binary"
-)
-
 // EnchantmentOption represents a single option in the enchantment table for a single item.
 type EnchantmentOption struct {
 	// Cost is the cost of the option. This is the amount of XP levels required to select this enchantment
@@ -27,14 +22,12 @@ type EnchantmentOption struct {
 	RecipeNetworkID uint32
 }
 
-// WriteEnchantOption writes an EnchantmentOption x to Buffer dst.
-func WriteEnchantOption(dst *bytes.Buffer, x EnchantmentOption) error {
-	return chainErr(
-		WriteVaruint32(dst, x.Cost),
-		WriteItemEnchants(dst, x.Enchantments),
-		WriteString(dst, x.Name),
-		WriteVaruint32(dst, x.RecipeNetworkID),
-	)
+// WriteEnchantOption writes an EnchantmentOption x to Writer w.
+func WriteEnchantOption(w *Writer, x *EnchantmentOption) {
+	w.Varuint32(&x.Cost)
+	WriteItemEnchants(w, &x.Enchantments)
+	w.String(&x.Name)
+	w.Varuint32(&x.RecipeNetworkID)
 }
 
 // EnchantOption reads an EnchantmentOption x from Reader r.
@@ -90,22 +83,16 @@ type ItemEnchantments struct {
 	Enchantments [3][]EnchantmentInstance
 }
 
-// WriteItemEnchants writes an ItemEnchantments x to Buffer dst.
-func WriteItemEnchants(dst *bytes.Buffer, x ItemEnchantments) error {
-	if err := binary.Write(dst, binary.LittleEndian, x.Slot); err != nil {
-		return err
-	}
+// WriteItemEnchants writes an ItemEnchantments x to Writer w..
+func WriteItemEnchants(w *Writer, x *ItemEnchantments) {
+	w.Int32(&x.Slot)
 	for _, enchantments := range x.Enchantments {
-		if err := WriteVaruint32(dst, uint32(len(enchantments))); err != nil {
-			return err
-		}
+		l := uint32(len(enchantments))
+		w.Varuint32(&l)
 		for _, enchantment := range enchantments {
-			if err := WriteEnchant(dst, enchantment); err != nil {
-				return err
-			}
+			WriteEnchant(w, &enchantment)
 		}
 	}
-	return nil
 }
 
 // ItemEnchants reads an ItemEnchantments x from Reader r.
@@ -128,11 +115,10 @@ type EnchantmentInstance struct {
 	Level byte
 }
 
-// WriteEnchant writes an EnchantmentInstance x to Buffer dst.
-func WriteEnchant(dst *bytes.Buffer, x EnchantmentInstance) error {
-	dst.WriteByte(x.Type)
-	dst.WriteByte(x.Level)
-	return nil
+// WriteEnchant writes an EnchantmentInstance x to Writer w.
+func WriteEnchant(w *Writer, x *EnchantmentInstance) {
+	w.Uint8(&x.Type)
+	w.Uint8(&x.Level)
 }
 
 // Enchant reads an EnchantmentInstance x from Buffer src.

@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -24,9 +23,9 @@ func (*BlockActorData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *BlockActorData) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = nbt.NewEncoder(buf).Encode(pk.NBTData)
+func (pk *BlockActorData) Marshal(w *protocol.Writer) {
+	w.UBlockPos(&pk.Position)
+	w.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
 }
 
 // Unmarshal ...

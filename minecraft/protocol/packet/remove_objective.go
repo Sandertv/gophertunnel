@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,8 +18,8 @@ func (*RemoveObjective) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *RemoveObjective) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.ObjectiveName)
+func (pk *RemoveObjective) Marshal(w *protocol.Writer) {
+	w.String(&pk.ObjectiveName)
 }
 
 // Unmarshal ...

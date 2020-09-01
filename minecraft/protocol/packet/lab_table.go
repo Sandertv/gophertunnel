@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -32,10 +30,10 @@ func (*LabTable) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LabTable) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	_ = protocol.WriteBlockPosition(buf, pk.Position)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ReactionType)
+func (pk *LabTable) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.ActionType)
+	w.BlockPos(&pk.Position)
+	w.Uint8(&pk.ReactionType)
 }
 
 // Unmarshal ...

@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +22,9 @@ func (*UpdateAttributes) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateAttributes) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteAttributes(buf, pk.Attributes)
+func (pk *UpdateAttributes) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	protocol.WriteAttributes(w, &pk.Attributes)
 }
 
 // Unmarshal ...

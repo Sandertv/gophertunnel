@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"math"
 )
@@ -25,55 +23,63 @@ func (*AvailableCommands) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AvailableCommands) Marshal(buf *bytes.Buffer) {
+func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
 	values, valueIndices := pk.enumValues()
 	suffixes, suffixIndices := pk.suffixes()
 	enums, enumIndices := pk.enums()
 	dynamicEnums, dynamicEnumIndices := pk.dynamicEnums()
 
 	// Start by writing all enum values to the buffer.
-	_ = protocol.WriteVaruint32(buf, uint32(len(values)))
+	valuesLen := uint32(len(values))
+	w.Varuint32(&valuesLen)
 	for _, value := range values {
-		_ = protocol.WriteString(buf, value)
+		w.String(&value)
 	}
 
 	// Then all suffixes.
-	_ = protocol.WriteVaruint32(buf, uint32(len(suffixes)))
+	suffixesLen := uint32(len(suffixes))
+	w.Varuint32(&suffixesLen)
 	for _, suffix := range suffixes {
-		_ = protocol.WriteString(buf, suffix)
+		w.String(&suffix)
 	}
 
 	// After that all actual enums, which point to enum values rather than directly writing strings.
-	_ = protocol.WriteVaruint32(buf, uint32(len(enums)))
+	enumsLen := uint32(len(enums))
+	w.Varuint32(&enumsLen)
 	for _, enum := range enums {
-		_ = protocol.WriteString(buf, enum.Type)
-		_ = protocol.WriteVaruint32(buf, uint32(len(enum.Options)))
+		optionsLen := uint32(len(enum.Options))
+		w.String(&enum.Type)
+		w.Varuint32(&optionsLen)
 		for _, option := range enum.Options {
-			writeEnumOption(buf, option, valueIndices)
+			writeEnumOption(w, option, valueIndices)
 		}
 	}
 
 	// Finally we write the command data which includes all usages of the commands.
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Commands)))
+	commandsLen := uint32(len(pk.Commands))
+	w.Varuint32(&commandsLen)
 	for _, command := range pk.Commands {
-		_ = protocol.WriteCommandData(buf, command, enumIndices, suffixIndices, dynamicEnumIndices)
+		protocol.WriteCommandData(w, &command, enumIndices, suffixIndices, dynamicEnumIndices)
 	}
 
 	// Soft enums follow, which may be changed after sending this packet.
-	_ = protocol.WriteVaruint32(buf, uint32(len(dynamicEnums)))
+	dynamicEnumsLen := uint32(len(dynamicEnums))
+	w.Varuint32(&dynamicEnumsLen)
 	for _, enum := range dynamicEnums {
-		_ = protocol.WriteString(buf, enum.Type)
-		_ = protocol.WriteVaruint32(buf, uint32(len(enum.Options)))
+		optionsLen := uint32(len(enum.Options))
+		w.String(&enum.Type)
+		w.Varuint32(&optionsLen)
 		for _, option := range enum.Options {
-			_ = protocol.WriteString(buf, option)
+			w.String(&option)
 		}
 	}
 
 	// Constraints are supposed to be here, but constraints are pointless, make no sense to be in this packet
 	// and are not worth implementing.
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Constraints)))
+	constraintsLen := uint32(len(pk.Constraints))
+	w.Varuint32(&constraintsLen)
 	for _, constraint := range pk.Constraints {
-		_ = protocol.WriteEnumConstraint(buf, constraint, enumIndices, valueIndices)
+		protocol.WriteEnumConstraint(w, &constraint, enumIndices, valueIndices)
 	}
 }
 
@@ -152,17 +158,20 @@ func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
 	}
 }
 
-// writeEnumOption writes an enum option to buf using the value indices passed. It is written as a
+// writeEnumOption writes an enum option to w using the value indices passed. It is written as a
 // byte/uint16/uint32 depending on the size of the value indices map.
-func writeEnumOption(buf *bytes.Buffer, option string, valueIndices map[string]int) {
+func writeEnumOption(w *protocol.Writer, option string, valueIndices map[string]int) {
 	l := len(valueIndices)
 	switch {
 	case l <= math.MaxUint8:
-		_ = binary.Write(buf, binary.LittleEndian, byte(valueIndices[option]))
+		val := byte(valueIndices[option])
+		w.Uint8(&val)
 	case l <= math.MaxUint16:
-		_ = binary.Write(buf, binary.LittleEndian, uint16(valueIndices[option]))
+		val := uint16(valueIndices[option])
+		w.Uint16(&val)
 	default:
-		_ = binary.Write(buf, binary.LittleEndian, uint32(valueIndices[option]))
+		val := uint32(valueIndices[option])
+		w.Uint32(&val)
 	}
 }
 

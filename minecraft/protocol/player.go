@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/google/uuid"
 )
 
@@ -37,19 +35,17 @@ type PlayerListEntry struct {
 	Host bool
 }
 
-// WritePlayerAddEntry writes a PlayerListEntry x to Buffer buf in a way that adds the player to the list.
-func WritePlayerAddEntry(buf *bytes.Buffer, x PlayerListEntry) error {
-	return chainErr(
-		WriteUUID(buf, x.UUID),
-		WriteVarint64(buf, x.EntityUniqueID),
-		WriteString(buf, x.Username),
-		WriteString(buf, x.XUID),
-		WriteString(buf, x.PlatformChatID),
-		binary.Write(buf, binary.LittleEndian, x.BuildPlatform),
-		WriteSerialisedSkin(buf, x.Skin),
-		binary.Write(buf, binary.LittleEndian, x.Teacher),
-		binary.Write(buf, binary.LittleEndian, x.Host),
-	)
+// WritePlayerAddEntry writes a PlayerListEntry x to Writer w in a way that adds the player to the list.
+func WritePlayerAddEntry(w *Writer, x *PlayerListEntry) {
+	w.UUID(&x.UUID)
+	w.Varint64(&x.EntityUniqueID)
+	w.String(&x.Username)
+	w.String(&x.XUID)
+	w.String(&x.PlatformChatID)
+	w.Int32(&x.BuildPlatform)
+	WriteSerialisedSkin(w, &x.Skin)
+	w.Bool(&x.Teacher)
+	w.Bool(&x.Host)
 }
 
 // PlayerAddEntry reads a PlayerListEntry x from Reader r in a way that adds a player to the list.
@@ -65,10 +61,9 @@ func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
 	r.Bool(&x.Host)
 }
 
-// WritePlayerRemoveEntry writes a PlayerListEntry x to Buffer buf in a way that removes a player from the
-// list.
-func WritePlayerRemoveEntry(buf *bytes.Buffer, x PlayerListEntry) error {
-	return WriteUUID(buf, x.UUID)
+// WritePlayerRemoveEntry writes a PlayerListEntry x to Writer w in a way that removes a player from the list.
+func WritePlayerRemoveEntry(w *Writer, x *PlayerListEntry) {
+	w.UUID(&x.UUID)
 }
 
 // PlayerRemoveEntry reads a PlayerListEntry x from Reader r in a way that removes a player from the list.

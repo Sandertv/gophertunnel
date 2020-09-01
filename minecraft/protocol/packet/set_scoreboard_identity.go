@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -31,13 +29,14 @@ func (*SetScoreboardIdentity) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetScoreboardIdentity) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Entries)))
+func (pk *SetScoreboardIdentity) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Entries))
+	w.Uint8(&pk.ActionType)
+	w.Varuint32(&l)
 	for _, entry := range pk.Entries {
-		_ = protocol.WriteVarint64(buf, entry.EntryID)
+		w.Varint64(&entry.EntryID)
 		if pk.ActionType == ScoreboardIdentityActionRegister {
-			_ = protocol.WriteVarint64(buf, entry.EntityUniqueID)
+			w.Varint64(&entry.EntityUniqueID)
 		}
 	}
 }

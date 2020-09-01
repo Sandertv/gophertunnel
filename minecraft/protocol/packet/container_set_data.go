@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -40,10 +38,10 @@ func (*ContainerSetData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ContainerSetData) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
-	_ = protocol.WriteVarint32(buf, pk.Key)
-	_ = protocol.WriteVarint32(buf, pk.Value)
+func (pk *ContainerSetData) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.WindowID)
+	w.Varint32(&pk.Key)
+	w.Varint32(&pk.Value)
 }
 
 // Unmarshal ...

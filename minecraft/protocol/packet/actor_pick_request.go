@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +21,9 @@ func (*ActorPickRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ActorPickRequest) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.EntityUniqueID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.HotBarSlot)
+func (pk *ActorPickRequest) Marshal(w *protocol.Writer) {
+	w.Int64(&pk.EntityUniqueID)
+	w.Uint8(&pk.HotBarSlot)
 }
 
 // Unmarshal ...

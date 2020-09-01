@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -33,11 +31,11 @@ func (*SpawnParticleEffect) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SpawnParticleEffect) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Dimension)
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteString(buf, pk.ParticleName)
+func (pk *SpawnParticleEffect) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.Dimension)
+	w.Varint64(&pk.EntityUniqueID)
+	w.Vec3(&pk.Position)
+	w.String(&pk.ParticleName)
 }
 
 // Unmarshal ...

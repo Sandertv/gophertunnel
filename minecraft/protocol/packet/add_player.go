@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -85,28 +83,28 @@ func (*AddPlayer) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AddPlayer) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUUID(buf, pk.UUID)
-	_ = protocol.WriteString(buf, pk.Username)
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteString(buf, pk.PlatformChatID)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVec3(buf, pk.Velocity)
-	_ = protocol.WriteFloat32(buf, pk.Pitch)
-	_ = protocol.WriteFloat32(buf, pk.Yaw)
-	_ = protocol.WriteFloat32(buf, pk.HeadYaw)
-	_ = protocol.WriteItem(buf, pk.HeldItem)
-	_ = protocol.WriteEntityMetadata(buf, pk.EntityMetadata)
-	_ = protocol.WriteVaruint32(buf, pk.Flags)
-	_ = protocol.WriteVaruint32(buf, pk.CommandPermissionLevel)
-	_ = protocol.WriteVaruint32(buf, pk.ActionPermissions)
-	_ = protocol.WriteVaruint32(buf, pk.PermissionLevel)
-	_ = protocol.WriteVaruint32(buf, pk.CustomStoredPermissions)
-	_ = binary.Write(buf, binary.LittleEndian, pk.PlayerUniqueID)
-	_ = protocol.WriteEntityLinks(buf, pk.EntityLinks)
-	_ = protocol.WriteString(buf, pk.DeviceID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.BuildPlatform)
+func (pk *AddPlayer) Marshal(w *protocol.Writer) {
+	w.UUID(&pk.UUID)
+	w.String(&pk.Username)
+	w.Varint64(&pk.EntityUniqueID)
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.String(&pk.PlatformChatID)
+	w.Vec3(&pk.Position)
+	w.Vec3(&pk.Velocity)
+	w.Float32(&pk.Pitch)
+	w.Float32(&pk.Yaw)
+	w.Float32(&pk.HeadYaw)
+	protocol.WriteItem(w, &pk.HeldItem)
+	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.Varuint32(&pk.Flags)
+	w.Varuint32(&pk.CommandPermissionLevel)
+	w.Varuint32(&pk.ActionPermissions)
+	w.Varuint32(&pk.PermissionLevel)
+	w.Varuint32(&pk.CustomStoredPermissions)
+	w.Int64(&pk.PlayerUniqueID)
+	protocol.WriteEntityLinks(w, &pk.EntityLinks)
+	w.String(&pk.DeviceID)
+	w.Int32(&pk.BuildPlatform)
 }
 
 // Unmarshal ...

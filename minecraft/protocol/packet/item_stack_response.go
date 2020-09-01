@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -22,10 +21,11 @@ func (*ItemStackResponse) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ItemStackResponse) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Responses)))
+func (pk *ItemStackResponse) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Responses))
+	w.Varuint32(&l)
 	for _, resp := range pk.Responses {
-		_ = protocol.WriteStackResponse(buf, resp)
+		protocol.WriteStackResponse(w, &resp)
 	}
 }
 

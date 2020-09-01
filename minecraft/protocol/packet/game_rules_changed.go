@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -22,8 +21,8 @@ func (*GameRulesChanged) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *GameRulesChanged) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteGameRules(buf, pk.GameRules)
+func (pk *GameRulesChanged) Marshal(w *protocol.Writer) {
+	protocol.WriteGameRules(w, &pk.GameRules)
 }
 
 // Unmarshal ...

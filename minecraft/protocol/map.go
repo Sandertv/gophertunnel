@@ -1,9 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"image/color"
 )
 
@@ -58,18 +55,16 @@ func MapTrackedObj(r *Reader, x *MapTrackedObject) {
 	}
 }
 
-// WriteMapTrackedObj writes a MapTrackedObject xx to buf.
-func WriteMapTrackedObj(buf *bytes.Buffer, x MapTrackedObject) error {
-	if err := binary.Write(buf, binary.LittleEndian, x.Type); err != nil {
-		return wrap(err)
-	}
+// WriteMapTrackedObj writes a MapTrackedObject x to Writer w.
+func WriteMapTrackedObj(w *Writer, x *MapTrackedObject) {
+	w.Int32(&x.Type)
 	switch x.Type {
 	case MapObjectTypeEntity:
-		return wrap(WriteVarint64(buf, x.EntityUniqueID))
+		w.Varint64(&x.EntityUniqueID)
 	case MapObjectTypeBlock:
-		return wrap(WriteUBlockPosition(buf, x.BlockPosition))
+		w.UBlockPos(&x.BlockPosition)
 	default:
-		panic(fmt.Sprintf("invalid map tracked object type %v", x.Type))
+		w.UnknownEnumOption(x.Type, "map tracked object type")
 	}
 }
 
@@ -83,16 +78,14 @@ func MapDeco(r *Reader, x *MapDecoration) {
 	VarRGBA(r, &x.Colour)
 }
 
-// WriteMapDeco writes a MapDecoration x to buf.
-func WriteMapDeco(buf *bytes.Buffer, x MapDecoration) error {
-	return chainErr(
-		binary.Write(buf, binary.LittleEndian, x.Type),
-		binary.Write(buf, binary.LittleEndian, x.Rotation),
-		binary.Write(buf, binary.LittleEndian, x.X),
-		binary.Write(buf, binary.LittleEndian, x.Y),
-		WriteString(buf, x.Label),
-		WriteVarRGBA(buf, x.Colour),
-	)
+// WriteMapDeco writes a MapDecoration x to Writer w.
+func WriteMapDeco(w *Writer, x *MapDecoration) {
+	w.Uint8(&x.Type)
+	w.Uint8(&x.Rotation)
+	w.Uint8(&x.X)
+	w.Uint8(&x.Y)
+	w.String(&x.Label)
+	WriteVarRGBA(w, &x.Colour)
 }
 
 // VarRGBA reads an RGBA value from Reader r packed into a varuint32.
@@ -107,7 +100,8 @@ func VarRGBA(r *Reader, x *color.RGBA) {
 	}
 }
 
-// WriteVarRGBA writes an RGBA value to buf by packing it into a varuint32.
-func WriteVarRGBA(buf *bytes.Buffer, x color.RGBA) error {
-	return wrap(WriteVaruint32(buf, uint32(x.R)|uint32(x.G)<<8|uint32(x.B)<<16|uint32(x.A)<<24))
+// WriteVarRGBA writes an RGBA value to Writer w by packing it into a varuint32.
+func WriteVarRGBA(w *Writer, x *color.RGBA) {
+	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24
+	w.Varuint32(&val)
 }

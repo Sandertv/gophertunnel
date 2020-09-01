@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -22,9 +21,9 @@ func (*MapCreateLockedCopy) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MapCreateLockedCopy) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.OriginalMapID)
-	_ = protocol.WriteVarint64(buf, pk.NewMapID)
+func (pk *MapCreateLockedCopy) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.OriginalMapID)
+	w.Varint64(&pk.NewMapID)
 }
 
 // Unmarshal ...

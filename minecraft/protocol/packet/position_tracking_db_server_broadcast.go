@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -51,15 +50,15 @@ func (*PositionTrackingDBServerBroadcast) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PositionTrackingDBServerBroadcast) Marshal(buf *bytes.Buffer) {
-	buf.WriteByte(pk.BroadcastAction)
-	_ = protocol.WriteVarint32(buf, pk.TrackingID)
-	buf.Write(pk.SerialisedData)
+func (pk *PositionTrackingDBServerBroadcast) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.BroadcastAction)
+	w.Varint32(&pk.TrackingID)
+	w.Bytes(&pk.SerialisedData)
 }
 
 // Unmarshal ...
 func (pk *PositionTrackingDBServerBroadcast) Unmarshal(r *protocol.Reader) {
 	r.Uint8(&pk.BroadcastAction)
 	r.Varint32(&pk.TrackingID)
-	r.Leftover(&pk.SerialisedData)
+	r.Bytes(&pk.SerialisedData)
 }

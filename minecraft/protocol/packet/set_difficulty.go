@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,8 +17,8 @@ func (*SetDifficulty) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetDifficulty) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, pk.Difficulty)
+func (pk *SetDifficulty) Marshal(w *protocol.Writer) {
+	w.Varuint32(&pk.Difficulty)
 }
 
 // Unmarshal ...

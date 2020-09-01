@@ -1,11 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
-)
-
 const (
 	ScoreboardIdentityPlayer = iota + 1
 	ScoreboardIdentityEntity
@@ -51,31 +45,25 @@ type ScoreboardIdentityEntry struct {
 	EntityUniqueID int64
 }
 
-// WriteScoreEntry writes a ScoreboardEntry x to Buffer dst. If modify is set to true, the display information
+// WriteScoreEntry writes a ScoreboardEntry x to Writer w. If modify is set to true, the display information
 // of the entry is written. If not, it is ignored, as expected when the SetScore packet is sent to modify
 // entries.
-func WriteScoreEntry(dst *bytes.Buffer, x ScoreboardEntry, modify bool) error {
-	if err := chainErr(
-		WriteVarint64(dst, x.EntryID),
-		WriteString(dst, x.ObjectiveName),
-		binary.Write(dst, binary.LittleEndian, x.Score),
-	); err != nil {
-		return err
-	}
+func WriteScoreEntry(w *Writer, x *ScoreboardEntry, modify bool) {
+	w.Varint64(&x.EntryID)
+	w.String(&x.ObjectiveName)
+	w.Int32(&x.Score)
+
 	if modify {
-		if err := binary.Write(dst, binary.LittleEndian, x.IdentityType); err != nil {
-			return err
-		}
+		w.Uint8(&x.IdentityType)
 		switch x.IdentityType {
 		case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-			return WriteVarint64(dst, x.EntityUniqueID)
+			w.Varint64(&x.EntityUniqueID)
 		case ScoreboardIdentityFakePlayer:
-			return WriteString(dst, x.DisplayName)
+			w.String(&x.DisplayName)
 		default:
-			panic(fmt.Sprintf("invalid scoreboardy entry identity type %v", x.IdentityType))
+			w.UnknownEnumOption(x.IdentityType, "score entry identity type")
 		}
 	}
-	return nil
 }
 
 // ScoreEntry reads a ScoreboardEntry x from Reader r. It reads the display information if modify is true,
@@ -84,6 +72,7 @@ func ScoreEntry(r *Reader, x *ScoreboardEntry, modify bool) {
 	r.Varint64(&x.EntryID)
 	r.String(&x.ObjectiveName)
 	r.Int32(&x.Score)
+
 	if modify {
 		r.Uint8(&x.IdentityType)
 		switch x.IdentityType {

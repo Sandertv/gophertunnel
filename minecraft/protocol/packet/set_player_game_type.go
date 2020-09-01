@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -28,8 +27,8 @@ func (*SetPlayerGameType) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetPlayerGameType) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.GameType)
+func (pk *SetPlayerGameType) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.GameType)
 }
 
 // Unmarshal ...

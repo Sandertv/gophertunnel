@@ -1,10 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-	"encoding/binary"
-)
-
 const (
 	// EntityLinkRemove is set to remove the link between two entities.
 	EntityLinkRemove = iota
@@ -55,26 +50,20 @@ func EntityLinks(r *Reader, x *[]EntityLink) {
 	}
 }
 
-// WriteEntityLinkAction writes a single entity link x to buffer dst.
-func WriteEntityLinkAction(dst *bytes.Buffer, x EntityLink) error {
-	return chainErr(
-		WriteVarint64(dst, x.RiddenEntityUniqueID),
-		WriteVarint64(dst, x.RiderEntityUniqueID),
-		binary.Write(dst, binary.LittleEndian, x.Type),
-		binary.Write(dst, binary.LittleEndian, x.Immediate),
-		binary.Write(dst, binary.LittleEndian, x.RiderInitiated),
-	)
+// WriteEntityLinkAction writes a single entity link x to Writer w.
+func WriteEntityLinkAction(w *Writer, x *EntityLink) {
+	w.Varint64(&x.RiddenEntityUniqueID)
+	w.Varint64(&x.RiderEntityUniqueID)
+	w.Uint8(&x.Type)
+	w.Bool(&x.Immediate)
+	w.Bool(&x.RiderInitiated)
 }
 
-// WriteEntityLinks writes a list of entity links currently active to buffer dst.
-func WriteEntityLinks(dst *bytes.Buffer, x []EntityLink) error {
-	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return wrap(err)
+// WriteEntityLinks writes a list of entity links currently active to Writer w.
+func WriteEntityLinks(w *Writer, x *[]EntityLink) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for _, link := range *x {
+		WriteEntityLinkAction(w, &link)
 	}
-	for _, link := range x {
-		if err := WriteEntityLinkAction(dst, link); err != nil {
-			return wrap(err)
-		}
-	}
-	return nil
 }

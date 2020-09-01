@@ -1,15 +1,13 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
+	"reflect"
 )
 
 const (
-	EntityDataByte = iota
+	EntityDataByte uint32 = iota
 	EntityDataInt16
 	EntityDataInt32
 	EntityDataFloat32
@@ -18,6 +16,18 @@ const (
 	EntityDataBlockPos
 	EntityDataInt64
 	EntityDataVec3
+)
+
+var (
+	entityDataByte        = EntityDataByte
+	entityDataInt16       = EntityDataInt16
+	entityDataInt32       = EntityDataInt32
+	entityDataFloat32     = EntityDataFloat32
+	entityDataString      = EntityDataString
+	entityDataCompoundTag = EntityDataCompoundTag
+	entityDataBlockPos    = EntityDataBlockPos
+	entityDataInt64       = EntityDataInt64
+	entityDataVec3        = EntityDataVec3
 )
 
 // EntityMetadata reads an entity metadata list from Reader r into map x. The types in the map will be one
@@ -73,61 +83,44 @@ func EntityMetadata(r *Reader, x *map[uint32]interface{}) {
 	}
 }
 
-// WriteEntityMetadata writes an entity metadata list x to buffer dst. The types held by the map must be one
+// WriteEntityMetadata writes an entity metadata list x to Writer w. The types held by the map must be one
 // of byte, int16, int32, float32, string, map[string]interface{}, BlockPos, int64 or mgl32.Vec3. The function
 // will panic if a different type is encountered.
-func WriteEntityMetadata(dst *bytes.Buffer, x map[uint32]interface{}) error {
-	if x == nil {
-		return WriteVaruint32(dst, 0)
-	}
-	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return wrap(err)
-	}
-	for key, value := range x {
-		if err := WriteVaruint32(dst, key); err != nil {
-			return wrap(err)
-		}
-		var typeErr, valueErr error
+func WriteEntityMetadata(w *Writer, x *map[uint32]interface{}) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for key, value := range *x {
+		w.Varuint32(&key)
 		switch v := value.(type) {
 		case byte:
-			typeErr = WriteVaruint32(dst, EntityDataByte)
-			valueErr = binary.Write(dst, binary.LittleEndian, v)
+			w.Varuint32(&entityDataByte)
+			w.Uint8(&v)
 		case int16:
-			typeErr = WriteVaruint32(dst, EntityDataInt16)
-			valueErr = binary.Write(dst, binary.LittleEndian, v)
+			w.Varuint32(&entityDataInt16)
+			w.Int16(&v)
 		case int32:
-			typeErr = WriteVaruint32(dst, EntityDataInt32)
-			valueErr = WriteVarint32(dst, v)
+			w.Varuint32(&entityDataInt32)
+			w.Varint32(&v)
 		case float32:
-			typeErr = WriteVaruint32(dst, EntityDataFloat32)
-			valueErr = WriteFloat32(dst, v)
+			w.Varuint32(&entityDataFloat32)
+			w.Float32(&v)
 		case string:
-			typeErr = WriteVaruint32(dst, EntityDataString)
-			valueErr = WriteString(dst, v)
+			w.Varuint32(&entityDataString)
+			w.String(&v)
 		case map[string]interface{}:
-			typeErr = WriteVaruint32(dst, EntityDataCompoundTag)
-			valueErr = nbt.NewEncoder(dst).Encode(v)
-			if valueErr != nil {
-				panic(fmt.Errorf("cannot encode entity metadata: %w", valueErr))
-			}
+			w.Varuint32(&entityDataCompoundTag)
+			w.NBT(&v, nbt.NetworkLittleEndian)
 		case BlockPos:
-			typeErr = WriteVaruint32(dst, EntityDataBlockPos)
-			valueErr = WriteBlockPosition(dst, v)
+			w.Varuint32(&entityDataBlockPos)
+			w.BlockPos(&v)
 		case int64:
-			typeErr = WriteVaruint32(dst, EntityDataInt64)
-			valueErr = WriteVarint64(dst, v)
+			w.Varuint32(&entityDataInt64)
+			w.Varint64(&v)
 		case mgl32.Vec3:
-			typeErr = WriteVaruint32(dst, EntityDataVec3)
-			valueErr = WriteVec3(dst, v)
+			w.Varuint32(&entityDataVec3)
+			w.Vec3(&v)
 		default:
-			panic(fmt.Sprintf("invalid entity metadata value type %T", value))
-		}
-		if typeErr != nil {
-			return wrap(typeErr)
-		}
-		if valueErr != nil {
-			return wrap(valueErr)
+			w.UnknownEnumOption(reflect.TypeOf(value), "entity metadata")
 		}
 	}
-	return nil
 }

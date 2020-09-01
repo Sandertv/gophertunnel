@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,8 +17,8 @@ func (*RiderJump) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *RiderJump) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.JumpStrength)
+func (pk *RiderJump) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.JumpStrength)
 }
 
 // Unmarshal ...

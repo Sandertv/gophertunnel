@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -20,8 +19,8 @@ func (*SetActorLink) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetActorLink) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteEntityLinkAction(buf, pk.EntityLink)
+func (pk *SetActorLink) Marshal(w *protocol.Writer) {
+	protocol.WriteEntityLinkAction(w, &pk.EntityLink)
 }
 
 // Unmarshal ...

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -20,8 +18,8 @@ func (*OnScreenTextureAnimation) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *OnScreenTextureAnimation) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.AnimationType)
+func (pk *OnScreenTextureAnimation) Marshal(w *protocol.Writer) {
+	w.Int32(&pk.AnimationType)
 }
 
 // Unmarshal ...

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -40,18 +38,19 @@ func (*LevelChunk) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LevelChunk) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.ChunkX)
-	_ = protocol.WriteVarint32(buf, pk.ChunkZ)
-	_ = protocol.WriteVaruint32(buf, pk.SubChunkCount)
-	_ = binary.Write(buf, binary.LittleEndian, pk.CacheEnabled)
+func (pk *LevelChunk) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.ChunkX)
+	w.Varint32(&pk.ChunkZ)
+	w.Varuint32(&pk.SubChunkCount)
+	w.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.BlobHashes)))
+		l := uint32(len(pk.BlobHashes))
+		w.Varuint32(&l)
 		for _, hash := range pk.BlobHashes {
-			_ = binary.Write(buf, binary.LittleEndian, hash)
+			w.Uint64(&hash)
 		}
 	}
-	_ = protocol.WriteByteSlice(buf, pk.RawPayload)
+	w.ByteSlice(&pk.RawPayload)
 }
 
 // Unmarshal ...

@@ -11,7 +11,7 @@ type Packet interface {
 	// ID returns the ID of the packet. All of these identifiers of packets may be found in id.go.
 	ID() uint32
 	// Marshal encodes the packet to its binary representation into buf.
-	Marshal(buf *bytes.Buffer)
+	Marshal(w *protocol.Writer)
 	// Unmarshal decodes a serialised packet in buf into the Packet instance. The serialised packet passed
 	// into Unmarshal will not have a header in it.
 	Unmarshal(r *protocol.Reader)

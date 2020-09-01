@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -88,17 +87,17 @@ func (pk *PlayerAuthInput) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayerAuthInput) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteFloat32(buf, pk.Pitch)
-	_ = protocol.WriteFloat32(buf, pk.Yaw)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVec2(buf, pk.MoveVector)
-	_ = protocol.WriteFloat32(buf, pk.HeadYaw)
-	_ = protocol.WriteVaruint64(buf, pk.InputData)
-	_ = protocol.WriteVaruint32(buf, pk.InputMode)
-	_ = protocol.WriteVaruint32(buf, pk.PlayMode)
+func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
+	w.Float32(&pk.Pitch)
+	w.Float32(&pk.Yaw)
+	w.Vec3(&pk.Position)
+	w.Vec2(&pk.MoveVector)
+	w.Float32(&pk.HeadYaw)
+	w.Varuint64(&pk.InputData)
+	w.Varuint32(&pk.InputMode)
+	w.Varuint32(&pk.PlayMode)
 	if pk.PlayMode == PlayModeReality {
-		_ = protocol.WriteVec3(buf, pk.GazeDirection)
+		w.Vec3(&pk.GazeDirection)
 	}
 }
 

@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
@@ -27,15 +25,13 @@ func ItemInst(r *Reader, x *ItemInstance) {
 	}
 }
 
-// WriteItemInst writes an ItemInstance x to Buffer dst.
-func WriteItemInst(dst *bytes.Buffer, x ItemInstance) error {
+// WriteItemInst writes an ItemInstance x to Writer w.
+func WriteItemInst(w *Writer, x *ItemInstance) {
 	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
 		panic(fmt.Sprintf("stack %#v is empty but network ID %v is non-zero", x.Stack, x.StackNetworkID))
 	}
-	return chainErr(
-		WriteVarint32(dst, x.StackNetworkID),
-		WriteItem(dst, x.Stack),
-	)
+	w.Varint32(&x.StackNetworkID)
+	WriteItem(w, &x.Stack)
 }
 
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that
@@ -119,62 +115,44 @@ func Item(r *Reader, x *ItemStack) {
 	}
 }
 
-// WriteItem writes an item stack x to buffer dst.
-func WriteItem(dst *bytes.Buffer, x ItemStack) error {
-	if err := WriteVarint32(dst, x.NetworkID); err != nil {
-		return wrap(err)
-	}
+// WriteItem writes an ItemStack x to Writer w.
+func WriteItem(w *Writer, x *ItemStack) {
+	w.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there's no more data to follow. Return immediately.
-		return nil
+		return
 	}
-	if err := WriteVarint32(dst, int32(x.MetadataValue<<8)|int32(x.Count)); err != nil {
-		return wrap(err)
-	}
+	aux := int32(x.MetadataValue<<8) | int32(x.Count)
+	w.Varint32(&aux)
 	if len(x.NBTData) != 0 {
-		// Write the item user data marker.
-		if err := binary.Write(dst, binary.LittleEndian, int16(-1)); err != nil {
-			return wrap(err)
-		}
-		// NBT version.
-		if err := binary.Write(dst, binary.LittleEndian, byte(1)); err != nil {
-			return wrap(err)
-		}
-		b, err := nbt.Marshal(x.NBTData)
-		if err != nil {
-			panic(fmt.Errorf("error writing item NBT of %#v: %w", x, err))
-		}
-		_, _ = dst.Write(b)
+		userDataMarker := int16(-1)
+		userDataVer := uint8(1)
+
+		w.Int16(&userDataMarker)
+		w.Uint8(&userDataVer)
+		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 	} else {
-		// If we write 0 for the marker, we don't have to write an empty compound tag.
-		if err := binary.Write(dst, binary.LittleEndian, int16(0)); err != nil {
-			return wrap(err)
-		}
+		userDataMarker := int16(0)
+
+		w.Int16(&userDataMarker)
 	}
-	if err := WriteVarint32(dst, int32(len(x.CanBePlacedOn))); err != nil {
-		return wrap(err)
-	}
+	placeOnLen := int32(len(x.CanBePlacedOn))
+	canBreak := int32(len(x.CanBreak))
+
+	w.Varint32(&placeOnLen)
 	for _, block := range x.CanBePlacedOn {
-		if err := WriteString(dst, block); err != nil {
-			return wrap(err)
-		}
+		w.String(&block)
 	}
-	if err := WriteVarint32(dst, int32(len(x.CanBreak))); err != nil {
-		return wrap(err)
-	}
+	w.Varint32(&canBreak)
 	for _, block := range x.CanBreak {
-		if err := WriteString(dst, block); err != nil {
-			return wrap(err)
-		}
+		w.String(&block)
 	}
+
 	const shieldID = 513
 	if x.NetworkID == shieldID {
 		var blockingTick int64
-		if err := WriteVarint64(dst, blockingTick); err != nil {
-			return wrap(err)
-		}
+		w.Varint64(&blockingTick)
 	}
-	return nil
 }
 
 // RecipeIngredient reads an ItemStack x as a recipe ingredient from Reader r.
@@ -191,16 +169,13 @@ func RecipeIngredient(r *Reader, x *ItemStack) {
 	x.Count = int16(count)
 }
 
-// WriteRecipeIngredient writes an ItemStack x as a recipe ingredient to Buffer dst.
-func WriteRecipeIngredient(dst *bytes.Buffer, x ItemStack) error {
-	if err := WriteVarint32(dst, x.NetworkID); err != nil {
-		return err
-	}
+// WriteRecipeIngredient writes an ItemStack x as a recipe ingredient to Writer w.
+func WriteRecipeIngredient(w *Writer, x *ItemStack) {
+	w.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
-		return nil
+		return
 	}
-	return chainErr(
-		WriteVarint32(dst, int32(x.MetadataValue)),
-		WriteVarint32(dst, int32(x.Count)),
-	)
+	meta, count := int32(x.MetadataValue), int32(x.Count)
+	w.Varint32(&meta)
+	w.Varint32(&count)
 }

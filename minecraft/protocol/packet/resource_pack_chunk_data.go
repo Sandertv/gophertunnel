@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -29,11 +27,11 @@ func (*ResourcePackChunkData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ResourcePackChunkData) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.UUID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ChunkIndex)
-	_ = binary.Write(buf, binary.LittleEndian, pk.DataOffset)
-	_ = protocol.WriteByteSlice(buf, pk.Data)
+func (pk *ResourcePackChunkData) Marshal(w *protocol.Writer) {
+	w.String(&pk.UUID)
+	w.Uint32(&pk.ChunkIndex)
+	w.Uint64(&pk.DataOffset)
+	w.ByteSlice(&pk.Data)
 }
 
 // Unmarshal ...

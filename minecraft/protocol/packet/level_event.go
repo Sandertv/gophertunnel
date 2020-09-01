@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -131,10 +130,10 @@ func (*LevelEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LevelEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.EventType)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVarint32(buf, pk.EventData)
+func (pk *LevelEvent) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.EventType)
+	w.Vec3(&pk.Position)
+	w.Varint32(&pk.EventData)
 }
 
 // Unmarshal ...

@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -22,9 +21,9 @@ func (*ModalFormRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ModalFormRequest) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, pk.FormID)
-	_ = protocol.WriteByteSlice(buf, pk.FormData)
+func (pk *ModalFormRequest) Marshal(w *protocol.Writer) {
+	w.Varuint32(&pk.FormID)
+	w.ByteSlice(&pk.FormData)
 }
 
 // Unmarshal ...

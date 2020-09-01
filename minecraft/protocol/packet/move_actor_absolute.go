@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -35,11 +33,13 @@ func (*MoveActorAbsolute) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MoveActorAbsolute) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Flags)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteRotation(buf, pk.Rotation)
+func (pk *MoveActorAbsolute) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Uint8(&pk.Flags)
+	w.Vec3(&pk.Position)
+	w.ByteFloat(&pk.Rotation[0])
+	w.ByteFloat(&pk.Rotation[1])
+	w.ByteFloat(&pk.Rotation[2])
 }
 
 // Unmarshal ...

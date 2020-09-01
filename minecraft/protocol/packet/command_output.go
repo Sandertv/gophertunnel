@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -45,16 +43,18 @@ func (*CommandOutput) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CommandOutput) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteCommandOriginData(buf, pk.CommandOrigin)
-	_ = binary.Write(buf, binary.LittleEndian, pk.OutputType)
-	_ = protocol.WriteVaruint32(buf, pk.SuccessCount)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.OutputMessages)))
+func (pk *CommandOutput) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.OutputMessages))
+
+	protocol.WriteCommandOriginData(w, &pk.CommandOrigin)
+	w.Uint8(&pk.OutputType)
+	w.Varuint32(&pk.SuccessCount)
+	w.Varuint32(&l)
 	for _, message := range pk.OutputMessages {
-		_ = protocol.WriteCommandMessage(buf, message)
+		protocol.WriteCommandMessage(w, &message)
 	}
 	if pk.OutputType == CommandOutputTypeDataSet {
-		_ = protocol.WriteString(buf, pk.DataSet)
+		w.String(&pk.DataSet)
 	}
 }
 

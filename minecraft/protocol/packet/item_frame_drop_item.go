@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,8 +17,8 @@ func (*ItemFrameDropItem) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ItemFrameDropItem) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
+func (pk *ItemFrameDropItem) Marshal(w *protocol.Writer) {
+	w.UBlockPos(&pk.Position)
 }
 
 // Unmarshal ...

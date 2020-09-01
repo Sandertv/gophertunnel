@@ -1,9 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -31,14 +28,17 @@ func (*SetScore) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetScore) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	if pk.ActionType != ScoreboardActionRemove && pk.ActionType != ScoreboardActionModify {
-		panic(fmt.Sprintf("invalid scoreboard action type %v", pk.ActionType))
-	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Entries)))
-	for _, entry := range pk.Entries {
-		_ = protocol.WriteScoreEntry(buf, entry, pk.ActionType == ScoreboardActionModify)
+func (pk *SetScore) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.ActionType)
+	switch pk.ActionType {
+	case ScoreboardActionRemove, ScoreboardActionModify:
+		l := uint32(len(pk.Entries))
+		w.Varuint32(&l)
+		for _, entry := range pk.Entries {
+			protocol.WriteScoreEntry(w, &entry, pk.ActionType == ScoreboardActionModify)
+		}
+	default:
+		w.UnknownEnumOption(pk.ActionType, "set score action type")
 	}
 }
 

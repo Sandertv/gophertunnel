@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -29,11 +27,11 @@ func (*NPCRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *NPCRequest) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.RequestType)
-	_ = protocol.WriteString(buf, pk.CommandString)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
+func (pk *NPCRequest) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Uint8(&pk.RequestType)
+	w.String(&pk.CommandString)
+	w.Uint8(&pk.ActionType)
 }
 
 // Unmarshal ...

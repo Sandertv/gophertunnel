@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -74,19 +72,17 @@ func StructSettings(r *Reader, x *StructureSettings) {
 	r.Vec3(&x.Pivot)
 }
 
-// WriteStructSettings writes StructureSettings x to Buffer dst.
-func WriteStructSettings(dst *bytes.Buffer, x StructureSettings) error {
-	return chainErr(
-		WriteString(dst, x.PaletteName),
-		binary.Write(dst, binary.LittleEndian, x.IgnoreEntities),
-		binary.Write(dst, binary.LittleEndian, x.IgnoreBlocks),
-		WriteUBlockPosition(dst, x.Size),
-		WriteUBlockPosition(dst, x.Offset),
-		WriteVarint64(dst, x.LastEditingPlayerUniqueID),
-		binary.Write(dst, binary.LittleEndian, x.Rotation),
-		binary.Write(dst, binary.LittleEndian, x.Mirror),
-		WriteFloat32(dst, x.Integrity),
-		binary.Write(dst, binary.LittleEndian, x.Seed),
-		WriteVec3(dst, x.Pivot),
-	)
+// WriteStructSettings writes StructureSettings x to Writer w.
+func WriteStructSettings(w *Writer, x *StructureSettings) {
+	w.String(&x.PaletteName)
+	w.Bool(&x.IgnoreEntities)
+	w.Bool(&x.IgnoreBlocks)
+	w.UBlockPos(&x.Size)
+	w.UBlockPos(&x.Offset)
+	w.Varint64(&x.LastEditingPlayerUniqueID)
+	w.Uint8(&x.Rotation)
+	w.Uint8(&x.Mirror)
+	w.Float32(&x.Integrity)
+	w.Uint32(&x.Seed)
+	w.Vec3(&x.Pivot)
 }

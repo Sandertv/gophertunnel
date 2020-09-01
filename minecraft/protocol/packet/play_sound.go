@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -29,11 +28,13 @@ func (*PlaySound) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlaySound) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.SoundName)
-	_ = protocol.WriteBlockPosition(buf, protocol.BlockPos{int32(pk.Position[0] * 8), int32(pk.Position[1] * 8), int32(pk.Position[2] * 8)})
-	_ = protocol.WriteFloat32(buf, pk.Volume)
-	_ = protocol.WriteFloat32(buf, pk.Pitch)
+func (pk *PlaySound) Marshal(w *protocol.Writer) {
+	b := protocol.BlockPos{int32(pk.Position[0] * 8), int32(pk.Position[1] * 8), int32(pk.Position[2] * 8)}
+
+	w.String(&pk.SoundName)
+	w.BlockPos(&b)
+	w.Float32(&pk.Volume)
+	w.Float32(&pk.Pitch)
 }
 
 // Unmarshal ...

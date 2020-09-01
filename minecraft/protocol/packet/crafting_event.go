@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -32,17 +30,18 @@ func (*CraftingEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CraftingEvent) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
-	_ = protocol.WriteVarint32(buf, pk.CraftingType)
-	_ = protocol.WriteUUID(buf, pk.RecipeUUID)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Input)))
+func (pk *CraftingEvent) Marshal(w *protocol.Writer) {
+	inputLen, outputLen := uint32(len(pk.Input)), uint32(len(pk.Output))
+	w.Uint8(&pk.WindowID)
+	w.Varint32(&pk.CraftingType)
+	w.UUID(&pk.RecipeUUID)
+	w.Varuint32(&inputLen)
 	for _, input := range pk.Input {
-		_ = protocol.WriteItem(buf, input)
+		protocol.WriteItem(w, &input)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Output)))
+	w.Varuint32(&outputLen)
 	for _, output := range pk.Output {
-		_ = protocol.WriteItem(buf, output)
+		protocol.WriteItem(w, &output)
 	}
 }
 

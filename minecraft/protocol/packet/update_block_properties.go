@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,11 +17,11 @@ func (pk *UpdateBlockProperties) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateBlockProperties) Marshal(buf *bytes.Buffer) {
-	_, _ = buf.Write(pk.SerialisedBlockProperties)
+func (pk *UpdateBlockProperties) Marshal(w *protocol.Writer) {
+	w.Bytes(&pk.SerialisedBlockProperties)
 }
 
 // Unmarshal ...
 func (pk *UpdateBlockProperties) Unmarshal(r *protocol.Reader) {
-	r.Leftover(&pk.SerialisedBlockProperties)
+	r.Bytes(&pk.SerialisedBlockProperties)
 }

@@ -1,9 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-)
-
 // BlockPos is the position of a block. It is composed of three integers, and is typically written as either
 // 3 varint32s or a varint32, varuint32 and varint32.
 type BlockPos [3]int32
@@ -21,23 +17,4 @@ func (pos BlockPos) Y() int32 {
 // Z returns the Z coordinate of the block position. It is equivalent to BlockPos[2].
 func (pos BlockPos) Z() int32 {
 	return pos[2]
-}
-
-// WriteBlockPosition writes a BlockPos x to Buffer dst, composed of 3 varint32s.
-func WriteBlockPosition(dst *bytes.Buffer, x BlockPos) error {
-	return chainErr(
-		WriteVarint32(dst, x[0]),
-		WriteVarint32(dst, x[1]),
-		WriteVarint32(dst, x[2]),
-	)
-}
-
-// WriteUBlockPosition writes an unsigned BlockPos x to Buffer dst, composed of a varint32, varuint32 and a
-// varint32.
-func WriteUBlockPosition(dst *bytes.Buffer, x BlockPos) error {
-	return chainErr(
-		WriteVarint32(dst, x[0]),
-		WriteVaruint32(dst, uint32(x[1])),
-		WriteVarint32(dst, x[2]),
-	)
 }

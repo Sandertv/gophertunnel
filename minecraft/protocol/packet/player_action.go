@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -57,11 +56,11 @@ func (*PlayerAction) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayerAction) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteVarint32(buf, pk.ActionType)
-	_ = protocol.WriteUBlockPosition(buf, pk.BlockPosition)
-	_ = protocol.WriteVarint32(buf, pk.BlockFace)
+func (pk *PlayerAction) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Varint32(&pk.ActionType)
+	w.UBlockPos(&pk.BlockPosition)
+	w.Varint32(&pk.BlockFace)
 }
 
 // Unmarshal ...

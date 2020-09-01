@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -24,9 +23,9 @@ func (*SpawnExperienceOrb) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SpawnExperienceOrb) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVarint32(buf, pk.ExperienceAmount)
+func (pk *SpawnExperienceOrb) Marshal(w *protocol.Writer) {
+	w.Vec3(&pk.Position)
+	w.Varint32(&pk.ExperienceAmount)
 }
 
 // Unmarshal ...

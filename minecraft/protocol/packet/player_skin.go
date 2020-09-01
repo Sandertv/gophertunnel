@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -29,12 +27,12 @@ func (*PlayerSkin) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayerSkin) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUUID(buf, pk.UUID)
-	_ = protocol.WriteSerialisedSkin(buf, pk.Skin)
-	_ = protocol.WriteString(buf, pk.NewSkinName)
-	_ = protocol.WriteString(buf, pk.OldSkinName)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Skin.Trusted)
+func (pk *PlayerSkin) Marshal(w *protocol.Writer) {
+	w.UUID(&pk.UUID)
+	protocol.WriteSerialisedSkin(w, &pk.Skin)
+	w.String(&pk.NewSkinName)
+	w.String(&pk.OldSkinName)
+	w.Bool(&pk.Skin.Trusted)
 }
 
 // Unmarshal ...

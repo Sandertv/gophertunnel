@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -42,12 +41,12 @@ func (*SetDisplayObjective) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetDisplayObjective) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.DisplaySlot)
-	_ = protocol.WriteString(buf, pk.ObjectiveName)
-	_ = protocol.WriteString(buf, pk.DisplayName)
-	_ = protocol.WriteString(buf, pk.CriteriaName)
-	_ = protocol.WriteVarint32(buf, pk.SortOrder)
+func (pk *SetDisplayObjective) Marshal(w *protocol.Writer) {
+	w.String(&pk.DisplaySlot)
+	w.String(&pk.ObjectiveName)
+	w.String(&pk.DisplayName)
+	w.String(&pk.CriteriaName)
+	w.Varint32(&pk.SortOrder)
 }
 
 // Unmarshal ...

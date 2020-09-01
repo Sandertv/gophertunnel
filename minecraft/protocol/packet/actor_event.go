@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -90,10 +88,10 @@ func (*ActorEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ActorEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.EventType)
-	_ = protocol.WriteVarint32(buf, pk.EventData)
+func (pk *ActorEvent) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Uint8(&pk.EventType)
+	w.Varint32(&pk.EventData)
 }
 
 // Unmarshal ...

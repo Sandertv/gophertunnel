@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -45,56 +44,45 @@ type InventoryAction struct {
 	StackNetworkID int32
 }
 
-// InvAction reads an inventory action from Reader r.
-func InvAction(r *Reader, action *InventoryAction, netIDs bool) {
-	r.Varuint32(&action.SourceType)
-	switch action.SourceType {
+// InvAction reads an InventoryAction x from Reader r.
+func InvAction(r *Reader, x *InventoryAction, netIDs bool) {
+	r.Varuint32(&x.SourceType)
+	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		r.Varint32(&action.WindowID)
+		r.Varint32(&x.WindowID)
 	case InventoryActionSourceWorld:
-		r.Varuint32(&action.SourceFlags)
+		r.Varuint32(&x.SourceFlags)
 	}
-	r.Varuint32(&action.InventorySlot)
-	Item(r, &action.OldItem)
-	Item(r, &action.NewItem)
+	r.Varuint32(&x.InventorySlot)
+	Item(r, &x.OldItem)
+	Item(r, &x.NewItem)
 	if netIDs {
-		r.Varint32(&action.StackNetworkID)
+		r.Varint32(&x.StackNetworkID)
 	}
 }
 
-// WriteInvAction writes an inventory action to buffer dst.
-func WriteInvAction(dst *bytes.Buffer, action InventoryAction, netIDs bool) error {
-	if err := WriteVaruint32(dst, action.SourceType); err != nil {
-		return wrap(err)
-	}
-	switch action.SourceType {
+// WriteInvAction writes an InventoryAction x to Writer w.
+func WriteInvAction(w *Writer, x *InventoryAction, netIDs bool) {
+	w.Varuint32(&x.SourceType)
+	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		if err := WriteVarint32(dst, action.WindowID); err != nil {
-			return wrap(err)
-		}
+		w.Varint32(&x.WindowID)
 	case InventoryActionSourceWorld:
-		if err := WriteVaruint32(dst, action.SourceFlags); err != nil {
-			return wrap(err)
-		}
+		w.Varuint32(&x.SourceFlags)
 	}
-	if err := chainErr(
-		WriteVaruint32(dst, action.InventorySlot),
-		WriteItem(dst, action.OldItem),
-		WriteItem(dst, action.NewItem),
-	); err != nil {
-		return err
-	}
+	w.Varuint32(&x.InventorySlot)
+	WriteItem(w, &x.OldItem)
+	WriteItem(w, &x.NewItem)
 	if netIDs {
-		return WriteVarint32(dst, action.StackNetworkID)
+		w.Varint32(&x.StackNetworkID)
 	}
-	return nil
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
 // The data it holds depends on the type.
 type InventoryTransactionData interface {
 	// Marshal encodes the inventory transaction data to its binary representation into buf.
-	Marshal(buf *bytes.Buffer)
+	Marshal(w *Writer)
 	// Unmarshal decodes a serialised inventory transaction data object from Reader r into the
 	// InventoryTransactionData instance.
 	Unmarshal(r *Reader)
@@ -194,15 +182,15 @@ type ReleaseItemTransactionData struct {
 }
 
 // Marshal ...
-func (data *UseItemTransactionData) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint32(buf, data.ActionType)
-	_ = WriteUBlockPosition(buf, data.BlockPosition)
-	_ = WriteVarint32(buf, data.BlockFace)
-	_ = WriteVarint32(buf, data.HotBarSlot)
-	_ = WriteItem(buf, data.HeldItem)
-	_ = WriteVec3(buf, data.Position)
-	_ = WriteVec3(buf, data.ClickedPosition)
-	_ = WriteVaruint32(buf, data.BlockRuntimeID)
+func (data *UseItemTransactionData) Marshal(w *Writer) {
+	w.Varuint32(&data.ActionType)
+	w.UBlockPos(&data.BlockPosition)
+	w.Varint32(&data.BlockFace)
+	w.Varint32(&data.HotBarSlot)
+	WriteItem(w, &data.HeldItem)
+	w.Vec3(&data.Position)
+	w.Vec3(&data.ClickedPosition)
+	w.Varuint32(&data.BlockRuntimeID)
 }
 
 // Unmarshal ...
@@ -218,13 +206,13 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (data *UseItemOnEntityTransactionData) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint64(buf, data.TargetEntityRuntimeID)
-	_ = WriteVaruint32(buf, data.ActionType)
-	_ = WriteVarint32(buf, data.HotBarSlot)
-	_ = WriteItem(buf, data.HeldItem)
-	_ = WriteVec3(buf, data.Position)
-	_ = WriteVec3(buf, data.ClickedPosition)
+func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
+	w.Varuint64(&data.TargetEntityRuntimeID)
+	w.Varuint32(&data.ActionType)
+	w.Varint32(&data.HotBarSlot)
+	WriteItem(w, &data.HeldItem)
+	w.Vec3(&data.Position)
+	w.Vec3(&data.ClickedPosition)
 }
 
 // Unmarshal ...
@@ -238,11 +226,11 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (data *ReleaseItemTransactionData) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint32(buf, data.ActionType)
-	_ = WriteVarint32(buf, data.HotBarSlot)
-	_ = WriteItem(buf, data.HeldItem)
-	_ = WriteVec3(buf, data.HeadPosition)
+func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
+	w.Varuint32(&data.ActionType)
+	w.Varint32(&data.HotBarSlot)
+	WriteItem(w, &data.HeldItem)
+	w.Vec3(&data.HeadPosition)
 }
 
 // Unmarshal ...
@@ -254,13 +242,13 @@ func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (*NormalTransactionData) Marshal(*bytes.Buffer) {}
+func (*NormalTransactionData) Marshal(*Writer) {}
 
 // Unmarshal ...
 func (*NormalTransactionData) Unmarshal(*Reader) {}
 
 // Marshal ...
-func (*MismatchTransactionData) Marshal(*bytes.Buffer) {}
+func (*MismatchTransactionData) Marshal(*Writer) {}
 
 // Unmarshal ...
 func (*MismatchTransactionData) Unmarshal(*Reader) {}
@@ -273,16 +261,14 @@ type LegacySetItemSlot struct {
 	Slots       []byte
 }
 
-// WriteSetItemSlot writes a LegacySetItemSlot x to Buffer dst.
-func WriteSetItemSlot(dst *bytes.Buffer, x LegacySetItemSlot) error {
-	dst.WriteByte(x.ContainerID)
-	if err := WriteVaruint32(dst, uint32(len(x.Slots))); err != nil {
-		return err
-	}
+// WriteSetItemSlot writes a LegacySetItemSlot x to Writer w.
+func WriteSetItemSlot(w *Writer, x *LegacySetItemSlot) {
+	l := uint32(len(x.Slots))
+	w.Uint8(&x.ContainerID)
+	w.Varuint32(&l)
 	for _, slot := range x.Slots {
-		dst.WriteByte(slot)
+		w.Uint8(&slot)
 	}
-	return nil
 }
 
 // SetItemSlot reads a LegacySetItemSlot x from Reader r.

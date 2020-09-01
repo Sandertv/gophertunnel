@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"image/color"
 	"math"
@@ -78,29 +76,32 @@ func (*ClientBoundMapItemData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ClientBoundMapItemData) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.MapID)
-	_ = protocol.WriteVaruint32(buf, pk.UpdateFlags)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Dimension)
-	_ = binary.Write(buf, binary.LittleEndian, pk.LockedMap)
+func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.MapID)
+	w.Varuint32(&pk.UpdateFlags)
+	w.Uint8(&pk.Dimension)
+	w.Bool(&pk.LockedMap)
 
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.MapsIncludedIn)))
+		l := uint32(len(pk.MapsIncludedIn))
+		w.Varuint32(&l)
 		for _, mapID := range pk.MapsIncludedIn {
-			_ = protocol.WriteVarint64(buf, mapID)
+			w.Varint64(&mapID)
 		}
 	}
 	if pk.UpdateFlags&(MapUpdateFlagInitialisation|MapUpdateFlagDecoration|MapUpdateFlagTexture) != 0 {
-		_ = binary.Write(buf, binary.LittleEndian, pk.Scale)
+		w.Uint8(&pk.Scale)
 	}
 	if pk.UpdateFlags&MapUpdateFlagDecoration != 0 {
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.TrackedObjects)))
+		l := uint32(len(pk.TrackedObjects))
+		w.Varuint32(&l)
 		for _, obj := range pk.TrackedObjects {
-			_ = protocol.WriteMapTrackedObj(buf, obj)
+			protocol.WriteMapTrackedObj(w, &obj)
 		}
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.Decorations)))
+		l = uint32(len(pk.TrackedObjects))
+		w.Varuint32(&l)
 		for _, decoration := range pk.Decorations {
-			_ = protocol.WriteMapDeco(buf, decoration)
+			protocol.WriteMapDeco(w, &decoration)
 		}
 	}
 	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
@@ -108,12 +109,14 @@ func (pk *ClientBoundMapItemData) Marshal(buf *bytes.Buffer) {
 		if pk.Width <= 0 || pk.Height <= 0 {
 			panic("invalid map texture update: width and height must be at least 1")
 		}
-		_ = protocol.WriteVarint32(buf, pk.Width)
-		_ = protocol.WriteVarint32(buf, pk.Height)
-		_ = protocol.WriteVarint32(buf, pk.XOffset)
-		_ = protocol.WriteVarint32(buf, pk.YOffset)
 
-		_ = protocol.WriteVaruint32(buf, uint32(pk.Width*pk.Height))
+		w.Varint32(&pk.Width)
+		w.Varint32(&pk.Height)
+		w.Varint32(&pk.XOffset)
+		w.Varint32(&pk.YOffset)
+
+		l := uint32(pk.Width * pk.Height)
+		w.Varuint32(&l)
 
 		if len(pk.Pixels) != int(pk.Height) {
 			panic("invalid map texture update: length of outer pixels array must be equal to height")
@@ -123,7 +126,7 @@ func (pk *ClientBoundMapItemData) Marshal(buf *bytes.Buffer) {
 				panic("invalid map texture update: length of inner pixels array must be equal to width")
 			}
 			for x := int32(0); x < pk.Width; x++ {
-				_ = protocol.WriteVarRGBA(buf, pk.Pixels[y][x])
+				protocol.WriteVarRGBA(w, &pk.Pixels[y][x])
 			}
 		}
 	}

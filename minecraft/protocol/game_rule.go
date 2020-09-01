@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 )
 
@@ -40,50 +38,29 @@ func GameRules(r *Reader, x *map[string]interface{}) {
 	}
 }
 
-// WriteGameRules writes a map of game rules x, indexed by their names to Buffer dst. The types of the map
+// WriteGameRules writes a map of game rules x, indexed by their names to Writer w. The types of the map
 // values must be either 'bool', 'float32' or 'uint32'. If one of the values has a different type, the
 // function will panic.
-func WriteGameRules(dst *bytes.Buffer, x map[string]interface{}) error {
-	if x == nil {
-		return WriteVaruint32(dst, 0)
-	}
-	// The game rules are always prefixed with a varuint32 indicating the amount.
-	if err := WriteVaruint32(dst, uint32(len(x))); err != nil {
-		return wrap(err)
-	}
-	for name, value := range x {
-		// We first write the name of the game rule.
-		if err := WriteString(dst, name); err != nil {
-			return wrap(err)
-		}
+func WriteGameRules(w *Writer, x *map[string]interface{}) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for name, value := range *x {
+		w.String(&name)
 		switch v := value.(type) {
 		case bool:
-			// Game rule type 1 is for booleans.
-			if err := WriteVaruint32(dst, 1); err != nil {
-				return wrap(err)
-			}
-			if err := binary.Write(dst, binary.LittleEndian, v); err != nil {
-				return wrap(err)
-			}
+			id := uint32(1)
+			w.Varuint32(&id)
+			w.Bool(&v)
 		case uint32:
-			// Game rule type 2 is for varuint32s.
-			if err := WriteVaruint32(dst, 2); err != nil {
-				return wrap(err)
-			}
-			if err := WriteVaruint32(dst, v); err != nil {
-				return wrap(err)
-			}
+			id := uint32(2)
+			w.Varuint32(&id)
+			w.Varuint32(&v)
 		case float32:
-			// Game rule type 3 is for float32s.
-			if err := WriteVaruint32(dst, 3); err != nil {
-				return wrap(err)
-			}
-			if err := WriteFloat32(dst, v); err != nil {
-				return wrap(err)
-			}
+			id := uint32(3)
+			w.Varuint32(&id)
+			w.Float32(&v)
 		default:
-			panic(fmt.Sprintf("invalid game rule type %T", v))
+			w.UnknownEnumOption(fmt.Sprintf("%T", value), "game rule type")
 		}
 	}
-	return nil
 }

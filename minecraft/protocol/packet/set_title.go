@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -40,12 +39,12 @@ func (*SetTitle) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetTitle) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.ActionType)
-	_ = protocol.WriteString(buf, pk.Text)
-	_ = protocol.WriteVarint32(buf, pk.FadeInDuration)
-	_ = protocol.WriteVarint32(buf, pk.RemainDuration)
-	_ = protocol.WriteVarint32(buf, pk.FadeOutDuration)
+func (pk *SetTitle) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.ActionType)
+	w.String(&pk.Text)
+	w.Varint32(&pk.FadeInDuration)
+	w.Varint32(&pk.RemainDuration)
+	w.Varint32(&pk.FadeOutDuration)
 }
 
 // Unmarshal ...

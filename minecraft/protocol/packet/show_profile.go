@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,8 +17,8 @@ func (*ShowProfile) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ShowProfile) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.XUID)
+func (pk *ShowProfile) Marshal(w *protocol.Writer) {
+	w.String(&pk.XUID)
 }
 
 // Unmarshal ...

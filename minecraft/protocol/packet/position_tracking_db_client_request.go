@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -30,9 +29,9 @@ func (*PositionTrackingDBClientRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PositionTrackingDBClientRequest) Marshal(buf *bytes.Buffer) {
-	buf.WriteByte(pk.RequestAction)
-	_ = protocol.WriteVarint32(buf, pk.TrackingID)
+func (pk *PositionTrackingDBClientRequest) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.RequestAction)
+	w.Varint32(&pk.TrackingID)
 }
 
 // Unmarshal ...

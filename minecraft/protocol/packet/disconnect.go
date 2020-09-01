@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,10 +21,10 @@ func (*Disconnect) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Disconnect) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.HideDisconnectionScreen)
+func (pk *Disconnect) Marshal(w *protocol.Writer) {
+	w.Bool(&pk.HideDisconnectionScreen)
 	if !pk.HideDisconnectionScreen {
-		_ = protocol.WriteString(buf, pk.Message)
+		w.String(&pk.Message)
 	}
 }
 

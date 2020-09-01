@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -25,14 +24,15 @@ func (*EmoteList) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *EmoteList) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.PlayerRuntimeID)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.EmotePieces)))
+func (pk *EmoteList) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.EmotePieces))
+	w.Varuint64(&pk.PlayerRuntimeID)
+	w.Varuint32(&l)
 	if len(pk.EmotePieces) > 6 {
 		panic("player can have at most 6 emotes set")
 	}
 	for _, piece := range pk.EmotePieces {
-		_ = protocol.WriteUUID(buf, piece)
+		w.UUID(&piece)
 	}
 }
 

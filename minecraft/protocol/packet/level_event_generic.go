@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -90,13 +89,13 @@ func (pk *LevelEventGeneric) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LevelEventGeneric) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.EventID)
-	_, _ = buf.Write(pk.SerialisedEventData)
+func (pk *LevelEventGeneric) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.EventID)
+	w.Bytes(&pk.SerialisedEventData)
 }
 
 // Unmarshal ...
 func (pk *LevelEventGeneric) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.EventID)
-	r.Leftover(&pk.SerialisedEventData)
+	r.Bytes(&pk.SerialisedEventData)
 }

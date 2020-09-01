@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -34,23 +32,20 @@ func (pk *StructureTemplateDataResponse) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *StructureTemplateDataResponse) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.StructureName)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Success)
+func (pk *StructureTemplateDataResponse) Marshal(w *protocol.Writer) {
+	w.String(&pk.StructureName)
+	w.Bool(&pk.Success)
 	if pk.Success {
-		if err := nbt.NewEncoder(buf).Encode(pk.StructureTemplate); err != nil {
-			panic(err)
-		}
+		w.NBT(&pk.StructureTemplate, nbt.NetworkLittleEndian)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.ResponseType)
+	w.Uint8(&pk.ResponseType)
 }
 
 // Unmarshal ...
 func (pk *StructureTemplateDataResponse) Unmarshal(r *protocol.Reader) {
-	var success bool
 	r.String(&pk.StructureName)
 	r.Bool(&pk.Success)
-	if success {
+	if pk.Success {
 		r.NBT(&pk.StructureTemplate, nbt.NetworkLittleEndian)
 	}
 	r.Uint8(&pk.ResponseType)

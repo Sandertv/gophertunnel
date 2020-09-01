@@ -1,9 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -59,33 +56,33 @@ func (*BossEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *BossEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.BossEntityUniqueID)
-	_ = protocol.WriteVaruint32(buf, pk.EventType)
+func (pk *BossEvent) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.BossEntityUniqueID)
+	w.Varuint32(&pk.EventType)
 	switch pk.EventType {
 	case BossEventShow:
-		_ = protocol.WriteString(buf, pk.BossBarTitle)
-		_ = protocol.WriteFloat32(buf, pk.HealthPercentage)
-		_ = binary.Write(buf, binary.LittleEndian, pk.ScreenDarkening)
-		_ = protocol.WriteVaruint32(buf, pk.Colour)
-		_ = protocol.WriteVaruint32(buf, pk.Overlay)
+		w.String(&pk.BossBarTitle)
+		w.Float32(&pk.HealthPercentage)
+		w.Int16(&pk.ScreenDarkening)
+		w.Varuint32(&pk.Colour)
+		w.Varuint32(&pk.Overlay)
 	case BossEventRegisterPlayer, BossEventUnregisterPlayer:
-		_ = protocol.WriteVarint64(buf, pk.PlayerUniqueID)
+		w.Varint64(&pk.PlayerUniqueID)
 	case BossEventHide:
-		// No extra payload for this event type.
+		// No extra payload for this boss event type.
 	case BossEventHealthPercentage:
-		_ = protocol.WriteFloat32(buf, pk.HealthPercentage)
+		w.Float32(&pk.HealthPercentage)
 	case BossEventTitle:
-		_ = protocol.WriteString(buf, pk.BossBarTitle)
+		w.String(&pk.BossBarTitle)
 	case BossEventAppearanceProperties:
-		_ = binary.Write(buf, binary.LittleEndian, pk.ScreenDarkening)
-		_ = protocol.WriteVaruint32(buf, pk.Colour)
-		_ = protocol.WriteVaruint32(buf, pk.Overlay)
+		w.Int16(&pk.ScreenDarkening)
+		w.Varuint32(&pk.Colour)
+		w.Varuint32(&pk.Overlay)
 	case BossEventTexture:
-		_ = protocol.WriteVaruint32(buf, pk.Colour)
-		_ = protocol.WriteVaruint32(buf, pk.Overlay)
+		w.Varuint32(&pk.Colour)
+		w.Varuint32(&pk.Overlay)
 	default:
-		panic(fmt.Sprintf("invalid boss event type %v", pk.EventType))
+		w.UnknownEnumOption(pk.EventType, "boss event type")
 	}
 }
 

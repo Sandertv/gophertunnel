@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,14 +21,15 @@ func (pk *ClientCacheBlobStatus) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ClientCacheBlobStatus) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.MissHashes)))
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.HitHashes)))
+func (pk *ClientCacheBlobStatus) Marshal(w *protocol.Writer) {
+	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
+	w.Varuint32(&missLen)
+	w.Varuint32(&hitLen)
 	for _, hash := range pk.MissHashes {
-		_ = binary.Write(buf, binary.LittleEndian, hash)
+		w.Uint64(&hash)
 	}
 	for _, hash := range pk.HitHashes {
-		_ = binary.Write(buf, binary.LittleEndian, hash)
+		w.Uint64(&hash)
 	}
 }
 

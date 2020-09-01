@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -38,10 +36,10 @@ func (*ChangeDimension) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ChangeDimension) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.Dimension)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Respawn)
+func (pk *ChangeDimension) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.Dimension)
+	w.Vec3(&pk.Position)
+	w.Bool(&pk.Respawn)
 }
 
 // Unmarshal ...

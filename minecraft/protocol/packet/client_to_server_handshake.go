@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -18,7 +17,7 @@ func (*ClientToServerHandshake) ID() uint32 {
 }
 
 // Marshal ...
-func (*ClientToServerHandshake) Marshal(*bytes.Buffer) {
+func (*ClientToServerHandshake) Marshal(*protocol.Writer) {
 
 }
 

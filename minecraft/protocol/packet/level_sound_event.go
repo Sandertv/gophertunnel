@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -318,13 +316,13 @@ func (*LevelSoundEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LevelSoundEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, pk.SoundType)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVarint32(buf, pk.ExtraData)
-	_ = protocol.WriteString(buf, pk.EntityType)
-	_ = binary.Write(buf, binary.LittleEndian, pk.BabyMob)
-	_ = binary.Write(buf, binary.LittleEndian, pk.DisableRelativeVolume)
+func (pk *LevelSoundEvent) Marshal(w *protocol.Writer) {
+	w.Varuint32(&pk.SoundType)
+	w.Vec3(&pk.Position)
+	w.Varint32(&pk.ExtraData)
+	w.String(&pk.EntityType)
+	w.Bool(&pk.BabyMob)
+	w.Bool(&pk.DisableRelativeVolume)
 }
 
 // Unmarshal ...

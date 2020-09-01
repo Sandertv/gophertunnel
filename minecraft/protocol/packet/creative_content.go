@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,10 +18,11 @@ func (*CreativeContent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CreativeContent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Items)))
+func (pk *CreativeContent) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Items))
+	w.Varuint32(&l)
 	for _, item := range pk.Items {
-		_ = protocol.WriteCreativeEntry(buf, item)
+		protocol.WriteCreativeEntry(w, &item)
 	}
 }
 

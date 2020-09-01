@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -31,40 +29,43 @@ func (*CraftingData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CraftingData) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Recipes)))
+func (pk *CraftingData) Marshal(w *protocol.Writer) {
+	l, potRecipesLen, containerRecipesLen := uint32(len(pk.Recipes)), uint32(len(pk.PotionRecipes)), uint32(len(pk.PotionContainerChangeRecipes))
+	w.Varuint32(&l)
 	for _, recipe := range pk.Recipes {
+		var c int32
 		switch recipe.(type) {
 		case *protocol.ShapelessRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeShapeless)
+			c = protocol.RecipeShapeless
 		case *protocol.ShapedRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeShaped)
+			c = protocol.RecipeShaped
 		case *protocol.FurnaceRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeFurnace)
+			c = protocol.RecipeFurnace
 		case *protocol.FurnaceDataRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeFurnaceData)
+			c = protocol.RecipeFurnaceData
 		case *protocol.MultiRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeMulti)
+			c = protocol.RecipeMulti
 		case *protocol.ShulkerBoxRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeShulkerBox)
+			c = protocol.RecipeShulkerBox
 		case *protocol.ShapelessChemistryRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeShapelessChemistry)
+			c = protocol.RecipeShapelessChemistry
 		case *protocol.ShapedChemistryRecipe:
-			_ = protocol.WriteVarint32(buf, protocol.RecipeShapedChemistry)
+			c = protocol.RecipeShapedChemistry
 		default:
-			panic(fmt.Sprintf("invalid crafting data recipe type %T", recipe))
+			w.UnknownEnumOption(fmt.Sprintf("%T", recipe), "crafting recipe type")
 		}
-		recipe.Marshal(buf)
+		w.Varint32(&c)
+		recipe.Marshal(w)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionRecipes)))
+	w.Varuint32(&potRecipesLen)
 	for _, mix := range pk.PotionRecipes {
-		_ = protocol.WritePotRecipe(buf, mix)
+		protocol.WritePotRecipe(w, &mix)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.PotionContainerChangeRecipes)))
+	w.Varuint32(&containerRecipesLen)
 	for _, mix := range pk.PotionContainerChangeRecipes {
-		_ = protocol.WritePotContainerChangeRecipe(buf, mix)
+		protocol.WritePotContainerChangeRecipe(w, &mix)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.ClearRecipes)
+	w.Bool(&pk.ClearRecipes)
 }
 
 // Unmarshal ...

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -60,16 +58,16 @@ func (*StructureBlockUpdate) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *StructureBlockUpdate) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = protocol.WriteString(buf, pk.StructureName)
-	_ = protocol.WriteString(buf, pk.DataField)
-	_ = binary.Write(buf, binary.LittleEndian, pk.IncludePlayers)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ShowBoundingBox)
-	_ = protocol.WriteVarint32(buf, pk.StructureBlockType)
-	_ = protocol.WriteStructSettings(buf, pk.Settings)
-	_ = protocol.WriteVarint32(buf, pk.RedstoneSaveMode)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ShouldTrigger)
+func (pk *StructureBlockUpdate) Marshal(w *protocol.Writer) {
+	w.UBlockPos(&pk.Position)
+	w.String(&pk.StructureName)
+	w.String(&pk.DataField)
+	w.Bool(&pk.IncludePlayers)
+	w.Bool(&pk.ShowBoundingBox)
+	w.Varint32(&pk.StructureBlockType)
+	protocol.WriteStructSettings(w, &pk.Settings)
+	w.Varint32(&pk.RedstoneSaveMode)
+	w.Bool(&pk.ShouldTrigger)
 }
 
 // Unmarshal ...

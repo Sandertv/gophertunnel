@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -20,8 +19,8 @@ func (*RequestChunkRadius) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *RequestChunkRadius) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.ChunkRadius)
+func (pk *RequestChunkRadius) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.ChunkRadius)
 }
 
 // Unmarshal ...

@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,11 +22,12 @@ func (*InventoryContent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *InventoryContent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, pk.WindowID)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Content)))
+func (pk *InventoryContent) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Content))
+	w.Varuint32(&pk.WindowID)
+	w.Varuint32(&l)
 	for _, item := range pk.Content {
-		_ = protocol.WriteItemInst(buf, item)
+		protocol.WriteItemInst(w, &item)
 	}
 }
 

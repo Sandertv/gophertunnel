@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -20,8 +19,8 @@ func (*SetTime) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetTime) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.Time)
+func (pk *SetTime) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.Time)
 }
 
 // Unmarshal ...

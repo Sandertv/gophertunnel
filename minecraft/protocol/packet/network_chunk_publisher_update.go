@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -28,9 +27,9 @@ func (*NetworkChunkPublisherUpdate) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *NetworkChunkPublisherUpdate) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteBlockPosition(buf, pk.Position)
-	_ = protocol.WriteVaruint32(buf, pk.Radius)
+func (pk *NetworkChunkPublisherUpdate) Marshal(w *protocol.Writer) {
+	w.BlockPos(&pk.Position)
+	w.Varuint32(&pk.Radius)
 }
 
 // Unmarshal ...

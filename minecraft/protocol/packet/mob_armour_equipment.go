@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -30,12 +29,12 @@ func (*MobArmourEquipment) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MobArmourEquipment) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteItem(buf, pk.Helmet)
-	_ = protocol.WriteItem(buf, pk.Chestplate)
-	_ = protocol.WriteItem(buf, pk.Leggings)
-	_ = protocol.WriteItem(buf, pk.Boots)
+func (pk *MobArmourEquipment) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	protocol.WriteItem(w, &pk.Helmet)
+	protocol.WriteItem(w, &pk.Chestplate)
+	protocol.WriteItem(w, &pk.Leggings)
+	protocol.WriteItem(w, &pk.Boots)
 }
 
 // Unmarshal ...

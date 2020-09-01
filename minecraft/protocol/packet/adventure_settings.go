@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -78,13 +76,13 @@ func (*AdventureSettings) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AdventureSettings) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, pk.Flags)
-	_ = protocol.WriteVaruint32(buf, pk.CommandPermissionLevel)
-	_ = protocol.WriteVaruint32(buf, pk.ActionPermissions)
-	_ = protocol.WriteVaruint32(buf, pk.PermissionLevel)
-	_ = protocol.WriteVaruint32(buf, pk.CustomStoredPermissions)
-	_ = binary.Write(buf, binary.LittleEndian, pk.PlayerUniqueID)
+func (pk *AdventureSettings) Marshal(w *protocol.Writer) {
+	w.Varuint32(&pk.Flags)
+	w.Varuint32(&pk.CommandPermissionLevel)
+	w.Varuint32(&pk.ActionPermissions)
+	w.Varuint32(&pk.PermissionLevel)
+	w.Varuint32(&pk.CustomStoredPermissions)
+	w.Int64(&pk.PlayerUniqueID)
 }
 
 // Unmarshal ...

@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/google/uuid"
 )
 
@@ -178,36 +176,16 @@ func CommandMessage(r *Reader, x *CommandOutputMessage) {
 	}
 }
 
-// WriteCommandMessage writes a CommandOutputMessage x to Buffer dst.
-func WriteCommandMessage(dst *bytes.Buffer, x CommandOutputMessage) error {
-	if err := chainErr(
-		binary.Write(dst, binary.LittleEndian, x.Success),
-		WriteString(dst, x.Message),
-		WriteVaruint32(dst, uint32(len(x.Parameters))),
-	); err != nil {
-		return err
-	}
-	for _, param := range x.Parameters {
-		if err := WriteString(dst, param); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// WriteCommandMessage writes a CommandOutputMessage x to Writer w.
+func WriteCommandMessage(w *Writer, x *CommandOutputMessage) {
+	l := uint32(len(x.Parameters))
 
-// WriteCommandOriginData writes a CommandOrigin x to Buffer dst.
-func WriteCommandOriginData(dst *bytes.Buffer, x CommandOrigin) error {
-	if err := chainErr(
-		WriteVaruint32(dst, x.Origin),
-		WriteUUID(dst, x.UUID),
-		WriteString(dst, x.RequestID),
-	); err != nil {
-		return err
+	w.Bool(&x.Success)
+	w.String(&x.Message)
+	w.Varuint32(&l)
+	for _, param := range x.Parameters {
+		w.String(&param)
 	}
-	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
-		return WriteVarint64(dst, x.PlayerUniqueID)
-	}
-	return nil
 }
 
 // CommandOriginData reads a CommandOrigin x from Reader r.
@@ -220,36 +198,14 @@ func CommandOriginData(r *Reader, x *CommandOrigin) {
 	}
 }
 
-// WriteCommandData writes a Command x to Buffer dst, using the enum indices and suffix indices passed to
-// translate enums and suffixes to the indices that they're written in in the buffer.
-func WriteCommandData(dst *bytes.Buffer, x Command, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) error {
-	alias := int32(-1)
-	if len(x.Aliases) != 0 {
-		alias = int32(enumIndices[x.Name+"Aliases"])
+// WriteCommandOriginData writes a CommandOrigin x to Writer w.
+func WriteCommandOriginData(w *Writer, x *CommandOrigin) {
+	w.Varuint32(&x.Origin)
+	w.UUID(&x.UUID)
+	w.String(&x.RequestID)
+	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
+		w.Varint64(&x.PlayerUniqueID)
 	}
-	if err := chainErr(
-		WriteString(dst, x.Name),
-		WriteString(dst, x.Description),
-		binary.Write(dst, binary.LittleEndian, x.Flags),
-		binary.Write(dst, binary.LittleEndian, x.PermissionLevel),
-		binary.Write(dst, binary.LittleEndian, alias),
-	); err != nil {
-		return err
-	}
-	if err := WriteVaruint32(dst, uint32(len(x.Overloads))); err != nil {
-		return err
-	}
-	for _, overload := range x.Overloads {
-		if err := WriteVaruint32(dst, uint32(len(overload.Parameters))); err != nil {
-			return err
-		}
-		for _, param := range overload.Parameters {
-			if err := WriteCommandParam(dst, param, enumIndices, suffixIndices, dynamicEnumIndices); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 // CommandData reads a Command x from Buffer src using the enums and suffixes passed to match indices with
@@ -279,9 +235,33 @@ func CommandData(r *Reader, x *Command, enums []CommandEnum, suffixes []string) 
 	}
 }
 
-// WriteCommandParam writes a CommandParameter x to Buffer dst, using the enum indices and suffix indices
+// WriteCommandData writes a Command x to Writer w, using the enum indices and suffix indices passed to
+// translate enums and suffixes to the indices that they're written in in the buffer.
+func WriteCommandData(w *Writer, x *Command, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) {
+	l := uint32(len(x.Overloads))
+
+	alias := int32(-1)
+	if len(x.Aliases) != 0 {
+		alias = int32(enumIndices[x.Name+"Aliases"])
+	}
+	w.String(&x.Name)
+	w.String(&x.Description)
+	w.Uint8(&x.Flags)
+	w.Uint8(&x.PermissionLevel)
+	w.Int32(&alias)
+	w.Varuint32(&l)
+	for _, overload := range x.Overloads {
+		paramsLen := uint32(len(overload.Parameters))
+		w.Varuint32(&paramsLen)
+		for _, param := range overload.Parameters {
+			WriteCommandParam(w, &param, enumIndices, suffixIndices, dynamicEnumIndices)
+		}
+	}
+}
+
+// WriteCommandParam writes a CommandParameter x to Writer w, using the enum indices and suffix indices
 // to translate the respective values to the offset in the buffer.
-func WriteCommandParam(dst *bytes.Buffer, x CommandParameter, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) error {
+func WriteCommandParam(w *Writer, x *CommandParameter, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) {
 	if x.Enum.Dynamic {
 		x.Type = CommandArgSoftEnum | CommandArgValid | uint32(dynamicEnumIndices[x.Enum.Type])
 	} else if len(x.Enum.Options) != 0 {
@@ -289,12 +269,10 @@ func WriteCommandParam(dst *bytes.Buffer, x CommandParameter, enumIndices map[st
 	} else if x.Suffix != "" {
 		x.Type = CommandArgSuffixed | uint32(suffixIndices[x.Suffix])
 	}
-	return chainErr(
-		WriteString(dst, x.Name),
-		binary.Write(dst, binary.LittleEndian, x.Type),
-		binary.Write(dst, binary.LittleEndian, x.Optional),
-		binary.Write(dst, binary.LittleEndian, x.Options),
-	)
+	w.String(&x.Name)
+	w.Uint32(&x.Type)
+	w.Bool(&x.Optional)
+	w.Uint8(&x.Options)
 }
 
 // CommandParam reads a CommandParam x from Buffer src using the enums and suffixes passed to translate
@@ -337,24 +315,19 @@ type CommandEnumConstraint struct {
 	Constraints []byte
 }
 
-// WriteEnumConstraint writes a CommandEnumConstraint x to Buffer dst using the enum (value) indices passed.
-func WriteEnumConstraint(dst *bytes.Buffer, x CommandEnumConstraint, enumIndices map[string]int, enumValueIndices map[string]int) error {
-	if err := chainErr(
-		binary.Write(dst, binary.LittleEndian, uint32(enumValueIndices[x.EnumOption])),
-		binary.Write(dst, binary.LittleEndian, uint32(enumIndices[x.EnumName])),
-		WriteVaruint32(dst, uint32(len(x.Constraints))),
-	); err != nil {
-		return wrap(err)
-	}
-	return wrap(binary.Write(dst, binary.LittleEndian, x.Constraints))
+// WriteEnumConstraint writes a CommandEnumConstraint x to Writer w using the enum (value) indices passed.
+func WriteEnumConstraint(w *Writer, x *CommandEnumConstraint, enumIndices map[string]int, enumValueIndices map[string]int) {
+	enumValueIndex, enumIndex := uint32(enumValueIndices[x.EnumOption]), uint32(enumIndices[x.EnumName])
+	w.Uint32(&enumValueIndex)
+	w.Uint32(&enumIndex)
+	w.ByteSlice(&x.Constraints)
 }
 
 // EnumConstraint reads a CommandEnumConstraint x from Buffer src using the enums and enum values passed.
 func EnumConstraint(r *Reader, x *CommandEnumConstraint, enums []CommandEnum, enumValues []string) {
-	var enumValueIndex, enumIndex, constraintCount uint32
+	var enumValueIndex, enumIndex uint32
 	r.Uint32(&enumValueIndex)
 	r.Uint32(&enumIndex)
-	r.Varuint32(&constraintCount)
 
 	r.LimitUint32(enumValueIndex, uint32(len(enumValues))-1)
 	r.LimitUint32(enumIndex, uint32(len(enums))-1)
@@ -362,8 +335,5 @@ func EnumConstraint(r *Reader, x *CommandEnumConstraint, enums []CommandEnum, en
 	x.EnumOption = enumValues[enumValueIndex]
 	x.EnumName = enums[enumIndex].Type
 
-	x.Constraints = make([]uint8, constraintCount)
-	for i := uint32(0); i < constraintCount; i++ {
-		r.Uint8(&x.Constraints[i])
-	}
+	r.ByteSlice(&x.Constraints)
 }

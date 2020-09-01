@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,8 +18,8 @@ func (*MapInfoRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MapInfoRequest) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.MapID)
+func (pk *MapInfoRequest) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.MapID)
 }
 
 // Unmarshal ...

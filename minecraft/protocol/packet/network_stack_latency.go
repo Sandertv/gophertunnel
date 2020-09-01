@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -25,9 +23,9 @@ func (*NetworkStackLatency) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *NetworkStackLatency) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Timestamp)
-	_ = binary.Write(buf, binary.LittleEndian, pk.NeedsResponse)
+func (pk *NetworkStackLatency) Marshal(w *protocol.Writer) {
+	w.Int64(&pk.Timestamp)
+	w.Bool(&pk.NeedsResponse)
 }
 
 // Unmarshal ...

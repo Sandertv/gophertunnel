@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -22,13 +21,13 @@ func (pk *Unknown) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *Unknown) Marshal(buf *bytes.Buffer) {
-	_, _ = buf.Write(pk.Payload)
+func (pk *Unknown) Marshal(w *protocol.Writer) {
+	w.Bytes(&pk.Payload)
 }
 
 // Unmarshal ...
 func (pk *Unknown) Unmarshal(r *protocol.Reader) {
-	r.Leftover(&pk.Payload)
+	r.Bytes(&pk.Payload)
 }
 
 // String implements a hex representation of an unknown packet, so that it is easier to read and identify

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -28,11 +26,11 @@ func (*LecternUpdate) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *LecternUpdate) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Page)
-	_ = binary.Write(buf, binary.LittleEndian, pk.PageCount)
-	_ = protocol.WriteBlockPosition(buf, pk.Position)
-	_ = binary.Write(buf, binary.LittleEndian, pk.DropBook)
+func (pk *LecternUpdate) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.Page)
+	w.Uint8(&pk.PageCount)
+	w.BlockPos(&pk.Position)
+	w.Bool(&pk.DropBook)
 }
 
 // Unmarshal ...

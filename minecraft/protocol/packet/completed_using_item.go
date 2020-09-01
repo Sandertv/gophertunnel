@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -41,9 +39,9 @@ func (*CompletedUsingItem) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *CompletedUsingItem) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.UsedItemID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.UseMethod)
+func (pk *CompletedUsingItem) Marshal(w *protocol.Writer) {
+	w.Int16(&pk.UsedItemID)
+	w.Int32(&pk.UseMethod)
 }
 
 // Unmarshal ...

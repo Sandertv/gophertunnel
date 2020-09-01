@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -27,9 +25,9 @@ func (*ShowStoreOffer) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ShowStoreOffer) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.OfferID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ShowAll)
+func (pk *ShowStoreOffer) Marshal(w *protocol.Writer) {
+	w.String(&pk.OfferID)
+	w.Bool(&pk.ShowAll)
 }
 
 // Unmarshal ...

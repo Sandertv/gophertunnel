@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -46,17 +44,17 @@ func (*UpdateTrade) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateTrade) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowID)
-	_ = binary.Write(buf, binary.LittleEndian, pk.WindowType)
-	_ = protocol.WriteVarint32(buf, pk.Size)
-	_ = protocol.WriteVarint32(buf, pk.TradeTier)
-	_ = protocol.WriteVarint64(buf, pk.VillagerUniqueID)
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_ = protocol.WriteString(buf, pk.DisplayName)
-	_ = binary.Write(buf, binary.LittleEndian, pk.NewTradeUI)
-	_ = binary.Write(buf, binary.LittleEndian, pk.DemandBasedPrices)
-	_, _ = buf.Write(pk.SerialisedOffers)
+func (pk *UpdateTrade) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.WindowID)
+	w.Uint8(&pk.WindowType)
+	w.Varint32(&pk.Size)
+	w.Varint32(&pk.TradeTier)
+	w.Varint64(&pk.VillagerUniqueID)
+	w.Varint64(&pk.EntityUniqueID)
+	w.String(&pk.DisplayName)
+	w.Bool(&pk.NewTradeUI)
+	w.Bool(&pk.DemandBasedPrices)
+	w.Bytes(&pk.SerialisedOffers)
 }
 
 // Unmarshal ...
@@ -70,5 +68,5 @@ func (pk *UpdateTrade) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.DisplayName)
 	r.Bool(&pk.NewTradeUI)
 	r.Bool(&pk.DemandBasedPrices)
-	r.Leftover(&pk.SerialisedOffers)
+	r.Bytes(&pk.SerialisedOffers)
 }

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +21,9 @@ func (*StopSound) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *StopSound) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.SoundName)
-	_ = binary.Write(buf, binary.LittleEndian, pk.StopAll)
+func (pk *StopSound) Marshal(w *protocol.Writer) {
+	w.String(&pk.SoundName)
+	w.Bool(&pk.StopAll)
 }
 
 // Unmarshal ...

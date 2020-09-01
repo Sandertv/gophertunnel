@@ -1,9 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-)
-
 // CreativeItem represents a creative item present in the creative inventory.
 type CreativeItem struct {
 	// CreativeItemNetworkID is a unique ID for the creative item. It has to be unique for each creative item
@@ -13,12 +9,10 @@ type CreativeItem struct {
 	Item ItemStack
 }
 
-// WriteCreativeEntry writes a CreativeItem x to the Buffer dst.
-func WriteCreativeEntry(dst *bytes.Buffer, x CreativeItem) error {
-	return chainErr(
-		WriteVaruint32(dst, x.CreativeItemNetworkID),
-		WriteItem(dst, x.Item),
-	)
+// WriteCreativeEntry writes a CreativeItem x to Writer w.
+func WriteCreativeEntry(w *Writer, x *CreativeItem) {
+	w.Varuint32(&x.CreativeItemNetworkID)
+	WriteItem(w, &x.Item)
 }
 
 // CreativeEntry reads a CreativeItem x from Reader r.

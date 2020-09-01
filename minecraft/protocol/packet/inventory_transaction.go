@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -51,33 +49,37 @@ func (*InventoryTransaction) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *InventoryTransaction) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint32(buf, pk.LegacyRequestID)
+func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
+	w.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
-		_ = protocol.WriteVaruint32(buf, uint32(len(pk.LegacySetItemSlots)))
+		l := uint32(len(pk.LegacySetItemSlots))
+		w.Varuint32(&l)
 		for _, slot := range pk.LegacySetItemSlots {
-			_ = protocol.WriteSetItemSlot(buf, slot)
+			protocol.WriteSetItemSlot(w, &slot)
 		}
 	}
+	var id uint32
 	switch pk.TransactionData.(type) {
 	case nil, *protocol.NormalTransactionData:
-		_ = protocol.WriteVaruint32(buf, InventoryTransactionTypeNormal)
+		id = InventoryTransactionTypeNormal
 	case *protocol.MismatchTransactionData:
-		_ = protocol.WriteVaruint32(buf, InventoryTransactionTypeMismatch)
+		id = InventoryTransactionTypeMismatch
 	case *protocol.UseItemTransactionData:
-		_ = protocol.WriteVaruint32(buf, InventoryTransactionTypeUseItem)
+		id = InventoryTransactionTypeUseItem
 	case *protocol.UseItemOnEntityTransactionData:
-		_ = protocol.WriteVaruint32(buf, InventoryTransactionTypeUseItemOnEntity)
+		id = InventoryTransactionTypeUseItemOnEntity
 	case *protocol.ReleaseItemTransactionData:
-		_ = protocol.WriteVaruint32(buf, InventoryTransactionTypeReleaseItem)
+		id = InventoryTransactionTypeReleaseItem
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.HasNetworkIDs)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Actions)))
+	w.Varuint32(&id)
+	w.Bool(&pk.HasNetworkIDs)
+	l := uint32(len(pk.Actions))
+	w.Varuint32(&l)
 	for _, action := range pk.Actions {
-		_ = protocol.WriteInvAction(buf, action, pk.HasNetworkIDs)
+		protocol.WriteInvAction(w, &action, pk.HasNetworkIDs)
 	}
 	if pk.TransactionData != nil {
-		pk.TransactionData.Marshal(buf)
+		pk.TransactionData.Marshal(w)
 	}
 }
 

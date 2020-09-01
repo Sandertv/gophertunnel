@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -33,18 +31,19 @@ func (*ResourcePackStack) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ResourcePackStack) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.TexturePackRequired)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.BehaviourPacks)))
+func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
+	w.Bool(&pk.TexturePackRequired)
+	behaviourLen, textureLen := uint32(len(pk.BehaviourPacks)), uint32(len(pk.TexturePacks))
+	w.Varuint32(&behaviourLen)
 	for _, pack := range pk.BehaviourPacks {
-		_ = protocol.WriteStackPack(buf, pack)
+		protocol.WriteStackPack(w, &pack)
 	}
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.TexturePacks)))
+	w.Varuint32(&textureLen)
 	for _, pack := range pk.TexturePacks {
-		_ = protocol.WriteStackPack(buf, pack)
+		protocol.WriteStackPack(w, &pack)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.Experimental)
-	_ = protocol.WriteString(buf, pk.BaseGameVersion)
+	w.Bool(&pk.Experimental)
+	w.String(&pk.BaseGameVersion)
 }
 
 // Unmarshal ...

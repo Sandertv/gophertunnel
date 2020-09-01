@@ -1,9 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -55,25 +52,25 @@ func (*BookEdit) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *BookEdit) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
-	_ = binary.Write(buf, binary.LittleEndian, pk.InventorySlot)
+func (pk *BookEdit) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.ActionType)
+	w.Uint8(&pk.InventorySlot)
 	switch pk.ActionType {
 	case BookActionReplacePage, BookActionAddPage:
-		_ = binary.Write(buf, binary.LittleEndian, pk.PageNumber)
-		_ = protocol.WriteString(buf, pk.Text)
-		_ = protocol.WriteString(buf, pk.PhotoName)
+		w.Uint8(&pk.PageNumber)
+		w.String(&pk.Text)
+		w.String(&pk.PhotoName)
 	case BookActionDeletePage:
-		_ = binary.Write(buf, binary.LittleEndian, pk.PageNumber)
+		w.Uint8(&pk.PageNumber)
 	case BookActionSwapPages:
-		_ = binary.Write(buf, binary.LittleEndian, pk.PageNumber)
-		_ = binary.Write(buf, binary.LittleEndian, pk.SecondaryPageNumber)
+		w.Uint8(&pk.PageNumber)
+		w.Uint8(&pk.SecondaryPageNumber)
 	case BookActionSign:
-		_ = protocol.WriteString(buf, pk.Title)
-		_ = protocol.WriteString(buf, pk.Author)
-		_ = protocol.WriteString(buf, pk.XUID)
+		w.String(&pk.Title)
+		w.String(&pk.Author)
+		w.String(&pk.XUID)
 	default:
-		panic(fmt.Sprintf("invalid book edit action type %v", pk.ActionType))
+		w.UnknownEnumOption(pk.ActionType, "book edit action type")
 	}
 }
 

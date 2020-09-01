@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -61,18 +59,18 @@ func (*MovePlayer) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *MovePlayer) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteFloat32(buf, pk.Pitch)
-	_ = protocol.WriteFloat32(buf, pk.Yaw)
-	_ = protocol.WriteFloat32(buf, pk.HeadYaw)
-	_ = binary.Write(buf, binary.LittleEndian, pk.Mode)
-	_ = binary.Write(buf, binary.LittleEndian, pk.OnGround)
-	_ = protocol.WriteVaruint64(buf, pk.RiddenEntityRuntimeID)
+func (pk *MovePlayer) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Vec3(&pk.Position)
+	w.Float32(&pk.Pitch)
+	w.Float32(&pk.Yaw)
+	w.Float32(&pk.HeadYaw)
+	w.Uint8(&pk.Mode)
+	w.Bool(&pk.OnGround)
+	w.Varuint64(&pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
-		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportCause)
-		_ = binary.Write(buf, binary.LittleEndian, pk.TeleportSourceEntityType)
+		w.Int32(&pk.TeleportCause)
+		w.Int32(&pk.TeleportSourceEntityType)
 	}
 }
 

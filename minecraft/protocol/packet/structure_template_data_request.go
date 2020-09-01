@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -33,11 +31,11 @@ func (pk *StructureTemplateDataRequest) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *StructureTemplateDataRequest) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.StructureName)
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = protocol.WriteStructSettings(buf, pk.Settings)
-	_ = binary.Write(buf, binary.LittleEndian, pk.RequestType)
+func (pk *StructureTemplateDataRequest) Marshal(w *protocol.Writer) {
+	w.String(&pk.StructureName)
+	w.UBlockPos(&pk.Position)
+	protocol.WriteStructSettings(w, &pk.Settings)
+	w.Uint8(&pk.RequestType)
 }
 
 // Unmarshal ...

@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -30,11 +28,12 @@ func (*ResourcePackClientResponse) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *ResourcePackClientResponse) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Response)
-	_ = binary.Write(buf, binary.LittleEndian, uint16(len(pk.PacksToDownload)))
+func (pk *ResourcePackClientResponse) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.Response)
+	l := uint16(len(pk.PacksToDownload))
+	w.Uint16(&l)
 	for _, pack := range pk.PacksToDownload {
-		_ = protocol.WriteString(buf, pack)
+		w.String(&pack)
 	}
 }
 

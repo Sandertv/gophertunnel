@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -34,11 +33,11 @@ func (*UpdateBlock) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateBlock) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = protocol.WriteVaruint32(buf, pk.NewBlockRuntimeID)
-	_ = protocol.WriteVaruint32(buf, pk.Flags)
-	_ = protocol.WriteVaruint32(buf, pk.Layer)
+func (pk *UpdateBlock) Marshal(w *protocol.Writer) {
+	w.UBlockPos(&pk.Position)
+	w.Varuint32(&pk.NewBlockRuntimeID)
+	w.Varuint32(&pk.Flags)
+	w.Varuint32(&pk.Layer)
 }
 
 // Unmarshal ...

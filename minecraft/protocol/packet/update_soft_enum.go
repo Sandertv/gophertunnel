@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -36,13 +34,14 @@ func (*UpdateSoftEnum) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *UpdateSoftEnum) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.EnumType)
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Options)))
+func (pk *UpdateSoftEnum) Marshal(w *protocol.Writer) {
+	w.String(&pk.EnumType)
+	l := uint32(len(pk.Options))
+	w.Varuint32(&l)
 	for _, option := range pk.Options {
-		_ = protocol.WriteString(buf, option)
+		w.String(&option)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.ActionType)
+	w.Uint8(&pk.ActionType)
 }
 
 // Unmarshal ...

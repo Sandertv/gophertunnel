@@ -1,10 +1,5 @@
 package protocol
 
-import (
-	"bytes"
-	"encoding/binary"
-)
-
 // CacheBlob represents a blob as used in the client side blob cache protocol. It holds a hash of its data and
 // the full data of it.
 type CacheBlob struct {
@@ -16,12 +11,10 @@ type CacheBlob struct {
 	Payload []byte
 }
 
-// WriteBlob writes a CacheBlob x to Buffer dst.
-func WriteBlob(dst *bytes.Buffer, x CacheBlob) error {
-	return chainErr(
-		binary.Write(dst, binary.LittleEndian, x.Hash),
-		WriteByteSlice(dst, x.Payload),
-	)
+// WriteBlob writes a CacheBlob x to Writer w.
+func WriteBlob(w *Writer, x *CacheBlob) {
+	w.Uint64(&x.Hash)
+	w.ByteSlice(&x.Payload)
 }
 
 // Blob reads a CacheBlob x from Reader r.

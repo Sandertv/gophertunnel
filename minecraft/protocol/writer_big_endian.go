@@ -1,0 +1,57 @@
+// +build armbe arm64be ppc64 mips mips64 mips64p32 ppc sparc sparc64 s390 s390x
+
+package protocol
+
+import (
+	"encoding/binary"
+	"math"
+	"unsafe"
+)
+
+// Uint16 writes a little endian uint16 to the underlying buffer.
+func (w *Writer) Uint16(x *uint16) {
+	w.buf = append(w.buf, 0, 0)
+	binary.LittleEndian.PutUint16(w.buf[len(w.buf)-2:], *x)
+}
+
+// Int16 writes a little endian int16 to the underlying buffer.
+func (w *Writer) Int16(x *int16) {
+	w.buf = append(w.buf, 0, 0)
+	binary.LittleEndian.PutUint16(w.buf[len(w.buf)-2:], uint16(*x))
+}
+
+// Uint32 writes a little endian uint32 to the underlying buffer.
+func (w *Writer) Uint32(x *uint32) {
+	w.buf = append(w.buf, 0, 0, 0, 0)
+	binary.LittleEndian.PutUint32(w.buf[len(w.buf)-4:], *x)
+}
+
+// Int32 writes a little endian int32 to the underlying buffer.
+func (w *Writer) Int32(x *int32) {
+	w.buf = append(w.buf, 0, 0, 0, 0)
+	binary.LittleEndian.PutUint32(w.buf[len(w.buf)-4:], uint32(*x))
+}
+
+// BEInt32 writes a big endian int32 to the underlying buffer.
+func (w *Writer) BEInt32(x *int32) {
+	data := *(*[4]byte)(unsafe.Pointer(x))
+	w.buf = append(w.buf, data[:]...)
+}
+
+// Uint64 writes a little endian uint64 to the underlying buffer.
+func (w *Writer) Uint64(x *uint64) {
+	w.buf = append(w.buf, 0, 0, 0, 0, 0, 0, 0, 0)
+	binary.LittleEndian.PutUint64(w.buf[len(w.buf)-8:], *x)
+}
+
+// Int64 writes a little endian int64 to the underlying buffer.
+func (w *Writer) Int64(x *int64) {
+	w.buf = append(w.buf, 0, 0, 0, 0, 0, 0, 0, 0)
+	binary.LittleEndian.PutUint64(w.buf[len(w.buf)-8:], uint64(*x))
+}
+
+// Float32 writes a little endian float32 to the underlying buffer.
+func (w *Writer) Float32(x *float32) {
+	w.buf = append(w.buf, 0, 0, 0, 0)
+	binary.LittleEndian.PutUint32(w.buf[len(w.buf)-4:], math.Float32bits(*x))
+}

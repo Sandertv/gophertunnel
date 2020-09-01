@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,9 +22,9 @@ func (*SetActorData) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *SetActorData) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteEntityMetadata(buf, pk.EntityMetadata)
+func (pk *SetActorData) Marshal(w *protocol.Writer) {
+	w.Varuint64(&pk.EntityRuntimeID)
+	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
 }
 
 // Unmarshal ...

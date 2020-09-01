@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -28,10 +27,10 @@ func (*PhotoTransfer) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PhotoTransfer) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.PhotoName)
-	_ = protocol.WriteByteSlice(buf, pk.PhotoData)
-	_ = protocol.WriteString(buf, pk.BookID)
+func (pk *PhotoTransfer) Marshal(w *protocol.Writer) {
+	w.String(&pk.PhotoName)
+	w.ByteSlice(&pk.PhotoData)
+	w.String(&pk.BookID)
 }
 
 // Unmarshal ...

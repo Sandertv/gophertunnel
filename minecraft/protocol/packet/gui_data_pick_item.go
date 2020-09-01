@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -25,10 +23,10 @@ func (*GUIDataPickItem) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *GUIDataPickItem) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.ItemName)
-	_ = protocol.WriteString(buf, pk.ItemEffects)
-	_ = binary.Write(buf, binary.LittleEndian, pk.HotBarSlot)
+func (pk *GUIDataPickItem) Marshal(w *protocol.Writer) {
+	w.String(&pk.ItemName)
+	w.String(&pk.ItemEffects)
+	w.Int32(&pk.HotBarSlot)
 }
 
 // Unmarshal ...

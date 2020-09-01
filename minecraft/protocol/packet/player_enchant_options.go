@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -23,10 +22,11 @@ func (*PlayerEnchantOptions) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PlayerEnchantOptions) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Options)))
+func (pk *PlayerEnchantOptions) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Options))
+	w.Varuint32(&l)
 	for _, option := range pk.Options {
-		_ = protocol.WriteEnchantOption(buf, option)
+		protocol.WriteEnchantOption(w, &option)
 	}
 }
 

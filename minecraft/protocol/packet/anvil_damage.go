@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -21,9 +19,9 @@ func (*AnvilDamage) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AnvilDamage) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.Damage)
-	_ = protocol.WriteUBlockPosition(buf, pk.AnvilPosition)
+func (pk *AnvilDamage) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.Damage)
+	w.UBlockPos(&pk.AnvilPosition)
 }
 
 // Unmarshal ..

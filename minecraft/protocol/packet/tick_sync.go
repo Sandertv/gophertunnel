@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -27,9 +25,9 @@ func (*TickSync) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *TickSync) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, pk.ClientRequestTimestamp)
-	_ = binary.Write(buf, binary.LittleEndian, pk.ServerReceptionTimestamp)
+func (pk *TickSync) Marshal(w *protocol.Writer) {
+	w.Int64(&pk.ClientRequestTimestamp)
+	w.Int64(&pk.ServerReceptionTimestamp)
 }
 
 // Unmarshal ...

@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -32,12 +31,12 @@ func (*AddPainting) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *AddPainting) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVarint64(buf, pk.EntityUniqueID)
-	_ = protocol.WriteVaruint64(buf, pk.EntityRuntimeID)
-	_ = protocol.WriteVec3(buf, pk.Position)
-	_ = protocol.WriteVarint32(buf, pk.Direction)
-	_ = protocol.WriteString(buf, pk.Title)
+func (pk *AddPainting) Marshal(w *protocol.Writer) {
+	w.Varint64(&pk.EntityUniqueID)
+	w.Varuint64(&pk.EntityRuntimeID)
+	w.Vec3(&pk.Position)
+	w.Varint32(&pk.Direction)
+	w.String(&pk.Title)
 }
 
 // Unmarshal ...

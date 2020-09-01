@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -28,10 +27,10 @@ func (*BlockEvent) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *BlockEvent) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteUBlockPosition(buf, pk.Position)
-	_ = protocol.WriteVarint32(buf, pk.EventType)
-	_ = protocol.WriteVarint32(buf, pk.EventData)
+func (pk *BlockEvent) Marshal(w *protocol.Writer) {
+	w.UBlockPos(&pk.Position)
+	w.Varint32(&pk.EventType)
+	w.Varint32(&pk.EventData)
 }
 
 // Unmarshal ...

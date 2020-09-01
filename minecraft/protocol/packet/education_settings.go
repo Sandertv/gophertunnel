@@ -1,8 +1,6 @@
 package packet
 
 import (
-	"bytes"
-	"encoding/binary"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -29,15 +27,16 @@ func (*EducationSettings) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *EducationSettings) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteString(buf, pk.CodeBuilderDefaultURI)
-	_ = protocol.WriteString(buf, pk.CodeBuilderTitle)
-	_ = binary.Write(buf, binary.LittleEndian, pk.CanResizeCodeBuilder)
-	_ = binary.Write(buf, binary.LittleEndian, pk.OverrideURI != "")
-	if pk.OverrideURI != "" {
-		_ = protocol.WriteString(buf, pk.OverrideURI)
+func (pk *EducationSettings) Marshal(w *protocol.Writer) {
+	hasOverrideURI := pk.OverrideURI != ""
+	w.String(&pk.CodeBuilderDefaultURI)
+	w.String(&pk.CodeBuilderTitle)
+	w.Bool(&pk.CanResizeCodeBuilder)
+	w.Bool(&hasOverrideURI)
+	if hasOverrideURI {
+		w.String(&pk.OverrideURI)
 	}
-	_ = binary.Write(buf, binary.LittleEndian, pk.HasQuiz)
+	w.Bool(&pk.HasQuiz)
 }
 
 // Unmarshal ...

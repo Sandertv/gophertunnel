@@ -51,11 +51,6 @@ type Dialer struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// SendPacketViolations makes the Dialer send PacketViolationWarnings to servers it connects to when it
-	// receives packets it cannot decode properly. Additionally, it will log PacketViolationWarnings coming
-	// from the server.
-	SendPacketViolations bool
-
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
@@ -107,7 +102,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.identityData = defaultIdentityData()
 	conn.packetFunc = dialer.PacketFunc
 	conn.cacheEnabled = dialer.EnableClientCache
-	conn.sendPacketViolations = dialer.SendPacketViolations
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.decoder.DisableBatchPacketLimit()
 

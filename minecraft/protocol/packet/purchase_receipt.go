@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -19,10 +18,11 @@ func (*PurchaseReceipt) ID() uint32 {
 }
 
 // Marshal ...
-func (pk *PurchaseReceipt) Marshal(buf *bytes.Buffer) {
-	_ = protocol.WriteVaruint32(buf, uint32(len(pk.Receipts)))
+func (pk *PurchaseReceipt) Marshal(w *protocol.Writer) {
+	l := uint32(len(pk.Receipts))
+	w.Varuint32(&l)
 	for _, receipt := range pk.Receipts {
-		_ = protocol.WriteString(buf, receipt)
+		w.String(&receipt)
 	}
 }
 

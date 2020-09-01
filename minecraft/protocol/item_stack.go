@@ -1,8 +1,6 @@
 package protocol
 
 import (
-	"bytes"
-	"encoding/binary"
 	"fmt"
 )
 
@@ -18,14 +16,11 @@ type ItemStackRequest struct {
 	Actions []StackRequestAction
 }
 
-// WriteStackRequest writes an ItemStackRequest x to Buffer dst.
-func WriteStackRequest(dst *bytes.Buffer, x ItemStackRequest) error {
-	if err := WriteVarint32(dst, x.RequestID); err != nil {
-		return err
-	}
-	if err := WriteVaruint32(dst, uint32(len(x.Actions))); err != nil {
-		return err
-	}
+// WriteStackRequest writes an ItemStackRequest x to Writer w.
+func WriteStackRequest(w *Writer, x *ItemStackRequest) {
+	l := uint32(len(x.Actions))
+	w.Varint32(&x.RequestID)
+	w.Varuint32(&l)
 	for _, action := range x.Actions {
 		var id byte
 		switch action.(type) {
@@ -58,12 +53,11 @@ func WriteStackRequest(dst *bytes.Buffer, x ItemStackRequest) error {
 		case *CraftResultsDeprecatedStackRequestAction:
 			id = StackRequestActionCraftResultsDeprecated
 		default:
-			panic(fmt.Sprintf("unknown item stack request action type %T", action))
+			w.UnknownEnumOption(fmt.Sprintf("%T", action), "stack request action type")
 		}
-		dst.WriteByte(id)
-		action.Marshal(dst)
+		w.Uint8(&id)
+		action.Marshal(w)
 	}
-	return nil
 }
 
 // StackRequest reads an ItemStackRequest x from Reader r.
@@ -152,26 +146,18 @@ type StackResponseSlotInfo struct {
 	StackNetworkID int32
 }
 
-// WriteStackResponse writes an ItemStackResponse x to Buffer dst.
-func WriteStackResponse(dst *bytes.Buffer, x ItemStackResponse) error {
-	if err := chainErr(
-		binary.Write(dst, binary.LittleEndian, x.Success),
-		WriteVarint32(dst, x.RequestID),
-	); err != nil {
-		return err
-	}
+// WriteStackResponse writes an ItemStackResponse x to Writer w.
+func WriteStackResponse(w *Writer, x *ItemStackResponse) {
+	w.Bool(&x.Success)
+	w.Varint32(&x.RequestID)
 	if !x.Success {
-		return nil
+		return
 	}
-	if err := WriteVaruint32(dst, uint32(len(x.ContainerInfo))); err != nil {
-		return err
-	}
+	l := uint32(len(x.ContainerInfo))
+	w.Varuint32(&l)
 	for _, info := range x.ContainerInfo {
-		if err := WriteStackContainerInfo(dst, info); err != nil {
-			return err
-		}
+		WriteStackContainerInfo(w, &info)
 	}
-	return nil
 }
 
 // StackResponse reads an ItemStackResponse x from Reader r.
@@ -190,18 +176,14 @@ func StackResponse(r *Reader, x *ItemStackResponse) {
 	}
 }
 
-// WriteStackContainerInfo writes a StackResponseContainerInfo x to Buffer dst.
-func WriteStackContainerInfo(dst *bytes.Buffer, x StackResponseContainerInfo) error {
-	dst.WriteByte(x.ContainerID)
-	if err := WriteVaruint32(dst, uint32(len(x.SlotInfo))); err != nil {
-		return err
-	}
+// WriteStackContainerInfo writes a StackResponseContainerInfo x to Writer w.
+func WriteStackContainerInfo(w *Writer, x *StackResponseContainerInfo) {
+	w.Uint8(&x.ContainerID)
+	l := uint32(len(x.SlotInfo))
+	w.Varuint32(&l)
 	for _, info := range x.SlotInfo {
-		if err := WriteStackSlotInfo(dst, info); err != nil {
-			return err
-		}
+		WriteStackSlotInfo(w, &info)
 	}
-	return nil
 }
 
 // StackContainerInfo reads a StackResponseContainerInfo x from Reader r.
@@ -216,17 +198,15 @@ func StackContainerInfo(r *Reader, x *StackResponseContainerInfo) {
 	}
 }
 
-// WriteStackSlotInfo writes a StackResponseSlotInfo x to Buffer dst.
-func WriteStackSlotInfo(dst *bytes.Buffer, x StackResponseSlotInfo) error {
+// WriteStackSlotInfo writes a StackResponseSlotInfo x to Writer w.
+func WriteStackSlotInfo(w *Writer, x *StackResponseSlotInfo) {
 	if x.Slot != x.HotbarSlot {
 		panic(fmt.Errorf("%v: Slot and HotbarSlot had different values: %v vs %v", callFrame(), x.Slot, x.HotbarSlot))
 	}
-	return chainErr(
-		binary.Write(dst, binary.LittleEndian, x.Slot),
-		binary.Write(dst, binary.LittleEndian, x.HotbarSlot),
-		binary.Write(dst, binary.LittleEndian, x.Count),
-		WriteVarint32(dst, x.StackNetworkID),
-	)
+	w.Uint8(&x.Slot)
+	w.Uint8(&x.HotbarSlot)
+	w.Uint8(&x.Count)
+	w.Varint32(&x.StackNetworkID)
 }
 
 // StackSlotInfo reads a StackResponseSlotInfo x from Reader r.
@@ -245,7 +225,7 @@ func StackSlotInfo(r *Reader, x *StackResponseSlotInfo) {
 // client, such as moving an item around the inventory or placing a block.
 type StackRequestAction interface {
 	// Marshal encodes the stack request action its binary representation into buf.
-	Marshal(buf *bytes.Buffer)
+	Marshal(w *Writer)
 	// Unmarshal decodes a serialised stack request action object from Reader r into the
 	// InventoryTransactionData instance.
 	Unmarshal(r *Reader)
@@ -279,10 +259,10 @@ type transferStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *transferStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, a.Count)
-	_ = WriteStackReqSlotInfo(buf, a.Source)
-	_ = WriteStackReqSlotInfo(buf, a.Destination)
+func (a *transferStackRequestAction) Marshal(w *Writer) {
+	w.Uint8(&a.Count)
+	WriteStackReqSlotInfo(w, &a.Source)
+	WriteStackReqSlotInfo(w, &a.Destination)
 }
 
 // Unmarshal ...
@@ -314,9 +294,9 @@ type SwapStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *SwapStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = WriteStackReqSlotInfo(buf, a.Source)
-	_ = WriteStackReqSlotInfo(buf, a.Destination)
+func (a *SwapStackRequestAction) Marshal(w *Writer) {
+	WriteStackReqSlotInfo(w, &a.Source)
+	WriteStackReqSlotInfo(w, &a.Destination)
 }
 
 // Unmarshal ...
@@ -340,10 +320,10 @@ type DropStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *DropStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, a.Count)
-	_ = WriteStackReqSlotInfo(buf, a.Source)
-	_ = binary.Write(buf, binary.LittleEndian, a.Randomly)
+func (a *DropStackRequestAction) Marshal(w *Writer) {
+	w.Uint8(&a.Count)
+	WriteStackReqSlotInfo(w, &a.Source)
+	w.Bool(&a.Randomly)
 }
 
 // Unmarshal ...
@@ -364,9 +344,9 @@ type DestroyStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *DestroyStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = binary.Write(buf, binary.LittleEndian, a.Count)
-	_ = WriteStackReqSlotInfo(buf, a.Source)
+func (a *DestroyStackRequestAction) Marshal(w *Writer) {
+	w.Uint8(&a.Count)
+	WriteStackReqSlotInfo(w, &a.Source)
 }
 
 // Unmarshal ...
@@ -394,8 +374,8 @@ type CreateStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CreateStackRequestAction) Marshal(buf *bytes.Buffer) {
-	buf.WriteByte(a.ResultsSlot)
+func (a *CreateStackRequestAction) Marshal(w *Writer) {
+	w.Uint8(&a.ResultsSlot)
 }
 
 // Unmarshal ...
@@ -407,7 +387,7 @@ func (a *CreateStackRequestAction) Unmarshal(r *Reader) {
 type LabTableCombineStackRequestAction struct{}
 
 // Marshal ...
-func (a *LabTableCombineStackRequestAction) Marshal(*bytes.Buffer) {}
+func (a *LabTableCombineStackRequestAction) Marshal(*Writer) {}
 
 // Unmarshal ...
 func (a *LabTableCombineStackRequestAction) Unmarshal(*Reader) {}
@@ -420,9 +400,9 @@ type BeaconPaymentStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *BeaconPaymentStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = WriteVarint32(buf, a.PrimaryEffect)
-	_ = WriteVarint32(buf, a.SecondaryEffect)
+func (a *BeaconPaymentStackRequestAction) Marshal(w *Writer) {
+	w.Varint32(&a.PrimaryEffect)
+	w.Varint32(&a.SecondaryEffect)
 }
 
 // Unmarshal ...
@@ -443,8 +423,8 @@ type CraftRecipeStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftRecipeStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint32(buf, a.RecipeNetworkID)
+func (a *CraftRecipeStackRequestAction) Marshal(w *Writer) {
+	w.Varuint32(&a.RecipeNetworkID)
 }
 
 // Unmarshal ...
@@ -467,8 +447,8 @@ type CraftCreativeStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftCreativeStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint32(buf, a.CreativeItemNetworkID)
+func (a *CraftCreativeStackRequestAction) Marshal(w *Writer) {
+	w.Varuint32(&a.CreativeItemNetworkID)
 }
 
 // Unmarshal ...
@@ -481,7 +461,7 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
 type CraftNonImplementedStackRequestAction struct{}
 
 // Marshal ...
-func (*CraftNonImplementedStackRequestAction) Marshal(*bytes.Buffer) {}
+func (*CraftNonImplementedStackRequestAction) Marshal(*Writer) {}
 
 // Unmarshal ...
 func (*CraftNonImplementedStackRequestAction) Unmarshal(*Reader) {}
@@ -496,12 +476,13 @@ type CraftResultsDeprecatedStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftResultsDeprecatedStackRequestAction) Marshal(buf *bytes.Buffer) {
-	_ = WriteVaruint32(buf, uint32(len(a.ResultItems)))
+func (a *CraftResultsDeprecatedStackRequestAction) Marshal(w *Writer) {
+	l := uint32(len(a.ResultItems))
+	w.Varuint32(&l)
 	for _, i := range a.ResultItems {
-		_ = WriteItem(buf, i)
+		WriteItem(w, &i)
 	}
-	buf.WriteByte(a.TimesCrafted)
+	w.Uint8(&a.TimesCrafted)
 }
 
 // Unmarshal ...
@@ -529,13 +510,11 @@ type StackRequestSlotInfo struct {
 	StackNetworkID int32
 }
 
-// WriteStackReqSlotInfo writes a StackRequestSlotInfo x to Buffer dst.
-func WriteStackReqSlotInfo(dst *bytes.Buffer, x StackRequestSlotInfo) error {
-	return chainErr(
-		binary.Write(dst, binary.LittleEndian, x.ContainerID),
-		binary.Write(dst, binary.LittleEndian, x.Slot),
-		WriteVarint32(dst, x.StackNetworkID),
-	)
+// WriteStackReqSlotInfo writes a StackRequestSlotInfo x to Writer w.
+func WriteStackReqSlotInfo(w *Writer, x *StackRequestSlotInfo) {
+	w.Uint8(&x.ContainerID)
+	w.Uint8(&x.Slot)
+	w.Varint32(&x.StackNetworkID)
 }
 
 // StackReqSlotInfo reads a StackRequestSlotInfo x from Reader r.
