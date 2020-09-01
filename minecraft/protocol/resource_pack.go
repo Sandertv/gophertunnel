@@ -39,19 +39,8 @@ type StackResourcePack struct {
 	SubPackName string
 }
 
-// WritePackInfo writes a ResourcePackInfo x to Writer w.
-func WritePackInfo(w *Writer, x *ResourcePackInfo) {
-	w.String(&x.UUID)
-	w.String(&x.Version)
-	w.Uint64(&x.Size)
-	w.String(&x.ContentKey)
-	w.String(&x.SubPackName)
-	w.String(&x.ContentIdentity)
-	w.Bool(&x.HasScripts)
-}
-
-// PackInfo reads a ResourcePackInfo x from Reader r.
-func PackInfo(r *Reader, x *ResourcePackInfo) {
+// PackInfo reads/writes a ResourcePackInfo x using IO r.
+func PackInfo(r IO, x *ResourcePackInfo) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.Uint64(&x.Size)
@@ -61,15 +50,8 @@ func PackInfo(r *Reader, x *ResourcePackInfo) {
 	r.Bool(&x.HasScripts)
 }
 
-// WriteStackPack writes a StackResourcePack x to Writer w.
-func WriteStackPack(w *Writer, x *StackResourcePack) {
-	w.String(&x.UUID)
-	w.String(&x.Version)
-	w.String(&x.SubPackName)
-}
-
-// StackPack reads a StackResourcePack x from Reader r.
-func StackPack(r *Reader, x *StackResourcePack) {
+// StackPack reads/writes a StackResourcePack x using IO r.
+func StackPack(r IO, x *StackResourcePack) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.String(&x.SubPackName)

@@ -38,7 +38,7 @@ func (pk *PlayerList) Marshal(w *protocol.Writer) {
 		case PlayerListActionAdd:
 			protocol.WritePlayerAddEntry(w, &entry)
 		case PlayerListActionRemove:
-			protocol.WritePlayerRemoveEntry(w, &entry)
+			w.UUID(&entry.UUID)
 		default:
 			w.UnknownEnumOption(pk.ActionType, "player list action type")
 		}
@@ -62,7 +62,7 @@ func (pk *PlayerList) Unmarshal(r *protocol.Reader) {
 		case PlayerListActionAdd:
 			protocol.PlayerAddEntry(r, &pk.Entries[i])
 		case PlayerListActionRemove:
-			protocol.PlayerRemoveEntry(r, &pk.Entries[i])
+			r.UUID(&pk.Entries[i].UUID)
 		default:
 			r.UnknownEnumOption(pk.ActionType, "player list action type")
 		}

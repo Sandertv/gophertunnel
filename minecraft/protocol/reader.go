@@ -7,6 +7,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
+	"image/color"
 	"io"
 	"math"
 	"unsafe"
@@ -116,6 +117,18 @@ func (r *Reader) ByteFloat(x *float32) {
 	var v uint8
 	r.Uint8(&v)
 	*x = float32(v) * (360.0 / 256.0)
+}
+
+// VarRGBA reads a color.RGBA x from a varuint32.
+func (r *Reader) VarRGBA(x *color.RGBA) {
+	var v uint32
+	r.Varuint32(&v)
+	*x = color.RGBA{
+		R: byte(v),
+		G: byte(v >> 8),
+		B: byte(v >> 16),
+		A: byte(v >> 24),
+	}
 }
 
 // Bytes reads the leftover bytes into a byte slice.

@@ -20,7 +20,7 @@ func (*SetActorLink) ID() uint32 {
 
 // Marshal ...
 func (pk *SetActorLink) Marshal(w *protocol.Writer) {
-	protocol.WriteEntityLinkAction(w, &pk.EntityLink)
+	protocol.EntityLinkAction(w, &pk.EntityLink)
 }
 
 // Unmarshal ...

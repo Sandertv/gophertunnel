@@ -77,7 +77,7 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 	l := uint32(len(x.Animations))
 	w.Uint32(&l)
 	for _, anim := range x.Animations {
-		WriteAnimation(w, &anim)
+		Animation(w, &anim)
 	}
 	w.Uint32(&x.CapeImageWidth)
 	w.Uint32(&x.CapeImageHeight)
@@ -94,7 +94,7 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 	l = uint32(len(x.PersonaPieces))
 	w.Uint32(&l)
 	for _, piece := range x.PersonaPieces {
-		WriteSkinPiece(w, &piece)
+		SkinPiece(w, &piece)
 	}
 	l = uint32(len(x.PieceTintColours))
 	w.Uint32(&l)
@@ -190,17 +190,8 @@ type SkinAnimation struct {
 	FrameCount float32
 }
 
-// WriteAnimation writes a SkinAnimation x to Writer w.
-func WriteAnimation(w *Writer, x *SkinAnimation) {
-	w.Uint32(&x.ImageWidth)
-	w.Uint32(&x.ImageHeight)
-	w.ByteSlice(&x.ImageData)
-	w.Uint32(&x.AnimationType)
-	w.Float32(&x.FrameCount)
-}
-
-// Animation reads a SkinAnimation x from Reader r.
-func Animation(r *Reader, x *SkinAnimation) {
+// Animation reads/writes a SkinAnimation x using IO r.
+func Animation(r IO, x *SkinAnimation) {
 	r.Uint32(&x.ImageWidth)
 	r.Uint32(&x.ImageHeight)
 	r.ByteSlice(&x.ImageData)
@@ -234,17 +225,8 @@ type PersonaPiece struct {
 	ProductID string
 }
 
-// WriteSkinPiece writes a PersonaPiece x to Writer w.
-func WriteSkinPiece(w *Writer, x *PersonaPiece) {
-	w.String(&x.PieceID)
-	w.String(&x.PieceType)
-	w.String(&x.PackID)
-	w.Bool(&x.Default)
-	w.String(&x.ProductID)
-}
-
-// SkinPiece reads a PersonaPiece x from Reader r.
-func SkinPiece(r *Reader, x *PersonaPiece) {
+// SkinPiece reads/writes a PersonaPiece x using IO r.
+func SkinPiece(r IO, x *PersonaPiece) {
 	r.String(&x.PieceID)
 	r.String(&x.PieceType)
 	r.String(&x.PackID)

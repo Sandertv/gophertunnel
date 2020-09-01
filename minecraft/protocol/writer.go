@@ -6,6 +6,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
+	"image/color"
 	"unsafe"
 )
 
@@ -84,6 +85,12 @@ func (w *Writer) UBlockPos(x *BlockPos) {
 	y := uint32(x[1])
 	w.Varuint32(&y)
 	w.Varint32(&x[2])
+}
+
+// VarRGBA writes a color.RGBA x as a varuint32 to the underlying buffer.
+func (w *Writer) VarRGBA(x *color.RGBA) {
+	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24
+	w.Varuint32(&val)
 }
 
 // UUID writes a UUID to the underlying buffer.
@@ -178,6 +185,11 @@ func (w *Writer) NBTList(x *[]interface{}, encoding nbt.Encoding) {
 // UnknownEnumOption panics with an unknown enum option error.
 func (w *Writer) UnknownEnumOption(value interface{}, enum string) {
 	w.panicf("unknown value '%v' for enum type '%v'", value, enum)
+}
+
+// InvalidValue panics with an invalid value error.
+func (w *Writer) InvalidValue(value interface{}, forField, reason string) {
+	w.panicf("invalid value '%v' for %v: %v", value, forField, reason)
 }
 
 // Data returns all bytes written to the Writer. Note that these bytes are only valid until the next call to

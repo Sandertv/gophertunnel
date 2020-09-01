@@ -36,11 +36,11 @@ func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
 	behaviourLen, textureLen := uint32(len(pk.BehaviourPacks)), uint32(len(pk.TexturePacks))
 	w.Varuint32(&behaviourLen)
 	for _, pack := range pk.BehaviourPacks {
-		protocol.WriteStackPack(w, &pack)
+		protocol.StackPack(w, &pack)
 	}
 	w.Varuint32(&textureLen)
 	for _, pack := range pk.TexturePacks {
-		protocol.WriteStackPack(w, &pack)
+		protocol.StackPack(w, &pack)
 	}
 	w.Bool(&pk.Experimental)
 	w.String(&pk.BaseGameVersion)

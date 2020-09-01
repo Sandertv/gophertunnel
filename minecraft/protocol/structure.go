@@ -57,8 +57,8 @@ type StructureSettings struct {
 	Pivot mgl32.Vec3
 }
 
-// StructSettings reads StructureSettings x from Reader r.
-func StructSettings(r *Reader, x *StructureSettings) {
+// StructSettings reads/writes StructureSettings x using IO r.
+func StructSettings(r IO, x *StructureSettings) {
 	r.String(&x.PaletteName)
 	r.Bool(&x.IgnoreEntities)
 	r.Bool(&x.IgnoreBlocks)
@@ -70,19 +70,4 @@ func StructSettings(r *Reader, x *StructureSettings) {
 	r.Float32(&x.Integrity)
 	r.Uint32(&x.Seed)
 	r.Vec3(&x.Pivot)
-}
-
-// WriteStructSettings writes StructureSettings x to Writer w.
-func WriteStructSettings(w *Writer, x *StructureSettings) {
-	w.String(&x.PaletteName)
-	w.Bool(&x.IgnoreEntities)
-	w.Bool(&x.IgnoreBlocks)
-	w.UBlockPos(&x.Size)
-	w.UBlockPos(&x.Offset)
-	w.Varint64(&x.LastEditingPlayerUniqueID)
-	w.Uint8(&x.Rotation)
-	w.Uint8(&x.Mirror)
-	w.Float32(&x.Integrity)
-	w.Uint32(&x.Seed)
-	w.Vec3(&x.Pivot)
 }

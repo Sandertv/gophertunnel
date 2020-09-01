@@ -23,7 +23,7 @@ func (pk *ClientCacheMissResponse) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Blobs))
 	w.Varuint32(&l)
 	for _, blob := range pk.Blobs {
-		protocol.WriteBlob(w, &blob)
+		protocol.Blob(w, &blob)
 	}
 }
 

@@ -60,13 +60,3 @@ func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
 }
-
-// WritePlayerRemoveEntry writes a PlayerListEntry x to Writer w in a way that removes a player from the list.
-func WritePlayerRemoveEntry(w *Writer, x *PlayerListEntry) {
-	w.UUID(&x.UUID)
-}
-
-// PlayerRemoveEntry reads a PlayerListEntry x from Reader r in a way that removes a player from the list.
-func PlayerRemoveEntry(r *Reader, x *PlayerListEntry) {
-	r.UUID(&x.UUID)
-}

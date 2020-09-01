@@ -11,14 +11,8 @@ type CacheBlob struct {
 	Payload []byte
 }
 
-// WriteBlob writes a CacheBlob x to Writer w.
-func WriteBlob(w *Writer, x *CacheBlob) {
-	w.Uint64(&x.Hash)
-	w.ByteSlice(&x.Payload)
-}
-
-// Blob reads a CacheBlob x from Reader r.
-func Blob(r *Reader, x *CacheBlob) {
+// Blob reads/writes a CacheBlob x using IO r.
+func Blob(r IO, x *CacheBlob) {
 	r.Uint64(&x.Hash)
 	r.ByteSlice(&x.Payload)
 }

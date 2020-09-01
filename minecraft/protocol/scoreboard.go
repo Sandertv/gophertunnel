@@ -45,30 +45,9 @@ type ScoreboardIdentityEntry struct {
 	EntityUniqueID int64
 }
 
-// WriteScoreEntry writes a ScoreboardEntry x to Writer w. If modify is set to true, the display information
-// of the entry is written. If not, it is ignored, as expected when the SetScore packet is sent to modify
-// entries.
-func WriteScoreEntry(w *Writer, x *ScoreboardEntry, modify bool) {
-	w.Varint64(&x.EntryID)
-	w.String(&x.ObjectiveName)
-	w.Int32(&x.Score)
-
-	if modify {
-		w.Uint8(&x.IdentityType)
-		switch x.IdentityType {
-		case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-			w.Varint64(&x.EntityUniqueID)
-		case ScoreboardIdentityFakePlayer:
-			w.String(&x.DisplayName)
-		default:
-			w.UnknownEnumOption(x.IdentityType, "score entry identity type")
-		}
-	}
-}
-
-// ScoreEntry reads a ScoreboardEntry x from Reader r. It reads the display information if modify is true,
+// ScoreEntry reads/writes a ScoreboardEntry x using IO r. It reads the display information if modify is true,
 // as expected when the SetScore packet is sent to modify entries.
-func ScoreEntry(r *Reader, x *ScoreboardEntry, modify bool) {
+func ScoreEntry(r IO, x *ScoreboardEntry, modify bool) {
 	r.Varint64(&x.EntryID)
 	r.String(&x.ObjectiveName)
 	r.Int32(&x.Score)

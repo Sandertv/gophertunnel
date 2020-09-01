@@ -29,8 +29,8 @@ type EntityLink struct {
 	RiderInitiated bool
 }
 
-// EntityLinkAction reads a single entity link (action) from Reader r.
-func EntityLinkAction(r *Reader, x *EntityLink) {
+// EntityLinkAction reads/writes a single entity link (action) using IO r.
+func EntityLinkAction(r IO, x *EntityLink) {
 	r.Varint64(&x.RiddenEntityUniqueID)
 	r.Varint64(&x.RiderEntityUniqueID)
 	r.Uint8(&x.Type)
@@ -50,20 +50,11 @@ func EntityLinks(r *Reader, x *[]EntityLink) {
 	}
 }
 
-// WriteEntityLinkAction writes a single entity link x to Writer w.
-func WriteEntityLinkAction(w *Writer, x *EntityLink) {
-	w.Varint64(&x.RiddenEntityUniqueID)
-	w.Varint64(&x.RiderEntityUniqueID)
-	w.Uint8(&x.Type)
-	w.Bool(&x.Immediate)
-	w.Bool(&x.RiderInitiated)
-}
-
 // WriteEntityLinks writes a list of entity links currently active to Writer w.
 func WriteEntityLinks(w *Writer, x *[]EntityLink) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
 	for _, link := range *x {
-		WriteEntityLinkAction(w, &link)
+		EntityLinkAction(w, &link)
 	}
 }

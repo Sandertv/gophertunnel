@@ -46,7 +46,7 @@ func (*CommandOutput) ID() uint32 {
 func (pk *CommandOutput) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.OutputMessages))
 
-	protocol.WriteCommandOriginData(w, &pk.CommandOrigin)
+	protocol.CommandOriginData(w, &pk.CommandOrigin)
 	w.Uint8(&pk.OutputType)
 	w.Varuint32(&pk.SuccessCount)
 	w.Varuint32(&l)

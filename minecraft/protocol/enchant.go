@@ -90,7 +90,7 @@ func WriteItemEnchants(w *Writer, x *ItemEnchantments) {
 		l := uint32(len(enchantments))
 		w.Varuint32(&l)
 		for _, enchantment := range enchantments {
-			WriteEnchant(w, &enchantment)
+			Enchant(w, &enchantment)
 		}
 	}
 }
@@ -115,14 +115,8 @@ type EnchantmentInstance struct {
 	Level byte
 }
 
-// WriteEnchant writes an EnchantmentInstance x to Writer w.
-func WriteEnchant(w *Writer, x *EnchantmentInstance) {
-	w.Uint8(&x.Type)
-	w.Uint8(&x.Level)
-}
-
-// Enchant reads an EnchantmentInstance x from Buffer src.
-func Enchant(r *Reader, x *EnchantmentInstance) {
+// Enchant reads/writes an EnchantmentInstance x using IO r.
+func Enchant(r IO, x *EnchantmentInstance) {
 	r.Uint8(&x.Type)
 	r.Uint8(&x.Level)
 }

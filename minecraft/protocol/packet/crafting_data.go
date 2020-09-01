@@ -59,11 +59,11 @@ func (pk *CraftingData) Marshal(w *protocol.Writer) {
 	}
 	w.Varuint32(&potRecipesLen)
 	for _, mix := range pk.PotionRecipes {
-		protocol.WritePotRecipe(w, &mix)
+		protocol.PotRecipe(w, &mix)
 	}
 	w.Varuint32(&containerRecipesLen)
 	for _, mix := range pk.PotionContainerChangeRecipes {
-		protocol.WritePotContainerChangeRecipe(w, &mix)
+		protocol.PotContainerChangeRecipe(w, &mix)
 	}
 	w.Bool(&pk.ClearRecipes)
 }

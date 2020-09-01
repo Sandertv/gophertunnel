@@ -182,7 +182,7 @@ func WriteStackContainerInfo(w *Writer, x *StackResponseContainerInfo) {
 	l := uint32(len(x.SlotInfo))
 	w.Varuint32(&l)
 	for _, info := range x.SlotInfo {
-		WriteStackSlotInfo(w, &info)
+		StackSlotInfo(w, &info)
 	}
 }
 
@@ -198,19 +198,8 @@ func StackContainerInfo(r *Reader, x *StackResponseContainerInfo) {
 	}
 }
 
-// WriteStackSlotInfo writes a StackResponseSlotInfo x to Writer w.
-func WriteStackSlotInfo(w *Writer, x *StackResponseSlotInfo) {
-	if x.Slot != x.HotbarSlot {
-		panic(fmt.Errorf("%v: Slot and HotbarSlot had different values: %v vs %v", callFrame(), x.Slot, x.HotbarSlot))
-	}
-	w.Uint8(&x.Slot)
-	w.Uint8(&x.HotbarSlot)
-	w.Uint8(&x.Count)
-	w.Varint32(&x.StackNetworkID)
-}
-
-// StackSlotInfo reads a StackResponseSlotInfo x from Reader r.
-func StackSlotInfo(r *Reader, x *StackResponseSlotInfo) {
+// StackSlotInfo reads/writes a StackResponseSlotInfo x using IO r.
+func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
@@ -261,8 +250,8 @@ type transferStackRequestAction struct {
 // Marshal ...
 func (a *transferStackRequestAction) Marshal(w *Writer) {
 	w.Uint8(&a.Count)
-	WriteStackReqSlotInfo(w, &a.Source)
-	WriteStackReqSlotInfo(w, &a.Destination)
+	StackReqSlotInfo(w, &a.Source)
+	StackReqSlotInfo(w, &a.Destination)
 }
 
 // Unmarshal ...
@@ -295,8 +284,8 @@ type SwapStackRequestAction struct {
 
 // Marshal ...
 func (a *SwapStackRequestAction) Marshal(w *Writer) {
-	WriteStackReqSlotInfo(w, &a.Source)
-	WriteStackReqSlotInfo(w, &a.Destination)
+	StackReqSlotInfo(w, &a.Source)
+	StackReqSlotInfo(w, &a.Destination)
 }
 
 // Unmarshal ...
@@ -322,7 +311,7 @@ type DropStackRequestAction struct {
 // Marshal ...
 func (a *DropStackRequestAction) Marshal(w *Writer) {
 	w.Uint8(&a.Count)
-	WriteStackReqSlotInfo(w, &a.Source)
+	StackReqSlotInfo(w, &a.Source)
 	w.Bool(&a.Randomly)
 }
 
@@ -346,7 +335,7 @@ type DestroyStackRequestAction struct {
 // Marshal ...
 func (a *DestroyStackRequestAction) Marshal(w *Writer) {
 	w.Uint8(&a.Count)
-	WriteStackReqSlotInfo(w, &a.Source)
+	StackReqSlotInfo(w, &a.Source)
 }
 
 // Unmarshal ...
@@ -510,15 +499,8 @@ type StackRequestSlotInfo struct {
 	StackNetworkID int32
 }
 
-// WriteStackReqSlotInfo writes a StackRequestSlotInfo x to Writer w.
-func WriteStackReqSlotInfo(w *Writer, x *StackRequestSlotInfo) {
-	w.Uint8(&x.ContainerID)
-	w.Uint8(&x.Slot)
-	w.Varint32(&x.StackNetworkID)
-}
-
-// StackReqSlotInfo reads a StackRequestSlotInfo x from Reader r.
-func StackReqSlotInfo(r *Reader, x *StackRequestSlotInfo) {
+// StackReqSlotInfo reads/writes a StackRequestSlotInfo x using IO r.
+func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
 	r.Uint8(&x.ContainerID)
 	r.Uint8(&x.Slot)
 	r.Varint32(&x.StackNetworkID)

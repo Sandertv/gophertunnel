@@ -96,12 +96,12 @@ func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
 		l := uint32(len(pk.TrackedObjects))
 		w.Varuint32(&l)
 		for _, obj := range pk.TrackedObjects {
-			protocol.WriteMapTrackedObj(w, &obj)
+			protocol.MapTrackedObj(w, &obj)
 		}
 		l = uint32(len(pk.TrackedObjects))
 		w.Varuint32(&l)
 		for _, decoration := range pk.Decorations {
-			protocol.WriteMapDeco(w, &decoration)
+			protocol.MapDeco(w, &decoration)
 		}
 	}
 	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
@@ -126,7 +126,7 @@ func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
 				panic("invalid map texture update: length of inner pixels array must be equal to width")
 			}
 			for x := int32(0); x < pk.Width; x++ {
-				protocol.WriteVarRGBA(w, &pk.Pixels[y][x])
+				w.VarRGBA(&pk.Pixels[y][x])
 			}
 		}
 	}
@@ -177,7 +177,7 @@ func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
 		for y := int32(0); y < pk.Height; y++ {
 			pk.Pixels[y] = make([]color.RGBA, pk.Width)
 			for x := int32(0); x < pk.Width; x++ {
-				protocol.VarRGBA(r, &pk.Pixels[y][x])
+				r.VarRGBA(&pk.Pixels[y][x])
 			}
 		}
 	}

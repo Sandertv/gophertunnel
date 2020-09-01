@@ -27,7 +27,7 @@ func (*CommandRequest) ID() uint32 {
 // Marshal ...
 func (pk *CommandRequest) Marshal(w *protocol.Writer) {
 	w.String(&pk.CommandLine)
-	protocol.WriteCommandOriginData(w, &pk.CommandOrigin)
+	protocol.CommandOriginData(w, &pk.CommandOrigin)
 	w.Bool(&pk.Internal)
 }
 

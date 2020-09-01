@@ -20,15 +20,8 @@ type PotionContainerChangeRecipe struct {
 	OutputItemID int32
 }
 
-// WritePotContainerChangeRecipe writes a PotionContainerChangeRecipe x to Writer w.
-func WritePotContainerChangeRecipe(w *Writer, x *PotionContainerChangeRecipe) {
-	w.Varint32(&x.InputItemID)
-	w.Varint32(&x.ReagentItemID)
-	w.Varint32(&x.OutputItemID)
-}
-
-// PotContainerChangeRecipe reads a PotionContainerChangeRecipe x from Reader r.
-func PotContainerChangeRecipe(r *Reader, x *PotionContainerChangeRecipe) {
+// PotContainerChangeRecipe reads/writes a PotionContainerChangeRecipe x using IO r.
+func PotContainerChangeRecipe(r IO, x *PotionContainerChangeRecipe) {
 	r.Varint32(&x.InputItemID)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.OutputItemID)
@@ -54,18 +47,8 @@ type PotionRecipe struct {
 	OutputPotionMetadata int32
 }
 
-// WritePotRecipe writes a PotionRecipe x to Writer w.
-func WritePotRecipe(w *Writer, x *PotionRecipe) {
-	w.Varint32(&x.InputPotionID)
-	w.Varint32(&x.InputPotionMetadata)
-	w.Varint32(&x.ReagentItemID)
-	w.Varint32(&x.ReagentItemMetadata)
-	w.Varint32(&x.OutputPotionID)
-	w.Varint32(&x.OutputPotionMetadata)
-}
-
-// PotRecipe reads a PotionRecipe x from Reader r.
-func PotRecipe(r *Reader, x *PotionRecipe) {
+// PotRecipe reads/writes a PotionRecipe x using IO r.
+func PotRecipe(r IO, x *PotionRecipe) {
 	r.Varint32(&x.InputPotionID)
 	r.Varint32(&x.InputPotionMetadata)
 	r.Varint32(&x.ReagentItemID)

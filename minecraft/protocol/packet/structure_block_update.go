@@ -65,7 +65,7 @@ func (pk *StructureBlockUpdate) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.IncludePlayers)
 	w.Bool(&pk.ShowBoundingBox)
 	w.Varint32(&pk.StructureBlockType)
-	protocol.WriteStructSettings(w, &pk.Settings)
+	protocol.StructSettings(w, &pk.Settings)
 	w.Varint32(&pk.RedstoneSaveMode)
 	w.Bool(&pk.ShouldTrigger)
 }

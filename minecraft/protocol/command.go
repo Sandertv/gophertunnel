@@ -188,23 +188,13 @@ func WriteCommandMessage(w *Writer, x *CommandOutputMessage) {
 	}
 }
 
-// CommandOriginData reads a CommandOrigin x from Reader r.
-func CommandOriginData(r *Reader, x *CommandOrigin) {
+// CommandOriginData reads/writes a CommandOrigin x using IO r.
+func CommandOriginData(r IO, x *CommandOrigin) {
 	r.Varuint32(&x.Origin)
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
 	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
 		r.Varint64(&x.PlayerUniqueID)
-	}
-}
-
-// WriteCommandOriginData writes a CommandOrigin x to Writer w.
-func WriteCommandOriginData(w *Writer, x *CommandOrigin) {
-	w.Varuint32(&x.Origin)
-	w.UUID(&x.UUID)
-	w.String(&x.RequestID)
-	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
-		w.Varint64(&x.PlayerUniqueID)
 	}
 }
 

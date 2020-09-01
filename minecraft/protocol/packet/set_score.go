@@ -35,7 +35,7 @@ func (pk *SetScore) Marshal(w *protocol.Writer) {
 		l := uint32(len(pk.Entries))
 		w.Varuint32(&l)
 		for _, entry := range pk.Entries {
-			protocol.WriteScoreEntry(w, &entry, pk.ActionType == ScoreboardActionModify)
+			protocol.ScoreEntry(w, &entry, pk.ActionType == ScoreboardActionModify)
 		}
 	default:
 		w.UnknownEnumOption(pk.ActionType, "set score action type")

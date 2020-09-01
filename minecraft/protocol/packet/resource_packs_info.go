@@ -35,12 +35,12 @@ func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	l := uint16(len(pk.BehaviourPacks))
 	w.Uint16(&l)
 	for _, pack := range pk.BehaviourPacks {
-		protocol.WritePackInfo(w, &pack)
+		protocol.PackInfo(w, &pack)
 	}
 	l = uint16(len(pk.TexturePacks))
 	w.Uint16(&l)
 	for _, pack := range pk.TexturePacks {
-		protocol.WritePackInfo(w, &pack)
+		protocol.PackInfo(w, &pack)
 	}
 }
 

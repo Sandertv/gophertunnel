@@ -42,8 +42,8 @@ type MapDecoration struct {
 	Colour color.RGBA
 }
 
-// MapTrackedObj reads a MapTrackedObject from Reader r into MapTrackedObject x.
-func MapTrackedObj(r *Reader, x *MapTrackedObject) {
+// MapTrackedObj reads/writes a MapTrackedObject x using IO r.
+func MapTrackedObj(r IO, x *MapTrackedObject) {
 	r.Int32(&x.Type)
 	switch x.Type {
 	case MapObjectTypeEntity:
@@ -55,53 +55,12 @@ func MapTrackedObj(r *Reader, x *MapTrackedObject) {
 	}
 }
 
-// WriteMapTrackedObj writes a MapTrackedObject x to Writer w.
-func WriteMapTrackedObj(w *Writer, x *MapTrackedObject) {
-	w.Int32(&x.Type)
-	switch x.Type {
-	case MapObjectTypeEntity:
-		w.Varint64(&x.EntityUniqueID)
-	case MapObjectTypeBlock:
-		w.UBlockPos(&x.BlockPosition)
-	default:
-		w.UnknownEnumOption(x.Type, "map tracked object type")
-	}
-}
-
-// MapDeco reads a MapDecoration from Reader r into MapDecoration x.
-func MapDeco(r *Reader, x *MapDecoration) {
+// MapDeco reads/writes a MapDecoration x using IO r.
+func MapDeco(r IO, x *MapDecoration) {
 	r.Uint8(&x.Type)
 	r.Uint8(&x.Rotation)
 	r.Uint8(&x.X)
 	r.Uint8(&x.Y)
 	r.String(&x.Label)
-	VarRGBA(r, &x.Colour)
-}
-
-// WriteMapDeco writes a MapDecoration x to Writer w.
-func WriteMapDeco(w *Writer, x *MapDecoration) {
-	w.Uint8(&x.Type)
-	w.Uint8(&x.Rotation)
-	w.Uint8(&x.X)
-	w.Uint8(&x.Y)
-	w.String(&x.Label)
-	WriteVarRGBA(w, &x.Colour)
-}
-
-// VarRGBA reads an RGBA value from Reader r packed into a varuint32.
-func VarRGBA(r *Reader, x *color.RGBA) {
-	var v uint32
-	r.Varuint32(&v)
-	*x = color.RGBA{
-		R: byte(v),
-		G: byte(v >> 8),
-		B: byte(v >> 16),
-		A: byte(v >> 24),
-	}
-}
-
-// WriteVarRGBA writes an RGBA value to Writer w by packing it into a varuint32.
-func WriteVarRGBA(w *Writer, x *color.RGBA) {
-	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24
-	w.Varuint32(&val)
+	r.VarRGBA(&x.Colour)
 }
