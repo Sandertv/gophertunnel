@@ -82,10 +82,7 @@ func WriteVaruint64(dst *bytes.Buffer, x uint64) error {
 		}
 		x >>= 7
 	}
-	if err := dst.WriteByte(byte(x)); err != nil {
-		return err
-	}
-	return nil
+	return dst.WriteByte(byte(x))
 }
 
 // WriteVarint32 writes an int32 to the destination buffer passed with a size of 1-5 bytes.
@@ -105,8 +102,5 @@ func WriteVaruint32(dst *bytes.Buffer, x uint32) error {
 		}
 		x >>= 7
 	}
-	if err := dst.WriteByte(byte(x)); err != nil {
-		return err
-	}
-	return nil
+	return dst.WriteByte(byte(x))
 }

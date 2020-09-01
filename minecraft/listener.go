@@ -300,7 +300,6 @@ func (listener *Listener) handleConn(conn *Conn) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.decoder.Decode()
 		if err != nil {
-			fmt.Println("Hello wtf", err)
 			if !raknet.ErrConnectionClosed(err) {
 				listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
 			}
