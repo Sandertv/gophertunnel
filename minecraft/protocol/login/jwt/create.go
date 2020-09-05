@@ -42,7 +42,7 @@ func New(header Header, payload interface{}, privateKey *ecdsa.PrivateKey) ([]by
 	rBytes = append(bytes.Repeat([]byte{0}, 48-len(rBytes)), rBytes...)
 	sBytes = append(bytes.Repeat([]byte{0}, 48-len(sBytes)), sBytes...)
 
-	signatureSection := base64.RawURLEncoding.EncodeToString(append(r.Bytes(), s.Bytes()...))
+	signatureSection := base64.RawURLEncoding.EncodeToString(append(rBytes, sBytes...))
 
 	// Finally we join together all sections and return it as a single string.
 	return []byte(headerSection + "." + payloadSection + "." + signatureSection), nil
