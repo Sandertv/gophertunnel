@@ -111,9 +111,9 @@ type ClientData struct {
 	// PersonaSkin specifies if the skin was a persona skin, meaning that it was created through the in-game
 	// skin creator.
 	PersonaSkin bool
-	// PlatformOfflineID is either a UUID or an empty string ...
+	// PlatformOfflineID is either an int64 or an empty string ...
 	PlatformOfflineID string `json:"PlatformOfflineId"`
-	// PlatformOnlineID is either a UUID or an empty string ...
+	// PlatformOnlineID is either an int64 or an empty string ...
 	PlatformOnlineID string `json:"PlatformOnlineId"`
 	// PlatformUserID holds a UUID which is only sent if the DeviceOS is of type device.XBOX. Its function
 	// is not exactly clear.
@@ -264,11 +264,11 @@ func (data ClientData) Validate() error {
 	if _, err := language.Parse(strings.Replace(data.LanguageCode, "_", "-", 1)); err != nil {
 		return fmt.Errorf("LanguageCode must be a valid BCP-47 ISO language code, but got %v", data.LanguageCode)
 	}
-	if _, err := uuid.Parse(data.PlatformOfflineID); err != nil && len(data.PlatformOfflineID) != 0 {
-		return fmt.Errorf("PlatformOfflineID must be parseable as a valid UUID or empty, but got %v", data.PlatformOfflineID)
+	if _, err := strconv.ParseInt(data.PlatformOfflineID, 10, 64); err != nil && len(data.PlatformOfflineID) != 0 {
+		return fmt.Errorf("PlatformOfflineID must be parseable as an int64 or empty, but got %v", data.PlatformOfflineID)
 	}
-	if _, err := uuid.Parse(data.PlatformOnlineID); err != nil && len(data.PlatformOnlineID) != 0 {
-		return fmt.Errorf("PlatformOnlineID must be parseable as a valid UUID or empty, but got %v", data.PlatformOnlineID)
+	if _, err := strconv.ParseInt(data.PlatformOnlineID, 10, 64); err != nil && len(data.PlatformOnlineID) != 0 {
+		return fmt.Errorf("PlatformOnlineID must be parseable as an int64 or empty, but got %v", data.PlatformOnlineID)
 	}
 	if _, err := uuid.Parse(data.SelfSignedID); err != nil {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
