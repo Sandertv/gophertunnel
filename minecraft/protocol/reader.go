@@ -178,6 +178,60 @@ func (r *Reader) UUID(x *uuid.UUID) {
 	*x = arr
 }
 
+// EntityMetadata reads an entity metadata map from the underlying buffer into map x.
+func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
+	*x = map[uint32]interface{}{}
+
+	var count uint32
+	r.Varuint32(&count)
+	r.LimitUint32(count, mediumLimit)
+	for i := uint32(0); i < count; i++ {
+		var key, dataType uint32
+		r.Varuint32(&key)
+		r.Varuint32(&dataType)
+		switch dataType {
+		case EntityDataByte:
+			var v byte
+			r.Uint8(&v)
+			(*x)[key] = v
+		case EntityDataInt16:
+			var v int16
+			r.Int16(&v)
+			(*x)[key] = v
+		case EntityDataInt32:
+			var v int32
+			r.Varint32(&v)
+			(*x)[key] = v
+		case EntityDataFloat32:
+			var v float32
+			r.Float32(&v)
+			(*x)[key] = v
+		case EntityDataString:
+			var v string
+			r.String(&v)
+			(*x)[key] = v
+		case EntityDataCompoundTag:
+			var v map[string]interface{}
+			r.NBT(&v, nbt.NetworkLittleEndian)
+			(*x)[key] = v
+		case EntityDataBlockPos:
+			var v BlockPos
+			r.BlockPos(&v)
+			(*x)[key] = v
+		case EntityDataInt64:
+			var v int64
+			r.Varint64(&v)
+			(*x)[key] = v
+		case EntityDataVec3:
+			var v mgl32.Vec3
+			r.Vec3(&v)
+			(*x)[key] = v
+		default:
+			r.UnknownEnumOption(dataType, "entity metadata")
+		}
+	}
+}
+
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {

@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
+	"reflect"
 	"unsafe"
 )
 
@@ -100,6 +101,46 @@ func (w *Writer) UUID(x *uuid.UUID) {
 		b[i], b[j] = b[j], b[i]
 	}
 	w.buf = append(w.buf, b...)
+}
+
+// EntityMetadata writes an entity metadata map x to the underlying buffer.
+func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
+	l := uint32(len(*x))
+	w.Varuint32(&l)
+	for key, value := range *x {
+		w.Varuint32(&key)
+		switch v := value.(type) {
+		case byte:
+			w.Varuint32(&entityDataByte)
+			w.Uint8(&v)
+		case int16:
+			w.Varuint32(&entityDataInt16)
+			w.Int16(&v)
+		case int32:
+			w.Varuint32(&entityDataInt32)
+			w.Varint32(&v)
+		case float32:
+			w.Varuint32(&entityDataFloat32)
+			w.Float32(&v)
+		case string:
+			w.Varuint32(&entityDataString)
+			w.String(&v)
+		case map[string]interface{}:
+			w.Varuint32(&entityDataCompoundTag)
+			w.NBT(&v, nbt.NetworkLittleEndian)
+		case BlockPos:
+			w.Varuint32(&entityDataBlockPos)
+			w.BlockPos(&v)
+		case int64:
+			w.Varuint32(&entityDataInt64)
+			w.Varint64(&v)
+		case mgl32.Vec3:
+			w.Varuint32(&entityDataVec3)
+			w.Vec3(&v)
+		default:
+			w.UnknownEnumOption(reflect.TypeOf(value), "entity metadata")
+		}
+	}
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

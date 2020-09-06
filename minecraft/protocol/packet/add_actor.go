@@ -61,13 +61,12 @@ func (pk *AddActor) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
 	protocol.WriteInitialAttributes(w, &pk.Attributes)
-	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.EntityMetadata(&pk.EntityMetadata)
 	protocol.WriteEntityLinks(w, &pk.EntityLinks)
 }
 
 // Unmarshal ...
 func (pk *AddActor) Unmarshal(r *protocol.Reader) {
-	pk.EntityMetadata = map[uint32]interface{}{}
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.String(&pk.EntityType)
@@ -77,6 +76,6 @@ func (pk *AddActor) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
 	protocol.InitialAttributes(r, &pk.Attributes)
-	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.EntityMetadata(&pk.EntityMetadata)
 	protocol.EntityLinks(r, &pk.EntityLinks)
 }

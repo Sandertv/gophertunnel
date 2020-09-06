@@ -95,7 +95,7 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
 	protocol.WriteItem(w, &pk.HeldItem)
-	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.EntityMetadata(&pk.EntityMetadata)
 	w.Varuint32(&pk.Flags)
 	w.Varuint32(&pk.CommandPermissionLevel)
 	w.Varuint32(&pk.ActionPermissions)
@@ -109,7 +109,6 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
-	pk.EntityMetadata = map[uint32]interface{}{}
 	r.UUID(&pk.UUID)
 	r.String(&pk.Username)
 	r.Varint64(&pk.EntityUniqueID)
@@ -121,7 +120,7 @@ func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
 	protocol.Item(r, &pk.HeldItem)
-	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.EntityMetadata(&pk.EntityMetadata)
 	r.Varuint32(&pk.Flags)
 	r.Varuint32(&pk.CommandPermissionLevel)
 	r.Varuint32(&pk.ActionPermissions)

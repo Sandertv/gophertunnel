@@ -45,18 +45,17 @@ func (pk *AddItemActor) Marshal(w *protocol.Writer) {
 	protocol.WriteItem(w, &pk.Item)
 	w.Vec3(&pk.Position)
 	w.Vec3(&pk.Velocity)
-	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.EntityMetadata(&pk.EntityMetadata)
 	w.Bool(&pk.FromFishing)
 }
 
 // Unmarshal ...
 func (pk *AddItemActor) Unmarshal(r *protocol.Reader) {
-	pk.EntityMetadata = map[uint32]interface{}{}
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	protocol.Item(r, &pk.Item)
 	r.Vec3(&pk.Position)
 	r.Vec3(&pk.Velocity)
-	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.EntityMetadata(&pk.EntityMetadata)
 	r.Bool(&pk.FromFishing)
 }

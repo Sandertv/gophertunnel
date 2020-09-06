@@ -24,12 +24,11 @@ func (*SetActorData) ID() uint32 {
 // Marshal ...
 func (pk *SetActorData) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
-	protocol.WriteEntityMetadata(w, &pk.EntityMetadata)
+	w.EntityMetadata(&pk.EntityMetadata)
 }
 
 // Unmarshal ...
 func (pk *SetActorData) Unmarshal(r *protocol.Reader) {
-	pk.EntityMetadata = map[uint32]interface{}{}
 	r.Varuint64(&pk.EntityRuntimeID)
-	protocol.EntityMetadata(r, &pk.EntityMetadata)
+	r.EntityMetadata(&pk.EntityMetadata)
 }
