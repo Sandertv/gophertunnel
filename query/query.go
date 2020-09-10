@@ -3,6 +3,7 @@ package query
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/rand"
 	"net"
 	"time"
@@ -36,7 +37,7 @@ func Do(address string) (information map[string]string, err error) {
 
 	// This data buffer is way too big for the first response, but that is fine, as we re-use it for the next
 	// response.
-	data := make([]byte, 1492)
+	data := make([]byte, math.MaxUint16)
 	n, err := conn.Read(data)
 	if err != nil {
 		return nil, err
