@@ -48,7 +48,7 @@ var exemptedPacks = []exemptedResourcePack{
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, except for the
-// ReadPacket function. (See its documentation.)
+// ReadPacket function, which must not be called multiple times simultaneously. (See its documentation.)
 type Conn struct {
 	conn        net.Conn
 	log         *log.Logger
@@ -259,7 +259,9 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // data. If a read deadline is set, an error is returned if the deadline is reached before any packet is
 // received.
 // The packet received must not be held until the next packet is read using ReadPacket(). If the same type of
-// packet is read, the previous one will be invalidated.
+// packet is read, the previous one will be invalidated. The ReadPacket method must, for this reason, not be
+// called multiple times simultaneously, as the resulting packets might end up with invalid data. Calling this
+// method simultaneously to any other method is safe.
 //
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
