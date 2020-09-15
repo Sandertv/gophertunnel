@@ -89,6 +89,9 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	case "raknet":
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
 		netConn, err = raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}.Dial(address)
+		if err != nil {
+			err = fmt.Errorf("raknet: %w", err)
+		}
 	default:
 		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
 		// the network passed.
@@ -103,7 +106,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.packetFunc = dialer.PacketFunc
 	conn.cacheEnabled = dialer.EnableClientCache
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
-	conn.decoder.DisableBatchPacketLimit()
+	conn.dec.DisableBatchPacketLimit()
 
 	if dialer.ClientData.SkinID != "" {
 		// If a custom client data struct was set, we change the default.
@@ -134,7 +137,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer.
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
-
 	} else {
 		request = login.Encode(chainData, conn.clientData, key)
 		identityData, _, _ := login.Decode(request)
@@ -149,7 +151,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	case <-c:
 		// We've connected successfully. We return the connection and no error.
 		return conn, nil
-	case <-conn.closeCtx.Done():
+	case <-conn.close:
 		// The connection was closed before we even were fully 'connected', so we return an error.
 		if conn.disconnectMessage.Load() != "" {
 			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
@@ -167,7 +169,7 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 	for {
 		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
 		// and push them to the Conn so that they may be processed.
-		packets, err := conn.decoder.Decode()
+		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !raknet.ErrConnectionClosed(err) {
 				logger.Printf("error reading from client connection: %v\n", err)
@@ -176,7 +178,7 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 		}
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
-			if err := conn.handleIncoming(data); err != nil {
+			if err := conn.receive(data); err != nil {
 				logger.Printf("error: %v", err)
 				return
 			}
