@@ -382,9 +382,7 @@ func (conn *Conn) SetReadDeadline(t time.Time) error {
 	}
 	empty := time.Time{}
 	if t == empty {
-		// Empty time, so we just set the time to some crazy high value to ensure the read deadline is never
-		// actually reached.
-		conn.readDeadline = time.After(time.Hour * 1000000)
+		conn.readDeadline = make(chan time.Time)
 	} else {
 		conn.readDeadline = time.After(time.Until(t))
 	}

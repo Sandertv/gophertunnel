@@ -17,7 +17,7 @@ const minecraftAuthURL = `https://multiplayer.minecraft.net/authentication`
 // RequestMinecraftChain requests a fully processed Minecraft JWT chain using the XSTS token passed, and the
 // ECDSA private key of the client. This key will later be used to initialise encryption, and must be saved
 // for when packets need to be decrypted/encrypted.
-func RequestMinecraftChain(token *XSTSToken, key *ecdsa.PrivateKey) (string, error) {
+func RequestMinecraftChain(token *XBLToken, key *ecdsa.PrivateKey) (string, error) {
 	data, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
 	pubKeyData := base64.StdEncoding.EncodeToString(data)
 
@@ -29,8 +29,8 @@ func RequestMinecraftChain(token *XSTSToken, key *ecdsa.PrivateKey) (string, err
 
 	// The Authorization header is important in particular. It is composed of the 'uhs' found in the XSTS
 	// token, and the Token it holds itself.
-	request.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", token.DisplayClaims.XUI[0].UserHash, token.Token))
-	request.Header.Set("User-Agent", "MCPE/UWP")
+	request.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", token.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, token.AuthorizationToken.Token))
+	request.Header.Set("User-Agent", "MCPE/Android")
 	request.Header.Set("Client-Version", protocol.CurrentVersion)
 
 	c := &http.Client{}

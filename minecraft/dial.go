@@ -101,36 +101,17 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		return nil, err
 	}
 	conn = newConn(netConn, key, dialer.ErrorLog)
-	conn.clientData = defaultClientData(address)
-	conn.identityData = defaultIdentityData()
+	conn.identityData = dialer.IdentityData
+	conn.clientData = dialer.ClientData
 	conn.packetFunc = dialer.PacketFunc
 	conn.cacheEnabled = dialer.EnableClientCache
+
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.dec.DisableBatchPacketLimit()
 
-	if dialer.ClientData.SkinID != "" {
-		// If a custom client data struct was set, we change the default.
-		conn.clientData = dialer.ClientData
-	}
-	var emptyIdentityData login.IdentityData
-	if dialer.IdentityData != emptyIdentityData {
-		// If a custom identity data object was set, we change the default.
-		conn.identityData = dialer.IdentityData
-	}
-	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
-
-	c := make(chan struct{})
-	go listenConn(conn, dialer.ErrorLog, c)
-
-	if conn.clientData.AnimatedImageData == nil {
-		conn.clientData.AnimatedImageData = make([]login.SkinAnimation, 0)
-	}
-	if conn.clientData.PersonaPieces == nil {
-		conn.clientData.PersonaPieces = make([]login.PersonaPiece, 0)
-	}
-	if conn.clientData.PieceTintColours == nil {
-		conn.clientData.PieceTintColours = make([]login.PersonaPieceTintColour, 0)
-	}
+	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
+	setAndroidData(&conn.clientData)
+	defaultIdentityData(&conn.identityData)
 
 	var request []byte
 	if dialer.Email == "" {
@@ -144,6 +125,10 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// we are not aware of the identity data ourselves yet.
 		conn.identityData = identityData
 	}
+	c := make(chan struct{})
+	go listenConn(conn, dialer.ErrorLog, c)
+
+	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
 		return nil, err
 	}
@@ -195,11 +180,11 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 // chain ready to be put in a login request is returned.
 func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	// Obtain the Live token, and using that the XSTS token.
-	liveToken, err := auth.RequestLiveToken(email, password)
+	liveToken, err := auth.RequestLiveToken()
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live token: %v", err)
 	}
-	xsts, err := auth.RequestXSTSToken(liveToken)
+	xsts, err := auth.RequestXBLToken(liveToken)
 	if err != nil {
 		return "", fmt.Errorf("error obtaining XSTS token: %v", err)
 	}
@@ -212,37 +197,65 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	return chain, nil
 }
 
-// defaultClientData returns a valid, mostly filled out ClientData struct using the connection address
-// passed, which is sent by default, if no other client data is set.
-func defaultClientData(address string) login.ClientData {
+// defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
+func defaultClientData(address, username string, d *login.ClientData) {
 	rand2.Seed(time.Now().Unix())
-	p, _ := json.Marshal(map[string]interface{}{
-		"geometry": map[string]interface{}{
-			"default": "Standard_Custom",
-		},
-	})
-	return login.ClientData{
-		ClientRandomID:    rand2.Int63(),
-		DeviceOS:          protocol.DeviceWin10,
-		GameVersion:       protocol.CurrentVersion,
-		DeviceID:          uuid.Must(uuid.NewRandom()).String(),
-		LanguageCode:      "en_GB",
-		ThirdPartyName:    "Steve",
-		SelfSignedID:      uuid.Must(uuid.NewRandom()).String(),
-		ServerAddress:     address,
-		SkinID:            uuid.Must(uuid.NewRandom()).String(),
-		SkinData:          base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0, 0, 0, 255}, 32*64)),
-		SkinResourcePatch: base64.StdEncoding.EncodeToString(p),
-		SkinImageWidth:    64,
-		SkinImageHeight:   32,
+	if d.ClientRandomID == 0 {
+		d.ClientRandomID = rand2.Int63()
 	}
+	if d.DeviceID == "" {
+		d.DeviceID = uuid.New().String()
+	}
+	if d.LanguageCode == "" {
+		d.LanguageCode = "en_GB"
+	}
+	if d.ThirdPartyName == "" {
+		d.ThirdPartyName = username
+	}
+	if d.AnimatedImageData == nil {
+		d.AnimatedImageData = make([]login.SkinAnimation, 0)
+	}
+	if d.PersonaPieces == nil {
+		d.PersonaPieces = make([]login.PersonaPiece, 0)
+	}
+	if d.PieceTintColours == nil {
+		d.PieceTintColours = make([]login.PersonaPieceTintColour, 0)
+	}
+	if d.SelfSignedID == "" {
+		d.SelfSignedID = uuid.New().String()
+	}
+	if d.SkinID == "" {
+		d.SkinID = uuid.New().String()
+	}
+	if d.SkinData == "" {
+		d.SkinData = base64.StdEncoding.EncodeToString(bytes.Repeat([]byte{0, 0, 0, 255}, 32*64))
+		d.SkinImageHeight = 32
+		d.SkinImageWidth = 64
+	}
+	if d.SkinResourcePatch == "" {
+		p, _ := json.Marshal(map[string]interface{}{
+			"geometry": map[string]interface{}{
+				"default": "Standard_Custom",
+			},
+		})
+		d.SkinResourcePatch = base64.StdEncoding.EncodeToString(p)
+	}
+	d.ServerAddress = address
 }
 
-// defaultIdentityData returns a valid default identity data object which may be used to fill out if the
-// client is not authenticated and if no identity data was provided.
-func defaultIdentityData() login.IdentityData {
-	return login.IdentityData{
-		Identity:    uuid.New().String(),
-		DisplayName: "Steve",
+// setAndroidData ensures the login.ClientData passed matches settings you would see on an Android device.
+func setAndroidData(data *login.ClientData) {
+	data.DeviceOS = protocol.DeviceAndroid
+	data.GameVersion = protocol.CurrentVersion
+}
+
+// defaultIdentityData edits the IdentityData passed to have defaults set to all fields that were left
+// unchanged.
+func defaultIdentityData(data *login.IdentityData) {
+	if data.Identity == "" {
+		data.Identity = uuid.New().String()
+	}
+	if data.DisplayName == "" {
+		data.DisplayName = "Steve"
 	}
 }
