@@ -31,6 +31,12 @@ type XBLToken struct {
 	}
 }
 
+// AuthorizationHeader returns a string that may be used for the 'Authorization' header used for Minecraft
+// related endpoints that need an XBOX Live authenticated caller.
+func (t XBLToken) AuthorizationHeader() string {
+	return fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token)
+}
+
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
 func RequestXBLToken(liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	if !liveToken.Valid() {
