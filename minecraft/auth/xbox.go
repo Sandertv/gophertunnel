@@ -32,7 +32,7 @@ type XBLToken struct {
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
-func RequestXBLToken(liveToken *oauth2.Token) (*XBLToken, error) {
+func RequestXBLToken(liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -58,7 +58,7 @@ func RequestXBLToken(liveToken *oauth2.Token) (*XBLToken, error) {
 		"Sandbox":           "RETAIL",
 		"UseModernGamertag": true,
 		"SiteName":          "user.auth.xboxlive.com",
-		"RelyingParty":      "https://multiplayer.minecraft.net/",
+		"RelyingParty":      relyingParty,
 		"ProofKey": map[string]interface{}{
 			"crv": "P-256",
 			"alg": "ES256",

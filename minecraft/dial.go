@@ -184,7 +184,7 @@ func authChain(email, password string, key *ecdsa.PrivateKey) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live token: %v", err)
 	}
-	xsts, err := auth.RequestXBLToken(liveToken)
+	xsts, err := auth.RequestXBLToken(liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
 		return "", fmt.Errorf("error obtaining XSTS token: %v", err)
 	}
