@@ -49,18 +49,22 @@ func RequestXBLToken(liveToken *oauth2.Token, relyingParty string) (*XBLToken, e
 		},
 	}}
 	defer c.CloseIdleConnections()
+
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
 	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-
 	deviceToken, err := obtainDeviceToken(c, key)
 	if err != nil {
 		return nil, err
 	}
+	return obtainXBLToken(c, key, liveToken, deviceToken, relyingParty)
+}
+
+func obtainXBLToken(c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, _ := json.Marshal(map[string]interface{}{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             "0000000048183522",
-		"deviceToken":       deviceToken.Token,
+		"deviceToken":       device.Token,
 		"Sandbox":           "RETAIL",
 		"UseModernGamertag": true,
 		"SiteName":          "user.auth.xboxlive.com",

@@ -19,11 +19,10 @@ const minecraftAuthURL = `https://multiplayer.minecraft.net/authentication`
 // for when packets need to be decrypted/encrypted.
 func RequestMinecraftChain(token *XBLToken, key *ecdsa.PrivateKey) (string, error) {
 	data, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
-	pubKeyData := base64.StdEncoding.EncodeToString(data)
 
 	// The body of the requests holds a JSON object with one key in it, the 'identityPublicKey', which holds
 	// the public key data of the private key passed.
-	body := fmt.Sprintf(`{"identityPublicKey":"%v"}`, pubKeyData)
+	body := `{"identityPublicKey":"` + base64.StdEncoding.EncodeToString(data) + `"}`
 	request, _ := http.NewRequest("POST", minecraftAuthURL, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
 
