@@ -1,9 +1,11 @@
 package auth
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/microsoft"
 	"net/http"
 	"net/url"
 	"time"
@@ -12,6 +14,17 @@ import (
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
 // a code.
 var TokenSource oauth2.TokenSource = tokenSource{}
+
+// RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
+// refreshes the token everytime it expires.
+func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
+	c := oauth2.Config{
+		ClientID: "0000000048183522",
+		Endpoint: microsoft.LiveConnectEndpoint,
+		Scopes:   []string{"service::user.auth.xboxlive.com::MBI_SSL"},
+	}
+	return c.TokenSource(context.Background(), t)
+}
 
 // tokenSource implements the oauth2.TokenSource interface. It provides a method to get an oauth2.Token using
 // device auth through a call to RequestLiveToken.
