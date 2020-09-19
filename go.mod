@@ -9,5 +9,6 @@ require (
 	github.com/pelletier/go-toml v1.6.0
 	github.com/sandertv/go-raknet v1.7.8
 	go.uber.org/atomic v1.6.0
+	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
 	golang.org/x/text v0.3.3
 )

@@ -102,8 +102,8 @@ func Verify(jwt []byte, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 	hash.Write(jwt[:bytes.LastIndex(jwt, []byte{'.'})])
 
 	sigLength := len(rawSignature)
-	r := new(big.Int).SetBytes(rawSignature[:sigLength/2])
-	s := new(big.Int).SetBytes(rawSignature[sigLength/2:])
+	r := new(big.Int).SetBytes(bytes.TrimLeft(rawSignature[:sigLength/2], "\x00"))
+	s := new(big.Int).SetBytes(bytes.TrimLeft(rawSignature[sigLength/2:], "\x00"))
 
 	if !ecdsa.Verify(publicKey, hash.Sum(nil), r, s) {
 		return false, fmt.Errorf("JWT claim has an incorrect signature")
