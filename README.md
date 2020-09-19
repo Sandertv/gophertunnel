@@ -37,14 +37,14 @@ package main
 
 import (
 	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 func main() {
 	// Connect to the server.
 	conn, err := minecraft.Dialer{
-		Email:    "some@email.address",
-		Password: "password",
+		TokenSource: auth.TokenSource,
 	}.Dial("raknet", "mco.mineplex.com:19132")
 	if err != nil {
 		panic(err)
