@@ -28,7 +28,7 @@ func RequestMinecraftChain(token *XBLToken, key *ecdsa.PrivateKey) (string, erro
 
 	// The Authorization header is important in particular. It is composed of the 'uhs' found in the XSTS
 	// token, and the Token it holds itself.
-	request.Header.Set("Authorization", token.AuthorizationHeader())
+	token.SetAuthHeader(request)
 	request.Header.Set("User-Agent", "MCPE/Android")
 	request.Header.Set("Client-Version", protocol.CurrentVersion)
 

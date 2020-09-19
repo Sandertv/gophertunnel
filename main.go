@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"io/ioutil"
 	"log"
 	"os"
@@ -27,13 +28,9 @@ func main() {
 			panic(err)
 		}
 		conn := c.(*minecraft.Conn)
-
-		data := conn.ClientData()
-		data.ServerAddress = config.Connection.RemoteAddress
 		serverConn, err := minecraft.Dialer{
-			Email:      config.Credentials.Email,
-			Password:   config.Credentials.Password,
-			ClientData: data,
+			TokenSource: auth.TokenSource,
+			ClientData:  conn.ClientData(),
 		}.Dial("raknet", config.Connection.RemoteAddress)
 		if err != nil {
 			panic(err)
@@ -87,10 +84,6 @@ type config struct {
 	Connection struct {
 		LocalAddress  string
 		RemoteAddress string
-	}
-	Credentials struct {
-		Email    string
-		Password string
 	}
 }
 

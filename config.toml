@@ -1,8 +1,5 @@
 
 [Connection]
   LocalAddress = "0.0.0.0:19132"
-  RemoteAddress = ""
+  RemoteAddress = "mco.mineplex.com:19132"
 
-[Credentials]
-  Email = ""
-  Password = ""
