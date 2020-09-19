@@ -187,7 +187,7 @@ func authChain(src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
 	}
 	xsts, err := auth.RequestXBLToken(liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
-		return "", fmt.Errorf("error obtaining XSTS token: %v", err)
+		return "", fmt.Errorf("error obtaining XBOX Live token: %v", err)
 	}
 
 	// Obtain the raw chain data using the
