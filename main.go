@@ -13,6 +13,10 @@ import (
 // The following program implements a proxy that forwards players from one local address to a remote address.
 func main() {
 	config := readConfig()
+	token, err := auth.RequestLiveToken()
+	if err != nil {
+		panic(err)
+	}
 
 	listener, err := minecraft.Listen("raknet", config.Connection.LocalAddress)
 	if err != nil {
@@ -29,7 +33,7 @@ func main() {
 		}
 		conn := c.(*minecraft.Conn)
 		serverConn, err := minecraft.Dialer{
-			TokenSource: auth.TokenSource,
+			TokenSource: auth.RefreshTokenSource(token),
 			ClientData:  conn.ClientData(),
 		}.Dial("raknet", config.Connection.RemoteAddress)
 		if err != nil {
