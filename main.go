@@ -17,6 +17,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	src := auth.RefreshTokenSource(token)
 
 	listener, err := minecraft.Listen("raknet", config.Connection.LocalAddress)
 	if err != nil {
@@ -33,7 +34,7 @@ func main() {
 		}
 		conn := c.(*minecraft.Conn)
 		serverConn, err := minecraft.Dialer{
-			TokenSource: auth.RefreshTokenSource(token),
+			TokenSource: src,
 			ClientData:  conn.ClientData(),
 		}.Dial("raknet", config.Connection.RemoteAddress)
 		if err != nil {
