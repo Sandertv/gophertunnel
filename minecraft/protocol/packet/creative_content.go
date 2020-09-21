@@ -22,7 +22,7 @@ func (pk *CreativeContent) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Items))
 	w.Varuint32(&l)
 	for _, item := range pk.Items {
-		protocol.WriteCreativeEntry(w, &item)
+		protocol.CreativeEntry(w, &item)
 	}
 }
 

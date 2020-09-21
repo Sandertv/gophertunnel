@@ -469,7 +469,7 @@ func (a *CraftResultsDeprecatedStackRequestAction) Marshal(w *Writer) {
 	l := uint32(len(a.ResultItems))
 	w.Varuint32(&l)
 	for _, i := range a.ResultItems {
-		WriteItem(w, &i)
+		w.Item(&i)
 	}
 	w.Uint8(&a.TimesCrafted)
 }
@@ -482,7 +482,7 @@ func (a *CraftResultsDeprecatedStackRequestAction) Unmarshal(r *Reader) {
 
 	a.ResultItems = make([]ItemStack, l)
 	for i := uint32(0); i < l; i++ {
-		Item(r, &a.ResultItems[i])
+		r.Item(&a.ResultItems[i])
 	}
 	r.Uint8(&a.TimesCrafted)
 }

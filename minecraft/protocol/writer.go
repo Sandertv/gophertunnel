@@ -143,6 +143,46 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	}
 }
 
+// Item writes an ItemStack x to the underlying buffer.
+func (w *Writer) Item(x *ItemStack) {
+	w.Varint32(&x.NetworkID)
+	if x.NetworkID == 0 {
+		// The item was air, so there's no more data to follow. Return immediately.
+		return
+	}
+	aux := int32(x.MetadataValue<<8) | int32(x.Count)
+	w.Varint32(&aux)
+	if len(x.NBTData) != 0 {
+		userDataMarker := int16(-1)
+		userDataVer := uint8(1)
+
+		w.Int16(&userDataMarker)
+		w.Uint8(&userDataVer)
+		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+	} else {
+		userDataMarker := int16(0)
+
+		w.Int16(&userDataMarker)
+	}
+	placeOnLen := int32(len(x.CanBePlacedOn))
+	canBreak := int32(len(x.CanBreak))
+
+	w.Varint32(&placeOnLen)
+	for _, block := range x.CanBePlacedOn {
+		w.String(&block)
+	}
+	w.Varint32(&canBreak)
+	for _, block := range x.CanBreak {
+		w.String(&block)
+	}
+
+	const shieldID = 513
+	if x.NetworkID == shieldID {
+		var blockingTick int64
+		w.Varint64(&blockingTick)
+	}
+}
+
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x

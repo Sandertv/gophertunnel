@@ -85,7 +85,7 @@ type ShapelessRecipe struct {
 	RecipeID string
 	// Input is a list of items that serve as the input of the shapeless recipe. These items are the items
 	// required to craft the output.
-	Input []ItemStack
+	Input []RecipeIngredientItem
 	// Output is a list of items that are created as a result of crafting the recipe.
 	Output []ItemStack
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
@@ -131,7 +131,7 @@ type ShapedRecipe struct {
 	Height int32
 	// Input is a list of items that serve as the input of the shapeless recipe. These items are the items
 	// required to craft the output. The amount of input items must be exactly equal to Width * Height.
-	Input []ItemStack
+	Input []RecipeIngredientItem
 	// Output is a list of items that are created as a result of crafting the recipe.
 	Output []ItemStack
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
@@ -242,14 +242,14 @@ func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
 // Marshal ...
 func (recipe *FurnaceRecipe) Marshal(w *Writer) {
 	w.Varint32(&recipe.InputType.NetworkID)
-	WriteItem(w, &recipe.Output)
+	w.Item(&recipe.Output)
 	w.String(&recipe.Block)
 }
 
 // Unmarshal ...
 func (recipe *FurnaceRecipe) Unmarshal(r *Reader) {
 	r.Varint32(&recipe.InputType.NetworkID)
-	Item(r, &recipe.Output)
+	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
 }
 
@@ -258,7 +258,7 @@ func (recipe *FurnaceDataRecipe) Marshal(w *Writer) {
 	w.Varint32(&recipe.InputType.NetworkID)
 	aux := int32(recipe.InputType.MetadataValue)
 	w.Varint32(&aux)
-	WriteItem(w, &recipe.Output)
+	w.Item(&recipe.Output)
 	w.String(&recipe.Block)
 }
 
@@ -267,7 +267,7 @@ func (recipe *FurnaceDataRecipe) Unmarshal(r *Reader) {
 	var dataValue int32
 	r.Varint32(&recipe.InputType.NetworkID)
 	r.Varint32(&dataValue)
-	Item(r, &recipe.Output)
+	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
 
 	recipe.InputType.MetadataValue = int16(dataValue)
@@ -297,12 +297,12 @@ func marshalShaped(w *Writer, recipe *ShapedRecipe) {
 		panic(fmt.Sprintf("shaped recipe must have exactly %vx%v input items, but got %v", recipe.Width, recipe.Height, len(recipe.Input)))
 	}
 	for _, input := range recipe.Input {
-		WriteRecipeIngredient(w, &input)
+		RecipeIngredient(w, &input)
 	}
 	l := uint32(len(recipe.Output))
 	w.Varuint32(&l)
 	for _, output := range recipe.Output {
-		WriteItem(w, &output)
+		w.Item(&output)
 	}
 	w.UUID(&recipe.UUID)
 	w.String(&recipe.Block)
@@ -319,7 +319,7 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 	r.LimitInt32(recipe.Height, 0, lowerLimit)
 
 	itemCount := int(recipe.Width * recipe.Height)
-	recipe.Input = make([]ItemStack, itemCount)
+	recipe.Input = make([]RecipeIngredientItem, itemCount)
 	for i := 0; i < itemCount; i++ {
 		RecipeIngredient(r, &recipe.Input[i])
 	}
@@ -329,7 +329,7 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 
 	recipe.Output = make([]ItemStack, outputCount)
 	for i := uint32(0); i < outputCount; i++ {
-		Item(r, &recipe.Output[i])
+		r.Item(&recipe.Output[i])
 	}
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
@@ -343,11 +343,11 @@ func marshalShapeless(w *Writer, recipe *ShapelessRecipe) {
 	w.String(&recipe.RecipeID)
 	w.Varuint32(&inputLen)
 	for _, input := range recipe.Input {
-		WriteRecipeIngredient(w, &input)
+		RecipeIngredient(w, &input)
 	}
 	w.Varuint32(&outputLen)
 	for _, output := range recipe.Output {
-		WriteItem(w, &output)
+		w.Item(&output)
 	}
 	w.UUID(&recipe.UUID)
 	w.String(&recipe.Block)
@@ -361,7 +361,7 @@ func unmarshalShapeless(r *Reader, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varuint32(&count)
 	r.LimitUint32(count, lowerLimit)
-	recipe.Input = make([]ItemStack, count)
+	recipe.Input = make([]RecipeIngredientItem, count)
 	for i := uint32(0); i < count; i++ {
 		RecipeIngredient(r, &recipe.Input[i])
 	}
@@ -369,7 +369,7 @@ func unmarshalShapeless(r *Reader, recipe *ShapelessRecipe) {
 	r.LimitUint32(count, lowerLimit)
 	recipe.Output = make([]ItemStack, count)
 	for i := uint32(0); i < count; i++ {
-		Item(r, &recipe.Output[i])
+		r.Item(&recipe.Output[i])
 	}
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)

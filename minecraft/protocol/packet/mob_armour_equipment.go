@@ -31,17 +31,17 @@ func (*MobArmourEquipment) ID() uint32 {
 // Marshal ...
 func (pk *MobArmourEquipment) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
-	protocol.WriteItem(w, &pk.Helmet)
-	protocol.WriteItem(w, &pk.Chestplate)
-	protocol.WriteItem(w, &pk.Leggings)
-	protocol.WriteItem(w, &pk.Boots)
+	w.Item(&pk.Helmet)
+	w.Item(&pk.Chestplate)
+	w.Item(&pk.Leggings)
+	w.Item(&pk.Boots)
 }
 
 // Unmarshal ...
 func (pk *MobArmourEquipment) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
-	protocol.Item(r, &pk.Helmet)
-	protocol.Item(r, &pk.Chestplate)
-	protocol.Item(r, &pk.Leggings)
-	protocol.Item(r, &pk.Boots)
+	r.Item(&pk.Helmet)
+	r.Item(&pk.Chestplate)
+	r.Item(&pk.Leggings)
+	r.Item(&pk.Boots)
 }

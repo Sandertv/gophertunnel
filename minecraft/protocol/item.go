@@ -1,10 +1,5 @@
 package protocol
 
-import (
-	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
-)
-
 // ItemInstance represents a unique instance of an item stack. These instances carry a specific network ID
 // that is persistent for the stack.
 type ItemInstance struct {
@@ -16,22 +11,13 @@ type ItemInstance struct {
 	Stack ItemStack
 }
 
-// ItemInst reads an ItemInstance x from Reader r.
-func ItemInst(r *Reader, x *ItemInstance) {
+// ItemInst reads/writes an ItemInstance x using IO r.
+func ItemInst(r IO, x *ItemInstance) {
 	r.Varint32(&x.StackNetworkID)
-	Item(r, &x.Stack)
+	r.Item(&x.Stack)
 	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
 		r.InvalidValue(x.StackNetworkID, "stack network ID", "stack is empty but network ID is non-zero")
 	}
-}
-
-// WriteItemInst writes an ItemInstance x to Writer w.
-func WriteItemInst(w *Writer, x *ItemInstance) {
-	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
-		panic(fmt.Sprintf("stack %#v is empty but network ID %v is non-zero", x.Stack, x.StackNetworkID))
-	}
-	w.Varint32(&x.StackNetworkID)
-	WriteItem(w, &x.Stack)
 }
 
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that
@@ -60,124 +46,26 @@ type ItemType struct {
 	MetadataValue int16
 }
 
-// Item reads an item stack from buffer src and stores it into item stack x.
-func Item(r *Reader, x *ItemStack) {
-	x.NBTData = make(map[string]interface{})
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
-		return
-	}
-	var auxValue int32
-	r.Varint32(&auxValue)
-	x.MetadataValue = int16(auxValue >> 8)
-	x.Count = int16(auxValue & 0xff)
-
-	var userDataMarker int16
-	r.Int16(&userDataMarker)
-
-	if userDataMarker == -1 {
-		var userDataVersion uint8
-		r.Uint8(&userDataVersion)
-
-		switch userDataVersion {
-		case 1:
-			r.NBT(&x.NBTData, nbt.NetworkLittleEndian)
-		default:
-			r.UnknownEnumOption(userDataVersion, "item user data version")
-			return
-		}
-	} else if userDataMarker > 0 {
-		r.NBT(&x.NBTData, nbt.LittleEndian)
-	}
-	var count int32
-	r.Varint32(&count)
-	r.LimitInt32(count, 0, higherLimit)
-
-	x.CanBePlacedOn = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		r.String(&x.CanBePlacedOn[i])
-	}
-
-	r.Varint32(&count)
-	r.LimitInt32(count, 0, higherLimit)
-
-	x.CanBreak = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		r.String(&x.CanBreak[i])
-	}
-	const shieldID = 513
-	if x.NetworkID == shieldID {
-		var blockingTick int64
-		r.Varint64(&blockingTick)
-	}
+// RecipeIngredientItem represents an item that may be used as a recipe ingredient.
+type RecipeIngredientItem struct {
+	// NetworkID is the numerical network ID of the item. This is sometimes a positive ID, and sometimes a
+	// negative ID, depending on what item it concerns.
+	NetworkID int32
+	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
+	// other items it is simply an identifier of a variant of the item.
+	MetadataValue int32
+	// Count is the count of items that the recipe ingredient is required to have.
+	Count int32
 }
 
-// WriteItem writes an ItemStack x to Writer w.
-func WriteItem(w *Writer, x *ItemStack) {
-	w.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there's no more data to follow. Return immediately.
-		return
-	}
-	aux := int32(x.MetadataValue<<8) | int32(x.Count)
-	w.Varint32(&aux)
-	if len(x.NBTData) != 0 {
-		userDataMarker := int16(-1)
-		userDataVer := uint8(1)
-
-		w.Int16(&userDataMarker)
-		w.Uint8(&userDataVer)
-		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
-	} else {
-		userDataMarker := int16(0)
-
-		w.Int16(&userDataMarker)
-	}
-	placeOnLen := int32(len(x.CanBePlacedOn))
-	canBreak := int32(len(x.CanBreak))
-
-	w.Varint32(&placeOnLen)
-	for _, block := range x.CanBePlacedOn {
-		w.String(&block)
-	}
-	w.Varint32(&canBreak)
-	for _, block := range x.CanBreak {
-		w.String(&block)
-	}
-
-	const shieldID = 513
-	if x.NetworkID == shieldID {
-		var blockingTick int64
-		w.Varint64(&blockingTick)
-	}
-}
-
-// RecipeIngredient reads an ItemStack x as a recipe ingredient from Reader r.
-func RecipeIngredient(r *Reader, x *ItemStack) {
+// RecipeIngredient reads/writes a RecipeIngredientItem x using IO r.
+func RecipeIngredient(r IO, x *RecipeIngredientItem) {
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		return
 	}
-	var meta, count int32
-	r.Varint32(&meta)
-	x.MetadataValue = int16(meta)
-	r.Varint32(&count)
-	r.LimitInt32(count, 0, mediumLimit)
-	x.Count = int16(count)
-}
-
-// WriteRecipeIngredient writes an ItemStack x as a recipe ingredient to Writer w.
-func WriteRecipeIngredient(w *Writer, x *ItemStack) {
-	w.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		return
-	}
-	meta, count := int32(x.MetadataValue), int32(x.Count)
-	w.Varint32(&meta)
-	w.Varint32(&count)
+	r.Varint32(&x.MetadataValue)
+	r.Varint32(&x.Count)
 }
 
 // ItemEntry is an item sent in the StartGame item table. It holds a name and a legacy ID, which is used to

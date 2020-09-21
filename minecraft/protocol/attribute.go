@@ -49,18 +49,16 @@ func WriteAttributes(w *Writer, x *[]Attribute) {
 
 // InitialAttributes reads an Attribute slice from bytes.Buffer src and stores it in the pointer passed.
 // InitialAttributes is used when reading the attributes of a new entity. (AddEntity packet)
-func InitialAttributes(r *Reader, attributes *[]Attribute) {
+func InitialAttributes(r *Reader, x *[]Attribute) {
 	var count uint32
 	r.Varuint32(&count)
 	r.LimitUint32(count, mediumLimit)
-	*attributes = make([]Attribute, count)
+	*x = make([]Attribute, count)
 	for i := uint32(0); i < count; i++ {
-		a := Attribute{}
-		r.String(&a.Name)
-		r.Float32(&a.Min)
-		r.Float32(&a.Value)
-		r.Float32(&a.Max)
-		(*attributes)[i] = a
+		r.String(&(*x)[i].Name)
+		r.Float32(&(*x)[i].Min)
+		r.Float32(&(*x)[i].Value)
+		r.Float32(&(*x)[i].Max)
 	}
 }
 

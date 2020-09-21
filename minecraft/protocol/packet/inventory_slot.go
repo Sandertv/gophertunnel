@@ -28,7 +28,7 @@ func (*InventorySlot) ID() uint32 {
 func (pk *InventorySlot) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.WindowID)
 	w.Varuint32(&pk.Slot)
-	protocol.WriteItemInst(w, &pk.NewItem)
+	protocol.ItemInst(w, &pk.NewItem)
 }
 
 // Unmarshal ...

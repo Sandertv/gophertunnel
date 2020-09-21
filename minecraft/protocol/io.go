@@ -38,6 +38,7 @@ type IO interface {
 	UUID(x *uuid.UUID)
 	VarRGBA(x *color.RGBA)
 	EntityMetadata(x *map[uint32]interface{})
+	Item(x *ItemStack)
 
 	UnknownEnumOption(value interface{}, enum string)
 	InvalidValue(value interface{}, forField, reason string)

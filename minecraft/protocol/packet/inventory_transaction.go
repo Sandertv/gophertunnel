@@ -55,7 +55,7 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 		l := uint32(len(pk.LegacySetItemSlots))
 		w.Varuint32(&l)
 		for _, slot := range pk.LegacySetItemSlots {
-			protocol.WriteSetItemSlot(w, &slot)
+			protocol.SetItemSlot(w, &slot)
 		}
 	}
 	var id uint32
@@ -76,7 +76,7 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Actions))
 	w.Varuint32(&l)
 	for _, action := range pk.Actions {
-		protocol.WriteInvAction(w, &action, pk.HasNetworkIDs)
+		protocol.InvAction(w, &action, pk.HasNetworkIDs)
 	}
 	if pk.TransactionData != nil {
 		pk.TransactionData.Marshal(w)

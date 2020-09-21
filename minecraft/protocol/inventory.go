@@ -44,8 +44,8 @@ type InventoryAction struct {
 	StackNetworkID int32
 }
 
-// InvAction reads an InventoryAction x from Reader r.
-func InvAction(r *Reader, x *InventoryAction, netIDs bool) {
+// InvAction reads/writes an InventoryAction x using IO r.
+func InvAction(r IO, x *InventoryAction, netIDs bool) {
 	r.Varuint32(&x.SourceType)
 	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
@@ -54,27 +54,10 @@ func InvAction(r *Reader, x *InventoryAction, netIDs bool) {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	Item(r, &x.OldItem)
-	Item(r, &x.NewItem)
+	r.Item(&x.OldItem)
+	r.Item(&x.NewItem)
 	if netIDs {
 		r.Varint32(&x.StackNetworkID)
-	}
-}
-
-// WriteInvAction writes an InventoryAction x to Writer w.
-func WriteInvAction(w *Writer, x *InventoryAction, netIDs bool) {
-	w.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		w.Varint32(&x.WindowID)
-	case InventoryActionSourceWorld:
-		w.Varuint32(&x.SourceFlags)
-	}
-	w.Varuint32(&x.InventorySlot)
-	WriteItem(w, &x.OldItem)
-	WriteItem(w, &x.NewItem)
-	if netIDs {
-		w.Varint32(&x.StackNetworkID)
 	}
 }
 
@@ -187,7 +170,7 @@ func (data *UseItemTransactionData) Marshal(w *Writer) {
 	w.UBlockPos(&data.BlockPosition)
 	w.Varint32(&data.BlockFace)
 	w.Varint32(&data.HotBarSlot)
-	WriteItem(w, &data.HeldItem)
+	w.Item(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 	w.Varuint32(&data.BlockRuntimeID)
@@ -199,7 +182,7 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
-	Item(r, &data.HeldItem)
+	r.Item(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -210,7 +193,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
 	w.Varuint64(&data.TargetEntityRuntimeID)
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	WriteItem(w, &data.HeldItem)
+	w.Item(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 }
@@ -220,7 +203,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	Item(r, &data.HeldItem)
+	r.Item(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -229,7 +212,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	WriteItem(w, &data.HeldItem)
+	w.Item(&data.HeldItem)
 	w.Vec3(&data.HeadPosition)
 }
 
@@ -237,7 +220,7 @@ func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	Item(r, &data.HeldItem)
+	r.Item(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 
@@ -261,25 +244,8 @@ type LegacySetItemSlot struct {
 	Slots       []byte
 }
 
-// WriteSetItemSlot writes a LegacySetItemSlot x to Writer w.
-func WriteSetItemSlot(w *Writer, x *LegacySetItemSlot) {
-	l := uint32(len(x.Slots))
-	w.Uint8(&x.ContainerID)
-	w.Varuint32(&l)
-	for _, slot := range x.Slots {
-		w.Uint8(&slot)
-	}
-}
-
-// SetItemSlot reads a LegacySetItemSlot x from Reader r.
-func SetItemSlot(r *Reader, x *LegacySetItemSlot) {
-	var length uint32
+// SetItemSlot reads/writes a LegacySetItemSlot x using IO r.
+func SetItemSlot(r IO, x *LegacySetItemSlot) {
 	r.Uint8(&x.ContainerID)
-	r.Varuint32(&length)
-	r.LimitUint32(length, lowerLimit)
-
-	x.Slots = make([]byte, length)
-	for i := uint32(0); i < length; i++ {
-		r.Uint8(&x.Slots[i])
-	}
+	r.ByteSlice(&x.Slots)
 }

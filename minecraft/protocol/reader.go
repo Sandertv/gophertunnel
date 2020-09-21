@@ -232,6 +232,61 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 	}
 }
 
+// Item reads an ItemStack x from the underlying buffer.
+func (r *Reader) Item(x *ItemStack) {
+	x.NBTData = make(map[string]interface{})
+	r.Varint32(&x.NetworkID)
+	if x.NetworkID == 0 {
+		// The item was air, so there is no more data we should read for the item instance. After all, air
+		// items aren't really anything.
+		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
+		return
+	}
+	var auxValue int32
+	r.Varint32(&auxValue)
+	x.MetadataValue = int16(auxValue >> 8)
+	x.Count = int16(auxValue & 0xff)
+
+	var userDataMarker int16
+	r.Int16(&userDataMarker)
+
+	if userDataMarker == -1 {
+		var userDataVersion uint8
+		r.Uint8(&userDataVersion)
+
+		switch userDataVersion {
+		case 1:
+			r.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		default:
+			r.UnknownEnumOption(userDataVersion, "item user data version")
+			return
+		}
+	} else if userDataMarker > 0 {
+		r.NBT(&x.NBTData, nbt.LittleEndian)
+	}
+	var count int32
+	r.Varint32(&count)
+	r.LimitInt32(count, 0, higherLimit)
+
+	x.CanBePlacedOn = make([]string, count)
+	for i := int32(0); i < count; i++ {
+		r.String(&x.CanBePlacedOn[i])
+	}
+
+	r.Varint32(&count)
+	r.LimitInt32(count, 0, higherLimit)
+
+	x.CanBreak = make([]string, count)
+	for i := int32(0); i < count; i++ {
+		r.String(&x.CanBreak[i])
+	}
+	const shieldID = 513
+	if x.NetworkID == shieldID {
+		var blockingTick int64
+		r.Varint64(&blockingTick)
+	}
+}
+
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {

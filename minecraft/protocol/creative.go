@@ -9,14 +9,8 @@ type CreativeItem struct {
 	Item ItemStack
 }
 
-// WriteCreativeEntry writes a CreativeItem x to Writer w.
-func WriteCreativeEntry(w *Writer, x *CreativeItem) {
-	w.Varuint32(&x.CreativeItemNetworkID)
-	WriteItem(w, &x.Item)
-}
-
-// CreativeEntry reads a CreativeItem x from Reader r.
-func CreativeEntry(r *Reader, x *CreativeItem) {
+// CreativeEntry reads/writes a CreativeItem x using IO r.
+func CreativeEntry(r IO, x *CreativeItem) {
 	r.Varuint32(&x.CreativeItemNetworkID)
-	Item(r, &x.Item)
+	r.Item(&x.Item)
 }

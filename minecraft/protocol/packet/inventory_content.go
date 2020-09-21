@@ -27,7 +27,7 @@ func (pk *InventoryContent) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.WindowID)
 	w.Varuint32(&l)
 	for _, item := range pk.Content {
-		protocol.WriteItemInst(w, &item)
+		protocol.ItemInst(w, &item)
 	}
 }
 
