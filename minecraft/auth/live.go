@@ -6,14 +6,24 @@ import (
 	"fmt"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/microsoft"
+	"io"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 )
 
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
-// a code.
-var TokenSource oauth2.TokenSource = tokenSource{}
+// a code. TokenSource prints the authentication code and URL to os.Stdout. To use a different io.Writer, use
+// WriterTokenSource.
+var TokenSource oauth2.TokenSource = tokenSource{w: os.Stdout}
+
+// WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
+// Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
+// code are printed.
+func WriterTokenSource(w io.Writer) oauth2.TokenSource {
+	return tokenSource{w: w}
+}
 
 // RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
 // refreshes the token everytime it expires.
@@ -28,22 +38,29 @@ func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 
 // tokenSource implements the oauth2.TokenSource interface. It provides a method to get an oauth2.Token using
 // device auth through a call to RequestLiveToken.
-type tokenSource struct{}
+type tokenSource struct{ w io.Writer }
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
 func (t tokenSource) Token() (*oauth2.Token, error) {
-	return RequestLiveToken()
+	return RequestLiveTokenWriter(t.w)
 }
 
 // RequestLiveToken does a login request for Microsoft Live Connect using device auth. A login URL will be
-// printed together with a user code which the user must use to submit.
-// Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
+// printed to the stdout with a user code which the user must use to submit.
+// RequestLiveToken is the equivalent of RequestLiveTokenWriter(os.Stdout).
 func RequestLiveToken() (*oauth2.Token, error) {
+	return RequestLiveTokenWriter(os.Stdout)
+}
+
+// RequestLiveTokenWriter does a login request for Microsoft Live Connect using device auth. A login URL will
+// be printed to the io.Writer passed with a user code which the user must use to submit.
+// Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
+func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	d, err := startDeviceAuth()
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println("Authenticate at", d.VerificationURI, "using the code", d.UserCode+".")
+	_, _ = w.Write([]byte(fmt.Sprintf("Authenticate at %v using the code %v.\n", d.VerificationURI, d.UserCode)))
 	ticker := time.NewTicker(time.Second * time.Duration(d.Interval))
 	defer ticker.Stop()
 
@@ -55,7 +72,7 @@ func RequestLiveToken() (*oauth2.Token, error) {
 		// If the token could not be obtained yet (authentication wasn't finished yet), the token is nil.
 		// We just retry if this is the case.
 		if t != nil {
-			fmt.Println("Authentication successful.")
+			_, _ = w.Write([]byte("Authentication successful.\n"))
 			return t, nil
 		}
 	}
