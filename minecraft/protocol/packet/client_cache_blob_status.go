@@ -49,5 +49,4 @@ func (pk *ClientCacheBlobStatus) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < hitCount; i++ {
 		r.Uint64(&pk.HitHashes[i])
 	}
-	return
 }

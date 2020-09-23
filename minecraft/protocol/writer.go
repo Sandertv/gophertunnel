@@ -289,8 +289,3 @@ func (w *Writer) Reset() {
 func (w *Writer) panicf(format string, a ...interface{}) {
 	panic(fmt.Errorf(format, a...))
 }
-
-// panic panics with the error passed, similarly to panicf.
-func (w *Writer) panic(err error) {
-	panic(err)
-}
