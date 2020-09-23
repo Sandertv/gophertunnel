@@ -33,7 +33,7 @@ type Header struct {
 	X5U       string `json:"x5u"`
 }
 
-// Header parses the JWT passed and returns the base64 decoded header section of the claim. The JSON data
+// HeaderFrom parses the JWT passed and returns the base64 decoded header section of the claim. The JSON data
 // returned is not guaranteed to be valid JSON.
 func HeaderFrom(jwt []byte) ([]byte, error) {
 	fragments := bytes.Split(jwt, []byte{'.'})
