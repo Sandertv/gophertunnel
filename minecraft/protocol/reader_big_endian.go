@@ -4,7 +4,6 @@ package protocol
 
 import (
 	"encoding/binary"
-	"io"
 	"math"
 )
 
@@ -41,16 +40,16 @@ func (r *Reader) Int32(x *int32) {
 	if _, err := r.r.Read(b); err != nil {
 		r.panic(err)
 	}
-	*x = *(*int32)(unsafe.Pointer(&b))
+	*x = int32(binary.BigEndian.Uint32(b))
 }
 
 // BEInt32 reads a big endian int32 from the underlying buffer.
 func (r *Reader) BEInt32(x *int32) {
-	if r.Len() < 4 {
-		r.panic(io.EOF)
+	b := make([]byte, 4)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*int32)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 4
+	*x = *(*int32)(unsafe.Pointer(&b[0]))
 }
 
 // Uint64 reads a little endian uint64 from the underlying buffer.
