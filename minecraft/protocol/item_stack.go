@@ -104,6 +104,7 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &CraftResultsDeprecatedStackRequestAction{}
 		default:
 			r.UnknownEnumOption(id, "stack request action type")
+			return
 		}
 		action.Unmarshal(r)
 		x.Actions[i] = action

@@ -122,8 +122,7 @@ func (listener *Listener) Listen(network, address string) error {
 // fields, call &Listener{}.Listen() instead.
 func Listen(network, address string) (*Listener, error) {
 	l := &Listener{}
-	err := l.Listen(network, address)
-	return l, err
+	return l, l.Listen(network, address)
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
