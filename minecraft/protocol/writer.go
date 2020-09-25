@@ -1,63 +1,71 @@
 package protocol
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
+	"io"
 	"reflect"
 	"unsafe"
 )
 
 // Writer implements writing methods for data types from Minecraft packets. Each Packet implementation has one
 // passed to it when writing.
+// Writer implements methods where values are passed using a pointer, so that Reader and Writer have a
+// synonymous interface and both implement the IO interface.
 type Writer struct {
-	buf []byte
+	w interface {
+		io.Writer
+		io.ByteWriter
+	}
 }
 
-// NewWriter creates a new initialised Writer with an initial underlying buffer size of 1024 bytes.
-func NewWriter() *Writer {
-	return &Writer{buf: make([]byte, 0, 1024)}
+// NewWriter creates a new initialised Writer with an underlying io.ByteWriter to write to.
+func NewWriter(w interface {
+	io.Writer
+	io.ByteWriter
+}) *Writer {
+	return &Writer{w: w}
 }
 
 // Uint8 writes a uint8 to the underlying buffer.
 func (w *Writer) Uint8(x *uint8) {
-	w.buf = append(w.buf, *x)
+	_ = w.w.WriteByte(*x)
 }
 
 // Bool writes a bool as either 0 or 1 to the underlying buffer.
 func (w *Writer) Bool(x *bool) {
 	if *x {
-		w.buf = append(w.buf, 1)
+		_ = w.w.WriteByte(1)
 		return
 	}
-	w.buf = append(w.buf, 0)
+	_ = w.w.WriteByte(0)
 }
 
 // String writes a string, prefixed with a varuint32, to the underlying buffer.
 func (w *Writer) String(x *string) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
-	w.buf = append(w.buf, *(*[]byte)(unsafe.Pointer(x))...)
+	_, _ = w.w.Write(*(*[]byte)(unsafe.Pointer(x)))
 }
 
 // ByteSlice writes a []byte, prefixed with a varuint32, to the underlying buffer.
 func (w *Writer) ByteSlice(x *[]byte) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
-	w.buf = append(w.buf, *x...)
+	_, _ = w.w.Write(*x)
 }
 
 // Bytes appends a []byte to the underlying buffer.
 func (w *Writer) Bytes(x *[]byte) {
-	w.buf = append(w.buf, *x...)
+	_, _ = w.w.Write(*x)
 }
 
 // ByteFloat writes a rotational float32 as a single byte to the underlying buffer.
 func (w *Writer) ByteFloat(x *float32) {
-	w.buf = append(w.buf, byte(*x/(360.0/256.0)))
+	_ = w.w.WriteByte(byte(*x / (360.0 / 256.0)))
 }
 
 // Vec3 writes an mgl32.Vec3 as 3 float32s to the underlying buffer.
@@ -100,7 +108,7 @@ func (w *Writer) UUID(x *uuid.UUID) {
 	for i, j := 0, 15; i < j; i, j = i+1, j-1 {
 		b[i], b[j] = b[j], b[i]
 	}
-	w.buf = append(w.buf, b...)
+	_, _ = w.w.Write(b)
 }
 
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
@@ -191,20 +199,20 @@ func (w *Writer) Varint64(x *int64) {
 		ux = ^ux
 	}
 	for ux >= 0x80 {
-		w.buf = append(w.buf, byte(ux)|0x80)
+		_ = w.w.WriteByte(byte(ux) | 0x80)
 		ux >>= 7
 	}
-	w.buf = append(w.buf, byte(ux))
+	_ = w.w.WriteByte(byte(ux))
 }
 
 // Varuint64 writes a uint64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varuint64(x *uint64) {
 	u := *x
 	for u >= 0x80 {
-		w.buf = append(w.buf, byte(u)|0x80)
+		_ = w.w.WriteByte(byte(u) | 0x80)
 		u >>= 7
 	}
-	w.buf = append(w.buf, byte(u))
+	_ = w.w.WriteByte(byte(u))
 }
 
 // Varint32 writes an int32 as 1-5 bytes to the underlying buffer.
@@ -215,52 +223,34 @@ func (w *Writer) Varint32(x *int32) {
 		ux = ^ux
 	}
 	for ux >= 0x80 {
-		w.buf = append(w.buf, byte(ux)|0x80)
+		_ = w.w.WriteByte(byte(ux) | 0x80)
 		ux >>= 7
 	}
-	w.buf = append(w.buf, byte(ux))
+	_ = w.w.WriteByte(byte(ux))
 }
 
 // Varuint32 writes a uint32 as 1-5 bytes to the underlying buffer.
 func (w *Writer) Varuint32(x *uint32) {
 	u := *x
 	for u >= 0x80 {
-		w.buf = append(w.buf, byte(u)|0x80)
+		_ = w.w.WriteByte(byte(u) | 0x80)
 		u >>= 7
 	}
-	w.buf = append(w.buf, byte(u))
+	_ = w.w.WriteByte(byte(u))
 }
 
 // NBT writes a map as NBT to the underlying buffer using the encoding passed.
 func (w *Writer) NBT(x *map[string]interface{}, encoding nbt.Encoding) {
-	var buf *bytes.Buffer
-	if len(*x) == 0 {
-		buf = bytes.NewBuffer(make([]byte, 0, 2))
-	} else if len(*x) < 4 {
-		buf = bytes.NewBuffer(make([]byte, 0, 48))
-	} else {
-		buf = bytes.NewBuffer(make([]byte, 0, 128))
-	}
-	if err := nbt.NewEncoderWithEncoding(buf, encoding).Encode(*x); err != nil {
+	if err := nbt.NewEncoderWithEncoding(w.w, encoding).Encode(*x); err != nil {
 		panic(err)
 	}
-	w.buf = append(w.buf, buf.Bytes()...)
 }
 
 // NBTList writes a slice as NBT to the underlying buffer using the encoding passed.
 func (w *Writer) NBTList(x *[]interface{}, encoding nbt.Encoding) {
-	var buf *bytes.Buffer
-	if len(*x) == 0 {
-		buf = bytes.NewBuffer(make([]byte, 0, 2))
-	} else if len(*x) < 4 {
-		buf = bytes.NewBuffer(make([]byte, 0, 48))
-	} else {
-		buf = bytes.NewBuffer(make([]byte, 0, 128))
-	}
-	if err := nbt.NewEncoderWithEncoding(buf, encoding).Encode(*x); err != nil {
+	if err := nbt.NewEncoderWithEncoding(w.w, encoding).Encode(*x); err != nil {
 		panic(err)
 	}
-	w.buf = append(w.buf, buf.Bytes()...)
 }
 
 // UnknownEnumOption panics with an unknown enum option error.
@@ -271,18 +261,6 @@ func (w *Writer) UnknownEnumOption(value interface{}, enum string) {
 // InvalidValue panics with an invalid value error.
 func (w *Writer) InvalidValue(value interface{}, forField, reason string) {
 	w.panicf("invalid value '%v' for %v: %v", value, forField, reason)
-}
-
-// Data returns all bytes written to the Writer. Note that these bytes are only valid until the next call to
-// Reset.
-func (w *Writer) Data() []byte {
-	return w.buf
-}
-
-// Reset resets the length of the underlying buffer. The underlying array is not removed, so writing to the
-// Writer again will result in reduced allocations.
-func (w *Writer) Reset() {
-	w.buf = w.buf[:0]
 }
 
 // panicf panics with the format and values passed.

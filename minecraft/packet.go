@@ -11,7 +11,7 @@ import (
 type packetData struct {
 	h       *packet.Header
 	full    []byte
-	payload []byte
+	payload *bytes.Buffer
 }
 
 // parseData parses the packet data slice passed into a packetData struct.
@@ -27,7 +27,7 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 		// The packet func was set, so we call it.
 		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
 	}
-	return &packetData{h: header, full: data, payload: buf.Bytes()}, nil
+	return &packetData{h: header, full: data, payload: buf}, nil
 }
 
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
@@ -47,8 +47,8 @@ func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 		}
 	}()
 	pk.Unmarshal(r)
-	if r.Len() != 0 {
-		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, r.Len(), r.Data())
+	if p.payload.Len() != 0 {
+		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())
 	}
 	return
 }

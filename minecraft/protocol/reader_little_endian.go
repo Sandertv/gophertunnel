@@ -4,78 +4,77 @@ package protocol
 
 import (
 	"encoding/binary"
-	"io"
 	"unsafe"
 )
 
 // Uint16 reads a little endian uint16 from the underlying buffer.
 func (r *Reader) Uint16(x *uint16) {
-	if r.Len() < 2 {
-		r.panic(io.EOF)
+	b := make([]byte, 2)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*uint16)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 2
+	*x = *(*uint16)(unsafe.Pointer(&b))
 }
 
 // Int16 reads a little endian int16 from the underlying buffer.
 func (r *Reader) Int16(x *int16) {
-	if r.Len() < 2 {
-		r.panic(io.EOF)
+	b := make([]byte, 2)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*int16)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 2
+	*x = *(*int16)(unsafe.Pointer(&b))
 }
 
 // Uint32 reads a little endian uint32 from the underlying buffer.
 func (r *Reader) Uint32(x *uint32) {
-	if r.Len() < 4 {
-		r.panic(io.EOF)
+	b := make([]byte, 4)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*uint32)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 4
+	*x = *(*uint32)(unsafe.Pointer(&b))
 }
 
 // Int32 reads a little endian int32 from the underlying buffer.
 func (r *Reader) Int32(x *int32) {
-	if r.Len() < 4 {
-		r.panic(io.EOF)
+	b := make([]byte, 4)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*int32)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 4
+	*x = *(*int32)(unsafe.Pointer(&b))
 }
 
 // BEInt32 reads a big endian int32 from the underlying buffer.
 func (r *Reader) BEInt32(x *int32) {
-	if r.Len() < 4 {
-		r.panic(io.EOF)
+	b := make([]byte, 4)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = int32(binary.BigEndian.Uint32(r.buf[r.off:]))
-	r.off += 4
+	*x = int32(binary.BigEndian.Uint32(b))
 }
 
 // Uint64 reads a little endian uint64 from the underlying buffer.
 func (r *Reader) Uint64(x *uint64) {
-	if r.Len() < 8 {
-		r.panic(io.EOF)
+	b := make([]byte, 8)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*uint64)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 8
+	*x = *(*uint64)(unsafe.Pointer(&b))
 }
 
 // Int64 reads a little endian int64 from the underlying buffer.
 func (r *Reader) Int64(x *int64) {
-	if r.Len() < 8 {
-		r.panic(io.EOF)
+	b := make([]byte, 8)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*int64)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 8
+	*x = *(*int64)(unsafe.Pointer(&b))
 }
 
 // Float32 reads a little endian float32 from the underlying buffer.
 func (r *Reader) Float32(x *float32) {
-	if r.Len() < 4 {
-		r.panic(io.EOF)
+	b := make([]byte, 4)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
 	}
-	*x = *(*float32)(unsafe.Pointer(&r.buf[r.off]))
-	r.off += 4
+	*x = *(*float32)(unsafe.Pointer(&b))
 }

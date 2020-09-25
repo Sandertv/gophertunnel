@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
@@ -9,6 +8,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
+	"io/ioutil"
 	"math"
 	"unsafe"
 )
@@ -17,32 +17,36 @@ import (
 // has one passed to it.
 // Reader's uses should always be encapsulated with a deferred recovery. Reader panics on invalid data.
 type Reader struct {
-	buf []byte
-	off int
+	r interface {
+		io.Reader
+		io.ByteReader
+	}
 }
 
-// NewReader creates a new Reader using the []byte passed as underlying source to read bytes from.
-func NewReader(buf []byte) *Reader {
-	return &Reader{buf: buf}
+// NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
+func NewReader(r interface {
+	io.Reader
+	io.ByteReader
+}) *Reader {
+	return &Reader{r: r}
 }
 
 // Uint8 reads a uint8 from the underlying buffer.
 func (r *Reader) Uint8(x *uint8) {
-	if r.Len() < 1 {
-		r.panic(io.EOF)
+	var err error
+	*x, err = r.r.ReadByte()
+	if err != nil {
+		r.panic(err)
 	}
-	*x = r.buf[r.off]
-	r.off++
 }
 
 // Bool reads a bool from the underlying buffer.
 func (r *Reader) Bool(x *bool) {
-	if r.Len() < 1 {
-		r.panic(io.EOF)
+	u, err := r.r.ReadByte()
+	if err != nil {
+		r.panic(err)
 	}
-	val := r.buf[r.off]
-	r.off++
-	if val == 0 {
+	if u == 0 {
 		*x = false
 		return
 	}
@@ -60,12 +64,11 @@ func (r *Reader) String(x *string) {
 	if l > math.MaxInt32 {
 		r.panic(errStringTooLong)
 	}
-	if r.Len() < l {
-		r.panic(io.EOF)
+	data := make([]byte, l)
+	if _, err := r.r.Read(data); err != nil {
+		r.panic(err)
 	}
-	data := r.buf[r.off : r.off+l]
 	*x = *(*string)(unsafe.Pointer(&data))
-	r.off += l
 }
 
 // ByteSlice reads a byte slice from the underlying buffer, similarly to String.
@@ -76,11 +79,11 @@ func (r *Reader) ByteSlice(x *[]byte) {
 	if l > math.MaxInt32 {
 		r.panic(errStringTooLong)
 	}
-	if r.Len() < l {
-		r.panic(io.EOF)
+	data := make([]byte, l)
+	if _, err := r.r.Read(data); err != nil {
+		r.panic(err)
 	}
-	*x = r.buf[r.off : r.off+l]
-	r.off += l
+	*x = data
 }
 
 // Vec3 reads three float32s into an mgl32.Vec3 from the underlying buffer.
@@ -133,40 +136,33 @@ func (r *Reader) VarRGBA(x *color.RGBA) {
 
 // Bytes reads the leftover bytes into a byte slice.
 func (r *Reader) Bytes(p *[]byte) {
-	*p = r.buf[r.off:]
-	r.off += r.Len()
+	var err error
+	*p, err = ioutil.ReadAll(r.r)
+	if err != nil {
+		r.panic(err)
+	}
 }
 
 // NBT reads a compound tag into a map from the underlying buffer.
 func (r *Reader) NBT(m *map[string]interface{}, encoding nbt.Encoding) {
-	buf := bytes.NewBuffer(r.buf[r.off:])
-	err := nbt.NewDecoderWithEncoding(buf, encoding).Decode(m)
-	r.off += r.Len() - buf.Len()
-
-	if err != nil {
+	if err := nbt.NewDecoderWithEncoding(r.r, encoding).Decode(m); err != nil {
 		r.panic(err)
 	}
 }
 
 // NBTList reads a list of NBT tags from the underlying buffer.
 func (r *Reader) NBTList(m *[]interface{}, encoding nbt.Encoding) {
-	buf := bytes.NewBuffer(r.buf[r.off:])
-	err := nbt.NewDecoderWithEncoding(buf, encoding).Decode(m)
-	r.off += r.Len() - buf.Len()
-
-	if err != nil {
+	if err := nbt.NewDecoderWithEncoding(r.r, encoding).Decode(m); err != nil {
 		r.panic(err)
 	}
 }
 
 // UUID reads a uuid.UUID from the underlying buffer.
 func (r *Reader) UUID(x *uuid.UUID) {
-	if r.Len() < 16 {
-		r.panic(io.EOF)
-	}
 	b := make([]byte, 16)
-	copy(b, r.buf[r.off:])
-	r.off += 16
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
+	}
 
 	// The UUIDs we read are Little Endian, but the uuid library is based on Big Endian UUIDs, so we need to
 	// reverse the two int64s the UUID is composed of, then reverse their bytes too.
@@ -325,15 +321,11 @@ var errVarIntOverflow = errors.New("varint overflows integer")
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
 func (r *Reader) Varint64(x *int64) {
 	var ux uint64
-	l := r.Len()
 	for i := 0; i < 70; i += 7 {
-		if l < 1 {
-			r.panic(io.EOF)
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
 		}
-		l--
-
-		b := r.buf[r.off]
-		r.off++
 
 		ux |= uint64(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -349,16 +341,12 @@ func (r *Reader) Varint64(x *int64) {
 
 // Varuint64 reads up to 10 bytes from the underlying buffer into a uint64.
 func (r *Reader) Varuint64(x *uint64) {
-	l := r.Len()
 	var v uint64
 	for i := 0; i < 70; i += 7 {
-		if l < 1 {
-			r.panic(io.EOF)
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
 		}
-		l--
-
-		b := r.buf[r.off]
-		r.off++
 
 		v |= uint64(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -372,15 +360,11 @@ func (r *Reader) Varuint64(x *uint64) {
 // Varint32 reads up to 5 bytes from the underlying buffer into an int32.
 func (r *Reader) Varint32(x *int32) {
 	var ux uint32
-	l := r.Len()
 	for i := 0; i < 35; i += 7 {
-		if l < 1 {
-			r.panic(io.EOF)
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
 		}
-		l--
-
-		b := r.buf[r.off]
-		r.off++
 
 		ux |= uint32(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -397,15 +381,11 @@ func (r *Reader) Varint32(x *int32) {
 // Varuint32 reads up to 5 bytes from the underlying buffer into a uint32.
 func (r *Reader) Varuint32(x *uint32) {
 	var v uint32
-	l := r.Len()
 	for i := 0; i < 35; i += 7 {
-		if l < 1 {
-			r.panic(io.EOF)
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
 		}
-		l--
-
-		b := r.buf[r.off]
-		r.off++
 
 		v |= uint32(b&0x7f) << i
 		if b&0x80 == 0 {
@@ -414,16 +394,6 @@ func (r *Reader) Varuint32(x *uint32) {
 		}
 	}
 	r.panic(errVarIntOverflow)
-}
-
-// Len returns the length of the leftover buffer held by the Reader.
-func (r *Reader) Len() int {
-	return len(r.buf) - r.off
-}
-
-// Data returns the leftover bytes.
-func (r *Reader) Data() []byte {
-	return r.buf[r.off:]
 }
 
 // panicf panics with the format and values passed and assigns the error created to the Reader.

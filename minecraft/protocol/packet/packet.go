@@ -1,8 +1,8 @@
 package packet
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"io"
 )
 
 // Packet represents a packet that may be sent over a Minecraft network connection. The packet needs to hold
@@ -26,14 +26,14 @@ type Header struct {
 }
 
 // Write writes the header as a single varuint32 to buf.
-func (header *Header) Write(buf *bytes.Buffer) error {
-	return protocol.WriteVaruint32(buf, header.PacketID|(uint32(header.SenderSubClient)<<10)|(uint32(header.TargetSubClient)<<12))
+func (header *Header) Write(w io.ByteWriter) error {
+	return protocol.WriteVaruint32(w, header.PacketID|(uint32(header.SenderSubClient)<<10)|(uint32(header.TargetSubClient)<<12))
 }
 
 // Read reads a varuint32 from buf and sets the corresponding values to the Header.
-func (header *Header) Read(buf *bytes.Buffer) error {
+func (header *Header) Read(r io.ByteReader) error {
 	var value uint32
-	if err := protocol.Varuint32(buf, &value); err != nil {
+	if err := protocol.Varuint32(r, &value); err != nil {
 		return err
 	}
 	header.PacketID = value & 0x3FF

@@ -92,7 +92,7 @@ type Conn struct {
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
-	w            *protocol.Writer
+	w            *bytes.Buffer
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
@@ -133,7 +133,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		enc:         packet.NewEncoder(netConn),
 		dec:         packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		w:           protocol.NewWriter(),
+		w:           bytes.NewBuffer(make([]byte, 0, 4096)),
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 256),
 		close:       make(chan struct{}),
@@ -241,16 +241,15 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	defer conn.sendMu.Unlock()
 
 	header := &packet.Header{PacketID: pk.ID()}
+	_ = header.Write(conn.w)
+	l := conn.w.Len()
 
-	hData := bytes.NewBuffer(make([]byte, 0, 1))
-	_ = header.Write(hData)
-
-	pk.Marshal(conn.w)
+	pk.Marshal(protocol.NewWriter(conn.w))
 	if conn.packetFunc != nil {
-		conn.packetFunc(*header, conn.w.Data(), conn.LocalAddr(), conn.RemoteAddr())
+		conn.packetFunc(*header, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
 
-	conn.bufferedSend = append(conn.bufferedSend, append(hData.Bytes(), conn.w.Data()...))
+	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), conn.w.Bytes()...))
 	conn.w.Reset()
 	return nil
 }
