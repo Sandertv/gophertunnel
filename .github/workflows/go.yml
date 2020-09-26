@@ -30,4 +30,4 @@ jobs:
           ./bin/staticcheck ./...
 
       - name: Build
-        run: go build -o dragonfly_exec -v .
+        run: go build -o gophertunnel_exe -v .
