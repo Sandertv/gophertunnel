@@ -111,7 +111,6 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	conn.dec.DisableBatchPacketLimit()
 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
-	setAndroidData(&conn.clientData)
 	defaultIdentityData(&conn.identityData)
 
 	var request []byte
@@ -120,6 +119,10 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		// holding the identity data set in the Dialer.
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
 	} else {
+		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
+		// we can't edit. We just enforce Android data for logging in.
+		setAndroidData(&conn.clientData)
+
 		request = login.Encode(chainData, conn.clientData, key)
 		identityData, _, _ := login.Decode(request)
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
