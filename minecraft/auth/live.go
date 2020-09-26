@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"golang.org/x/oauth2"
@@ -16,24 +15,13 @@ import (
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
 // a code. TokenSource prints the authentication code and URL to os.Stdout. To use a different io.Writer, use
 // WriterTokenSource.
-var TokenSource oauth2.TokenSource = tokenSource{w: os.Stdout}
+var TokenSource oauth2.TokenSource = &tokenSource{w: os.Stdout}
 
 // WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
 // code are printed.
 func WriterTokenSource(w io.Writer) oauth2.TokenSource {
-	return tokenSource{w: w}
-}
-
-// RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
-// refreshes the token everytime it expires.
-func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
-	c := oauth2.Config{
-		ClientID: "0000000048183522",
-		Endpoint: microsoft.LiveConnectEndpoint,
-		Scopes:   []string{"service::user.auth.xboxlive.com::MBI_SSL"},
-	}
-	return c.TokenSource(context.Background(), t)
+	return &tokenSource{w: w}
 }
 
 // tokenSource implements the oauth2.TokenSource interface. It provides a method to get an oauth2.Token using
@@ -41,8 +29,29 @@ func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 type tokenSource struct{ w io.Writer }
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
-func (t tokenSource) Token() (*oauth2.Token, error) {
+func (t *tokenSource) Token() (*oauth2.Token, error) {
 	return RequestLiveTokenWriter(t.w)
+}
+
+// RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
+// refreshes the token everytime it expires.
+func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
+	return oauth2.ReuseTokenSource(t, &refreshTokenSource{t: t})
+}
+
+// refreshTokenSource is an oauth2.TokenSource that refreshes the token it holds whenever a new oauth2.Token
+// is requested from it.
+type refreshTokenSource struct{ t *oauth2.Token }
+
+// Token refreshes the token held by the source and returns a new oauth2.Token.
+func (src *refreshTokenSource) Token() (*oauth2.Token, error) {
+	tok, err := refreshToken(src.t)
+	if err != nil {
+		return nil, err
+	}
+	// Update the token to use to refresh for the next time Token is called.
+	src.t = tok
+	return tok, nil
 }
 
 // RequestLiveToken does a login request for Microsoft Live Connect using device auth. A login URL will be
@@ -103,7 +112,7 @@ func startDeviceAuth() (*deviceAuthConnect, error) {
 // pollDeviceAuth polls the token endpoint for the device code. A token is returned if the user authenticated
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
 func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
-	resp, err := http.PostForm("https://login.live.com/oauth20_token.srf", url.Values{
+	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
 		"client_id":   []string{"0000000048183522"},
 		"grant_type":  []string{"urn:ietf:params:oauth:grant-type:device_code"},
 		"device_code": []string{deviceCode},
@@ -129,6 +138,35 @@ func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 		}, nil
 	}
 	return nil, fmt.Errorf("non-empty unknown poll error: %v", poll.Error)
+}
+
+// refreshToken refreshes the oauth2.Token passed and returns a new oauth2.Token. An error is returned if
+// refreshing was not successful.
+func refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
+	// This function unfortunately needs to exist because golang.org/x/oauth2 does not pass the scope to this
+	// request, which Microsoft Connect enforces.
+	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
+		"client_id":     []string{"0000000048183522"},
+		"scope":         []string{"service::user.auth.xboxlive.com::MBI_SSL"},
+		"grant_type":    []string{"refresh_token"},
+		"refresh_token": []string{t.RefreshToken},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("error refreshing token: %v", resp.Status)
+	}
+	poll := new(deviceAuthPoll)
+	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
+		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
+	}
+	return &oauth2.Token{
+		AccessToken:  poll.AccessToken,
+		TokenType:    poll.TokenType,
+		RefreshToken: poll.RefreshToken,
+		Expiry:       time.Now().Add(time.Duration(poll.ExpiresIn) * time.Second),
+	}, nil
 }
 
 type deviceAuthConnect struct {
