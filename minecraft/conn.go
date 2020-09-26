@@ -477,6 +477,9 @@ func (conn *Conn) handle(pkData *packetData) error {
 // handlePacket handles an incoming packet. It returns an error if any of the data found in the packet was not
 // valid or if handling failed for any other reason.
 func (conn *Conn) handlePacket(pk packet.Packet) error {
+	defer func() {
+		_ = conn.Flush()
+	}()
 	switch pk := pk.(type) {
 	// Internal packets destined for the server.
 	case *packet.Login:
