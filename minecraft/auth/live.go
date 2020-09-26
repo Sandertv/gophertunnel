@@ -92,9 +92,9 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 // enter.
 func startDeviceAuth() (*deviceAuthConnect, error) {
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
-		"client_id":     []string{"0000000048183522"},
-		"scope":         []string{"service::user.auth.xboxlive.com::MBI_SSL"},
-		"response_type": []string{"device_code"},
+		"client_id":     {"0000000048183522"},
+		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
+		"response_type": {"device_code"},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_connect.srf: %w", err)
@@ -113,9 +113,9 @@ func startDeviceAuth() (*deviceAuthConnect, error) {
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
 func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
-		"client_id":   []string{"0000000048183522"},
-		"grant_type":  []string{"urn:ietf:params:oauth:grant-type:device_code"},
-		"device_code": []string{deviceCode},
+		"client_id":   {"0000000048183522"},
+		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
+		"device_code": {deviceCode},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
@@ -146,10 +146,10 @@ func refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
 	// This function unfortunately needs to exist because golang.org/x/oauth2 does not pass the scope to this
 	// request, which Microsoft Connect enforces.
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
-		"client_id":     []string{"0000000048183522"},
-		"scope":         []string{"service::user.auth.xboxlive.com::MBI_SSL"},
-		"grant_type":    []string{"refresh_token"},
-		"refresh_token": []string{t.RefreshToken},
+		"client_id":     {"0000000048183522"},
+		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
+		"grant_type":    {"refresh_token"},
+		"refresh_token": {t.RefreshToken},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
