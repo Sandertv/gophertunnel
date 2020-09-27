@@ -206,6 +206,12 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	rand2.Seed(time.Now().Unix())
 
 	d.ServerAddress = address
+	if d.DeviceOS == 0 {
+		d.DeviceOS = protocol.DeviceAndroid
+	}
+	if d.GameVersion == "" {
+		d.GameVersion = protocol.CurrentVersion
+	}
 	if d.ClientRandomID == 0 {
 		d.ClientRandomID = rand2.Int63()
 	}
