@@ -36,7 +36,7 @@ func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 	var ok bool
 	pk, ok = conn.pool[p.h.PacketID]
 	if !ok {
-		// No packet with the ID. This may be a custom packet of some sorts or not
+		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
 	}
 
