@@ -4,19 +4,17 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// LecternUpdate is sent by the server to update a lectern block, so that players can see that the block
-// changed. It is used, for example, when a page is turned.
+// LecternUpdate is sent by the client to update the server on which page was opened in a book on a lectern,
+// or if the book should be removed from it.
 type LecternUpdate struct {
-	// Page is the page number in the book that was opened on the lectern. If no book was opened, the field
-	// is ignored.
+	// Page is the page number in the book that was opened by the player on the lectern.
 	Page byte
-	// PageCount is the number of pages that the book opened in the lectern has. If can be ignored if no
-	// book is on the lectern.
+	// PageCount is the number of pages that the book opened in the lectern has.
 	PageCount byte
 	// Position is the position of the lectern that was updated. If no lectern is at the block position,
-	// the packet is ignored.
+	// the packet should be ignored.
 	Position protocol.BlockPos
-	// DropBook specifies if the book currently set on display in the lectern should be dropped.
+	// DropBook specifies if the book currently set on display in the lectern should be dropped server-side.
 	DropBook bool
 }
 
