@@ -311,10 +311,16 @@ func (listener *Listener) handleConn(conn *Conn) {
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {
-				// The connection was previously not logged in, but was after receiving this packet,
-				// meaning the connection is fully completely now. We add it to the channel so that
-				// a call to Accept() can receive it.
-				listener.incoming <- conn
+				select {
+				case <-listener.close:
+					// The listener was closed while this one was logged in, so the incoming channel will be
+					// closed. Just return so the connection is closed and cleaned up.
+					return
+				case listener.incoming <- conn:
+					// The connection was previously not logged in, but was after receiving this packet,
+					// meaning the connection is fully completely now. We add it to the channel so that
+					// a call to Accept() can receive it.
+				}
 			}
 		}
 	}
