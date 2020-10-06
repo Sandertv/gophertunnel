@@ -39,6 +39,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+    "time"
 )
 
 func main() {
@@ -50,7 +51,7 @@ func main() {
 		panic(err)
 	}
 	// Make the client spawn in the world. Set timeout to 30.
-	if err := conn.DoSpawn(30); err != nil {
+	if err := conn.DoSpawn(time.Second * 30); err != nil {
 		panic(err)
 	}
 	defer conn.Close()
@@ -76,6 +77,7 @@ package main
 import (
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+    "time"
 )
 
 func main() {
@@ -96,7 +98,7 @@ func main() {
 			defer conn.Close()
 
 			// Make the client connecting spawn.
-			if err := conn.StartGame(minecraft.GameData{ /* World data here */ }, 30); err != nil {
+			if err := conn.StartGame(minecraft.GameData{ /* World data here */ }, time.Second * 30); err != nil {
 				panic(err)
 			}
 

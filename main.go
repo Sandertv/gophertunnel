@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"sync"
+	"time"
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
@@ -49,13 +50,13 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 	var g sync.WaitGroup
 	g.Add(2)
 	go func() {
-		if err := conn.StartGame(serverConn.GameData(), 30); err != nil {
+		if err := conn.StartGame(serverConn.GameData(), time.Second*30); err != nil {
 			panic(err)
 		}
 		g.Done()
 	}()
 	go func() {
-		if err := serverConn.DoSpawn(30); err != nil {
+		if err := serverConn.DoSpawn(time.Second * 30); err != nil {
 			panic(err)
 		}
 		g.Done()
