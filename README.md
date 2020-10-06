@@ -49,8 +49,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// Make the client spawn in the world.
-	if err := conn.DoSpawn(); err != nil {
+	// Make the client spawn in the world. Set timeout to 30.
+	if err := conn.DoSpawn(30); err != nil {
 		panic(err)
 	}
 	defer conn.Close()
@@ -96,7 +96,7 @@ func main() {
 			defer conn.Close()
 
 			// Make the client connecting spawn.
-			if err := conn.StartGame(minecraft.GameData{ /* World data here */ }); err != nil {
+			if err := conn.StartGame(minecraft.GameData{ /* World data here */ }, 30); err != nil {
 				panic(err)
 			}
 

@@ -49,13 +49,13 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 	var g sync.WaitGroup
 	g.Add(2)
 	go func() {
-		if err := conn.StartGame(serverConn.GameData()); err != nil {
+		if err := conn.StartGame(serverConn.GameData(), 30); err != nil {
 			panic(err)
 		}
 		g.Done()
 	}()
 	go func() {
-		if err := serverConn.DoSpawn(); err != nil {
+		if err := serverConn.DoSpawn(30); err != nil {
 			panic(err)
 		}
 		g.Done()

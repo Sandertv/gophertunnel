@@ -191,7 +191,7 @@ func (conn *Conn) GameData() GameData {
 // StartGame starts the game for a client that connected to the server. StartGame should be called for a Conn
 // obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
-func (conn *Conn) StartGame(data GameData) error {
+func (conn *Conn) StartGame(data GameData, timeout time.Duration) error {
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
@@ -199,12 +199,12 @@ func (conn *Conn) StartGame(data GameData) error {
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
-	timeout := time.After(time.Second * 30)
+	timeoutC := time.After(timeout)
 	select {
 	case <-conn.spawn:
 		// Conn was spawned successfully.
 		return nil
-	case <-timeout:
+	case <-timeoutC:
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.close:
 		return fmt.Errorf("connection closed")
@@ -215,16 +215,16 @@ func (conn *Conn) StartGame(data GameData) error {
 // minecraft.Dial(). Use Conn.StartGame to spawn a Conn obtained using a minecraft.Listener.
 // DoSpawn will start the spawning sequence using the game data found in conn.GameData(), which was sent
 // earlier by the server.
-func (conn *Conn) DoSpawn() error {
+func (conn *Conn) DoSpawn(timeout time.Duration) error {
 	conn.waitingForSpawn.Store(true)
 
-	timeout := time.After(time.Second * 30)
+	timeoutC := time.After(timeout)
 
 	select {
 	case <-conn.spawn:
 		// Conn was spawned successfully.
 		return nil
-	case <-timeout:
+	case <-timeoutC:
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.close:
 		if conn.disconnectMessage.Load() != "" {
