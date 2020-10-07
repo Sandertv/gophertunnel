@@ -20,6 +20,8 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -89,7 +91,14 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	switch network {
 	case "raknet":
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
-		netConn, err = raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}.Dial(address)
+		dialer := raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}
+		var pong []byte
+		pong, err = dialer.Ping(address)
+		if err != nil {
+			err = fmt.Errorf("raknet ping: %w", err)
+			break
+		}
+		netConn, err = dialer.Dial(addressWithPongPort(pong, address))
 		if err != nil {
 			err = fmt.Errorf("raknet: %w", err)
 		}
@@ -269,4 +278,22 @@ func defaultIdentityData(data *login.IdentityData) {
 	if data.DisplayName == "" {
 		data.DisplayName = "Steve"
 	}
+}
+
+// addressWithPongPort parses the redirect IPv4 port from the pong and returns the address passed with the port
+// found if present, or the original address if not.
+func addressWithPongPort(pong []byte, address string) string {
+	frag := bytes.Split(pong, []byte{';'})
+	if len(frag) > 10 {
+		portStr := frag[10]
+		port, err := strconv.Atoi(string(portStr))
+		if err != nil {
+			return address
+		}
+		// Remove the port from the address.
+		addressParts := strings.Split(address, ":")
+		address = strings.Join(strings.Split(address, ":")[:len(addressParts)-1], ":")
+		return address + ":" + strconv.Itoa(port)
+	}
+	return address
 }
