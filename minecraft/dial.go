@@ -290,7 +290,14 @@ var regex = regexp.MustCompile(`[^\\];`)
 // addressWithPongPort parses the redirect IPv4 port from the pong and returns the address passed with the port
 // found if present, or the original address if not.
 func addressWithPongPort(pong []byte, address string) string {
-	frag := regex.Split(string(pong), -1)
+	indices := regex.FindAllStringIndex(string(pong), -1)
+	frag := make([]string, len(indices)+1)
+
+	first := 0
+	for i, index := range indices {
+		frag[i] = string(pong[first : index[1]-1])
+		first = index[1]
+	}
 	if len(frag) > 10 {
 		portStr := frag[10]
 		port, err := strconv.Atoi(portStr)
