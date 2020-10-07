@@ -16,6 +16,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"github.com/sandertv/gophertunnel/minecraft/text"
 	"go.uber.org/atomic"
 	"io"
 	"log"
@@ -532,7 +533,6 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 			status = packet.PlayStatusLoginFailedServer
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
-		_ = conn.Close()
 		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
@@ -541,6 +541,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		return fmt.Errorf("error verifying login request: %v", err)
 	}
 	if !authenticated && conn.authEnabled {
+		_ = conn.WritePacket(&packet.Disconnect{Message: text.Red()("You must be logged in with XBOX Live to join.")})
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
 	conn.authenticated = authenticated
