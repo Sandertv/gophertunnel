@@ -20,6 +20,7 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -280,13 +281,19 @@ func defaultIdentityData(data *login.IdentityData) {
 	}
 }
 
+// regex is used to split strings by semicolons, except semicolons that are escaped. Note that this regex will
+// not work properly with the case 'Test\\;`, where it would be expected that ';' is not escaped. Client-side,
+// however, it is still escaped, so gophertunnel mimics this behaviour.
+// (see https://github.com/Sandertv/gophertunnel/commit/d0c9c4c99cd02e441290efe4ee3568a39f7233f9#commitcomment-43046604)
+var regex = regexp.MustCompile(`[^\\];`)
+
 // addressWithPongPort parses the redirect IPv4 port from the pong and returns the address passed with the port
 // found if present, or the original address if not.
 func addressWithPongPort(pong []byte, address string) string {
-	frag := bytes.Split(pong, []byte{';'})
+	frag := regex.Split(string(pong), -1)
 	if len(frag) > 10 {
 		portStr := frag[10]
-		port, err := strconv.Atoi(string(portStr))
+		port, err := strconv.Atoi(portStr)
 		if err != nil {
 			return address
 		}
