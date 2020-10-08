@@ -68,13 +68,14 @@ const (
 func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	var data []byte
 	if decoder.packetReader == nil {
-		n, err := decoder.reader.Read(decoder.buf)
-		if err != nil {
-			return nil, fmt.Errorf("error reading batch from reader: %v", err)
-		}
+		var n int
+		n, err = decoder.reader.Read(decoder.buf)
 		data = decoder.buf[:n]
 	} else {
 		data, err = decoder.packetReader.ReadPacket()
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error reading batch from reader: %v", err)
 	}
 	if len(data) == 0 {
 		return nil, nil
