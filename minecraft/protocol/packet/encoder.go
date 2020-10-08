@@ -16,6 +16,9 @@ type Encoder struct {
 	writer                                      io.Writer
 	buf, compressed                             *bytes.Buffer
 
+	bufShrinkTick        int
+	compressedShrinkTick int
+
 	encrypt *encrypt
 }
 
@@ -87,7 +90,30 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	if _, err := encoder.writer.Write(b); err != nil {
 		return fmt.Errorf("error writing compressed packet to io.Writer: %v", err)
 	}
+
+	encoder.shrinkBuffers()
 	return nil
+}
+
+// shrinkBuffers shrinks the bytes.Buffers held by the Encoder when incoming data has consistently been
+// considerably smaller than the size of the buffer.
+func (encoder *Encoder) shrinkBuffers() {
+	if encoder.compressed.Cap() > encoder.compressed.Len()*2 {
+		encoder.compressedShrinkTick++
+		if encoder.compressedShrinkTick > 40 {
+			encoder.compressed = bytes.NewBuffer(make([]byte, 0, encoder.compressed.Len()/2))
+		}
+	} else if encoder.compressedShrinkTick > 0 {
+		encoder.compressedShrinkTick--
+	}
+	if encoder.buf.Cap() > encoder.buf.Len()*2 {
+		encoder.bufShrinkTick++
+		if encoder.bufShrinkTick > 40 {
+			encoder.buf = bytes.NewBuffer(make([]byte, 0, encoder.buf.Len()/2))
+		}
+	} else if encoder.bufShrinkTick > 0 {
+		encoder.bufShrinkTick--
+	}
 }
 
 // compress compresses the data passed using the writer passed and returns it in a byte slice. It returns

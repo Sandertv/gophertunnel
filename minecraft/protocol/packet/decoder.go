@@ -16,15 +16,25 @@ type Decoder struct {
 	buf          []byte
 	decompressor io.ReadCloser
 	reader       io.Reader
+	packetReader packetReader
 
 	encrypt *encrypt
 
 	checkPacketLimit bool
 }
 
+// packetReader is used to read packets immediately instead of copying them in a buffer first. This is a
+// specific case made to reduce RAM usage.
+type packetReader interface {
+	ReadPacket() ([]byte, error)
+}
+
 // NewDecoder returns a new decoder decoding data from the reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
+	if pr, ok := reader.(packetReader); ok {
+		return &Decoder{checkPacketLimit: true, packetReader: pr}
+	}
 	return &Decoder{
 		reader:           reader,
 		buf:              make([]byte, 1024*1024*3),
@@ -56,11 +66,19 @@ const (
 // Decode decodes one 'packet' from the reader passed in NewDecoder(), producing a slice of packets that it
 // held and an error if not successful.
 func (decoder *Decoder) Decode() (packets [][]byte, err error) {
-	n, err := decoder.reader.Read(decoder.buf)
-	if err != nil {
-		return nil, fmt.Errorf("error reading batch from reader: %v", err)
+	var data []byte
+	if decoder.packetReader == nil {
+		n, err := decoder.reader.Read(decoder.buf)
+		if err != nil {
+			return nil, fmt.Errorf("error reading batch from reader: %v", err)
+		}
+		data = decoder.buf[:n]
+	} else {
+		data, err = decoder.packetReader.ReadPacket()
 	}
-	data := decoder.buf[:n]
+	if len(data) == 0 {
+		return nil, nil
+	}
 	if data[0] != header {
 		return nil, fmt.Errorf("error reading packet: invalid packet header %x: expected %x", data[0], header)
 	}
