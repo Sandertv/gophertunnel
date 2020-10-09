@@ -152,6 +152,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {
 				_ = conn.Close()
+				return
 			}
 		}
 	}()
