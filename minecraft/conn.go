@@ -99,7 +99,7 @@ type Conn struct {
 	loggedIn bool
 	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
 	// the world: It is completing a sequence that will result in the spawning.
-	spawn           chan bool
+	spawn           chan struct{}
 	waitingForSpawn atomic.Bool
 
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
@@ -137,7 +137,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 256),
 		close:       make(chan struct{}),
-		spawn:       make(chan bool),
+		spawn:       make(chan struct{}),
 		conn:        netConn,
 		privateKey:  key,
 		log:         log,
@@ -149,14 +149,9 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	go func() {
 		ticker := time.NewTicker(time.Second / 20)
 		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				if err := conn.Flush(); err != nil {
-					_ = conn.Close()
-				}
-			case <-conn.close:
-				return
+		for range ticker.C {
+			if err := conn.Flush(); err != nil {
+				_ = conn.Close()
 			}
 		}
 	}()
@@ -201,13 +196,13 @@ func (conn *Conn) StartGame(data GameData) error {
 
 	timeout := time.After(time.Second * 30)
 	select {
+	case <-conn.close:
+		return fmt.Errorf("connection closed")
+	case <-timeout:
+		return fmt.Errorf("start game spawning timeout")
 	case <-conn.spawn:
 		// Conn was spawned successfully.
 		return nil
-	case <-timeout:
-		return fmt.Errorf("start game spawning timeout")
-	case <-conn.close:
-		return fmt.Errorf("connection closed")
 	}
 }
 
@@ -221,22 +216,27 @@ func (conn *Conn) DoSpawn() error {
 	timeout := time.After(time.Second * 30)
 
 	select {
-	case <-conn.spawn:
-		// Conn was spawned successfully.
-		return nil
-	case <-timeout:
-		return fmt.Errorf("start game spawning timeout")
 	case <-conn.close:
 		if conn.disconnectMessage.Load() != "" {
 			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
 		}
 		return fmt.Errorf("connection closed")
+	case <-timeout:
+		return fmt.Errorf("start game spawning timeout")
+	case <-conn.spawn:
+		// Conn was spawned successfully.
+		return nil
 	}
 }
 
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
 // next 20th of a second, after which the data is flushed and sent over the connection.
 func (conn *Conn) WritePacket(pk packet.Packet) error {
+	select {
+	case <-conn.close:
+		return fmt.Errorf("connection closed")
+	default:
+	}
 	conn.sendMu.Lock()
 	defer conn.sendMu.Unlock()
 
@@ -271,6 +271,10 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	}
 
 	select {
+	case <-conn.close:
+		return nil, fmt.Errorf("error reading packet: connection closed")
+	case <-conn.readDeadline:
+		return nil, fmt.Errorf("error reading packet: read timeout")
 	case data := <-conn.packets:
 		pk, err := data.decode(conn)
 		if err != nil {
@@ -278,10 +282,6 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			return conn.ReadPacket()
 		}
 		return pk, nil
-	case <-conn.readDeadline:
-		return nil, fmt.Errorf("error reading packet: read timeout")
-	case <-conn.close:
-		return nil, fmt.Errorf("error reading packet: connection closed")
 	}
 }
 
@@ -313,15 +313,15 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 		return copy(b, data.full), nil
 	}
 	select {
+	case <-conn.close:
+		return 0, fmt.Errorf("error reading packet: connection closed")
+	case <-conn.readDeadline:
+		return 0, fmt.Errorf("error reading packet: read timeout")
 	case data := <-conn.packets:
 		if len(b) < len(data.full) {
 			return 0, fmt.Errorf("error reading data: A packet sent on a Minecraft connection was larger than the buffer used to receive the message into")
 		}
 		return copy(b, data.full), nil
-	case <-conn.readDeadline:
-		return 0, fmt.Errorf("error reading packet: read timeout")
-	case <-conn.close:
-		return 0, fmt.Errorf("error reading packet: connection closed")
 	}
 }
 
@@ -444,8 +444,8 @@ func (conn *Conn) receive(data []byte) error {
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
 		select {
-		case conn.packets <- pkData:
 		case <-conn.close:
+		case conn.packets <- pkData:
 		}
 		return nil
 	}
@@ -875,11 +875,11 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				ChunkIndex: i,
 			})
 			select {
+			case <-conn.close:
+				return
 			case frag := <-downloadingPack.newFrag:
 				// Write the fragment to the full buffer of the downloading resource pack.
 				_, _ = downloadingPack.buf.Write(frag)
-			case <-conn.close:
-				return
 			}
 		}
 		conn.packMu.Lock()
@@ -1038,7 +1038,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
-	conn.spawn <- true
+	conn.spawn <- struct{}{}
 	conn.waitingForSpawn.Store(false)
 	return nil
 }
@@ -1062,7 +1062,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
-		conn.spawn <- true
+		conn.spawn <- struct{}{}
 		conn.waitingForSpawn.Store(false)
 		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	case packet.PlayStatusLoginFailedInvalidTenant:

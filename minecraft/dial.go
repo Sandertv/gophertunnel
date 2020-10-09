@@ -147,15 +147,15 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		return nil, err
 	}
 	select {
-	case <-c:
-		// We've connected successfully. We return the connection and no error.
-		return conn, nil
 	case <-conn.close:
 		// The connection was closed before we even were fully 'connected', so we return an error.
 		if conn.disconnectMessage.Load() != "" {
 			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
 		}
 		return nil, fmt.Errorf("connection timeout")
+	case <-c:
+		// We've connected successfully. We return the connection and no error.
+		return conn, nil
 	}
 }
 
