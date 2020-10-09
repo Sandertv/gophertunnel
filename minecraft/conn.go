@@ -329,6 +329,11 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // Flush flushes the packets currently buffered by the connections to the underlying net.Conn, so that they
 // are directly sent.
 func (conn *Conn) Flush() error {
+	select {
+	case <-conn.close:
+		return fmt.Errorf("connection closed")
+	default:
+	}
 	conn.sendMu.Lock()
 	defer conn.sendMu.Unlock()
 
