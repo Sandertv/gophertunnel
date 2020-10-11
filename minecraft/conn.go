@@ -1059,7 +1059,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
 	if conn.waitingForSpawn.CAS(true, false) {
-		conn.spawn <- struct{}{}
+		close(conn.spawn)
 	}
 	return nil
 }
@@ -1083,8 +1083,9 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
-		conn.spawn <- struct{}{}
-		conn.waitingForSpawn.Store(false)
+		if conn.waitingForSpawn.CAS(true, false) {
+			close(conn.spawn)
+		}
 		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()
