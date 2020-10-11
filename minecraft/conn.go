@@ -135,7 +135,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		pool:        packet.NewPool(),
 		w:           bytes.NewBuffer(make([]byte, 0, 4096)),
 		salt:        make([]byte, 16),
-		packets:     make(chan *packetData, 256),
+		packets:     make(chan *packetData, 8),
 		close:       make(chan struct{}),
 		spawn:       make(chan struct{}),
 		conn:        netConn,
@@ -262,7 +262,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
-	if data, ok := conn.takePushedBackPacket(); ok {
+	if data, ok := conn.takeDeferredPacket(); ok {
 		pk, err := data.decode(conn)
 		if err != nil {
 			conn.log.Println(err)
@@ -307,7 +307,7 @@ func (conn *Conn) Write(b []byte) (n int, err error) {
 // to carry the full packet.
 // It is recommended to use ReadPacket() rather than Read() in cases where reading is done directly.
 func (conn *Conn) Read(b []byte) (n int, err error) {
-	if data, ok := conn.takePushedBackPacket(); ok {
+	if data, ok := conn.takeDeferredPacket(); ok {
 		if len(b) < len(data.full) {
 			return 0, fmt.Errorf("error reading data: A message sent on a Minecraft socket was larger than the buffer used to receive the message into")
 		}
@@ -418,10 +418,9 @@ func (conn *Conn) ChunkRadius() int {
 	return conn.chunkRadius
 }
 
-// takePushedBackPacket locks the pushed back packets lock and takes the next packet from the list of
-// pushed back packets. If none was found, it returns false, and if one was found, the data and true is
-// returned.
-func (conn *Conn) takePushedBackPacket() (*packetData, bool) {
+// takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
+// packets. If none was found, it returns false, and if one was found, the data and true is returned.
+func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
 	conn.deferredPacketMu.Lock()
 	defer conn.deferredPacketMu.Unlock()
 
@@ -431,6 +430,13 @@ func (conn *Conn) takePushedBackPacket() (*packetData, bool) {
 	data := conn.deferredPackets[0]
 	conn.deferredPackets = conn.deferredPackets[1:]
 	return data, true
+}
+
+// deferPacket defers a packet so that it is obtained in the next ReadPacket call
+func (conn *Conn) deferPacket(pk *packetData) {
+	conn.deferredPacketMu.Lock()
+	conn.deferredPackets = append(conn.deferredPackets, pk)
+	conn.deferredPacketMu.Unlock()
 }
 
 // receive receives an incoming serialised packet from the underlying connection. If the connection is not yet
@@ -449,6 +455,14 @@ func (conn *Conn) receive(data []byte) error {
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
+		select {
+		case <-conn.close:
+		case previous := <-conn.packets:
+			// There was already a packet in this channel, so take it out and defer it so that it is read
+			// next.
+			conn.deferPacket(previous)
+		default:
+		}
 		select {
 		case <-conn.close:
 		case conn.packets <- pkData:
@@ -472,7 +486,7 @@ func (conn *Conn) handle(pkData *packetData) error {
 	}
 	// This is not the packet we expected next in the login sequence. We push it back so that it may
 	// be handled by the user.
-	conn.deferredPackets = append(conn.deferredPackets, pkData)
+	conn.deferPacket(pkData)
 	return nil
 }
 
@@ -1044,8 +1058,9 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
-	conn.spawn <- struct{}{}
-	conn.waitingForSpawn.Store(false)
+	if conn.waitingForSpawn.CAS(true, false) {
+		conn.spawn <- struct{}{}
+	}
 	return nil
 }
 
