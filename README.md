@@ -6,29 +6,8 @@ A Minecraft library containing packages to create clients, servers, proxies and 
 ![telescope gopher](https://github.com/Sandertv/gophertunnel/blob/master/gophertunnel_telescope_coloured.png)
 
 ## Overview
-gophertunnel is composed of several packages that may be of use for creating Minecraft related tools.
-
-package [query](https://pkg.go.dev/github.com/sandertv/gophertunnel/query?tab=doc): A package implementing the sending of queries
-to servers that implement the UT3/GameSpy Query Protocol.
-
-package [minecraft](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft?tab=doc): A package implementing connecting
-to Minecraft Bedrock Edition servers and listening for Minecraft Bedrock Edition clients using a TCP style interface.
-
-* package [minecraft/auth](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/auth?tab=doc): A package implementing
-Microsoft, XBOX Live and Minecraft account authentication.
-
-* package [minecraft/nbt](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/nbt?tab=doc): A package implementing the
-Minecraft NBT format. Three variants of the format are implemented: The Java Edition variant (Big Endian) and
-the Bedrock Edition variants (Little Endian, both with and without varints)
-
-* package [minecraft/protocol](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/protocol?tab=doc): A package
-implementing the reading, writing and handling of packets found in the Minecraft Bedrock Edition protocol.
-
-* package [minecraft/resource](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/resource?tab=doc): A package handling
-the reading and compiling of Minecraft resource packs.
-
-* package [minecraft/text](https://pkg.go.dev/github.com/sandertv/gophertunnel/minecraft/text?tab=doc): A package containing utility
-functions related to Minecraft text formatting.
+gophertunnel is composed of several packages that may be of use for creating Minecraft related tools. A brief
+overview of all packages may be found [here](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel?tab=packages).
 
 ## Examples
 Creating a Minecraft client that authenticates using an XBOX Live account and connects to a server:
