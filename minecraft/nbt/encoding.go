@@ -248,7 +248,7 @@ func (e networkLittleEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	return *(*string)(unsafe.Pointer(&data)), nil
+	return string(data), nil
 }
 
 type littleEndian struct{}
@@ -435,7 +435,7 @@ func (littleEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	return *(*string)(unsafe.Pointer(&data)), nil
+	return string(data), nil
 }
 
 type bigEndian struct{}
@@ -622,7 +622,7 @@ func (bigEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	return *(*string)(unsafe.Pointer(&data)), nil
+	return string(data), nil
 }
 
 // consumeN consumes n bytes from the offset reader and returns them. It returns an error if the reader does
