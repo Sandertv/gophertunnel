@@ -7,7 +7,6 @@ import (
 	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
-	"io/ioutil"
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
@@ -92,12 +91,10 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		}
 	}
 
-	raw, err := decoder.decompress(data)
+	b, err := decoder.decompress(data)
 	if err != nil {
 		return nil, err
 	}
-
-	b := bytes.NewBuffer(raw)
 	for b.Len() != 0 {
 		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
 			return nil, fmt.Errorf("number of packets in compressed batch exceeds %v", maximumInBatch)
@@ -112,14 +109,14 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 }
 
 // decompress decompresses the data passed and returns it as a byte slice.
-func (decoder *Decoder) decompress(data []byte) ([]byte, error) {
-	buf := bytes.NewBuffer(data)
-	if err := decoder.init(buf); err != nil {
+func (decoder *Decoder) decompress(data []byte) (*bytes.Buffer, error) {
+	if err := decoder.init(bytes.NewBuffer(data)); err != nil {
 		return nil, fmt.Errorf("error decompressing data: %v", err)
 	}
 	_ = decoder.decompressor.Close()
-	raw, err := ioutil.ReadAll(decoder.decompressor)
-	if err != nil {
+
+	raw := bytes.NewBuffer(make([]byte, 0, len(data)*2))
+	if _, err := io.Copy(raw, decoder.decompressor); err != nil {
 		return nil, fmt.Errorf("error reading decompressed data: %v", err)
 	}
 	return raw, nil
