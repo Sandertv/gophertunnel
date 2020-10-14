@@ -1,7 +1,7 @@
-// Package auth implements authentication to Microsoft accounts and XBOX Live accounts. It does so in a couple
-// of steps, the first of which being authentication to the Live account to obtain a Live token, so that
-// authentication to the XBOX Live account may be initiated.
+// Package auth implements authentication to Microsoft Live Connect accounts, XBOX Live accounts and
+// ultimately Minecraft accounts associated with them. Microsoft Live Connect auth is performed using device
+// auth.
 //
-// The auth package currently does not handle 2FA accounts. Trying to authenticate to an account with 2FA
-// enabled will result in undefined behaviour.
+// The auth package provides token sources for Microsoft Live Connect auth with an oauth2-style interface,
+// with token sources that may be plugged into services directly.
 package auth
