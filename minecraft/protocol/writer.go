@@ -8,6 +8,7 @@ import (
 	"image/color"
 	"io"
 	"reflect"
+	"unsafe"
 )
 
 // Writer implements writing methods for data types from Minecraft packets. Each Packet implementation has one
@@ -47,7 +48,7 @@ func (w *Writer) Bool(x *bool) {
 func (w *Writer) String(x *string) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
-	_, _ = w.w.Write([]byte(*x))
+	_, _ = w.w.Write(*(*[]byte)(unsafe.Pointer(x)))
 }
 
 // ByteSlice writes a []byte, prefixed with a varuint32, to the underlying buffer.
