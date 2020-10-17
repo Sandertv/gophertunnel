@@ -646,9 +646,7 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	if !ok {
 		return fmt.Errorf("ServerToClientHandshake JWT payload contained no 'salt'")
 	}
-	// Some (faulty) JWT implementations use padded base64, whereas it should be raw. We trim this off.
-	b64Salt = strings.TrimRight(b64Salt, "=")
-	salt, err := base64.RawStdEncoding.DecodeString(b64Salt)
+	salt, err := base64.StdEncoding.DecodeString(b64Salt)
 	if err != nil {
 		return fmt.Errorf("error base64 decoding ServerToClientHandshake salt: %v", err)
 	}
