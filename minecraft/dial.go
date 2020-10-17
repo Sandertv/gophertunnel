@@ -171,7 +171,7 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !raknet.ErrConnectionClosed(err) {
-				logger.Printf("error reading from client connection: %v\n", err)
+				logger.Printf("error reading from dialer connection: %v\n", err)
 			}
 			return
 		}

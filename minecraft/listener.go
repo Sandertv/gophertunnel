@@ -300,7 +300,7 @@ func (listener *Listener) handleConn(conn *Conn) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !raknet.ErrConnectionClosed(err) {
-				listener.ErrorLog.Printf("error reading from client connection: %v\n", err)
+				listener.ErrorLog.Printf("error reading from listener connection: %v\n", err)
 			}
 			return
 		}
