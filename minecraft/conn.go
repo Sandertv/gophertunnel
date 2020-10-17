@@ -867,10 +867,8 @@ func (conn *Conn) nextResourcePackDownload() error {
 // pack by the client.
 func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) error {
 	id := strings.Split(pk.UUID, "_")[0]
-	chunkCount := pk.ChunkCount
 
 	downloadingPack, ok := conn.packQueue.downloadingPacks[id]
-
 	if !ok {
 		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
 		// sent in the ResourcePacksInfo packet.
@@ -888,6 +886,13 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	conn.packQueue.awaitingPacks[id] = &downloadingPack
 
 	downloadingPack.chunkSize = pk.DataChunkSize
+
+	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
+	// though there's data, and the client will still download normally.
+	chunkCount := uint32(pk.Size / uint64(pk.DataChunkSize))
+	if pk.Size%uint64(pk.DataChunkSize) != 0 {
+		chunkCount++
+	}
 	go func() {
 		for i := uint32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{

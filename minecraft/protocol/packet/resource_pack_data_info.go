@@ -27,6 +27,8 @@ type ResourcePackDataInfo struct {
 	DataChunkSize uint32
 	// ChunkCount is the total amount of data chunks that the sent resource pack will exist out of. It is the
 	// total size of the resource pack divided by the DataChunkSize field.
+	// The client doesn't actually seem to use this field. Rather, it divides the size by the chunk size to
+	// calculate it itself.
 	ChunkCount uint32
 	// Size is the total size in bytes that the resource pack occupies. This is the size of the compressed
 	// archive (zip) of the resource pack.
