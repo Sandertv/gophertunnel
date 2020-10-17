@@ -138,7 +138,7 @@ func Payload(jwt []byte) ([]byte, error) {
 // ParsePublicKey parses a public key from the base64 encoded public key data passed and sets it to the public
 // key pointer. If parsing failed or if the public key was not of the type ECDSA, an error is returned.
 func ParsePublicKey(b64Data string, key *ecdsa.PublicKey) error {
-	data, err := base64.RawStdEncoding.DecodeString(b64Data)
+	data, err := base64.StdEncoding.DecodeString(b64Data)
 	if err != nil {
 		return fmt.Errorf("error base64 decoding public key data: %v", err)
 	}
@@ -157,5 +157,5 @@ func ParsePublicKey(b64Data string, key *ecdsa.PublicKey) error {
 // MarshalPublicKey marshals an ECDSA public key to a base64 encoded binary representation.
 func MarshalPublicKey(key *ecdsa.PublicKey) string {
 	data, _ := x509.MarshalPKIXPublicKey(key)
-	return base64.RawStdEncoding.EncodeToString(data)
+	return base64.StdEncoding.EncodeToString(data)
 }
