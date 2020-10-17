@@ -6,10 +6,10 @@ import (
 	"crypto/elliptic"
 	"crypto/rand"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/internal/resource"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -255,12 +255,10 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.SkinImageWidth = 64
 	}
 	if d.SkinResourcePatch == "" {
-		p, _ := json.Marshal(map[string]interface{}{
-			"geometry": map[string]interface{}{
-				"default": "Standard_Custom",
-			},
-		})
-		d.SkinResourcePatch = base64.StdEncoding.EncodeToString(p)
+		d.SkinResourcePatch = base64.StdEncoding.EncodeToString([]byte(resource.DefaultSkinResourcePatch))
+	}
+	if d.SkinGeometry == "" {
+		d.SkinGeometry = base64.StdEncoding.EncodeToString([]byte(resource.DefaultSkinGeometry))
 	}
 }
 
