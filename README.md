@@ -10,7 +10,8 @@ gophertunnel is composed of several packages that may be of use for creating Min
 overview of all packages may be found [here](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel?tab=packages).
 
 ## Examples
-
+Examples on how to dial a connection or start a server can be found in the [minecraft package](https://github.com/Sandertv/gophertunnel/tree/master/minecraft).
+Additionally, a MITM proxy is implemented in the [main.go file](https://github.com/Sandertv/gophertunnel/blob/master/main.go).
 
 ## Versions
 Gophertunnel supports only one version at a time. Generally, a new minor version is tagged when gophertunnel
@@ -25,10 +26,6 @@ versions for past Minecraft versions is listed below.
 | 1.14.0  | v1.3.20  |
 | 1.13.0  | v1.3.5   |
 | 1.12.0  | v1.2.11  |
-
-## Proxy
-A MITM proxy program is implemented in the main.go file. It uses the gophertunnel libraries to create a proxy
-that provides user authentication and proxying a connection to another server.
 
 ## Sponsors
 Gophertunnel is sponsored by all my [gopher patrons](https://patreon.com/sandertv). A special thanks goes to
