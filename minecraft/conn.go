@@ -645,7 +645,8 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	if !ok {
 		return fmt.Errorf("ServerToClientHandshake JWT payload contained no 'salt'")
 	}
-	salt, err := base64.StdEncoding.DecodeString(b64Salt)
+	b64Salt = strings.TrimRight(b64Salt, "=")
+	salt, err := base64.RawStdEncoding.DecodeString(b64Salt)
 	if err != nil {
 		return fmt.Errorf("error base64 decoding ServerToClientHandshake salt: %v", err)
 	}
