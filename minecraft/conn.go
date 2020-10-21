@@ -1116,7 +1116,7 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 		X5U:       pubKey,
 	}
 	payload := map[string]interface{}{
-		"salt": base64.StdEncoding.EncodeToString(conn.salt),
+		"salt": base64.RawStdEncoding.EncodeToString(conn.salt),
 	}
 
 	// We produce an encoded JWT using the header and payload above, then we send the JWT in a ServerToClient-
