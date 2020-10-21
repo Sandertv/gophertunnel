@@ -89,13 +89,6 @@ func Verify(jwt []byte, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 		// been able to receive the token yet.
 		return false, fmt.Errorf("JWT claim used too early: token is not yet usable")
 	}
-	var newPublicKeyData string
-	if needNewKey {
-		newPublicKeyData = jwtData.IdentityPublicKey
-		if newPublicKeyData == MojangPublicKey {
-			hasMojangKey = true
-		}
-	}
 	// Signature verification.
 	hash := sha512.New384()
 	// The hash is produced using the header and the payload section of the claim.
@@ -108,11 +101,14 @@ func Verify(jwt []byte, publicKey *ecdsa.PublicKey, needNewKey bool) (hasMojangK
 	if !ecdsa.Verify(publicKey, hash.Sum(nil), r, s) {
 		return false, fmt.Errorf("JWT claim has an incorrect signature")
 	}
+	if MarshalPublicKey(publicKey) == MojangPublicKey {
+		hasMojangKey = true
+	}
 
 	if needNewKey {
 		// Finally parse the new identityPublicKey and set it to the public key pointer passed, so that it may
 		// be used to verify the next claim in the chain.
-		if err := ParsePublicKey(newPublicKeyData, publicKey); err != nil {
+		if err := ParsePublicKey(jwtData.IdentityPublicKey, publicKey); err != nil {
 			return false, fmt.Errorf("error parsing identityPublicKey: %v", err)
 		}
 	}
