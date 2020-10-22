@@ -28,8 +28,10 @@ versions for past Minecraft versions is listed below.
 | 1.12.0  | v1.2.11  |
 
 ## Sponsors
-Gophertunnel is sponsored by all my [gopher patrons](https://patreon.com/sandertv). A special thanks goes to
-the Very Important Gophers below.
+[https://img.shields.io/badge/dynamic/json?logo=patreon&style=for-the-badge&color=%23e85b46&label=Patreon&query=data.attributes.patron_count&suffix=%20patrons&url=https%3A%2F%2Fwww.patreon.com%2Fapi%2Fcampaigns%2F2832539](https://patreon.com/sandertv)
+
+Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to the Very Important Gophers below.
+
 <a href="https://github.com/TwistedAsylumMC"><img src="https://avatars3.githubusercontent.com/u/30378179?s=400&u=49eabab31601b6bf5b0024c05c2556bc7f5b3e3b&v=4" width="60" height="60"></a>
 
 ## Contact
