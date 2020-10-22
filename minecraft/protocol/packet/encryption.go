@@ -15,13 +15,13 @@ import (
 type encrypt struct {
 	sendCounter uint64
 	buf         [8]byte
-	keyBytes    [32]byte
+	keyBytes    []byte
 	stream      cipher.Stream
 }
 
 // newEncrypt returns a new encryption 'session' using the secret key bytes passed. The session has its cipher
 // block and IV prepared so that it may be used to decrypt and encrypt data.
-func newEncrypt(keyBytes [32]byte, stream cipher.Stream) *encrypt {
+func newEncrypt(keyBytes []byte, stream cipher.Stream) *encrypt {
 	return &encrypt{keyBytes: keyBytes, stream: stream}
 }
 
@@ -35,7 +35,7 @@ func (encrypt *encrypt) encrypt(data []byte) []byte {
 	hash := sha256.New()
 	hash.Write(encrypt.buf[:])
 	hash.Write(data[1:])
-	hash.Write(encrypt.keyBytes[:])
+	hash.Write(encrypt.keyBytes)
 
 	// We add the first 8 bytes of the checksum to the data and encrypt it.
 	data = append(data, hash.Sum(nil)[:8]...)
@@ -64,7 +64,7 @@ func (encrypt *encrypt) verify(data []byte) error {
 	hash := sha256.New()
 	hash.Write(encrypt.buf[:])
 	hash.Write(data[:len(data)-8])
-	hash.Write(encrypt.keyBytes[:])
+	hash.Write(encrypt.keyBytes)
 	ourSum := hash.Sum(nil)[:8]
 
 	// Finally we check if the original sum was equal to the sum we just produced.

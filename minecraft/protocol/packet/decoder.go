@@ -44,8 +44,8 @@ func NewDecoder(reader io.Reader) *Decoder {
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	decoder.encrypt = newEncrypt(keyBytes, newCFB8Decrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
+	block, _ := aes.NewCipher(append([]byte(nil), keyBytes[:]...))
+	decoder.encrypt = newEncrypt(append([]byte(nil), keyBytes[:]...), newCFB8Decrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet

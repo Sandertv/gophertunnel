@@ -41,8 +41,8 @@ func NewEncoder(writer io.Writer) *Encoder {
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	encoder.encrypt = newEncrypt(keyBytes, newCFB8Encrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
+	block, _ := aes.NewCipher(append([]byte(nil), keyBytes[:]...))
+	encoder.encrypt = newEncrypt(append([]byte(nil), keyBytes[:]...), newCFB8Encrypter(block, append([]byte(nil), keyBytes[:aes.BlockSize]...)))
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and
