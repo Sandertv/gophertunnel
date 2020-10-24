@@ -616,6 +616,7 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	if err != nil {
 		return fmt.Errorf("parse server token: %w", err)
 	}
+	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
 	kStr, _ := raw.(string)
 

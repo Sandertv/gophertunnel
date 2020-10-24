@@ -68,6 +68,7 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 	}
 
 	// The first token holds the client's public key in the x5u (it's self signed).
+	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
 	if err := parseAsKey(raw, key); err != nil {
 		return iData, cData, res, fmt.Errorf("parse x5u: %w", err)
@@ -182,6 +183,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
 	keyData := MarshalPublicKey(&key.PublicKey)
 	tok, _ := jwt.ParseSigned(request.Chain[0])
 
+	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	x5uData, _ := tok.Headers[0].ExtraHeaders["x5u"]
 	x5u, _ := x5uData.(string)
 	claims := jwt.Claims{
