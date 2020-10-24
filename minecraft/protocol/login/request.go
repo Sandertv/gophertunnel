@@ -238,8 +238,9 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		ExtraHeaders: map[jose.HeaderKey]interface{}{"x5u": keyData},
 	})
 	firstJWT, _ := jwt.Signed(signer).Claims(identityClaims{
-		Claims:    claims,
-		ExtraData: identityData,
+		Claims:            claims,
+		ExtraData:         identityData,
+		IdentityPublicKey: keyData,
 	}).CompactSerialize()
 
 	request := &request{Chain: chain{firstJWT}}
@@ -276,6 +277,8 @@ type identityClaims struct {
 
 	// ExtraData holds the extra data of this claim, which is the IdentityData of the player.
 	ExtraData IdentityData `json:"extraData"`
+
+	IdentityPublicKey string `json:"identityPublicKey"`
 }
 
 // Validate validates the identity claims held by the struct and returns an error if any illegal data was
