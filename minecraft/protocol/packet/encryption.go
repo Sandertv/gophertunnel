@@ -54,6 +54,9 @@ func (encrypt *encrypt) decrypt(data []byte) {
 // verify verifies the packet checksum of the decrypted data passed. If successful, nil is returned. Otherwise
 // an error is returned describing the invalid checksum.
 func (encrypt *encrypt) verify(data []byte) error {
+	if len(data) < 8 {
+		return fmt.Errorf("encrypted packet must be at least 8 bytes long, got %v", len(data))
+	}
 	sum := data[len(data)-8:]
 
 	// We first write the current send counter to a buffer and use it to produce a packet checksum.
