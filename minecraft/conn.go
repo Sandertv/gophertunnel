@@ -6,17 +6,17 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/login/jwt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
 	"go.uber.org/atomic"
+	"gopkg.in/square/go-jose.v2"
+	"gopkg.in/square/go-jose.v2/jwt"
 	"io"
 	"log"
 	"net"
@@ -538,7 +538,22 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 func (conn *Conn) handleLogin(pk *packet.Login) error {
 	// The next expected packet is a response from the client to the handshake.
 	conn.expect(packet.IDClientToServerHandshake)
+	var (
+		err        error
+		authResult login.AuthResult
+	)
+	conn.identityData, conn.clientData, authResult, err = login.Parse(pk.ConnectionRequest)
+	if err != nil {
+		return fmt.Errorf("parse login request: %w", err)
+	}
+	conn.authenticated = authResult.XBOXLiveAuthenticated
 
+	// Make sure the player is logged in with XBOX Live when necessary.
+	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
+		_ = conn.WritePacket(&packet.Disconnect{Message: text.Red()("You must be logged in with XBOX Live to join.")})
+		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
+	}
+	// Make sure protocol numbers match.
 	if pk.ClientProtocol != protocol.CurrentProtocol {
 		// By default we assume the client is outdated.
 		status := packet.PlayStatusLoginFailedClient
@@ -549,30 +564,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
 	}
-
-	publicKey, authenticated, err := login.Verify(pk.ConnectionRequest)
-	if err != nil {
-		return fmt.Errorf("error verifying login request: %v", err)
-	}
-	if !authenticated && conn.authEnabled {
-		_ = conn.WritePacket(&packet.Disconnect{Message: text.Red()("You must be logged in with XBOX Live to join.")})
-		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
-	}
-	conn.authenticated = authenticated
-
-	conn.identityData, conn.clientData, err = login.Decode(pk.ConnectionRequest)
-	if err != nil {
-		return fmt.Errorf("error decoding login request: %v", err)
-	}
-	// First validate the identity data and the client data to ensure we're working with valid data. Mojang
-	// might change this data, or some custom client might fiddle with the data, so we can never be too sure.
-	if err := conn.identityData.Validate(); err != nil {
-		return fmt.Errorf("invalid identity data: %v", err)
-	}
-	if err := conn.clientData.Validate(); err != nil {
-		return fmt.Errorf("invalid client data: %v", err)
-	}
-	if err := conn.enableEncryption(publicKey); err != nil {
+	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)
 	}
 	return nil
@@ -611,49 +603,39 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	return nil
 }
 
+// saltClaims holds the claims for the salt sent by the server in the ServerToClientHandshake packet.
+type saltClaims struct {
+	Salt string `json:"salt"`
+}
+
 // handleServerToClientHandshake handles an incoming ServerToClientHandshake packet. It initialises encryption
 // on the client side of the connection, using the hash and the public key from the server exposed in the
 // packet.
 func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandshake) error {
-	headerData, err := jwt.HeaderFrom(pk.JWT)
+	tok, err := jwt.ParseSigned(string(pk.JWT))
 	if err != nil {
-		return fmt.Errorf("error reading ServerToClientHandshake JWT header: %v", err)
+		return fmt.Errorf("parse server token: %w", err)
 	}
-	header := &jwt.Header{}
-	if err := json.Unmarshal(headerData, header); err != nil {
-		return fmt.Errorf("error parsing ServerToClientHandshake JWT header JSON: %v", err)
+	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	kStr, _ := raw.(string)
+
+	pub := new(ecdsa.PublicKey)
+	if err := login.ParsePublicKey(kStr, pub); err != nil {
+		return fmt.Errorf("parse server public key: %w", err)
 	}
-	if !jwt.AllowedAlg(header.Algorithm) {
-		return fmt.Errorf("ServerToClientHandshake JWT header had unexpected alg: expected %v, got %v", "ES384", header.Algorithm)
+
+	var c saltClaims
+	if err := tok.Claims(pub, &c); err != nil {
+		return fmt.Errorf("verify claims: %w", err)
 	}
-	// First parse the public pubKey, so that we can use it to verify the entire JWT afterwards. The JWT is self-
-	// signed by the server.
-	pubKey := &ecdsa.PublicKey{}
-	if err := jwt.ParsePublicKey(header.X5U, pubKey); err != nil {
-		return fmt.Errorf("error parsing ServerToClientHandshake header x5u public pubKey: %v", err)
-	}
-	if _, err := jwt.Verify(pk.JWT, pubKey, false); err != nil {
-		return fmt.Errorf("error verifying ServerToClientHandshake JWT: %v", err)
-	}
-	// We already know the JWT is valid as we verified it, so no need to error check.
-	body, _ := jwt.Payload(pk.JWT)
-	m := make(map[string]string)
-	if err := json.Unmarshal(body, &m); err != nil {
-		return fmt.Errorf("error parsing ServerToClientHandshake JWT payload JSON: %v", err)
-	}
-	b64Salt, ok := m["salt"]
-	if !ok {
-		return fmt.Errorf("ServerToClientHandshake JWT payload contained no 'salt'")
-	}
-	b64Salt = strings.TrimRight(b64Salt, "=")
-	salt, err := base64.RawStdEncoding.DecodeString(b64Salt)
+	c.Salt = strings.TrimRight(c.Salt, "=")
+	salt, err := base64.RawStdEncoding.DecodeString(c.Salt)
 	if err != nil {
 		return fmt.Errorf("error base64 decoding ServerToClientHandshake salt: %v", err)
 	}
 
-	x, _ := pubKey.Curve.ScalarMult(pubKey.X, pubKey.Y, conn.privateKey.D.Bytes())
-	sharedSecret := x.Bytes()
-	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
+	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
+	keyBytes := sha256.Sum256(append(salt, x.Bytes()...))
 
 	// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
 	conn.enc.EnableEncryption(keyBytes)
@@ -1110,22 +1092,16 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 // enableEncryption enables encryption on the server side over the connection. It sends an unencrypted
 // handshake packet to the client and enables encryption after that.
 func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
-	pubKey := jwt.MarshalPublicKey(&conn.privateKey.PublicKey)
-	header := jwt.Header{
-		Algorithm: "ES384",
-		X5U:       pubKey,
-	}
-	payload := map[string]interface{}{
-		"salt": base64.RawStdEncoding.EncodeToString(conn.salt),
-	}
-
+	signer, _ := jose.NewSigner(jose.SigningKey{Key: conn.privateKey, Algorithm: jose.ES384}, &jose.SignerOptions{
+		ExtraHeaders: map[jose.HeaderKey]interface{}{"x5u": login.MarshalPublicKey(&conn.privateKey.PublicKey)},
+	})
 	// We produce an encoded JWT using the header and payload above, then we send the JWT in a ServerToClient-
 	// Handshake packet so that the client can initialise encryption.
-	serverJWT, err := jwt.New(header, payload, conn.privateKey)
+	serverJWT, err := jwt.Signed(signer).Claims(saltClaims{Salt: base64.RawStdEncoding.EncodeToString(conn.salt)}).CompactSerialize()
 	if err != nil {
-		return fmt.Errorf("error creating encoded JWT: %v", err)
+		return fmt.Errorf("compact serialise server JWT: %w", err)
 	}
-	if err := conn.WritePacket(&packet.ServerToClientHandshake{JWT: serverJWT}); err != nil {
+	if err := conn.WritePacket(&packet.ServerToClientHandshake{JWT: []byte(serverJWT)}); err != nil {
 		return fmt.Errorf("error sending ServerToClientHandshake packet: %v", err)
 	}
 	// Flush immediately as we'll enable encryption after this.

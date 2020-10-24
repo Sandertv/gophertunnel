@@ -134,7 +134,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		setAndroidData(&conn.clientData)
 
 		request = login.Encode(chainData, conn.clientData, key)
-		identityData, _, _ := login.Decode(request)
+		identityData, _, _, _ := login.Parse(request)
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
 		// we are not aware of the identity data ourselves yet.
 		conn.identityData = identityData
