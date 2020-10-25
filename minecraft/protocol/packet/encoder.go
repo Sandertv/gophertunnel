@@ -19,6 +19,7 @@ type Encoder struct {
 	encrypt *encrypt
 }
 
+// writeCloseResetter is an interface composed of an io.WriteCloser and a Reset(io.Writer) method.
 type writeCloseResetter interface {
 	io.WriteCloser
 	Reset(w io.Writer)
