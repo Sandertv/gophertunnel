@@ -1,10 +1,10 @@
 package packet
 
 import (
-	"bytes"
 	"crypto/aes"
 	"fmt"
 	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
@@ -12,9 +12,9 @@ import (
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
 type Encoder struct {
-	compressor, mediumCompressor, noCompression *flate.Writer
-	writer                                      io.Writer
-	buf, compressed                             *bytes.Buffer
+	compressor      writeCloseResetter
+	writer          io.Writer
+	buf, compressed *dynamic.Buffer
 
 	bufShrinkTick        int
 	compressedShrinkTick int
@@ -22,19 +22,19 @@ type Encoder struct {
 	encrypt *encrypt
 }
 
+type writeCloseResetter interface {
+	io.WriteCloser
+	Reset(w io.Writer)
+}
+
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
-func NewEncoder(writer io.Writer) *Encoder {
-	w, _ := flate.NewWriter(writer, flate.NoCompression)
-	w2, _ := flate.NewWriter(writer, flate.DefaultCompression)
-	w3, _ := flate.NewWriter(writer, 4)
+func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{
-		noCompression:    w,
-		compressor:       w2,
-		mediumCompressor: w3,
-		writer:           writer,
-		buf:              bytes.NewBuffer(make([]byte, 0, 1024*1024*2)),
-		compressed:       bytes.NewBuffer(make([]byte, 0, 1024*1024*3)),
+		writer:     w,
+		compressor: flate.NewStatelessWriter(w).(writeCloseResetter),
+		buf:        dynamic.NewBuffer(make([]byte, 0, 1024*1024)),
+		compressed: dynamic.NewBuffer(make([]byte, 0, 1024*1024)),
 	}
 }
 
@@ -67,17 +67,9 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		}
 	}
 
-	var w *flate.Writer
-	if encoder.compressed.Len() <= 512 {
-		w = encoder.noCompression
-	} else if encoder.compressed.Len() <= 8192 {
-		w = encoder.mediumCompressor
-	} else {
-		w = encoder.compressor
-	}
 	// We compress the data and write the full data to the io.Writer. The data returned includes the header
 	// we wrote at the start.
-	b, err := encoder.compress(w, encoder.compressed.Bytes())
+	b, err := encoder.compress(encoder.compressor, encoder.compressed.Bytes())
 	if err != nil {
 		return err
 	}
@@ -90,35 +82,12 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	if _, err := encoder.writer.Write(b); err != nil {
 		return fmt.Errorf("error writing compressed packet to io.Writer: %v", err)
 	}
-
-	encoder.shrinkBuffers()
 	return nil
-}
-
-// shrinkBuffers shrinks the bytes.Buffers held by the Encoder when incoming data has consistently been
-// considerably smaller than the size of the buffer.
-func (encoder *Encoder) shrinkBuffers() {
-	if encoder.compressed.Cap() > encoder.compressed.Len()*2 {
-		encoder.compressedShrinkTick++
-		if encoder.compressedShrinkTick > 40 {
-			encoder.compressed = bytes.NewBuffer(make([]byte, 0, encoder.compressed.Len()/2))
-		}
-	} else if encoder.compressedShrinkTick > 0 {
-		encoder.compressedShrinkTick--
-	}
-	if encoder.buf.Cap() > encoder.buf.Len()*2 {
-		encoder.bufShrinkTick++
-		if encoder.bufShrinkTick > 40 {
-			encoder.buf = bytes.NewBuffer(make([]byte, 0, encoder.buf.Len()/2))
-		}
-	} else if encoder.bufShrinkTick > 0 {
-		encoder.bufShrinkTick--
-	}
 }
 
 // compress compresses the data passed using the writer passed and returns it in a byte slice. It returns
 // the full content of encoder.buf, so any data currently set in that buffer will also be returned.
-func (encoder *Encoder) compress(w *flate.Writer, data []byte) ([]byte, error) {
+func (encoder *Encoder) compress(w writeCloseResetter, data []byte) ([]byte, error) {
 	w.Reset(encoder.buf)
 	if _, err := w.Write(data); err != nil {
 		return nil, fmt.Errorf("error writing compressed data: %v", err)

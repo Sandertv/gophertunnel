@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
@@ -91,7 +92,7 @@ type Conn struct {
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
-	w            *bytes.Buffer
+	w            *dynamic.Buffer
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
@@ -132,7 +133,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		enc:         packet.NewEncoder(netConn),
 		dec:         packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		w:           bytes.NewBuffer(make([]byte, 0, 4096)),
+		w:           dynamic.NewBuffer(make([]byte, 0, 4096)),
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 8),
 		close:       make(chan struct{}),
