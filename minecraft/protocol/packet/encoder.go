@@ -16,9 +16,6 @@ type Encoder struct {
 	writer          io.Writer
 	buf, compressed *dynamic.Buffer
 
-	bufShrinkTick        int
-	compressedShrinkTick int
-
 	encrypt *encrypt
 }
 
