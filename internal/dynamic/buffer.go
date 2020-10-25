@@ -16,8 +16,8 @@ type Buffer struct {
 // but it retains the underlying storage for use by future writes.
 // Reset is the same as Truncate(0).
 func (b *Buffer) Reset() {
-	const shrinkAfter = 30
-	if b.Len()*2 < b.Cap() {
+	const shrinkAfter = 50
+	if b.Len()*3 < b.Cap() {
 		b.c++
 		if b.c > shrinkAfter {
 			b.c = 0
