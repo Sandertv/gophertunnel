@@ -21,12 +21,10 @@ const (
 	white      = "§f"
 	darkYellow = "§g"
 
-	obfuscated    = "§k"
-	bold          = "§l"
-	strikethrough = "§m"
-	underline     = "§n"
-	italic        = "§o"
-	reset         = "§r"
+	obfuscated = "§k"
+	bold       = "§l"
+	italic     = "§o"
+	reset      = "§r"
 )
 
 const (
@@ -48,81 +46,69 @@ const (
 	ansiWhite      = "\x1b[38;5;231m"
 	ansiDarkYellow = "\x1b[38;5;226m"
 
-	ansiObfuscated    = ""
-	ansiBold          = "\x1b[1m"
-	ansiStrikethrough = "\x1b[9m"
-	ansiUnderline     = "\x1b[4m"
-	ansiItalic        = "\x1b[3m"
-	ansiReset         = "\x1b[m"
+	ansiObfuscated = ""
+	ansiBold       = "\x1b[1m"
+	ansiItalic     = "\x1b[3m"
+	ansiReset      = "\x1b[m"
 )
 
 var m = map[string]string{
-	black:         ansiBlack,
-	darkBlue:      ansiDarkBlue,
-	darkGreen:     ansiDarkGreen,
-	darkAqua:      ansiDarkAqua,
-	darkRed:       ansiDarkRed,
-	darkPurple:    ansiDarkPurple,
-	gold:          ansiGold,
-	grey:          ansiGrey,
-	darkGrey:      ansiDarkGrey,
-	blue:          ansiBlue,
-	green:         ansiGreen,
-	aqua:          ansiAqua,
-	red:           ansiRed,
-	purple:        ansiPurple,
-	yellow:        ansiYellow,
-	white:         ansiWhite,
-	darkYellow:    ansiDarkYellow,
-	obfuscated:    ansiObfuscated,
-	bold:          ansiBold,
-	strikethrough: ansiStrikethrough,
-	underline:     ansiUnderline,
-	reset:         ansiReset,
-	italic:        ansiItalic,
+	black:      ansiBlack,
+	darkBlue:   ansiDarkBlue,
+	darkGreen:  ansiDarkGreen,
+	darkAqua:   ansiDarkAqua,
+	darkRed:    ansiDarkRed,
+	darkPurple: ansiDarkPurple,
+	gold:       ansiGold,
+	grey:       ansiGrey,
+	darkGrey:   ansiDarkGrey,
+	blue:       ansiBlue,
+	green:      ansiGreen,
+	aqua:       ansiAqua,
+	red:        ansiRed,
+	purple:     ansiPurple,
+	yellow:     ansiYellow,
+	white:      ansiWhite,
+	darkYellow: ansiDarkYellow,
+	obfuscated: ansiObfuscated,
+	bold:       ansiBold,
+	reset:      ansiReset,
+	italic:     ansiItalic,
 }
 
 var strMap = map[string]string{
-	"black":         black,
-	"dark-blue":     darkBlue,
-	"dark-green":    darkGreen,
-	"dark-aqua":     darkAqua,
-	"dark-red":      darkRed,
-	"dark-purple":   darkPurple,
-	"gold":          gold,
-	"grey":          grey,
-	"dark-grey":     darkGrey,
-	"blue":          darkBlue,
-	"green":         green,
-	"aqua":          aqua,
-	"red":           red,
-	"purple":        purple,
-	"yellow":        yellow,
-	"white":         white,
-	"dark-yellow":   darkYellow,
-	"obfuscated":    obfuscated,
-	"bold":          bold,
-	"b":             bold,
-	"strikethrough": strikethrough,
-	"strike":        strikethrough,
-	"underline":     underline,
-	"u":             underline,
-	"italic":        italic,
-	"i":             italic,
+	"black":       black,
+	"dark-blue":   darkBlue,
+	"dark-green":  darkGreen,
+	"dark-aqua":   darkAqua,
+	"dark-red":    darkRed,
+	"dark-purple": darkPurple,
+	"gold":        gold,
+	"grey":        grey,
+	"dark-grey":   darkGrey,
+	"blue":        darkBlue,
+	"green":       green,
+	"aqua":        aqua,
+	"red":         red,
+	"purple":      purple,
+	"yellow":      yellow,
+	"white":       white,
+	"dark-yellow": darkYellow,
+	"obfuscated":  obfuscated,
+	"bold":        bold,
+	"b":           bold,
+	"italic":      italic,
+	"i":           italic,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting
 // codes and vice versa.
-var minecraftReplacer, ansiReplacer *strings.Replacer
+var minecraftReplacer *strings.Replacer
 
 func init() {
 	var minecraftToANSI []string
-	var ansiToMinecraft []string
 	for minecraftCode, ansiCode := range m {
-		if ansiCode != ansiObfuscated {
-			ansiToMinecraft = append(ansiToMinecraft, ansiCode, minecraftCode)
-		}
 		minecraftToANSI = append(minecraftToANSI, minecraftCode, ansiCode)
 	}
-	minecraftReplacer, ansiReplacer = strings.NewReplacer(minecraftToANSI...), strings.NewReplacer(ansiToMinecraft...)
+	minecraftReplacer = strings.NewReplacer(minecraftToANSI...)
 }

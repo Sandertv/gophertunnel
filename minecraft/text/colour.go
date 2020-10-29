@@ -19,7 +19,7 @@ func ANSI(a ...interface{}) string {
 // Colourf colours the format string using HTML tags after first escaping all parameters passed and
 // substituting them in the format string. The following colours and formatting may be used:
 // 	black, dark-blue, dark-green, dark-aqua, dark-red, dark-purple, gold, grey, dark-grey, blue, green, aqua,
-// 	red, purple, yellow, white, dark-yellow, obfuscated, bold, strikethrough, underline, and italic.
+// 	red, purple, yellow, white, dark-yellow, obfuscated, bold (b), and italic (i).
 // These HTML tags may also be nested, like so:
 // `<red>Hello <bold>World</bold>!</red>`
 func Colourf(format string, a ...interface{}) string {
