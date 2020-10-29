@@ -102,9 +102,13 @@ var strMap = map[string]string{
 	"dark-yellow":   darkYellow,
 	"obfuscated":    obfuscated,
 	"bold":          bold,
+	"b":             bold,
 	"strikethrough": strikethrough,
+	"strike":        strikethrough,
 	"underline":     underline,
+	"u":             underline,
 	"italic":        italic,
+	"i":             italic,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting
