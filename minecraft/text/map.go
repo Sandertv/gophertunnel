@@ -82,6 +82,31 @@ var m = map[string]string{
 	italic:        ansiItalic,
 }
 
+var strMap = map[string]string{
+	"black":         black,
+	"dark-blue":     darkBlue,
+	"dark-green":    darkGreen,
+	"dark-aqua":     darkAqua,
+	"dark-red":      darkRed,
+	"dark-purple":   darkPurple,
+	"gold":          gold,
+	"grey":          grey,
+	"dark-grey":     darkGrey,
+	"blue":          darkBlue,
+	"green":         green,
+	"aqua":          aqua,
+	"red":           red,
+	"purple":        purple,
+	"yellow":        yellow,
+	"white":         white,
+	"dark-yellow":   darkYellow,
+	"obfuscated":    obfuscated,
+	"bold":          bold,
+	"strikethrough": strikethrough,
+	"underline":     underline,
+	"italic":        italic,
+}
+
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting
 // codes and vice versa.
 var minecraftReplacer, ansiReplacer *strings.Replacer
