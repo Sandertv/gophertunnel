@@ -551,7 +551,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 
 	// Make sure the player is logged in with XBOX Live when necessary.
 	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
-		_ = conn.WritePacket(&packet.Disconnect{Message: text.Red()("You must be logged in with XBOX Live to join.")})
+		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
 	// Make sure protocol numbers match.
