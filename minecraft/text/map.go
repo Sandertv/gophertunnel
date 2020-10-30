@@ -86,7 +86,7 @@ var strMap = map[string]string{
 	"gold":        gold,
 	"grey":        grey,
 	"dark-grey":   darkGrey,
-	"blue":        darkBlue,
+	"blue":        blue,
 	"green":       green,
 	"aqua":        aqua,
 	"red":         red,
