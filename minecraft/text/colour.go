@@ -23,11 +23,7 @@ func ANSI(a ...interface{}) string {
 // These HTML tags may also be nested, like so:
 // `<red>Hello <bold>World</bold>!</red>`
 func Colourf(format string, a ...interface{}) string {
-	params := make([]interface{}, len(a))
-	for i := 0; i < len(a); i++ {
-		params[i] = html.EscapeString(fmt.Sprintf("%+v", a[i]))
-	}
-	str := fmt.Sprintf(format, params...)
+	str := fmt.Sprintf(format, a...)
 
 	e := &enc{w: &strings.Builder{}}
 	t := html.NewTokenizer(strings.NewReader(str))
