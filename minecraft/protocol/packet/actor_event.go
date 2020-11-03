@@ -56,7 +56,7 @@ const (
 	ActorEventCompleteTrade
 	ActorEventRemoveLeash
 	ActorEventLlamaCaravanUpdated
-	ActorEventConsumeToken
+	ActorEventConsumeTotem
 	ActorEventPlayerCheckTreasureHunterAchievement
 	ActorEventEntitySpawn
 	ActorEventDragonBreath
