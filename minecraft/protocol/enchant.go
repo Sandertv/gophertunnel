@@ -38,36 +38,10 @@ func EnchantOption(r *Reader, x *EnchantmentOption) {
 	r.Varuint32(&x.RecipeNetworkID)
 }
 
-const (
-	EnchantmentSlotNone           = 0
-	EnchantmentSlotAll            = 0xffff
-	EnchantmentSlotArmour         = EnchantmentSlotHelmet | EnchantmentSlotChestplate | EnchantmentSlotLeggings | EnchantmentSlotBoots
-	EnchantmentSlotHelmet         = 0x1
-	EnchantmentSlotChestplate     = 0x2
-	EnchantmentSlotLeggings       = 0x4
-	EnchantmentSlotBoots          = 0x8
-	EnchantmentSlotSword          = 0x10
-	EnchantmentSlotBow            = 0x20
-	EnchantmentSlotToolOther      = EnchantmentSlotHoe | EnchantmentSlotShears | EnchantmentSlotFlintAndSteel
-	EnchantmentSlotHoe            = 0x40
-	EnchantmentSlotShears         = 0x80
-	EnchantmentSlotFlintAndSteel  = 0x100
-	EnchantmentSlotDig            = EnchantmentSlotAxe | EnchantmentSlotPickaxe | EnchantmentSlotShovel
-	EnchantmentSlotAxe            = 0x200
-	EnchantmentSlotPickaxe        = 0x400
-	EnchantmentSlotShovel         = 0x800
-	EnchantmentSlotFishingRod     = 0x1000
-	EnchantmentSlotCarrotOnAStick = 0x2000
-	EnchantmentSlotElytra         = 0x4000
-	EnchantmentSlotTrident        = 0x8000
-)
-
 // ItemEnchantments holds information on the enchantments that are applied to an item when a specific button
 // is clicked in the enchantment table.
 type ItemEnchantments struct {
-	// Slot is the enchantment slot of the item that was put into the enchantment table, for which the
-	// following enchantments will apply.
-	// The possible slots can be found above.
+	// Slot is either 0, 1 or 2. Its exact usage is not clear.
 	Slot int32
 	// Enchantments is an array of 3 slices of enchantment instances. Each array represents enchantments that
 	// will be added to the item with a different activation type. The arrays in which enchantments are sent
