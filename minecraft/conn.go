@@ -47,7 +47,8 @@ var exemptedPacks = []exemptedResourcePack{
 }
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
-// methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously.
+// methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, but ReadPacket
+// must not be called on multiple goroutines simultaneously.
 type Conn struct {
 	// once is used to ensure the Conn is closed only a single time. It protects the channel below from being
 	// closed multiple times.
@@ -93,6 +94,7 @@ type Conn struct {
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
 	w            *dynamic.Buffer
+	hdr          *packet.Header
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
@@ -142,6 +144,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		privateKey:  key,
 		log:         log,
 		chunkRadius: 16,
+		hdr:         &packet.Header{},
 	}
 	conn.expectedIDs.Store([]uint32{packet.IDLogin})
 	_, _ = rand.Read(conn.salt)
@@ -241,13 +244,13 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	conn.sendMu.Lock()
 	defer conn.sendMu.Unlock()
 
-	header := &packet.Header{PacketID: pk.ID()}
-	_ = header.Write(conn.w)
+	conn.hdr.PacketID = pk.ID()
+	_ = conn.hdr.Write(conn.w)
 	l := conn.w.Len()
 
 	pk.Marshal(protocol.NewWriter(conn.w))
 	if conn.packetFunc != nil {
-		conn.packetFunc(*header, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
+		conn.packetFunc(*conn.hdr, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
 
 	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), conn.w.Bytes()...))
@@ -257,7 +260,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 
 // ReadPacket reads a packet from the Conn, depending on the packet ID that is found in front of the packet
 // data. If a read deadline is set, an error is returned if the deadline is reached before any packet is
-// received.
+// received. ReadPacket must not be called on multiple goroutines simultaneously.
 //
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.

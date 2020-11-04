@@ -11,14 +11,14 @@ func Register(id uint32, pk func() Packet) {
 var registeredPackets = map[uint32]func() Packet{}
 
 // Pool is a map holding packets indexed by a packet ID.
-type Pool map[uint32]func() Packet
+type Pool map[uint32]Packet
 
 // NewPool returns a new pool with all supported packets sent. Packets may be retrieved from it simply by
 // indexing it with the packet ID.
 func NewPool() Pool {
 	p := Pool{}
 	for id, pk := range registeredPackets {
-		p[id] = pk
+		p[id] = pk()
 	}
 	return p
 }
