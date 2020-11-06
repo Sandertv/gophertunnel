@@ -153,7 +153,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
 		}
 		return nil, fmt.Errorf("connection timeout")
-	case <-time.After(time.Second * 15):
+	case <-time.After(time.Second * 30):
 		return conn, fmt.Errorf("connection timeout")
 	case <-c:
 		// We've connected successfully. We return the connection and no error.

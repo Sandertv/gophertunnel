@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -571,6 +572,8 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)
 	}
+	// Clear out the start game packet from the pool.
+	conn.pool[packet.IDLogin] = &packet.Login{}
 	return nil
 }
 
@@ -909,6 +912,9 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		// Finally we add the resource to the resource packs slice.
 		conn.resourcePacks = append(conn.resourcePacks, pack)
 		if conn.packQueue.packAmount == 0 {
+			// Clear out the start game packet from the pool.
+			conn.pool[packet.IDResourcePackChunkData] = &packet.ResourcePackChunkData{}
+
 			conn.expect(packet.IDResourcePackStack)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		}
@@ -997,12 +1003,15 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		WorldSpawn:                   pk.WorldSpawn,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
-		Blocks:                       pk.Blocks,
+		Blocks:                       internal.PutAndGetStates(pk.Blocks),
 		Items:                        pk.Items,
 		ServerAuthoritativeMovement:  pk.ServerAuthoritativeMovement,
 		WorldGameMode:                pk.WorldGameMode,
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
 	}
+	// Clear out the start game packet from the pool.
+	conn.pool[packet.IDStartGame] = &packet.StartGame{}
+
 	conn.loggedIn = true
 
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)

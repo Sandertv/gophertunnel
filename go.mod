@@ -8,6 +8,7 @@ require (
 	github.com/klauspost/compress v1.11.1
 	github.com/pelletier/go-toml v1.8.1
 	github.com/sandertv/go-raknet v1.7.23
+	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
 	go.uber.org/atomic v1.7.0
 	golang.org/x/net v0.0.0-20200822124328-c89045814202
 	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
