@@ -11,6 +11,9 @@ import (
 var mu sync.Mutex
 var blocks = map[string][]interface{}{}
 
+// PutAndGetStates puts the block states passed into a map and returns it if the same blocks didn't already
+// exist. If the blocks did already exist, the original blocks are returned so that the slice passed may be
+// garbage collected.
 func PutAndGetStates(b []interface{}) []interface{} {
 	h := hashBlockStates(b)
 	mu.Lock()
@@ -23,10 +26,12 @@ func PutAndGetStates(b []interface{}) []interface{} {
 	return b
 }
 
+// hashBlockStates computes a sha256 hash over the Minecraft block states passed.
 func hashBlockStates(b []interface{}) string {
 	h := sha256.New()
 	var k []string
 	for _, block := range b {
+		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 		m, _ := block.(map[string]interface{})
 		blockData, _ := m["block"]
 		blockMap, _ := blockData.(map[string]interface{})
