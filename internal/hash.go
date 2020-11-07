@@ -31,12 +31,14 @@ func hashBlockStates(b []interface{}) string {
 	h := sha256.New()
 	var k []string
 	for _, block := range b {
-		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 		m, _ := block.(map[string]interface{})
+		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 		blockData, _ := m["block"]
 		blockMap, _ := blockData.(map[string]interface{})
+		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 		nameData, _ := blockMap["name"]
 		name, _ := nameData.(string)
+		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 		propertyData, _ := blockMap["states"]
 		properties, _ := propertyData.(map[string]interface{})
 
