@@ -650,7 +650,8 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	conn.dec.EnableEncryption(keyBytes)
 
 	// We write a ClientToServerHandshake packet (which has no payload) as a response.
-	return conn.WritePacket(&packet.ClientToServerHandshake{})
+	_ = conn.WritePacket(&packet.ClientToServerHandshake{})
+	return nil
 }
 
 // handleClientCacheStatus handles a ClientCacheStatus packet sent by the client. It specifies if the client
@@ -695,14 +696,16 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 
 	if len(packsToDownload) != 0 {
 		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData)
-		return conn.WritePacket(&packet.ResourcePackClientResponse{
+		_ = conn.WritePacket(&packet.ResourcePackClientResponse{
 			Response:        packet.PackResponseSendPacks,
 			PacksToDownload: packsToDownload,
 		})
+		return nil
 	}
 	conn.expect(packet.IDResourcePackStack)
 
-	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+	return nil
 }
 
 // handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
@@ -729,7 +732,8 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 		}
 	}
 	conn.expect(packet.IDStartGame)
-	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
+	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
+	return nil
 }
 
 // hasPack checks if the connection has a resource pack downloaded with the UUID and version passed, provided
@@ -1015,7 +1019,8 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.loggedIn = true
 
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
-	return conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: int32(conn.chunkRadius)})
+	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: int32(conn.chunkRadius)})
+	return nil
 }
 
 // handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
@@ -1036,7 +1041,8 @@ func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error 
 		SerialisedBiomeDefinitions: b,
 	})
 
-	return conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
+	_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
+	return nil
 }
 
 // handleChunkRadiusUpdated handles an incoming ChunkRadiusUpdated packet, which updates the initial chunk
@@ -1084,8 +1090,9 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		// We've spawned and can send the last packet in the spawn sequence.
 		if conn.waitingForSpawn.CAS(true, false) {
 			close(conn.spawn)
+			_ = conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 		}
-		return conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
+		return nil
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()
 		return fmt.Errorf("invalid edu edition game owner")
