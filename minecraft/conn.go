@@ -644,7 +644,7 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 
 	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
 	// Make sure to pad the shared secret up to 96 bytes.
-	sharedSecret := append(bytes.Repeat([]byte{0}, 96-len(x.Bytes())), x.Bytes()...)
+	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
 
 	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
 
@@ -1133,7 +1133,9 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 
 	// We first compute the shared secret.
 	x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
-	sharedSecret := append(bytes.Repeat([]byte{0}, 96-len(x.Bytes())), x.Bytes()...)
+
+	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
+
 	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
