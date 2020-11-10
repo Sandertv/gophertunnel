@@ -643,7 +643,10 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	}
 
 	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
-	keyBytes := sha256.Sum256(append(salt, x.Bytes()...))
+	// Make sure to pad the shared secret up to 96 bytes.
+	sharedSecret := append(bytes.Repeat([]byte{0}, 96-len(x.Bytes())), x.Bytes()...)
+
+	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
 
 	// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
 	conn.enc.EnableEncryption(keyBytes)
