@@ -84,16 +84,11 @@ func (listener *Listener) Listen(network, address string) error {
 
 	switch network {
 	case "raknet":
-		// Listen specifically for the RakNet network type, as the standard library (obviously) doesn't
-		// implement that.
 		var l *raknet.Listener
-		l, err = raknet.Listen(address)
-		if err == nil {
-			l.ErrorLog = log.New(ioutil.Discard, "", 0)
-			netListener = l
-		}
+		l, err = raknet.ListenConfig{ErrorLog: log.New(ioutil.Discard, "", 0)}.Listen(address)
+		netListener = l
 	default:
-		// Otherwise fall back to the standard net.Listen.
+		// Fall back to the standard net.Listen.
 		netListener, err = net.Listen(network, address)
 	}
 	if err != nil {
