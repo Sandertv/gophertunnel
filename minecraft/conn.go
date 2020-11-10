@@ -1133,7 +1133,8 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 
 	// We first compute the shared secret.
 	x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
-	keyBytes := sha256.Sum256(append(conn.salt, x.Bytes()...))
+	sharedSecret := append(bytes.Repeat([]byte{0}, 96-len(x.Bytes())), x.Bytes()...)
+	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
 	conn.enc.EnableEncryption(keyBytes)
