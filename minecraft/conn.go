@@ -66,8 +66,6 @@ type Conn struct {
 
 	identityData login.IdentityData
 	clientData   login.ClientData
-	// authenticated represents if player's login data was verified to be signed with Mojang's key.
-	authenticated bool
 
 	gameData    GameData
 	chunkRadius int
@@ -178,7 +176,7 @@ func (conn *Conn) ClientData() login.ClientData {
 
 // Authenticated returns true if the connection was authenticated through XBOX Live services.
 func (conn *Conn) Authenticated() bool {
-	return conn.authenticated
+	return conn.IdentityData().XUID != ""
 }
 
 // GameData returns specific game data set to the connection for the player to be initialised with. If the
@@ -551,7 +549,6 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if err != nil {
 		return fmt.Errorf("parse login request: %w", err)
 	}
-	conn.authenticated = authResult.XBOXLiveAuthenticated
 
 	// Make sure the player is logged in with XBOX Live when necessary.
 	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {

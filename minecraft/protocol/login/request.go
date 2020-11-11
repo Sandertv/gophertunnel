@@ -111,6 +111,12 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 		if err := identityClaims.Validate(jwt.Expected{Time: t, Issuer: iss}); err != nil {
 			return iData, cData, res, fmt.Errorf("validate token 2: %w", err)
 		}
+		if authenticated == (identityClaims.ExtraData.XUID != "") {
+			return iData, cData, res, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
+		}
+		if authenticated == (identityClaims.ExtraData.TitleID != "") {
+			return iData, cData, res, fmt.Errorf("identity data must have a title ID when logged into XBOX Live only")
+		}
 	default:
 		return iData, cData, res, fmt.Errorf("unexpected login chain length %v", len(req.Chain))
 	}
