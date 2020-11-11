@@ -43,8 +43,8 @@ type ListenerStatusProvider struct {
 	name string
 }
 
-// NewListenerStatusProvider creates a ListenerStatusProvider that displays the server name passed.
-func NewListenerStatusProvider(serverName string) ListenerStatusProvider {
+// NewStatusProvider creates a ListenerStatusProvider that displays the server name passed.
+func NewStatusProvider(serverName string) ListenerStatusProvider {
 	return ListenerStatusProvider{name: serverName}
 }
 

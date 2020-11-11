@@ -92,7 +92,7 @@ func (cfg ListenConfig) Listen(network, address string) (*Listener, error) {
 		cfg.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
 	if cfg.StatusProvider == nil {
-		cfg.StatusProvider = NewListenerStatusProvider("Minecraft Server")
+		cfg.StatusProvider = NewStatusProvider("Minecraft Server")
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{

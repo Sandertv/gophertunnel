@@ -9,13 +9,13 @@ import (
 func ExampleListen() {
 	// Create a minecraft.Listener with a specific name to be displayed as MOTD in the server list.
 	name := "MOTD of this server"
-	listener := minecraft.Listener{
-		ServerName: name,
+	cfg := minecraft.ListenConfig{
+		StatusProvider: minecraft.NewStatusProvider(name),
 	}
 
 	// Listen on the address with port 19132.
 	address := ":19132"
-	err := listener.Listen("raknet", address)
+	listener, err := cfg.Listen("raknet", address)
 	if err != nil {
 		panic(err)
 	}
