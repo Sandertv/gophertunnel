@@ -14,14 +14,11 @@ import (
 	"log"
 	"net"
 	"os"
-	"sync"
 	"time"
 )
 
-// Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
-// login sequence of connecting clients and provides the implements the net.Listener interface to provide a
-// consistent API.
-type Listener struct {
+// ListenConfig holds settings that may be edited to change behaviour of a Listener.
+type ListenConfig struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of clients are written to. By
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
@@ -31,17 +28,14 @@ type Listener struct {
 	// account.
 	AuthenticationDisabled bool
 
-	// ServerName is the server name shown in the in-game menu, above the player list. The name cannot be
-	// changed after a player is connected. By default, 'Minecraft Server' will be set.
-	ServerName string
 	// MaximumPlayers is the maximum amount of players accepted in the server. If non-zero, players that
 	// attempt to join while the server is full will be kicked during login. If zero, the maximum player count
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
-	// ShowVersion specifies if the supported Minecraft version should be shown in the MOTD of the server. If
-	// set to false, if set to true, the lowest supported version will be displayed.
-	ShowVersion bool
+
+	// StatusProvider is the ServerStatusProvider of the Listener. When set to nil, the default
+	StatusProvider ServerStatusProvider
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -57,56 +51,61 @@ type Listener struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+}
+
+// Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
+// login sequence of connecting clients and provides the implements the net.Listener interface to provide a
+// consistent API.
+type Listener struct {
+	cfg      ListenConfig
+	listener net.Listener
 
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount atomic.Int32
 
-	listener net.Listener
+	incoming chan *Conn
+	close    chan struct{}
 
-	hijackingPong atomic.Bool
-	incoming      chan *Conn
-	close         chan struct{}
-
-	mu  sync.Mutex
-	p   ServerStatusProvider
 	key *ecdsa.PrivateKey
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
-func (listener *Listener) Listen(network, address string) error {
+func (cfg ListenConfig) Listen(network, address string) (*Listener, error) {
 	var netListener net.Listener
 	var err error
 
-	listener.key, _ = ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
-
 	switch network {
 	case "raknet":
-		var l *raknet.Listener
-		l, err = raknet.ListenConfig{ErrorLog: log.New(ioutil.Discard, "", 0)}.Listen(address)
-		netListener = l
+		netListener, err = raknet.ListenConfig{ErrorLog: log.New(ioutil.Discard, "", 0)}.Listen(address)
 	default:
 		// Fall back to the standard net.Listen.
 		netListener, err = net.Listen(network, address)
 	}
 	if err != nil {
-		return err
+		return nil, err
 	}
-	if listener.ErrorLog == nil {
-		listener.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
+
+	if cfg.ErrorLog == nil {
+		cfg.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
-	if listener.ServerName == "" {
-		listener.ServerName = "Minecraft Server"
+	if cfg.StatusProvider == nil {
+		cfg.StatusProvider = NewListenerStatusProvider("Minecraft Server")
 	}
-	listener.listener = netListener
-	listener.incoming = make(chan *Conn)
-	listener.close = make(chan struct{})
+	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	listener := &Listener{
+		cfg:      cfg,
+		listener: netListener,
+		incoming: make(chan *Conn),
+		close:    make(chan struct{}),
+		key:      key,
+	}
 
 	// Actually start listening.
 	go listener.listen()
-	return nil
+	return listener, nil
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
@@ -116,8 +115,8 @@ func (listener *Listener) Listen(network, address string) error {
 // Listen has the default values for the fields of Listener filled out. To use different values for these
 // fields, call &Listener{}.Listen() instead.
 func Listen(network, address string) (*Listener, error) {
-	l := &Listener{}
-	return l, l.Listen(network, address)
+	var lc ListenConfig
+	return lc.Listen(network, address)
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
@@ -143,48 +142,6 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	return conn.Close()
 }
 
-// StatusProvider sets a server status provider to dynamically provide the status of the server.
-// StatusProvider will overwrite the status shown in the server list through the MaximumPlayers field and the
-// current connected players.
-func (listener *Listener) StatusProvider(p ServerStatusProvider) {
-	listener.mu.Lock()
-	listener.p = p
-	listener.mu.Unlock()
-
-	listener.updatePongData()
-	go func() {
-		ticker := time.NewTicker(time.Second * 3)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				listener.updatePongData()
-			case <-listener.close:
-				return
-			}
-		}
-	}()
-}
-
-// AddResourcePack adds the resource.Pack passed to the list of resource packs that a player can download
-// when it joins the server. AddResourcePack ensures the pack is added in a thread-safe way.
-func (listener *Listener) AddResourcePack(p *resource.Pack) {
-	listener.mu.Lock()
-	listener.ResourcePacks = append(listener.ResourcePacks, p)
-	listener.mu.Unlock()
-}
-
-// HijackPong hijacks the pong response from a server at an address passed. The listener passed will
-// continuously update its pong data by hijacking the pong data of the server at the address.
-// The hijack will last until the listener is shut down.
-// If the address passed could not be resolved, an error is returned.
-// Calling HijackPong means that any current and future pong data set using listener.PongData is overwritten
-// each update.
-func (listener *Listener) HijackPong(address string) error {
-	listener.hijackingPong.Store(true)
-	return listener.listener.(*raknet.Listener).HijackPong(address)
-}
-
 // Addr returns the address of the underlying listener.
 func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
@@ -198,41 +155,17 @@ func (listener *Listener) Close() error {
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
-	if listener.hijackingPong.Load() {
-		return
-	}
-
-	listener.mu.Lock()
-	m := listener.p
-	listener.mu.Unlock()
-
-	var (
-		maxCount, current int32
-		serverName        string
-	)
-	if m == nil {
-		maxCount = int32(listener.MaximumPlayers)
-		serverName = listener.ServerName
-		current = listener.playerCount.Load()
-		if maxCount == 0 {
-			// If the maximum amount of allowed players is 0, we set it to the the current amount of line players
-			// plus 1, so that new players can always join.
-			maxCount = current + 1
-		}
-	} else {
-		motd, online, max := m.ServerStatus()
-		serverName, maxCount, current = motd, int32(max), int32(online)
-	}
+	s := listener.status()
 
 	var ver string
-	if listener.ShowVersion {
+	if s.ShowVersion {
 		ver = protocol.CurrentVersion
 	}
 
 	rakListener := listener.listener.(*raknet.Listener)
 
 	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
-		serverName, protocol.CurrentProtocol, ver, current, maxCount, rakListener.ID(),
+		s.ServerName, protocol.CurrentProtocol, ver, s.PlayerCount, s.MaxPlayers, rakListener.ID(),
 		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
@@ -241,6 +174,18 @@ func (listener *Listener) updatePongData() {
 // it to the accepted connections channel so that a call to Accept can pick it up.
 func (listener *Listener) listen() {
 	listener.updatePongData()
+	go func() {
+		ticker := time.NewTicker(time.Second * 4)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				listener.updatePongData()
+			case <-listener.close:
+				return
+			}
+		}
+	}()
 	defer func() {
 		close(listener.incoming)
 		close(listener.close)
@@ -260,16 +205,14 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	listener.mu.Lock()
-	conn := newConn(netConn, listener.key, listener.ErrorLog)
-	conn.packetFunc = listener.PacketFunc
-	conn.texturePacksRequired = listener.TexturePacksRequired
-	conn.resourcePacks = listener.ResourcePacks
-	conn.gameData.WorldName = listener.ServerName
-	conn.authEnabled = !listener.AuthenticationDisabled
-	listener.mu.Unlock()
+	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog)
+	conn.packetFunc = listener.cfg.PacketFunc
+	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
+	conn.resourcePacks = listener.cfg.ResourcePacks
+	conn.gameData.WorldName = listener.status().ServerName
+	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 
-	if listener.playerCount.Load() == int32(listener.MaximumPlayers) && listener.MaximumPlayers != 0 {
+	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 		_ = conn.Close()
@@ -279,6 +222,11 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	listener.updatePongData()
 
 	go listener.handleConn(conn)
+}
+
+// status returns the current ServerStatus of the Listener.
+func (listener *Listener) status() ServerStatus {
+	return listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
 }
 
 // handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to
@@ -295,14 +243,14 @@ func (listener *Listener) handleConn(conn *Conn) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !raknet.ErrConnectionClosed(err) {
-				listener.ErrorLog.Printf("error reading from listener connection: %v\n", err)
+				listener.cfg.ErrorLog.Printf("error reading from listener connection: %v\n", err)
 			}
 			return
 		}
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				listener.ErrorLog.Printf("error: %v", err)
+				listener.cfg.ErrorLog.Printf("error: %v", err)
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {
