@@ -51,22 +51,7 @@ func (src *tokenSource) Token() (*oauth2.Token, error) {
 // refreshes the token everytime it expires. Note that this function must be used over oauth2.ReuseTokenSource
 // due to that function not refreshing with the correct scopes.
 func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
-	return oauth2.ReuseTokenSource(t, &refreshTokenSource{t: t})
-}
-
-// refreshTokenSource is an oauth2.TokenSource that refreshes the token it holds whenever a new oauth2.Token
-// is requested from it.
-type refreshTokenSource struct{ t *oauth2.Token }
-
-// Token refreshes the token held by the source and returns a new oauth2.Token.
-func (src *refreshTokenSource) Token() (*oauth2.Token, error) {
-	tok, err := refreshToken(src.t)
-	if err != nil {
-		return nil, err
-	}
-	// Update the token to use to refresh for the next time Token is called.
-	src.t = tok
-	return tok, nil
+	return oauth2.ReuseTokenSource(t, &tokenSource{w: os.Stdout, t: t})
 }
 
 // RequestLiveToken does a login request for Microsoft Live Connect using device auth. A login URL will be
