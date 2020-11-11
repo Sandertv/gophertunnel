@@ -80,8 +80,8 @@ func DialTimeout(network, address string, timeout time.Duration) (*Conn, error) 
 	return d.DialTimeout(network, address, timeout)
 }
 
-// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
-// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 // DialContext uses a zero value of Dialer to initiate the connection.
 func DialContext(ctx context.Context, network, address string) (*Conn, error) {
@@ -106,8 +106,8 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 	return d.DialContext(ctx, network, address)
 }
 
-// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
-// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
