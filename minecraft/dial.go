@@ -14,6 +14,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
@@ -65,26 +66,61 @@ type Dialer struct {
 //
 // A zero value of a Dialer struct is used to initiate the connection. A custom Dialer may be used to specify
 // additional behaviour.
-func Dial(network string, address string) (conn *Conn, err error) {
-	return Dialer{}.Dial(network, address)
+func Dial(network, address string) (*Conn, error) {
+	var d Dialer
+	return d.Dial(network, address)
+}
+
+// DialTimeout dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// If a connection is not established before the timeout ends, DialTimeout returns an error.
+// DialTimeout uses a zero value of Dialer to initiate the connection.
+func DialTimeout(network, address string, timeout time.Duration) (*Conn, error) {
+	var d Dialer
+	return d.DialTimeout(network, address, timeout)
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
 // "raknet". A Conn is returned which may be used to receive packets from and send packets to.
-// Specific fields in the Dialer specify additional behaviour during the connection, such as authenticating
-// to XBOX Live and custom client data.
-func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error) {
+// If a connection is not established before the context passed is cancelled, DialContext returns an error.
+// DialContext uses a zero value of Dialer to initiate the connection.
+func DialContext(ctx context.Context, network, address string) (*Conn, error) {
+	var d Dialer
+	return d.DialContext(ctx, network, address)
+}
+
+// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
+// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+func (d Dialer) Dial(network, address string) (*Conn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	return d.DialContext(ctx, network, address)
+}
+
+// DialTimeout dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// If a connection is not established before the timeout ends, DialTimeout returns an error.
+func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Conn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return d.DialContext(ctx, network, address)
+}
+
+// Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
+// "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// If a connection is not established before the context passed is cancelled, DialContext returns an error.
+func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 
 	var chainData string
-	if dialer.TokenSource != nil {
-		chainData, err = authChain(dialer.TokenSource, key)
+	if d.TokenSource != nil {
+		chainData, err = authChain(ctx, d.TokenSource, key)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if dialer.ErrorLog == nil {
-		dialer.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
+	if d.ErrorLog == nil {
+		d.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
 	var netConn net.Conn
 
@@ -98,23 +134,24 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 			err = fmt.Errorf("raknet ping: %w", err)
 			break
 		}
-		netConn, err = dialer.Dial(addressWithPongPort(pong, address))
+		netConn, err = dialer.DialContext(ctx, addressWithPongPort(pong, address))
 		if err != nil {
 			err = fmt.Errorf("raknet: %w", err)
 		}
 	default:
 		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
 		// the network passed.
-		netConn, err = net.Dial(network, address)
+		var d net.Dialer
+		netConn, err = d.DialContext(ctx, network, address)
 	}
 	if err != nil {
 		return nil, err
 	}
-	conn = newConn(netConn, key, dialer.ErrorLog)
-	conn.identityData = dialer.IdentityData
-	conn.clientData = dialer.ClientData
-	conn.packetFunc = dialer.PacketFunc
-	conn.cacheEnabled = dialer.EnableClientCache
+	conn = newConn(netConn, key, d.ErrorLog)
+	conn.identityData = d.IdentityData
+	conn.clientData = d.ClientData
+	conn.packetFunc = d.PacketFunc
+	conn.cacheEnabled = d.EnableClientCache
 
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.dec.DisableBatchPacketLimit()
@@ -123,7 +160,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	defaultIdentityData(&conn.identityData)
 
 	var request []byte
-	if dialer.TokenSource == nil {
+	if d.TokenSource == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
@@ -141,7 +178,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 		conn.identityData = identityData
 	}
 	c := make(chan struct{})
-	go listenConn(conn, dialer.ErrorLog, c)
+	go listenConn(conn, d.ErrorLog, c)
 
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
@@ -154,7 +191,7 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
 		}
 		return nil, fmt.Errorf("connection timeout")
-	case <-time.After(time.Second * 30):
+	case <-ctx.Done():
 		return conn, fmt.Errorf("connection timeout")
 	case <-c:
 		// We've connected successfully. We return the connection and no error.
@@ -195,19 +232,19 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
-func authChain(src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
+func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
 	// Obtain the Live token, and using that the XSTS token.
 	liveToken, err := src.Token()
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Live Connect token: %v", err)
 	}
-	xsts, err := auth.RequestXBLToken(liveToken, "https://multiplayer.minecraft.net/")
+	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
 		return "", fmt.Errorf("error obtaining XBOX Live token: %v", err)
 	}
 
 	// Obtain the raw chain data using the
-	chain, err := auth.RequestMinecraftChain(xsts, key)
+	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
 	if err != nil {
 		return "", fmt.Errorf("error obtaining Minecraft auth chain: %v", err)
 	}
