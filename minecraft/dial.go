@@ -126,7 +126,9 @@ func (dialer Dialer) Dial(network string, address string) (conn *Conn, err error
 	var request []byte
 	if dialer.TokenSource == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
-		// holding the identity data set in the Dialer.
+		// holding the identity data set in the Dialer after making sure we clear data from the identity data
+		// that is only present when logged in.
+		clearXBLIdentityData(&conn.identityData)
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
 	} else {
 		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
@@ -268,6 +270,13 @@ func defaultClientData(address, username string, d *login.ClientData) {
 func setAndroidData(data *login.ClientData) {
 	data.DeviceOS = protocol.DeviceAndroid
 	data.GameVersion = protocol.CurrentVersion
+}
+
+// clearXBLIdentityData clears data from the login.IdentityData that is only set when a player is logged into
+// XBOX Live.
+func clearXBLIdentityData(data *login.IdentityData) {
+	data.XUID = ""
+	data.TitleID = ""
 }
 
 // defaultIdentityData edits the IdentityData passed to have defaults set to all fields that were left
