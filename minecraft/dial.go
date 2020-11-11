@@ -20,7 +20,6 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -288,23 +287,32 @@ func defaultIdentityData(data *login.IdentityData) {
 	}
 }
 
-// regex is used to split strings by semicolons, except semicolons that are escaped. Note that this regex will
-// not work properly with the case 'Test\\;`, where it would be expected that ';' is not escaped. Client-side,
-// however, it is still escaped, so gophertunnel mimics this behaviour.
-// (see https://github.com/Sandertv/gophertunnel/commit/d0c9c4c99cd02e441290efe4ee3568a39f7233f9#commitcomment-43046604)
-var regex = regexp.MustCompile(`[^\\];`)
+// splitPong splits the pong data passed by ;, taking into account escaping these.
+func splitPong(s string) []string {
+	var runes []rune
+	var tokens []string
+	inEscape := false
+	for _, r := range s {
+		switch {
+		case r == '\\':
+			inEscape = true
+		case r == ';':
+			tokens = append(tokens, string(runes))
+			runes = runes[:0]
+		case inEscape:
+			inEscape = false
+			fallthrough
+		default:
+			runes = append(runes, r)
+		}
+	}
+	return append(tokens, string(runes))
+}
 
 // addressWithPongPort parses the redirect IPv4 port from the pong and returns the address passed with the port
 // found if present, or the original address if not.
 func addressWithPongPort(pong []byte, address string) string {
-	indices := regex.FindAllStringIndex(string(pong), -1)
-	frag := make([]string, len(indices)+1)
-
-	first := 0
-	for i, index := range indices {
-		frag[i] = string(pong[first : index[1]-1])
-		first = index[1]
-	}
+	frag := splitPong(string(pong))
 	if len(frag) > 10 {
 		portStr := frag[10]
 		port, err := strconv.Atoi(portStr)

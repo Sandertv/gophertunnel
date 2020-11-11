@@ -20,11 +20,14 @@ func main() {
 	}
 	src := auth.RefreshTokenSource(token)
 
-	listener, err := minecraft.Listen("raknet", config.Connection.LocalAddress)
+	p, err := minecraft.NewForeignStatusProvider(config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)
 	}
-	if err := listener.HijackPong(config.Connection.RemoteAddress); err != nil {
+	listener, err := minecraft.ListenConfig{
+		StatusProvider: p,
+	}.Listen("raknet", config.Connection.LocalAddress)
+	if err != nil {
 		panic(err)
 	}
 	defer listener.Close()
