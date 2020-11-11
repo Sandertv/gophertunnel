@@ -20,7 +20,6 @@ import (
 	rand2 "math/rand"
 	"net"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -288,28 +287,23 @@ func defaultIdentityData(data *login.IdentityData) {
 	}
 }
 
-// regex is used to split strings by semicolons, except semicolons that are escaped. Note that this regex will
-// not work properly with the case 'Test\\;`, where it would be expected that ';' is not escaped. Client-side,
-// however, it is still escaped, so gophertunnel mimics this behaviour.
-// (see https://github.com/Sandertv/gophertunnel/commit/d0c9c4c99cd02e441290efe4ee3568a39f7233f9#commitcomment-43046604)
-var regex = regexp.MustCompile(`[^\\];`)
-
+// splitPong splits the pong data passed by ;, taking into account escaping these.
 func splitPong(s string) []string {
 	var runes []rune
 	var tokens []string
 	inEscape := false
 	for _, r := range s {
 		switch {
-		case inEscape:
-			inEscape = false
-			fallthrough
-		default:
-			runes = append(runes, r)
 		case r == '\\':
 			inEscape = true
 		case r == ';':
 			tokens = append(tokens, string(runes))
 			runes = runes[:0]
+		case inEscape:
+			inEscape = false
+			fallthrough
+		default:
+			runes = append(runes, r)
 		}
 	}
 	return append(tokens, string(runes))
