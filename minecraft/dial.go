@@ -220,6 +220,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	rand2.Seed(time.Now().Unix())
 
 	d.ServerAddress = address
+	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
 	}
@@ -234,9 +235,6 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	}
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
-	}
-	if d.ThirdPartyName == "" {
-		d.ThirdPartyName = username
 	}
 	if d.AnimatedImageData == nil {
 		d.AnimatedImageData = make([]login.SkinAnimation, 0)
