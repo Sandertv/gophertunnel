@@ -14,27 +14,42 @@ import (
 
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
 // a code. TokenSource prints the authentication code and URL to os.Stdout. To use a different io.Writer, use
-// WriterTokenSource.
+// WriterTokenSource. TokenSource automatically refreshes tokens.
 var TokenSource oauth2.TokenSource = &tokenSource{w: os.Stdout}
 
 // WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
-// code are printed.
+// code are printed. WriterTokenSource automatically refreshes tokens.
 func WriterTokenSource(w io.Writer) oauth2.TokenSource {
 	return &tokenSource{w: w}
 }
 
 // tokenSource implements the oauth2.TokenSource interface. It provides a method to get an oauth2.Token using
 // device auth through a call to RequestLiveToken.
-type tokenSource struct{ w io.Writer }
+type tokenSource struct {
+	w io.Writer
+	t *oauth2.Token
+}
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
-func (t *tokenSource) Token() (*oauth2.Token, error) {
-	return RequestLiveTokenWriter(t.w)
+func (src *tokenSource) Token() (*oauth2.Token, error) {
+	if src.t == nil {
+		t, err := RequestLiveTokenWriter(src.w)
+		src.t = t
+		return t, err
+	}
+	tok, err := refreshToken(src.t)
+	if err != nil {
+		return nil, err
+	}
+	// Update the token to use to refresh for the next time Token is called.
+	src.t = tok
+	return tok, nil
 }
 
 // RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
-// refreshes the token everytime it expires.
+// refreshes the token everytime it expires. Note that this function must be used over oauth2.ReuseTokenSource
+// due to that function not refreshing with the correct scopes.
 func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 	return oauth2.ReuseTokenSource(t, &refreshTokenSource{t: t})
 }
