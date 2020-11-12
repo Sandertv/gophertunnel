@@ -97,7 +97,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	}
 	for b.Len() != 0 {
 		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
-			return nil, fmt.Errorf("number of packets in compressed batch exceeds %v", maximumInBatch)
+			return nil, fmt.Errorf("number of packets %v in compressed batch exceeds %v", len(packets), maximumInBatch)
 		}
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
