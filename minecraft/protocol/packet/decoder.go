@@ -96,16 +96,19 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		return nil, err
 	}
 	for b.Len() != 0 {
-		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
-			return nil, fmt.Errorf("number of packets %v in compressed batch exceeds %v", len(packets), maximumInBatch)
-		}
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
 			return nil, fmt.Errorf("error reading packet length: %v", err)
 		}
+		if length == 0 {
+			return nil, fmt.Errorf("invalid 0 packet length in compressed batch")
+		}
 		packets = append(packets, b.Next(int(length)))
 	}
-	return
+	if len(packets) > maximumInBatch && decoder.checkPacketLimit {
+		return nil, fmt.Errorf("number of packets %v in compressed batch exceeds %v", len(packets), maximumInBatch)
+	}
+	return packets, nil
 }
 
 // decompress decompresses the data passed and returns it as a byte slice.
