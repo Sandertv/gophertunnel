@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
 	"crypto/sha256"
@@ -190,6 +191,28 @@ func (conn *Conn) GameData() GameData {
 // obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
 func (conn *Conn) StartGame(data GameData) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	return conn.StartGameContext(ctx, data)
+}
+
+// StartGameTimeout starts the game for a client that connected to the server, returning an error if the
+// connection is not yet fully connected while the timeout expires.
+// StartGameTimeout should be called for a Conn obtained using a minecraft.Listener. The game data passed will
+// be used to spawn the player in the world of the server. To spawn a Conn obtained from a call to
+// minecraft.Dial(), use Conn.DoSpawn().
+func (conn *Conn) StartGameTimeout(data GameData, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return conn.StartGameContext(ctx, data)
+}
+
+// StartGameContext starts the game for a client that connected to the server, returning an error if the
+// context is closed while spawning the client.
+// StartGameContext should be called for a Conn obtained using a minecraft.Listener. The game data passed will
+// be used to spawn the player in the world of the server. To spawn a Conn obtained from a call to
+// minecraft.Dial(), use Conn.DoSpawn().
+func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
@@ -197,11 +220,10 @@ func (conn *Conn) StartGame(data GameData) error {
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
-	timeout := time.After(time.Second * 30)
 	select {
 	case <-conn.close:
 		return fmt.Errorf("connection closed")
-	case <-timeout:
+	case <-ctx.Done():
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.spawn:
 		// Conn was spawned successfully.
@@ -213,10 +235,32 @@ func (conn *Conn) StartGame(data GameData) error {
 // minecraft.Dial(). Use Conn.StartGame to spawn a Conn obtained using a minecraft.Listener.
 // DoSpawn will start the spawning sequence using the game data found in conn.GameData(), which was sent
 // earlier by the server.
+// DoSpawn has a default timeout of 30 seconds. DoSpawnContext or DoSpawnTimeout may be used for cancellation
+// at any other times.
 func (conn *Conn) DoSpawn() error {
-	conn.waitingForSpawn.Store(true)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	defer cancel()
+	return conn.DoSpawnContext(ctx)
+}
 
-	timeout := time.After(time.Second * 30)
+// DoSpawnTimeout starts the game for the client in the server with a timeout after which an error is
+// returned if the client has not yet spawned by that time. DoSpawnTimeout should be called for a Conn
+// obtained using minecraft.Dial(). Use Conn.StartGame to spawn a Conn obtained using a minecraft.Listener.
+// DoSpawnTimeout will start the spawning sequence using the game data found in conn.GameData(), which was
+// sent earlier by the server.
+func (conn *Conn) DoSpawnTimeout(timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return conn.DoSpawnContext(ctx)
+}
+
+// DoSpawnContext starts the game for the client in the server, using a specific context for cancellation.
+// DoSpawnContext should be called for a Conn obtained using minecraft.Dial(). Use Conn.StartGame to spawn a
+// Conn obtained using a minecraft.Listener.
+// DoSpawnContext will start the spawning sequence using the game data found in conn.GameData(), which was
+// sent earlier by the server.
+func (conn *Conn) DoSpawnContext(ctx context.Context) error {
+	conn.waitingForSpawn.Store(true)
 
 	select {
 	case <-conn.close:
@@ -224,7 +268,7 @@ func (conn *Conn) DoSpawn() error {
 			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
 		}
 		return fmt.Errorf("connection closed")
-	case <-timeout:
+	case <-ctx.Done():
 		return fmt.Errorf("start game spawning timeout")
 	case <-conn.spawn:
 		// Conn was spawned successfully.

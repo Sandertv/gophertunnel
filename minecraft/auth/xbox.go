@@ -2,6 +2,7 @@ package auth
 
 import (
 	"bytes"
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -12,7 +13,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
-	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
 	"net/http"
 	"time"
