@@ -226,7 +226,11 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 // status returns the current ServerStatus of the Listener.
 func (listener *Listener) status() ServerStatus {
-	return listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
+	status := listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
+	if status.MaxPlayers == 0 {
+		status.MaxPlayers = status.PlayerCount
+	}
+	return status
 }
 
 // handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to
