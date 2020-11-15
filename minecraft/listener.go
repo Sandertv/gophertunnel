@@ -228,7 +228,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 func (listener *Listener) status() ServerStatus {
 	status := listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
 	if status.MaxPlayers == 0 {
-		status.MaxPlayers = status.PlayerCount
+		status.MaxPlayers = status.PlayerCount + 1
 	}
 	return status
 }
