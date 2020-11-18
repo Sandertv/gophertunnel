@@ -116,7 +116,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.TokenSource != nil {
 		chainData, err = authChain(ctx, d.TokenSource, key)
 		if err != nil {
-			return nil, err
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
 	}
 	if d.ErrorLog == nil {
@@ -131,13 +131,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		var pong []byte
 		pong, err = dialer.Ping(address)
 		if err != nil {
-			err = fmt.Errorf("raknet ping: %w", err)
 			break
 		}
 		netConn, err = dialer.DialContext(ctx, addressWithPongPort(pong, address))
-		if err != nil {
-			err = fmt.Errorf("raknet: %w", err)
-		}
 	default:
 		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
 		// the network passed.
@@ -186,13 +182,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	}
 	select {
 	case <-conn.close:
-		// The connection was closed before we even were fully 'connected', so we return an error.
-		if conn.disconnectMessage.Load() != "" {
-			return nil, fmt.Errorf("disconnected while connecting: %v", conn.disconnectMessage.Load())
-		}
-		return nil, fmt.Errorf("connection timeout")
+		return nil, conn.closeErr("dial")
 	case <-ctx.Done():
-		return conn, fmt.Errorf("connection timeout")
+		return nil, conn.wrap(ctx.Err(), "dial")
 	case <-c:
 		// We've connected successfully. We return the connection and no error.
 		return conn, nil

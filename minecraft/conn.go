@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -222,9 +221,9 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 
 	select {
 	case <-conn.close:
-		return fmt.Errorf("connection closed")
+		return conn.closeErr("start game")
 	case <-ctx.Done():
-		return fmt.Errorf("start game spawning timeout")
+		return conn.wrap(ctx.Err(), "start game")
 	case <-conn.spawn:
 		// Conn was spawned successfully.
 		return nil
@@ -264,12 +263,9 @@ func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 
 	select {
 	case <-conn.close:
-		if conn.disconnectMessage.Load() != "" {
-			return fmt.Errorf("disconnected while spawning: %v", conn.disconnectMessage.Load())
-		}
-		return fmt.Errorf("connection closed")
+		return conn.closeErr("do spawn")
 	case <-ctx.Done():
-		return fmt.Errorf("start game spawning timeout")
+		return conn.wrap(ctx.Err(), "do spawn")
 	case <-conn.spawn:
 		// Conn was spawned successfully.
 		return nil
@@ -281,7 +277,7 @@ func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 func (conn *Conn) WritePacket(pk packet.Packet) error {
 	select {
 	case <-conn.close:
-		return fmt.Errorf("connection closed")
+		return conn.closeErr("write packet")
 	default:
 	}
 	conn.sendMu.Lock()
@@ -319,9 +315,9 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 
 	select {
 	case <-conn.close:
-		return nil, fmt.Errorf("error reading packet: connection closed")
+		return nil, conn.closeErr("read packet")
 	case <-conn.readDeadline:
-		return nil, fmt.Errorf("error reading packet: read timeout")
+		return nil, conn.wrap(context.DeadlineExceeded, "read packet")
 	case data := <-conn.packets:
 		pk, err := data.decode(conn)
 		if err != nil {
@@ -355,18 +351,18 @@ func (conn *Conn) Write(b []byte) (n int, err error) {
 func (conn *Conn) Read(b []byte) (n int, err error) {
 	if data, ok := conn.takeDeferredPacket(); ok {
 		if len(b) < len(data.full) {
-			return 0, fmt.Errorf("error reading data: A message sent on a Minecraft socket was larger than the buffer used to receive the message into")
+			return 0, conn.wrap(errBufferTooSmall, "read")
 		}
 		return copy(b, data.full), nil
 	}
 	select {
 	case <-conn.close:
-		return 0, fmt.Errorf("error reading packet: connection closed")
+		return 0, conn.closeErr("read")
 	case <-conn.readDeadline:
-		return 0, fmt.Errorf("error reading packet: read timeout")
+		return 0, conn.wrap(context.DeadlineExceeded, "read")
 	case data := <-conn.packets:
 		if len(b) < len(data.full) {
-			return 0, fmt.Errorf("error reading data: A packet sent on a Minecraft connection was larger than the buffer used to receive the message into")
+			return 0, conn.wrap(errBufferTooSmall, "read")
 		}
 		return copy(b, data.full), nil
 	}
@@ -377,7 +373,7 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 func (conn *Conn) Flush() error {
 	select {
 	case <-conn.close:
-		return fmt.Errorf("connection closed")
+		return conn.closeErr("flush")
 	default:
 	}
 	conn.sendMu.Lock()
@@ -385,7 +381,8 @@ func (conn *Conn) Flush() error {
 
 	if len(conn.bufferedSend) > 0 {
 		if err := conn.enc.Encode(conn.bufferedSend); err != nil {
-			return fmt.Errorf("error encoding packet batch: %v", err)
+			// Should never happen.
+			panic(fmt.Errorf("error encoding packet batch: %v", err))
 		}
 		// Reset the send slice so that we don't accidentally send the same packets.
 		conn.bufferedSend = conn.bufferedSend[:0]
@@ -425,7 +422,7 @@ func (conn *Conn) SetDeadline(t time.Time) error {
 // Passing an empty time.Time to the method (time.Time{}) results in the read deadline being cleared.
 func (conn *Conn) SetReadDeadline(t time.Time) error {
 	if t.Before(time.Now()) {
-		return fmt.Errorf("error setting read deadline: time passed is before time.Now()")
+		panic(fmt.Errorf("error setting read deadline: time passed is before time.Now()"))
 	}
 	empty := time.Time{}
 	if t == empty {
@@ -444,10 +441,12 @@ func (conn *Conn) SetWriteDeadline(time.Time) error {
 // Latency returns a rolling average of latency between the sending and the receiving end of the connection.
 // The latency returned is updated continuously and is half the round trip time (RTT).
 func (conn *Conn) Latency() time.Duration {
-	if c, ok := conn.conn.(*raknet.Conn); ok {
+	if c, ok := conn.conn.(interface {
+		Latency() time.Duration
+	}); ok {
 		return c.Latency()
 	}
-	panic(fmt.Sprintf("unexpected connection type %T", conn.conn))
+	panic(fmt.Sprintf("connection type %T has no Latency() time.Duration method", conn.conn))
 }
 
 // ClientCacheEnabled checks if the connection has the client blob cache enabled. If true, the server may send
@@ -974,23 +973,23 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 // pack that is being downloaded.
 func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) error {
 	pk.UUID = strings.Split(pk.UUID, "_")[0]
-	downloadingPack, ok := conn.packQueue.awaitingPacks[pk.UUID]
+	pack, ok := conn.packQueue.awaitingPacks[pk.UUID]
 	if !ok {
 		// We haven't received a ResourcePackDataInfo packet from the server, so we can't use this data to
 		// download a resource pack.
 		return fmt.Errorf("resource pack chunk data for resource pack that was not being downloaded")
 	}
-	lastData := downloadingPack.buf.Len()+int(downloadingPack.chunkSize) >= int(downloadingPack.size)
-	if !lastData && uint32(len(pk.Data)) != downloadingPack.chunkSize {
+	lastData := pack.buf.Len()+int(pack.chunkSize) >= int(pack.size)
+	if !lastData && uint32(len(pk.Data)) != pack.chunkSize {
 		// The chunk data didn't have the full size and wasn't the last data to be sent for the resource pack,
 		// meaning we got too little data.
-		return fmt.Errorf("resource pack chunk data had a length of %v, but expected %v", len(pk.Data), downloadingPack.chunkSize)
+		return fmt.Errorf("resource pack chunk data had a length of %v, but expected %v", len(pk.Data), pack.chunkSize)
 	}
-	if pk.ChunkIndex != downloadingPack.expectedIndex {
-		return fmt.Errorf("resource pack chunk data had chunk index %v, but expected %v", pk.ChunkIndex, downloadingPack.expectedIndex)
+	if pk.ChunkIndex != pack.expectedIndex {
+		return fmt.Errorf("resource pack chunk data had chunk index %v, but expected %v", pk.ChunkIndex, pack.expectedIndex)
 	}
-	downloadingPack.expectedIndex++
-	downloadingPack.newFrag <- pk.Data
+	pack.expectedIndex++
+	pack.newFrag <- pk.Data
 	return nil
 }
 
@@ -1189,4 +1188,13 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 // expect sets the packet IDs that are next expected to arrive.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
+}
+
+// closeErr returns an adequate connection closed error for the op passed. If the connection was closed
+// through a Disconnect packet, the message is contained.
+func (conn *Conn) closeErr(op string) error {
+	if msg := conn.disconnectMessage.Load(); msg != "" {
+		return conn.wrap(fmt.Errorf("disconnected by server: %v", msg), op)
+	}
+	return conn.wrap(errClosed, op)
 }
