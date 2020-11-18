@@ -25,7 +25,7 @@ func ANSI(a ...interface{}) string {
 func Colourf(format string, a ...interface{}) string {
 	str := fmt.Sprintf(format, a...)
 
-	e := &enc{w: &strings.Builder{}}
+	e := &enc{w: &strings.Builder{}, first: true}
 	t := html.NewTokenizer(strings.NewReader(str))
 	for {
 		if t.Next() == html.ErrorToken {
@@ -40,11 +40,16 @@ func Colourf(format string, a ...interface{}) string {
 type enc struct {
 	w           *strings.Builder
 	formatStack []string
+	first       bool
 }
 
 // process handles a single html.Token and either writes the string to the strings.Builder, adds a colour to
 // the stack or removes a colour from the stack.
 func (e *enc) process(tok html.Token) {
+	if e.first {
+		e.w.WriteString(reset)
+		e.first = false
+	}
 	switch tok.Type {
 	case html.TextToken:
 		for _, s := range e.formatStack {
