@@ -6,6 +6,7 @@ require (
 	github.com/go-gl/mathgl v1.0.0
 	github.com/google/uuid v1.1.2
 	github.com/klauspost/compress v1.11.1
+	github.com/muhammadmuzzammil1998/jsonc v0.0.0-20200627155943-e1c384b63054 // indirect
 	github.com/pelletier/go-toml v1.8.1
 	github.com/sandertv/go-raknet v1.7.25
 	github.com/yourbasic/radix v0.0.0-20180308122924-cbe1cc82e907
