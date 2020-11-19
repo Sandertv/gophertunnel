@@ -903,24 +903,24 @@ func (conn *Conn) nextResourcePackDownload() error {
 func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) error {
 	id := strings.Split(pk.UUID, "_")[0]
 
-	downloadingPack, ok := conn.packQueue.downloadingPacks[id]
+	pack, ok := conn.packQueue.downloadingPacks[id]
 	if !ok {
 		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
 		// sent in the ResourcePacksInfo packet.
 		return fmt.Errorf("unknown pack to download with UUID %v", id)
 	}
-	if downloadingPack.size != pk.Size {
+	if pack.size != pk.Size {
 		// Size mismatch: The ResourcePacksInfo packet had a size for the pack that did not match with the
 		// size sent here.
 		conn.log.Printf("pack %v had a different size in the ResourcePacksInfo packet than the ResourcePackDataInfo packet\n", id)
-		downloadingPack.size = pk.Size
+		pack.size = pk.Size
 	}
 
 	// Remove the resource pack from the downloading packs and add it to the awaiting packets.
 	delete(conn.packQueue.downloadingPacks, id)
-	conn.packQueue.awaitingPacks[id] = &downloadingPack
+	conn.packQueue.awaitingPacks[id] = &pack
 
-	downloadingPack.chunkSize = pk.DataChunkSize
+	pack.chunkSize = pk.DataChunkSize
 
 	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
 	// though there's data, and the client will still download normally.
@@ -928,29 +928,31 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	if pk.Size%uint64(pk.DataChunkSize) != 0 {
 		chunkCount++
 	}
+
+	idCopy := pk.UUID
 	go func() {
 		for i := uint32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
-				UUID:       pk.UUID,
+				UUID:       idCopy,
 				ChunkIndex: i,
 			})
 			select {
 			case <-conn.close:
 				return
-			case frag := <-downloadingPack.newFrag:
+			case frag := <-pack.newFrag:
 				// Write the fragment to the full buffer of the downloading resource pack.
-				_, _ = downloadingPack.buf.Write(frag)
+				_, _ = pack.buf.Write(frag)
 			}
 		}
 		conn.packMu.Lock()
 		defer conn.packMu.Unlock()
 
-		if downloadingPack.buf.Len() != int(downloadingPack.size) {
-			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", downloadingPack.size, downloadingPack.buf.Len())
+		if pack.buf.Len() != int(pack.size) {
+			conn.log.Printf("incorrect resource pack size: expected %v, but got %v\n", pack.size, pack.buf.Len())
 			return
 		}
 		// First parse the resource pack from the total byte buffer we obtained.
-		pack, err := resource.FromBytes(downloadingPack.buf.Bytes())
+		pack, err := resource.FromBytes(pack.buf.Bytes())
 		if err != nil {
 			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", id, err)
 			return
