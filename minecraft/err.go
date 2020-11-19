@@ -26,27 +26,3 @@ func (conn *Conn) wrap(err error, op string) error {
 		Err:    err,
 	}
 }
-
-// wrap wraps the error passed into a net.OpError with the op as operation and returns it, or nil if the error
-// passed is nil. Additionally, the returned net.OpError returns true when err.Timeout() is called.
-func (conn *Conn) wrapTimeout(err error, op string) error {
-	if err == nil {
-		return nil
-	}
-	return conn.wrap(timeoutErr{err: err}, op)
-}
-
-// timeoutErr wraps around an error and implements the net.timeout interface.
-type timeoutErr struct {
-	err error
-}
-
-// Error ...
-func (t timeoutErr) Error() string {
-	return t.err.Error()
-}
-
-// Timeout ...
-func (t timeoutErr) Timeout() bool {
-	return true
-}
