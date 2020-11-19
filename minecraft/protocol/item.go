@@ -75,5 +75,15 @@ type ItemEntry struct {
 	Name string
 	// LegacyID is the legacy ID of the item. It must point to either an existing item ID or a new one if it
 	// seeks to implement a new item.
-	LegacyID int16
+	LegacyID       int16
+	ComponentBased bool
+}
+
+// ItemComponentEntry is sent in the ItemComponent item table. It holds a name and all of the components and
+// properties associated to the item.
+type ItemComponentEntry struct {
+	// Name is the name of the item, which is a name like 'minecraft:stick'.
+	Name string
+	// Data is a map containing the components and properties of the item.
+	Data map[string]interface{}
 }

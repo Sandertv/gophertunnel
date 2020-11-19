@@ -18,11 +18,11 @@ type ResourcePackStack struct {
 	// The order of these texture packs specifies the order that they are applied in on the client side. The
 	// first in the list will be applied first.
 	TexturePacks []protocol.StackResourcePack
-	// Experimental specifies if the resource packs in the stack are experimental. This is internal and should
-	// always be set to false.
-	Experimental bool
 	// BaseGameVersion is the vanilla version that the client should set its resource pack stack to.
 	BaseGameVersion string
+	// Unsure of the usage.
+	Experiments                     []protocol.ExperimentData
+	PreviouslyHadExperimentsToggled bool
 }
 
 // ID ...
@@ -42,8 +42,9 @@ func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
 	for _, pack := range pk.TexturePacks {
 		protocol.StackPack(w, &pack)
 	}
-	w.Bool(&pk.Experimental)
 	w.String(&pk.BaseGameVersion)
+	protocol.Experiments(w, &pk.Experiments)
+	w.Bool(&pk.PreviouslyHadExperimentsToggled)
 }
 
 // Unmarshal ...
@@ -61,6 +62,7 @@ func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < length; i++ {
 		protocol.StackPack(r, &pk.TexturePacks[i])
 	}
-	r.Bool(&pk.Experimental)
 	r.String(&pk.BaseGameVersion)
+	protocol.Experiments(r, &pk.Experiments)
+	r.Bool(&pk.PreviouslyHadExperimentsToggled)
 }

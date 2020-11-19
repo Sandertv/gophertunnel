@@ -55,14 +55,11 @@ type GameData struct {
 	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
 	// that are in the game, including any specific variants of that block, will crash mobile clients. It
 	// seems Windows 10 games do not crash.
-	Blocks []interface{}
+	Blocks []protocol.BlockEntry
 	// Items is a list of all items existing in the game. Failing to send any of the default items that are in
 	// the game will crash mobile clients.
-	Items []protocol.ItemEntry
-	// ServerAuthoritativeMovement specifies if the client should use the 'server authoritative movement',
-	// meaning it will send PlayerAuthInput packets instead of MovePlayer packets, which the server should
-	// verify.
-	ServerAuthoritativeMovement bool
+	Items                           []protocol.ItemEntry
+	ServerAuthoritativeMovementMode uint32
 	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.

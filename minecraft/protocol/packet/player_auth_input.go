@@ -55,7 +55,7 @@ const (
 
 // PlayerAuthInput is sent by the client to allow for server authoritative movement. It is used to synchronise
 // the player input with the position server-side.
-// The client sends this packet when the ServerAuthoritativeMovement field in the StartGame packet is set
+// The client sends this packet when the ServerAuthoritativeMovementMode field in the StartGame packet is set
 // to true, instead of the MovePlayer packet. The client will send this packet once every tick.
 type PlayerAuthInput struct {
 	// Pitch and Yaw hold the rotation that the player reports it has.
@@ -79,6 +79,9 @@ type PlayerAuthInput struct {
 	// GazeDirection is the direction in which the player is gazing, when the PlayMode is PlayModeReality: In
 	// other words, when the player is playing in virtual reality.
 	GazeDirection mgl32.Vec3
+	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
+	Tick  uint64
+	Delta mgl32.Vec3
 }
 
 // ID ...
@@ -99,6 +102,8 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	if pk.PlayMode == PlayModeReality {
 		w.Vec3(&pk.GazeDirection)
 	}
+	w.Varuint64(&pk.Tick)
+	w.Vec3(&pk.Delta)
 }
 
 // Unmarshal ...
@@ -114,4 +119,6 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	if pk.PlayMode == PlayModeReality {
 		r.Vec3(&pk.GazeDirection)
 	}
+	r.Varuint64(&pk.Tick)
+	r.Vec3(&pk.Delta)
 }

@@ -180,6 +180,12 @@ func init() {
 		IDPositionTrackingDBClientRequest:   func() Packet { return &PositionTrackingDBClientRequest{} },
 		IDDebugInfo:                         func() Packet { return &DebugInfo{} },
 		IDPacketViolationWarning:            func() Packet { return &PacketViolationWarning{} },
+		IDMotionPredictionHints:             func() Packet { return &MotionPredictionHints{} },
+		IDAnimateEntity:                     func() Packet { return &AnimateEntity{} },
+		IDCameraShake:                       func() Packet { return &CameraShake{} },
+		IDPlayerFog:                         func() Packet { return &PlayerFog{} },
+		IDCorrectPlayerMovePrediction:       func() Packet { return &CorrectPlayerMovePrediction{} },
+		IDItemComponent:                     func() Packet { return &ItemComponent{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

@@ -7,6 +7,10 @@ import (
 )
 
 const (
+	AuthoritativeMovementModeClient = iota
+	AuthoritativeMovementModeServer
+	AuthoritativeMovementModeServerWithRewind
+
 	SpawnBiomeTypeDefault = iota
 	SpawnBiomeTypeUserDefined
 )
@@ -105,7 +109,9 @@ type StartGame struct {
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.
-	GameRules map[string]interface{}
+	GameRules                    map[string]interface{}
+	Experiments                  []protocol.ExperimentData
+	ExperimentsPreviouslyToggled bool
 	// BonusChestEnabled specifies if the world had the bonus map setting enabled when generating it. It does
 	// not have any effect client-side.
 	BonusChestEnabled bool
@@ -165,12 +171,13 @@ type StartGame struct {
 	// Trial specifies if the world was a trial world, meaning features are limited and there is a time limit
 	// on the world.
 	Trial bool
-	// ServerAuthoritativeMovement specifies if the server is authoritative over the movement of the player,
+	// ServerAuthoritativeMovementMode specifies if the server is authoritative over the movement of the player,
 	// meaning it controls the movement of it.
 	// In reality, the only thing that changes when this field is set to true is the packet sent by the player
-	// when it moves. When set to true, it will send the PlayerAuthInput packet instead of the MovePlayer
-	// packet.
-	ServerAuthoritativeMovement bool
+	// when it moves. When set to AuthoritativeMovementModeServer or
+	// AuthoritativeMovementModeServerWithRewind, it will send the PlayerAuthInput packet instead of the
+	// MovePlayer packet.
+	ServerAuthoritativeMovementMode uint32
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
 	// EnchantmentSeed is the seed used to seed the random used to produce enchantments in the enchantment
@@ -178,7 +185,7 @@ type StartGame struct {
 	// both client- and server-side.
 	EnchantmentSeed int32
 	// Blocks is a list of all blocks registered on the server.
-	Blocks []interface{}
+	Blocks []protocol.BlockEntry
 	// Items is a list of all items with their legacy IDs which are available in the game. Failing to send any
 	// of the items that are in the game will crash mobile clients.
 	Items []protocol.ItemEntry
@@ -227,6 +234,8 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.CommandsEnabled)
 	w.Bool(&pk.TexturePackRequired)
 	protocol.WriteGameRules(w, &pk.GameRules)
+	protocol.Experiments(w, &pk.Experiments)
+	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
 	w.Varint32(&pk.PlayerPermissions)
@@ -252,16 +261,23 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.String(&pk.WorldName)
 	w.String(&pk.TemplateContentIdentity)
 	w.Bool(&pk.Trial)
-	w.Bool(&pk.ServerAuthoritativeMovement)
+	w.Varuint32(&pk.ServerAuthoritativeMovementMode)
 	w.Int64(&pk.Time)
 	w.Varint32(&pk.EnchantmentSeed)
-	w.NBTList(&pk.Blocks, nbt.NetworkLittleEndian)
 
-	l := uint32(len(pk.Items))
+	l := uint32(len(pk.Blocks))
+	w.Varuint32(&l)
+	for i := range pk.Blocks {
+		w.String(&pk.Blocks[i].Name)
+		w.NBT(&pk.Blocks[i].Properties, nbt.NetworkLittleEndian)
+	}
+
+	l = uint32(len(pk.Items))
 	w.Varuint32(&l)
 	for i := range pk.Items {
 		w.String(&pk.Items[i].Name)
 		w.Int16(&pk.Items[i].LegacyID)
+		w.Bool(&pk.Items[i].ComponentBased)
 	}
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
@@ -270,7 +286,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	pk.GameRules = make(map[string]interface{})
-	var itemCount uint32
+	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.PlayerGameMode)
@@ -300,6 +316,8 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.CommandsEnabled)
 	r.Bool(&pk.TexturePackRequired)
 	protocol.GameRules(r, &pk.GameRules)
+	protocol.Experiments(r, &pk.Experiments)
+	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
 	r.Varint32(&pk.PlayerPermissions)
@@ -325,16 +343,23 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.WorldName)
 	r.String(&pk.TemplateContentIdentity)
 	r.Bool(&pk.Trial)
-	r.Bool(&pk.ServerAuthoritativeMovement)
+	r.Varuint32(&pk.ServerAuthoritativeMovementMode)
 	r.Int64(&pk.Time)
 	r.Varint32(&pk.EnchantmentSeed)
-	r.NBTList(&pk.Blocks, nbt.NetworkLittleEndian)
-	r.Varuint32(&itemCount)
 
+	r.Varuint32(&blockCount)
+	pk.Blocks = make([]protocol.BlockEntry, blockCount)
+	for i := uint32(0); i < blockCount; i++ {
+		r.String(&pk.Blocks[i].Name)
+		r.NBT(&pk.Blocks[i].Properties, nbt.NetworkLittleEndian)
+	}
+
+	r.Varuint32(&itemCount)
 	pk.Items = make([]protocol.ItemEntry, itemCount)
 	for i := uint32(0); i < itemCount; i++ {
 		r.String(&pk.Items[i].Name)
 		r.Int16(&pk.Items[i].LegacyID)
+		r.Bool(&pk.Items[i].ComponentBased)
 	}
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)

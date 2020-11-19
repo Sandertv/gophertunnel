@@ -44,16 +44,16 @@ func (pk *MoveActorDelta) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
 	w.Uint16(&pk.Flags)
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
-		x := int32(math.Float32bits(pk.DeltaPosition[0]))
-		w.Varint32(&x)
+		x := float32(math.Float32bits(pk.DeltaPosition[0]))
+		w.Float32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasY != 0 {
-		x := int32(math.Float32bits(pk.DeltaPosition[1]))
-		w.Varint32(&x)
+		x := float32(math.Float32bits(pk.DeltaPosition[1]))
+		w.Float32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasZ != 0 {
-		x := int32(math.Float32bits(pk.DeltaPosition[2]))
-		w.Varint32(&x)
+		x := float32(math.Float32bits(pk.DeltaPosition[2]))
+		w.Float32(&x)
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotX != 0 {
 		w.ByteFloat(&pk.Rotation[0])

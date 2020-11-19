@@ -157,4 +157,10 @@ const (
 	IDPositionTrackingDBClientRequest
 	IDDebugInfo
 	IDPacketViolationWarning
+	IDMotionPredictionHints
+	IDAnimateEntity
+	IDCameraShake
+	IDPlayerFog
+	IDCorrectPlayerMovePrediction
+	IDItemComponent
 )

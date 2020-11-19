@@ -51,6 +51,8 @@ type MovePlayer struct {
 	TeleportCause int32
 	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
 	TeleportSourceEntityType int32
+	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
+	Tick uint64
 }
 
 // ID ...
@@ -72,6 +74,7 @@ func (pk *MovePlayer) Marshal(w *protocol.Writer) {
 		w.Int32(&pk.TeleportCause)
 		w.Int32(&pk.TeleportSourceEntityType)
 	}
+	w.Varuint64(&pk.Tick)
 }
 
 // Unmarshal ...
@@ -88,4 +91,5 @@ func (pk *MovePlayer) Unmarshal(r *protocol.Reader) {
 		r.Int32(&pk.TeleportCause)
 		r.Int32(&pk.TeleportSourceEntityType)
 	}
+	r.Varuint64(&pk.Tick)
 }
