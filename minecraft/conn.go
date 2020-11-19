@@ -278,7 +278,6 @@ func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 // WritePacket encodes the packet passed and writes it to the Conn. The encoded data is buffered until the
 // next 20th of a second, after which the data is flushed and sent over the connection.
 func (conn *Conn) WritePacket(pk packet.Packet) error {
-	fmt.Printf("Sending %T\n", pk)
 	select {
 	case <-conn.close:
 		return fmt.Errorf("connection closed")
@@ -314,7 +313,6 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			conn.log.Println(err)
 			return conn.ReadPacket()
 		}
-		fmt.Printf("Received %T\n", pk)
 		return pk, nil
 	}
 
@@ -329,7 +327,6 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			conn.log.Println(err)
 			return conn.ReadPacket()
 		}
-		fmt.Printf("Received %T\n", pk)
 		return pk, nil
 	}
 }

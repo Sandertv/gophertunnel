@@ -18,14 +18,15 @@ Gophertunnel supports only one version at a time. Generally, a new minor version
 supports a new Minecraft version that was not previously supported. A list of the recommended gophertunnel
 versions for past Minecraft versions is listed below.
 
-| Version | Tag      |
-|---------|----------|
-| 1.16.20 | Latest   |
-| 1.16.0  | v1.7.11  |
-| 1.14.60 | v1.6.5   |
-| 1.14.0  | v1.3.20  |
-| 1.13.0  | v1.3.5   |
-| 1.12.0  | v1.2.11  |
+| Version  | Tag      |
+|----------|----------|
+| 1.16.100 | Latest   |
+| 1.16.20  | v1.8.2   |
+| 1.16.0   | v1.7.11  |
+| 1.14.60  | v1.6.5   |
+| 1.14.0   | v1.3.20  |
+| 1.13.0   | v1.3.5   |
+| 1.12.0   | v1.2.11  |
 
 ## Sponsors
 [![Become Patron](https://img.shields.io/badge/dynamic/json?logo=patreon&style=for-the-badge&color=%23e85b46&label=Patreon&query=data.attributes.patron_count&suffix=%20patrons&url=https%3A%2F%2Fwww.patreon.com%2Fapi%2Fcampaigns%2F2832539)](https://patreon.com/sandertv)
