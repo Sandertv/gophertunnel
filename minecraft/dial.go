@@ -129,7 +129,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
 		dialer := raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}
 		var pong []byte
-		pong, err = dialer.Ping(address)
+		pong, err = dialer.PingContext(ctx, address)
 		if err != nil {
 			break
 		}
