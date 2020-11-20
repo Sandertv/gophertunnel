@@ -4,13 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
-	"encoding/json"
 	"fmt"
+	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 )
@@ -329,12 +328,8 @@ func readManifest(path string) (*Manifest, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error reading from manifest file: %v", err)
 	}
-	// Some JSON implementations (Mojang's) allow comments in JSON. We strip these out first.
-	expr := regexp.MustCompile(`//.*`)
-	allData = expr.ReplaceAll(allData, []byte{})
-
 	manifest := &Manifest{}
-	if err := json.Unmarshal(allData, manifest); err != nil {
+	if err := jsonc.Unmarshal(allData, manifest); err != nil {
 		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
 	}
 	manifest.Header.UUID = strings.ToLower(manifest.Header.UUID)

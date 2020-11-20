@@ -126,7 +126,7 @@ func Listen(network, address string) (*Listener, error) {
 func (listener *Listener) Accept() (net.Conn, error) {
 	conn, ok := <-listener.incoming
 	if !ok {
-		return nil, fmt.Errorf("accept: listener closed")
+		return nil, &net.OpError{Op: "accept", Net: "minecraft", Addr: listener.Addr(), Err: errListenerClosed}
 	}
 	return conn, nil
 }

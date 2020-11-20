@@ -1,9 +1,9 @@
 # gophertunnel
-> A Minecraft library used for creating proxies, servers, clients and tools.
+> Swiss army knife for Minecraft (Bedrock Edition) software written in Go
 
 [Module Documentation](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel)
 
-![telescope gopher](https://github.com/Sandertv/gophertunnel/blob/master/gophertunnel_telescope_coloured.png)
+![telescope gopher](https://raw.githubusercontent.com/Sandertv/gophertunnel/master/gophertunnel_telescope_coloured.png)
 
 ## Overview
 gophertunnel is composed of several packages that may be of use for creating Minecraft related tools. A brief
