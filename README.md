@@ -1,7 +1,6 @@
 # gophertunnel
 > Swiss army knife for Minecraft (Bedrock Edition) software written in Go
-
-[Module Documentation](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel)
+[![PkgGoDev](https://pkg.go.dev/badge/github.com/sandertv/gophertunnel)](https://pkg.go.dev/github.com/sandertv/gophertunnel)
 
 ![telescope gopher](https://raw.githubusercontent.com/Sandertv/gophertunnel/master/gophertunnel_telescope_coloured.png)
 
