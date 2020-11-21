@@ -5,10 +5,10 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// MotionPredictionHints is sent by the server to the client for debugging reasons. The packet is not useful
-// to a third party server.
-// There is a predictive movement component for entities. This packet fills the "history" of that component
-// and, when enabled, prints debug points on the screen to see where the entity would move.
+// MotionPredictionHints is sent by the server to the client. There is a predictive movement component for
+// entities. This packet fills the "history" of that component and entity movement is computed based on the
+// points. Vanilla sends this packet instead of the SetActorMotion packet when 'spatial optimisations' are
+// enabled.
 type MotionPredictionHints struct {
 	// EntityRuntimeID is the runtime ID of the entity whose velocity is sent to the client.
 	EntityRuntimeID uint64
