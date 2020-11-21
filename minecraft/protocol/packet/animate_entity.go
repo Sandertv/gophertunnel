@@ -4,13 +4,16 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// AnimateEntity is sent by the server to animate an entity client-side.
 type AnimateEntity struct {
+	// TODO: Document all these fields.
 	Animation     string
 	NextState     string
 	StopCondition string
 	Controller    string
 	BlendOutTime  float32
-	RuntimeIDs    []uint64
+	// EntityRuntimeIDs is list of runtime IDs of entities that the animation should be applied to.
+	EntityRuntimeIDs []uint64
 }
 
 // ID ...
@@ -25,10 +28,10 @@ func (pk *AnimateEntity) Marshal(w *protocol.Writer) {
 	w.String(&pk.StopCondition)
 	w.String(&pk.Controller)
 	w.Float32(&pk.BlendOutTime)
-	l := uint32(len(pk.RuntimeIDs))
+	l := uint32(len(pk.EntityRuntimeIDs))
 	w.Varuint32(&l)
-	for i := range pk.RuntimeIDs {
-		w.Varuint64(&pk.RuntimeIDs[i])
+	for i := range pk.EntityRuntimeIDs {
+		w.Varuint64(&pk.EntityRuntimeIDs[i])
 	}
 }
 
@@ -40,8 +43,8 @@ func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.Controller)
 	var count uint32
 	r.Varuint32(&count)
-	pk.RuntimeIDs = make([]uint64, count)
+	pk.EntityRuntimeIDs = make([]uint64, count)
 	for i := uint32(0); i < count; i++ {
-		r.Varuint64(&pk.RuntimeIDs[i])
+		r.Varuint64(&pk.EntityRuntimeIDs[i])
 	}
 }

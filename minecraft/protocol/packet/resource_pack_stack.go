@@ -20,9 +20,13 @@ type ResourcePackStack struct {
 	TexturePacks []protocol.StackResourcePack
 	// BaseGameVersion is the vanilla version that the client should set its resource pack stack to.
 	BaseGameVersion string
-	// Unsure of the usage.
-	Experiments                     []protocol.ExperimentData
-	PreviouslyHadExperimentsToggled bool
+	// Experiments holds a list of experiments that are either enabled or disabled in the world that the
+	// player spawns in.
+	// It is not clear why experiments are sent both here and in the StartGame packet.
+	Experiments []protocol.ExperimentData
+	// ExperimentsPreviouslyToggled specifies if any experiments were previously toggled in this world. It is
+	// probably used for some kind of metrics.
+	ExperimentsPreviouslyToggled bool
 }
 
 // ID ...
@@ -43,8 +47,12 @@ func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
 		protocol.StackPack(w, &pack)
 	}
 	w.String(&pk.BaseGameVersion)
-	protocol.Experiments(w, &pk.Experiments)
-	w.Bool(&pk.PreviouslyHadExperimentsToggled)
+	l := uint32(len(pk.Experiments))
+	w.Uint32(&l)
+	for _, experiment := range pk.Experiments {
+		protocol.Experiment(w, &experiment)
+	}
+	w.Bool(&pk.ExperimentsPreviouslyToggled)
 }
 
 // Unmarshal ...
@@ -63,6 +71,10 @@ func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
 		protocol.StackPack(r, &pk.TexturePacks[i])
 	}
 	r.String(&pk.BaseGameVersion)
-	protocol.Experiments(r, &pk.Experiments)
-	r.Bool(&pk.PreviouslyHadExperimentsToggled)
+	var l uint32
+	r.Uint32(&l)
+	for i := uint32(0); i < l; i++ {
+		protocol.Experiment(r, &pk.Experiments[i])
+	}
+	r.Bool(&pk.ExperimentsPreviouslyToggled)
 }

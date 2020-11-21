@@ -5,6 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// TODO: Documentation
 type MotionPredictionHints struct {
 	EntityRuntimeID uint64
 	Motion          mgl32.Vec3

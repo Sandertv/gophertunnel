@@ -5,6 +5,9 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// CorrectPlayerMovePrediction is sent by the server if and only if StartGame.ServerAuthoritativeMovementMode
+// is set to AuthoritativeMovementModeServerWithRewind.
+// TODO
 type CorrectPlayerMovePrediction struct {
 	Position mgl32.Vec3
 	Delta    mgl32.Vec3

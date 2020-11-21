@@ -1,18 +1,16 @@
 package protocol
 
+// ExperimentData holds data on an experiment that is either enabled or disabled.
 type ExperimentData struct {
-	Name    string
+	// Name is the name of the experiment.
+	Name string
+	// Enabled specifies if the experiment is enabled. Vanilla typically always sets this to true for any
+	// experiments sent.
 	Enabled bool
 }
 
-func Experiments(r IO, x *[]ExperimentData) {
-	var count int32
-	r.Int32(&count)
-	*x = make([]ExperimentData, count)
-	for i := int32(0); i < count; i++ {
-		e := ExperimentData{}
-		r.String(&e.Name)
-		r.Bool(&e.Enabled)
-		*x = append(*x, e)
-	}
+// Experiment reads an ExperimentData x from IO r.
+func Experiment(r IO, x *ExperimentData) {
+	r.String(&x.Name)
+	r.Bool(&x.Enabled)
 }

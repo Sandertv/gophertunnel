@@ -1,11 +1,12 @@
 package packet
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// ItemComponent is sent by the server to attach client-side components to a custom item.
 type ItemComponent struct {
+	// Items holds a list of all custom items with their respective components set.
 	Items []protocol.ItemComponentEntry
 }
 
@@ -19,8 +20,7 @@ func (pk *ItemComponent) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Items))
 	w.Varuint32(&l)
 	for i := range pk.Items {
-		w.String(&pk.Items[i].Name)
-		w.NBT(&pk.Items[i].Data, nbt.NetworkLittleEndian)
+		protocol.ItemComponents(w, &pk.Items[i])
 	}
 }
 
@@ -30,7 +30,6 @@ func (pk *ItemComponent) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&count)
 	pk.Items = make([]protocol.ItemComponentEntry, count)
 	for i := uint32(0); i < count; i++ {
-		r.String(&pk.Items[i].Name)
-		r.NBT(&pk.Items[i].Data, nbt.NetworkLittleEndian)
+		protocol.ItemComponents(r, &pk.Items[i])
 	}
 }

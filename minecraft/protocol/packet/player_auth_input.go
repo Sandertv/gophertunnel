@@ -79,8 +79,11 @@ type PlayerAuthInput struct {
 	// GazeDirection is the direction in which the player is gazing, when the PlayMode is PlayModeReality: In
 	// other words, when the player is playing in virtual reality.
 	GazeDirection mgl32.Vec3
-	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
-	Tick  uint64
+	// Tick is the server tick at which the packet was sent. It is used in relation to
+	// CorrectPlayerMovePrediction.
+	Tick uint64
+	// Delta was the delta between the old and the new position. There isn't any practical use for this field
+	// as it can be calculated by the server itself.
 	Delta mgl32.Vec3
 }
 

@@ -2,7 +2,6 @@ package packet
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -109,8 +108,12 @@ type StartGame struct {
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.
-	GameRules                    map[string]interface{}
-	Experiments                  []protocol.ExperimentData
+	GameRules map[string]interface{}
+	// Experiments holds a list of experiments that are either enabled or disabled in the world that the
+	// player spawns in.
+	Experiments []protocol.ExperimentData
+	// ExperimentsPreviouslyToggled specifies if any experiments were previously toggled in this world. It is
+	// probably used for some kind of metrics.
 	ExperimentsPreviouslyToggled bool
 	// BonusChestEnabled specifies if the world had the bonus map setting enabled when generating it. It does
 	// not have any effect client-side.
@@ -234,7 +237,11 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.CommandsEnabled)
 	w.Bool(&pk.TexturePackRequired)
 	protocol.WriteGameRules(w, &pk.GameRules)
-	protocol.Experiments(w, &pk.Experiments)
+	l := uint32(len(pk.Experiments))
+	w.Uint32(&l)
+	for _, experiment := range pk.Experiments {
+		protocol.Experiment(w, &experiment)
+	}
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
@@ -265,19 +272,16 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Int64(&pk.Time)
 	w.Varint32(&pk.EnchantmentSeed)
 
-	l := uint32(len(pk.Blocks))
+	l = uint32(len(pk.Blocks))
 	w.Varuint32(&l)
 	for i := range pk.Blocks {
-		w.String(&pk.Blocks[i].Name)
-		w.NBT(&pk.Blocks[i].Properties, nbt.NetworkLittleEndian)
+		protocol.Block(w, &pk.Blocks[i])
 	}
 
 	l = uint32(len(pk.Items))
 	w.Varuint32(&l)
 	for i := range pk.Items {
-		w.String(&pk.Items[i].Name)
-		w.Int16(&pk.Items[i].LegacyID)
-		w.Bool(&pk.Items[i].ComponentBased)
+		protocol.Item(w, &pk.Items[i])
 	}
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
@@ -316,7 +320,11 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.CommandsEnabled)
 	r.Bool(&pk.TexturePackRequired)
 	protocol.GameRules(r, &pk.GameRules)
-	protocol.Experiments(r, &pk.Experiments)
+	var l uint32
+	r.Uint32(&l)
+	for i := uint32(0); i < l; i++ {
+		protocol.Experiment(r, &pk.Experiments[i])
+	}
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
@@ -350,16 +358,13 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&blockCount)
 	pk.Blocks = make([]protocol.BlockEntry, blockCount)
 	for i := uint32(0); i < blockCount; i++ {
-		r.String(&pk.Blocks[i].Name)
-		r.NBT(&pk.Blocks[i].Properties, nbt.NetworkLittleEndian)
+		protocol.Block(r, &pk.Blocks[i])
 	}
 
 	r.Varuint32(&itemCount)
 	pk.Items = make([]protocol.ItemEntry, itemCount)
 	for i := uint32(0); i < itemCount; i++ {
-		r.String(&pk.Items[i].Name)
-		r.Int16(&pk.Items[i].LegacyID)
-		r.Bool(&pk.Items[i].ComponentBased)
+		protocol.Item(r, &pk.Items[i])
 	}
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)

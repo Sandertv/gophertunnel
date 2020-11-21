@@ -1,5 +1,7 @@
 package protocol
 
+import "github.com/sandertv/gophertunnel/minecraft/nbt"
+
 // ItemInstance represents a unique instance of an item stack. These instances carry a specific network ID
 // that is persistent for the stack.
 type ItemInstance struct {
@@ -73,10 +75,18 @@ func RecipeIngredient(r IO, x *RecipeIngredientItem) {
 type ItemEntry struct {
 	// Name if the name of the item, which is a name like 'minecraft:stick'.
 	Name string
-	// LegacyID is the legacy ID of the item. It must point to either an existing item ID or a new one if it
-	// seeks to implement a new item.
-	LegacyID       int16
+	// RuntimeID is the ID that is used to identify the item over network. After sending all items in the
+	// StartGame packet, items will then be identified using these numerical IDs.
+	RuntimeID int16
+	// ComponentBased specifies if the item was created using components, meaning the item is a custom item.
 	ComponentBased bool
+}
+
+// Item reads/writes an ItemEntry x using IO r.
+func Item(r IO, x *ItemEntry) {
+	r.String(&x.Name)
+	r.Int16(&x.RuntimeID)
+	r.Bool(&x.ComponentBased)
 }
 
 // ItemComponentEntry is sent in the ItemComponent item table. It holds a name and all of the components and
@@ -86,4 +96,10 @@ type ItemComponentEntry struct {
 	Name string
 	// Data is a map containing the components and properties of the item.
 	Data map[string]interface{}
+}
+
+// ItemComponents reads/writes an ItemComponentEntry x using IO r.
+func ItemComponents(r IO, x *ItemComponentEntry) {
+	r.String(&x.Name)
+	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
