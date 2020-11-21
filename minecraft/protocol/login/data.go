@@ -243,6 +243,10 @@ type SkinAnimation struct {
 	// 2 -> 32x32 Body animation.
 	// 3 -> 128x128 Body animation.
 	Type int
+	// ExpressionType is the type of expression made by the skin, which is one of the following:
+	// 0 -> Linear.
+	// 1 -> Blinking.
+	AnimationExpression int
 }
 
 // checkVersion is used to check if a version is an actual valid version. It must only contain numbers and
