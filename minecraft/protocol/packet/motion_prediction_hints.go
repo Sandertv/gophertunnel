@@ -5,11 +5,17 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// TODO: Documentation
+// MotionPredictionHints is sent by the server to the client for debugging reasons. The packet is not useful
+// to a third party server.
+// There is a predictive movement component for entities. This packet fills the "history" of that component
+// and, when enabled, prints debug points on the screen to see where the entity would move.
 type MotionPredictionHints struct {
+	// EntityRuntimeID is the runtime ID of the entity whose velocity is sent to the client.
 	EntityRuntimeID uint64
-	Motion          mgl32.Vec3
-	OnGround        bool
+	// Velocity is the server-calculated velocity of the entity at the point of sending the packet.
+	Velocity mgl32.Vec3
+	// OnGround specifies if the server currently thinks the entity is on the ground.
+	OnGround bool
 }
 
 // ID ...
@@ -20,13 +26,13 @@ func (*MotionPredictionHints) ID() uint32 {
 // Marshal ...
 func (pk *MotionPredictionHints) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
-	w.Vec3(&pk.Motion)
+	w.Vec3(&pk.Velocity)
 	w.Bool(&pk.OnGround)
 }
 
 // Unmarshal ...
 func (pk *MotionPredictionHints) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
-	r.Vec3(&pk.Motion)
+	r.Vec3(&pk.Velocity)
 	r.Bool(&pk.OnGround)
 }
