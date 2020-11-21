@@ -122,6 +122,8 @@ type Conn struct {
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
 	disconnectMessage atomic.String
+
+	shieldID atomic.Int32
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -214,7 +216,13 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
+
 	conn.gameData = data
+	for _, item := range data.Items {
+		if item.Name == "minecraft:shield" {
+			conn.shieldID.Store(int32(item.RuntimeID))
+		}
+	}
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
@@ -286,7 +294,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	_ = conn.hdr.Write(conn.w)
 	l := conn.w.Len()
 
-	pk.Marshal(protocol.NewWriter(conn.w))
+	pk.Marshal(protocol.NewWriter(conn.w, conn.shieldID.Load()))
 	if conn.packetFunc != nil {
 		conn.packetFunc(*conn.hdr, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
@@ -1056,6 +1064,11 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		ServerAuthoritativeMovementMode: pk.ServerAuthoritativeMovementMode,
 		WorldGameMode:                   pk.WorldGameMode,
 		ServerAuthoritativeInventory:    pk.ServerAuthoritativeInventory,
+	}
+	for _, item := range pk.Items {
+		if item.Name == "minecraft:shield" {
+			conn.shieldID.Store(int32(item.RuntimeID))
+		}
 	}
 	// Clear out the start game packet from the pool.
 	conn.pool[packet.IDStartGame] = &packet.StartGame{}

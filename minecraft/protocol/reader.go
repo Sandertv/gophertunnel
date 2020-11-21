@@ -21,14 +21,15 @@ type Reader struct {
 		io.Reader
 		io.ByteReader
 	}
+	shieldID int32
 }
 
 // NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
 func NewReader(r interface {
 	io.Reader
 	io.ByteReader
-}) *Reader {
-	return &Reader{r: r}
+}, shieldID int32) *Reader {
+	return &Reader{r: r, shieldID: shieldID}
 }
 
 // Uint8 reads a uint8 from the underlying buffer.
@@ -276,8 +277,7 @@ func (r *Reader) Item(x *ItemStack) {
 	for i := int32(0); i < count; i++ {
 		r.String(&x.CanBreak[i])
 	}
-	const shieldID = 513
-	if x.NetworkID == shieldID {
+	if x.NetworkID == r.shieldID {
 		var blockingTick int64
 		r.Varint64(&blockingTick)
 	}

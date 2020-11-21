@@ -19,14 +19,15 @@ type Writer struct {
 		io.Writer
 		io.ByteWriter
 	}
+	shieldID int32
 }
 
 // NewWriter creates a new initialised Writer with an underlying io.ByteWriter to write to.
 func NewWriter(w interface {
 	io.Writer
 	io.ByteWriter
-}) *Writer {
-	return &Writer{w: w}
+}, shieldID int32) *Writer {
+	return &Writer{w: w, shieldID: shieldID}
 }
 
 // Uint8 writes a uint8 to the underlying buffer.
@@ -182,9 +183,7 @@ func (w *Writer) Item(x *ItemStack) {
 	for _, block := range x.CanBreak {
 		w.String(&block)
 	}
-
-	const shieldID = 513
-	if x.NetworkID == shieldID {
+	if x.NetworkID == w.shieldID {
 		var blockingTick int64
 		w.Varint64(&blockingTick)
 	}
