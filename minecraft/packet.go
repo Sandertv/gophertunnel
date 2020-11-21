@@ -39,7 +39,7 @@ func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
 	}
 
-	r := protocol.NewReader(p.payload)
+	r := protocol.NewReader(p.payload, conn.shieldID.Load())
 	defer func() {
 		if recoveredErr := recover(); recoveredErr != nil {
 			err = fmt.Errorf("%T: %w", pk, recoveredErr.(error))

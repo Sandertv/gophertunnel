@@ -24,20 +24,20 @@ const (
 	IDUpdateBlock
 	IDAddPainting
 	IDTickSync
-	_ // IDLevelSoundEvent(1): We don't bother implementing this.
+	_
 	IDLevelEvent
 	IDBlockEvent
 	IDActorEvent
 	IDMobEffect
 	IDUpdateAttributes
-	IDInventoryTransaction // 30
+	IDInventoryTransaction
 	IDMobEquipment
 	IDMobArmourEquipment
 	IDInteract
 	IDBlockPickRequest
 	IDActorPickRequest
 	IDPlayerAction
-	IDActorFall
+	_
 	IDHurtArmour
 	IDSetActorData
 	IDSetActorMotion
@@ -120,13 +120,13 @@ const (
 	IDScriptCustomEvent
 	IDSpawnParticleEffect
 	IDAvailableActorIdentifiers
-	_ // IDLevelSoundEvent(2): We don't bother implementing this.
+	_
 	IDNetworkChunkPublisherUpdate
 	IDBiomeDefinitionList
 	IDLevelSoundEvent
 	IDLevelEventGeneric
 	IDLecternUpdate
-	_ // VideoStreamConnect, removed in 1.16.
+	_
 	IDAddEntity
 	IDRemoveEntity
 	IDClientCacheStatus
@@ -134,7 +134,7 @@ const (
 	IDOnScreenTextureAnimation
 	IDStructureTemplateDataRequest
 	IDStructureTemplateDataResponse
-	IDUpdateBlockProperties
+	_
 	IDClientCacheBlobStatus
 	IDClientCacheMissResponse
 	IDEducationSettings
@@ -157,4 +157,10 @@ const (
 	IDPositionTrackingDBClientRequest
 	IDDebugInfo
 	IDPacketViolationWarning
+	IDMotionPredictionHints
+	IDAnimateEntity
+	IDCameraShake
+	IDPlayerFog
+	IDCorrectPlayerMovePrediction
+	IDItemComponent
 )

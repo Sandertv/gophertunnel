@@ -11,6 +11,9 @@ type ContainerClose struct {
 	// WindowID is the ID representing the window of the container that should be closed. It must be equal to
 	// the one sent in the ContainerOpen packet to close the designated window.
 	WindowID byte
+	// ServerSide determines whether or not the container was force-closed by the server. If this value is
+	// not set correctly, the client may ignore the packet and respond with a PacketViolationWarning.
+	ServerSide bool
 }
 
 // ID ...
@@ -21,9 +24,11 @@ func (*ContainerClose) ID() uint32 {
 // Marshal ...
 func (pk *ContainerClose) Marshal(w *protocol.Writer) {
 	w.Uint8(&pk.WindowID)
+	w.Bool(&pk.ServerSide)
 }
 
 // Unmarshal ...
 func (pk *ContainerClose) Unmarshal(r *protocol.Reader) {
 	r.Uint8(&pk.WindowID)
+	r.Bool(&pk.ServerSide)
 }

@@ -9,7 +9,6 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -123,6 +122,8 @@ type Conn struct {
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
 	disconnectMessage atomic.String
+
+	shieldID atomic.Int32
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -215,7 +216,13 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
+
 	conn.gameData = data
+	for _, item := range data.Items {
+		if item.Name == "minecraft:shield" {
+			conn.shieldID.Store(int32(item.RuntimeID))
+		}
+	}
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
 
@@ -287,7 +294,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	_ = conn.hdr.Write(conn.w)
 	l := conn.w.Len()
 
-	pk.Marshal(protocol.NewWriter(conn.w))
+	pk.Marshal(protocol.NewWriter(conn.w, conn.shieldID.Load()))
 	if conn.packetFunc != nil {
 		conn.packetFunc(*conn.hdr, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
@@ -855,30 +862,30 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 func (conn *Conn) startGame() {
 	data := conn.gameData
 	_ = conn.WritePacket(&packet.StartGame{
-		Difficulty:                   data.Difficulty,
-		EntityUniqueID:               data.EntityUniqueID,
-		EntityRuntimeID:              data.EntityRuntimeID,
-		PlayerGameMode:               data.PlayerGameMode,
-		PlayerPosition:               data.PlayerPosition,
-		Pitch:                        data.Pitch,
-		Yaw:                          data.Yaw,
-		Dimension:                    data.Dimension,
-		WorldSpawn:                   data.WorldSpawn,
-		GameRules:                    data.GameRules,
-		Time:                         data.Time,
-		Blocks:                       data.Blocks,
-		Items:                        data.Items,
-		AchievementsDisabled:         true,
-		Generator:                    1,
-		EducationFeaturesEnabled:     true,
-		MultiPlayerGame:              true,
-		MultiPlayerCorrelationID:     uuid.Must(uuid.NewRandom()).String(),
-		CommandsEnabled:              true,
-		WorldName:                    data.WorldName,
-		LANBroadcastEnabled:          true,
-		ServerAuthoritativeMovement:  data.ServerAuthoritativeMovement,
-		WorldGameMode:                data.WorldGameMode,
-		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
+		Difficulty:                      data.Difficulty,
+		EntityUniqueID:                  data.EntityUniqueID,
+		EntityRuntimeID:                 data.EntityRuntimeID,
+		PlayerGameMode:                  data.PlayerGameMode,
+		PlayerPosition:                  data.PlayerPosition,
+		Pitch:                           data.Pitch,
+		Yaw:                             data.Yaw,
+		Dimension:                       data.Dimension,
+		WorldSpawn:                      data.WorldSpawn,
+		GameRules:                       data.GameRules,
+		Time:                            data.Time,
+		Blocks:                          data.CustomBlocks,
+		Items:                           data.Items,
+		AchievementsDisabled:            true,
+		Generator:                       1,
+		EducationFeaturesEnabled:        true,
+		MultiPlayerGame:                 true,
+		MultiPlayerCorrelationID:        uuid.Must(uuid.NewRandom()).String(),
+		CommandsEnabled:                 true,
+		WorldName:                       data.WorldName,
+		LANBroadcastEnabled:             true,
+		ServerAuthoritativeMovementMode: data.ServerAuthoritativeMovementMode,
+		WorldGameMode:                   data.WorldGameMode,
+		ServerAuthoritativeInventory:    data.ServerAuthoritativeInventory,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1040,23 +1047,28 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
-		Difficulty:                   pk.Difficulty,
-		WorldName:                    pk.WorldName,
-		EntityUniqueID:               pk.EntityUniqueID,
-		EntityRuntimeID:              pk.EntityRuntimeID,
-		PlayerGameMode:               pk.PlayerGameMode,
-		PlayerPosition:               pk.PlayerPosition,
-		Pitch:                        pk.Pitch,
-		Yaw:                          pk.Yaw,
-		Dimension:                    pk.Dimension,
-		WorldSpawn:                   pk.WorldSpawn,
-		GameRules:                    pk.GameRules,
-		Time:                         pk.Time,
-		Blocks:                       internal.PutAndGetStates(pk.Blocks),
-		Items:                        pk.Items,
-		ServerAuthoritativeMovement:  pk.ServerAuthoritativeMovement,
-		WorldGameMode:                pk.WorldGameMode,
-		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
+		Difficulty:                      pk.Difficulty,
+		WorldName:                       pk.WorldName,
+		EntityUniqueID:                  pk.EntityUniqueID,
+		EntityRuntimeID:                 pk.EntityRuntimeID,
+		PlayerGameMode:                  pk.PlayerGameMode,
+		PlayerPosition:                  pk.PlayerPosition,
+		Pitch:                           pk.Pitch,
+		Yaw:                             pk.Yaw,
+		Dimension:                       pk.Dimension,
+		WorldSpawn:                      pk.WorldSpawn,
+		GameRules:                       pk.GameRules,
+		Time:                            pk.Time,
+		CustomBlocks:                    pk.Blocks,
+		Items:                           pk.Items,
+		ServerAuthoritativeMovementMode: pk.ServerAuthoritativeMovementMode,
+		WorldGameMode:                   pk.WorldGameMode,
+		ServerAuthoritativeInventory:    pk.ServerAuthoritativeInventory,
+	}
+	for _, item := range pk.Items {
+		if item.Name == "minecraft:shield" {
+			conn.shieldID.Store(int32(item.RuntimeID))
+		}
 	}
 	// Clear out the start game packet from the pool.
 	conn.pool[packet.IDStartGame] = &packet.StartGame{}
@@ -1087,6 +1099,8 @@ func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error 
 	})
 
 	_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
+
+	_ = conn.WritePacket(&packet.CreativeContent{})
 	return nil
 }
 

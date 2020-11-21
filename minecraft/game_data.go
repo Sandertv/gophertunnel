@@ -52,17 +52,17 @@ type GameData struct {
 	GameRules map[string]interface{}
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
-	// Blocks is a list of all blocks and variants existing in the game. Failing to send any of the blocks
-	// that are in the game, including any specific variants of that block, will crash mobile clients. It
-	// seems Windows 10 games do not crash.
-	Blocks []interface{}
-	// Items is a list of all items existing in the game. Failing to send any of the default items that are in
-	// the game will crash mobile clients.
+	// CustomBlocks is a list of custom blocks added to the game by the server. These blocks all have a name
+	// and block properties.
+	CustomBlocks []protocol.BlockEntry
+	// Items is a list of all items existing in the game, including custom items registered by the server.
 	Items []protocol.ItemEntry
-	// ServerAuthoritativeMovement specifies if the client should use the 'server authoritative movement',
-	// meaning it will send PlayerAuthInput packets instead of MovePlayer packets, which the server should
-	// verify.
-	ServerAuthoritativeMovement bool
+	// ServerAuthoritativeMovementMode specifies the way the server handles player movement. Available options
+	// are packet.AuthoritativeMovementModeClient, packet.AuthoritativeMovementModeServer and
+	// packet.AuthoritativeMovementModeServerWithRewind, where server the server authoritative types result in
+	// the client sending PlayerAuthInput packets instead of MovePlayer packets and the rewind mode requires
+	// sending the tick of movement and several actions.
+	ServerAuthoritativeMovementMode uint32
 	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.

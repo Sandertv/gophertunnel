@@ -167,6 +167,9 @@ const (
 	SkinAnimationHead = iota + 1
 	SkinAnimationBody32x32
 	SkinAnimationBody128x128
+
+	ExpressionTypeLinear = iota
+	ExpressionTypeBlinking
 )
 
 // SkinAnimation represents an animation that may be added to a skin. The client plays the animation itself,
@@ -188,6 +191,8 @@ type SkinAnimation struct {
 	// FrameCount is the amount of frames that the skin animation holds. The number of frames here is the
 	// amount of images that may be found in the ImageData field.
 	FrameCount float32
+	// ExpressionType is the type of expression made by the skin, which is one the types found above.
+	ExpressionType uint32
 }
 
 // Animation reads/writes a SkinAnimation x using IO r.
@@ -197,6 +202,7 @@ func Animation(r IO, x *SkinAnimation) {
 	r.ByteSlice(&x.ImageData)
 	r.Uint32(&x.AnimationType)
 	r.Float32(&x.FrameCount)
+	r.Uint32(&x.ExpressionType)
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.

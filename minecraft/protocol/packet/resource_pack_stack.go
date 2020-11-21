@@ -18,11 +18,15 @@ type ResourcePackStack struct {
 	// The order of these texture packs specifies the order that they are applied in on the client side. The
 	// first in the list will be applied first.
 	TexturePacks []protocol.StackResourcePack
-	// Experimental specifies if the resource packs in the stack are experimental. This is internal and should
-	// always be set to false.
-	Experimental bool
 	// BaseGameVersion is the vanilla version that the client should set its resource pack stack to.
 	BaseGameVersion string
+	// Experiments holds a list of experiments that are either enabled or disabled in the world that the
+	// player spawns in.
+	// It is not clear why experiments are sent both here and in the StartGame packet.
+	Experiments []protocol.ExperimentData
+	// ExperimentsPreviouslyToggled specifies if any experiments were previously toggled in this world. It is
+	// probably used for some kind of metrics.
+	ExperimentsPreviouslyToggled bool
 }
 
 // ID ...
@@ -42,8 +46,13 @@ func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
 	for _, pack := range pk.TexturePacks {
 		protocol.StackPack(w, &pack)
 	}
-	w.Bool(&pk.Experimental)
 	w.String(&pk.BaseGameVersion)
+	l := uint32(len(pk.Experiments))
+	w.Uint32(&l)
+	for _, experiment := range pk.Experiments {
+		protocol.Experiment(w, &experiment)
+	}
+	w.Bool(&pk.ExperimentsPreviouslyToggled)
 }
 
 // Unmarshal ...
@@ -61,6 +70,11 @@ func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < length; i++ {
 		protocol.StackPack(r, &pk.TexturePacks[i])
 	}
-	r.Bool(&pk.Experimental)
 	r.String(&pk.BaseGameVersion)
+	var l uint32
+	r.Uint32(&l)
+	for i := uint32(0); i < l; i++ {
+		protocol.Experiment(r, &pk.Experiments[i])
+	}
+	r.Bool(&pk.ExperimentsPreviouslyToggled)
 }

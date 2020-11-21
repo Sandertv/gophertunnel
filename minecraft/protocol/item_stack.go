@@ -111,12 +111,19 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 	}
 }
 
+const (
+	ItemStackResponseStatusOK = iota
+	ItemStackResponseStatusError
+	// There are lots more of these statuses for specific errors, but they don't seem to be very useful.
+)
+
 // ItemStackResponse is a response to an individual ItemStackRequest.
 type ItemStackResponse struct {
-	// Success specifies if the request with the RequestID below was successful. If this is the case, the
+	// Status specifies if the request with the RequestID below was successful. If this is the case, the
 	// ContainerInfo below will have information on what slots ended up changing. If not, the container info
 	// will be empty.
-	Success bool
+	// A non-0 status means an error occurred and will result in the action being reverted.
+	Status uint8
 	// RequestID is the unique ID of the request that this response is in reaction to. If rejected, the client
 	// will undo the actions from the request with this ID.
 	RequestID int32
@@ -149,9 +156,9 @@ type StackResponseSlotInfo struct {
 
 // WriteStackResponse writes an ItemStackResponse x to Writer w.
 func WriteStackResponse(w *Writer, x *ItemStackResponse) {
-	w.Bool(&x.Success)
+	w.Uint8(&x.Status)
 	w.Varint32(&x.RequestID)
-	if !x.Success {
+	if x.Status != ItemStackResponseStatusOK {
 		return
 	}
 	l := uint32(len(x.ContainerInfo))
@@ -164,9 +171,9 @@ func WriteStackResponse(w *Writer, x *ItemStackResponse) {
 // StackResponse reads an ItemStackResponse x from Reader r.
 func StackResponse(r *Reader, x *ItemStackResponse) {
 	var l uint32
-	r.Bool(&x.Success)
+	r.Uint8(&x.Status)
 	r.Varint32(&x.RequestID)
-	if !x.Success {
+	if x.Status != ItemStackResponseStatusOK {
 		return
 	}
 	r.Varuint32(&l)
