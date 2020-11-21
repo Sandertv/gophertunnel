@@ -11,8 +11,8 @@ type ContainerClose struct {
 	// WindowID is the ID representing the window of the container that should be closed. It must be equal to
 	// the one sent in the ContainerOpen packet to close the designated window.
 	WindowID byte
-	// ServerSide determines whether or not the container was force-closed by the server. The exact use of
-	// this is unknown but it was added to fix the crashing of inventories being closed by the server.
+	// ServerSide determines whether or not the container was force-closed by the server. If this value is
+	// not set correctly, the client may ignore the packet and respond with a PacketViolationWarning.
 	ServerSide bool
 }
 

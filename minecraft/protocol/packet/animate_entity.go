@@ -14,12 +14,12 @@ type AnimateEntity struct {
 }
 
 // ID ...
-func (pk AnimateEntity) ID() uint32 {
+func (*AnimateEntity) ID() uint32 {
 	return IDAnimateEntity
 }
 
 // Marshal ...
-func (pk AnimateEntity) Marshal(w *protocol.Writer) {
+func (pk *AnimateEntity) Marshal(w *protocol.Writer) {
 	w.String(&pk.Animation)
 	w.String(&pk.NextState)
 	w.String(&pk.StopCondition)
@@ -33,7 +33,7 @@ func (pk AnimateEntity) Marshal(w *protocol.Writer) {
 }
 
 // Unmarshal ...
-func (pk AnimateEntity) Unmarshal(r *protocol.Reader) {
+func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.Animation)
 	r.String(&pk.NextState)
 	r.String(&pk.StopCondition)

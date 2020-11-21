@@ -10,12 +10,12 @@ type ItemComponent struct {
 }
 
 // ID ...
-func (pk ItemComponent) ID() uint32 {
+func (*ItemComponent) ID() uint32 {
 	return IDItemComponent
 }
 
 // Marshal ...
-func (pk ItemComponent) Marshal(w *protocol.Writer) {
+func (pk *ItemComponent) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Items))
 	w.Varuint32(&l)
 	for i := range pk.Items {
@@ -25,7 +25,7 @@ func (pk ItemComponent) Marshal(w *protocol.Writer) {
 }
 
 // Unmarshal ...
-func (pk ItemComponent) Unmarshal(r *protocol.Reader) {
+func (pk *ItemComponent) Unmarshal(r *protocol.Reader) {
 	var count uint32
 	r.Varuint32(&count)
 	pk.Items = make([]protocol.ItemComponentEntry, count)

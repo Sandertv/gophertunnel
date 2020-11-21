@@ -12,19 +12,19 @@ type MotionPredictionHints struct {
 }
 
 // ID ...
-func (pk MotionPredictionHints) ID() uint32 {
+func (*MotionPredictionHints) ID() uint32 {
 	return IDMotionPredictionHints
 }
 
 // Marshal ...
-func (pk MotionPredictionHints) Marshal(w *protocol.Writer) {
+func (pk *MotionPredictionHints) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
 	w.Vec3(&pk.Motion)
 	w.Bool(&pk.OnGround)
 }
 
 // Unmarshal ...
-func (pk MotionPredictionHints) Unmarshal(r *protocol.Reader) {
+func (pk *MotionPredictionHints) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Vec3(&pk.Motion)
 	r.Bool(&pk.OnGround)

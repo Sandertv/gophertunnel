@@ -13,12 +13,12 @@ type PlayerFog struct {
 }
 
 // ID ...
-func (PlayerFog) ID() uint32 {
+func (*PlayerFog) ID() uint32 {
 	return IDPlayerFog
 }
 
 // Marshal ...
-func (pk PlayerFog) Marshal(w *protocol.Writer) {
+func (pk *PlayerFog) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Stack))
 	w.Varuint32(&l)
 	for i := range pk.Stack {
@@ -27,7 +27,7 @@ func (pk PlayerFog) Marshal(w *protocol.Writer) {
 }
 
 // Unmarshal ...
-func (pk PlayerFog) Unmarshal(r *protocol.Reader) {
+func (pk *PlayerFog) Unmarshal(r *protocol.Reader) {
 	var count uint32
 	r.Varuint32(&count)
 	pk.Stack = make([]string, count)

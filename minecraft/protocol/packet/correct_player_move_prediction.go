@@ -13,12 +13,12 @@ type CorrectPlayerMovePrediction struct {
 }
 
 // ID ...
-func (pk CorrectPlayerMovePrediction) ID() uint32 {
+func (*CorrectPlayerMovePrediction) ID() uint32 {
 	return IDCorrectPlayerMovePrediction
 }
 
 // Marshal ...
-func (pk CorrectPlayerMovePrediction) Marshal(w *protocol.Writer) {
+func (pk *CorrectPlayerMovePrediction) Marshal(w *protocol.Writer) {
 	w.Vec3(&pk.Position)
 	w.Vec3(&pk.Delta)
 	w.Bool(&pk.OnGround)
@@ -26,7 +26,7 @@ func (pk CorrectPlayerMovePrediction) Marshal(w *protocol.Writer) {
 }
 
 // Unmarshal ...
-func (pk CorrectPlayerMovePrediction) Unmarshal(r *protocol.Reader) {
+func (pk *CorrectPlayerMovePrediction) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.Position)
 	r.Vec3(&pk.Delta)
 	r.Bool(&pk.OnGround)

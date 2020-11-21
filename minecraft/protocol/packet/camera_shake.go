@@ -8,8 +8,8 @@ const (
 )
 
 type CameraShake struct {
-	// Intensity is the intensity of the shaking. The vanilla server limits this to 4, so a value larger
-	// than 4 may not work.
+	// Intensity is the intensity of the shaking. The client limits this value to 4, so anything higher may
+	// not work.
 	Intensity float32
 	// Duration is the number of seconds the camera will shake for.
 	Duration float32
@@ -19,19 +19,19 @@ type CameraShake struct {
 }
 
 // ID ...
-func (CameraShake) ID() uint32 {
+func (*CameraShake) ID() uint32 {
 	return IDCameraShake
 }
 
 // Marshal ...
-func (pk CameraShake) Marshal(w *protocol.Writer) {
+func (pk *CameraShake) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Intensity)
 	w.Float32(&pk.Duration)
 	w.Uint8(&pk.Type)
 }
 
 // Unmarshal ...
-func (pk CameraShake) Unmarshal(r *protocol.Reader) {
+func (pk *CameraShake) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Intensity)
 	r.Float32(&pk.Duration)
 	r.Uint8(&pk.Type)

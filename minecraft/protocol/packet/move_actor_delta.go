@@ -73,17 +73,17 @@ func (pk *MoveActorDelta) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Uint16(&pk.Flags)
 
-	var v int32
+	var v float32
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
-		r.Varint32(&v)
+		r.Float32(&v)
 		pk.DeltaPosition[0] = math.Float32frombits(uint32(v))
 	}
 	if pk.Flags&MoveActorDeltaFlagHasY != 0 {
-		r.Varint32(&v)
+		r.Float32(&v)
 		pk.DeltaPosition[1] = math.Float32frombits(uint32(v))
 	}
 	if pk.Flags&MoveActorDeltaFlagHasZ != 0 {
-		r.Varint32(&v)
+		r.Float32(&v)
 		pk.DeltaPosition[2] = math.Float32frombits(uint32(v))
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotX != 0 {
