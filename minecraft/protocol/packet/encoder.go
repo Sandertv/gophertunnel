@@ -5,16 +5,15 @@ import (
 	"fmt"
 	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/internal/dynamic"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
 type Encoder struct {
-	compressor      writeCloseResetter
-	writer          io.Writer
-	buf, compressed *dynamic.Buffer
+	compressor writeCloseResetter
+	writer     io.Writer
+	buf        *dynamic.Buffer
 
 	encrypt *encrypt
 }
@@ -33,7 +32,6 @@ func NewEncoder(w io.Writer) *Encoder {
 		writer:     w,
 		compressor: f,
 		buf:        dynamic.NewBuffer(make([]byte, 0, 1024*1024)),
-		compressed: dynamic.NewBuffer(make([]byte, 0, 1024*1024)),
 	}
 }
 
@@ -50,25 +48,27 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	defer func() {
 		// Reset both buffers so that they can be re-used the next time Encoder encodes packets.
 		encoder.buf.Reset()
-		encoder.compressed.Reset()
 	}()
 	if err := encoder.buf.WriteByte(header); err != nil {
 		return fmt.Errorf("error writing 0xfe header: %v", err)
 	}
 
+	encoder.compressor.Reset(encoder.buf)
+	l := make([]byte, 5)
+
 	for _, packet := range packets {
 		// Each packet is prefixed with a varuint32 specifying the length of the packet.
-		if err := protocol.WriteVaruint32(encoder.compressed, uint32(len(packet))); err != nil {
+		if err := writeVaruint32(encoder.compressor, uint32(len(packet)), l); err != nil {
 			return fmt.Errorf("error writing varuint32 length: %v", err)
 		}
-		if _, err := encoder.compressed.Write(packet); err != nil {
+		if _, err := encoder.compressor.Write(packet); err != nil {
 			return fmt.Errorf("error writing packet payload: %v", err)
 		}
 	}
 
 	// We compress the data and write the full data to the io.Writer. The data returned includes the header
 	// we wrote at the start.
-	b, err := encoder.compress(encoder.compressor, encoder.compressed.Bytes())
+	b, err := encoder.compress()
 	if err != nil {
 		return err
 	}
@@ -86,13 +86,29 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 
 // compress compresses the data passed using the writer passed and returns it in a byte slice. It returns
 // the full content of encoder.buf, so any data currently set in that buffer will also be returned.
-func (encoder *Encoder) compress(w writeCloseResetter, data []byte) ([]byte, error) {
-	w.Reset(encoder.buf)
-	if _, err := w.Write(data); err != nil {
-		return nil, fmt.Errorf("error writing compressed data: %v", err)
-	}
-	if err := w.Close(); err != nil {
+func (encoder *Encoder) compress() ([]byte, error) {
+	if err := encoder.compressor.Close(); err != nil {
 		return nil, fmt.Errorf("error closing compressor: %v", err)
 	}
 	return encoder.buf.Bytes(), nil
+}
+
+// writeVaruint32 writes a uint32 to the destination buffer passed with a size of 1-5 bytes. It uses byte
+// slice b in order to prevent allocations.
+func writeVaruint32(dst writeCloseResetter, x uint32, b []byte) error {
+	b[4] = 0
+	b[3] = 0
+	b[2] = 0
+	b[1] = 0
+	b[0] = 0
+
+	i := 0
+	for x >= 0x80 {
+		b[i] = byte(x) | 0x80
+		i++
+		x >>= 7
+	}
+	b[i] = byte(x)
+	_, err := dst.Write(b[:i+1])
+	return err
 }
