@@ -37,7 +37,7 @@ const (
 	IDBlockPickRequest
 	IDActorPickRequest
 	IDPlayerAction
-	IDActorFall
+	_ // IDActorFall, removed in 1.16.100
 	IDHurtArmour
 	IDSetActorData
 	IDSetActorMotion
@@ -134,7 +134,7 @@ const (
 	IDOnScreenTextureAnimation
 	IDStructureTemplateDataRequest
 	IDStructureTemplateDataResponse
-	IDUpdateBlockProperties
+	_ // IDUpdateBlockProperties, removed in 1.16.100
 	IDClientCacheBlobStatus
 	IDClientCacheMissResponse
 	IDEducationSettings
