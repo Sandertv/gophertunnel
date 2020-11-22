@@ -322,6 +322,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	protocol.GameRules(r, &pk.GameRules)
 	var l uint32
 	r.Uint32(&l)
+	pk.Experiments = make([]protocol.ExperimentData, l)
 	for i := uint32(0); i < l; i++ {
 		protocol.Experiment(r, &pk.Experiments[i])
 	}
