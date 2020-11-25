@@ -187,7 +187,7 @@ type StartGame struct {
 	// table. Note that the exact correct random implementation must be used to produce the correct results
 	// both client- and server-side.
 	EnchantmentSeed int32
-	// Blocks is a list of all blocks registered on the server.
+	// Blocks is a list of all custom blocks registered on the server.
 	Blocks []protocol.BlockEntry
 	// Items is a list of all items with their legacy IDs which are available in the game. Failing to send any
 	// of the items that are in the game will crash mobile clients.

@@ -2,8 +2,9 @@ package protocol
 
 import "github.com/sandertv/gophertunnel/minecraft/nbt"
 
-// BlockEntry is an entry for a custom block found in the StartGame packet. The order of these specify the
-// runtime ID that the blocks get.
+// BlockEntry is an entry for a custom block found in the StartGame packet. The runtime ID of these custom
+// block entries is based on the index they have in the block palette when the palette is ordered
+// alphabetically.
 type BlockEntry struct {
 	// Name is the name of the custom block.
 	Name string
