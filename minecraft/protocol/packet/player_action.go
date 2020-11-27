@@ -18,7 +18,7 @@ const (
 	PlayerActionStopSprint
 	PlayerActionStartSneak
 	PlayerActionStopSneak
-	PlayerActionDimensionChangeRequest // Deprecated.
+	PlayerActionCreativePlayerDestroyBlock
 	PlayerActionDimensionChangeDone
 	PlayerActionStartGlide
 	PlayerActionStopGlide
