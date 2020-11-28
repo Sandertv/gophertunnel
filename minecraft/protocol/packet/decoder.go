@@ -59,7 +59,7 @@ const (
 	header = 0xfe
 	// maximumInBatch is the maximum amount of packets that may be found in a batch. If a compressed batch has
 	// more than this amount, decoding will fail.
-	maximumInBatch = 512
+	maximumInBatch = 512 + 256
 )
 
 // Decode decodes one 'packet' from the reader passed in NewDecoder(), producing a slice of packets that it
