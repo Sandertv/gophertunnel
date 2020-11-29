@@ -34,7 +34,8 @@ type ListenConfig struct {
 	// accepted into the server.
 	MaximumPlayers int
 
-	// StatusProvider is the ServerStatusProvider of the Listener. When set to nil, the default
+	// StatusProvider is the ServerStatusProvider of the Listener. When set to nil, the default provider,
+	// ListenerStatusProvider, is used as provider.
 	StatusProvider ServerStatusProvider
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
