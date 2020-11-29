@@ -23,7 +23,7 @@ type ListenConfig struct {
 	// default, ErrorLog is set to one equal to the global logger.
 	ErrorLog *log.Logger
 
-	// AuthenticationDisables specifies if authentication of players that join is disabled. If set to true, no
+	// AuthenticationDisabled specifies if authentication of players that join is disabled. If set to true, no
 	// verification will be done to ensure that the player connecting is authenticated using their XBOX Live
 	// account.
 	AuthenticationDisabled bool
