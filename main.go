@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
@@ -74,6 +75,9 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 				return
 			}
 			if err := serverConn.WritePacket(pk); err != nil {
+				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
+					_ = listener.Disconnect(conn, disconnect.Error())
+				}
 				return
 			}
 		}
@@ -84,6 +88,9 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 		for {
 			pk, err := serverConn.ReadPacket()
 			if err != nil {
+				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
+					_ = listener.Disconnect(conn, disconnect.Error())
+				}
 				return
 			}
 			if err := conn.WritePacket(pk); err != nil {

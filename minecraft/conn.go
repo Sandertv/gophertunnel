@@ -1210,7 +1210,7 @@ func (conn *Conn) expect(packetIDs ...uint32) {
 // through a Disconnect packet, the message is contained.
 func (conn *Conn) closeErr(op string) error {
 	if msg := conn.disconnectMessage.Load(); msg != "" {
-		return conn.wrap(fmt.Errorf("disconnected by server: %v", msg), op)
+		return conn.wrap(DisconnectError(msg), op)
 	}
 	return conn.wrap(errClosed, op)
 }
