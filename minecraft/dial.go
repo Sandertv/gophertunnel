@@ -180,6 +180,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
 		return nil, err
 	}
+	_ = conn.Flush()
 	select {
 	case <-conn.close:
 		return nil, conn.closeErr("dial")
