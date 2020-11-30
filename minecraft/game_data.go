@@ -67,4 +67,7 @@ type GameData struct {
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.
 	ServerAuthoritativeInventory bool
+	// Experiments is a list of experiments enabled on the server side. These experiments are used to enable
+	// disable experimental features.
+	Experiments []protocol.ExperimentData
 }

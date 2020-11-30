@@ -886,6 +886,7 @@ func (conn *Conn) startGame() {
 		ServerAuthoritativeMovementMode: data.ServerAuthoritativeMovementMode,
 		WorldGameMode:                   data.WorldGameMode,
 		ServerAuthoritativeInventory:    data.ServerAuthoritativeInventory,
+		Experiments:                     data.Experiments,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1064,6 +1065,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		ServerAuthoritativeMovementMode: pk.ServerAuthoritativeMovementMode,
 		WorldGameMode:                   pk.WorldGameMode,
 		ServerAuthoritativeInventory:    pk.ServerAuthoritativeInventory,
+		Experiments:                     pk.Experiments,
 	}
 	for _, item := range pk.Items {
 		if item.Name == "minecraft:shield" {
