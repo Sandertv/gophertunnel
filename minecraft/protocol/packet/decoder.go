@@ -101,7 +101,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 			return nil, fmt.Errorf("error reading packet length: %v", err)
 		}
 		if length == 0 {
-			return nil, fmt.Errorf("invalid 0 packet length in compressed batch")
+			continue
 		}
 		packets = append(packets, b.Next(int(length)))
 	}
