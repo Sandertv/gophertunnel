@@ -9,6 +9,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/google/uuid"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/internal/dynamic"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -387,7 +388,7 @@ func (conn *Conn) Flush() error {
 	defer conn.sendMu.Unlock()
 
 	if len(conn.bufferedSend) > 0 {
-		if err := conn.enc.Encode(conn.bufferedSend); err != nil {
+		if err := conn.enc.Encode(conn.bufferedSend); !raknet.ErrConnectionClosed(err) {
 			// Should never happen.
 			panic(fmt.Errorf("error encoding packet batch: %v", err))
 		}
