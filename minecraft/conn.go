@@ -388,7 +388,7 @@ func (conn *Conn) Flush() error {
 	defer conn.sendMu.Unlock()
 
 	if len(conn.bufferedSend) > 0 {
-		if err := conn.enc.Encode(conn.bufferedSend); !raknet.ErrConnectionClosed(err) {
+		if err := conn.enc.Encode(conn.bufferedSend); err != nil && !raknet.ErrConnectionClosed(err) {
 			// Should never happen.
 			panic(fmt.Errorf("error encoding packet batch: %v", err))
 		}
