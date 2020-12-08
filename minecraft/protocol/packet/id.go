@@ -163,4 +163,5 @@ const (
 	IDPlayerFog
 	IDCorrectPlayerMovePrediction
 	IDItemComponent
+	IDFilterText
 )

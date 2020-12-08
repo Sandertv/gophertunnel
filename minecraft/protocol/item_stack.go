@@ -152,6 +152,7 @@ type StackResponseSlotInfo struct {
 	Count byte
 	// StackNetworkID is the network ID of the new stack at a specific slot.
 	StackNetworkID int32
+	CustomName     string
 }
 
 // WriteStackResponse writes an ItemStackResponse x to Writer w.
@@ -215,6 +216,7 @@ func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 	if x.Slot != x.HotbarSlot {
 		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
+	r.String(&x.CustomName)
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
