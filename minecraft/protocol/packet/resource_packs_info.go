@@ -21,7 +21,6 @@ type ResourcePacksInfo struct {
 	// The order of these texture packs is not relevant in this packet. It is however important in the
 	// ResourcePackStack packet.
 	TexturePacks []protocol.ResourcePackInfo
-	SupportsRTX  bool
 }
 
 // ID ...
@@ -42,8 +41,9 @@ func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	w.Uint16(&l)
 	for _, pack := range pk.TexturePacks {
 		protocol.PackInfo(w, &pack)
+		var rtxEnabled bool // TODO: Add this to ResourcePackInfo but not for behaviour packs
+		w.Bool(&rtxEnabled)
 	}
-	w.Bool(&pk.SupportsRTX)
 }
 
 // Unmarshal ...
@@ -62,6 +62,7 @@ func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	pk.TexturePacks = make([]protocol.ResourcePackInfo, length)
 	for i := uint16(0); i < length; i++ {
 		protocol.PackInfo(r, &pk.TexturePacks[i])
+		var rtxEnabled bool // TODO: Add this to ResourcePackInfo but not for behaviour packs
+		r.Bool(&rtxEnabled)
 	}
-	r.Bool(&pk.SupportsRTX)
 }
