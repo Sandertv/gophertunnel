@@ -152,7 +152,8 @@ type StackResponseSlotInfo struct {
 	Count byte
 	// StackNetworkID is the network ID of the new stack at a specific slot.
 	StackNetworkID int32
-	CustomName     string
+	// CustomName ...
+	CustomName string
 }
 
 // WriteStackResponse writes an ItemStackResponse x to Writer w.

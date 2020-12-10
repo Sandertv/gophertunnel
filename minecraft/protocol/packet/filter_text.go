@@ -4,8 +4,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// FilterText ...Cus
 type FilterText struct {
-	Text       string
+	// Text ...
+	Text string
+	// FromServer ...
 	FromServer bool
 }
 
