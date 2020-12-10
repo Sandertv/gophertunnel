@@ -650,11 +650,6 @@ func (conn *Conn) handleClientToServerHandshake() error {
 			continue
 		}
 		texturePack := protocol.TexturePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
-		if pack.HasScripts() {
-			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
-			pk.HasScripts = true
-			texturePack.HasScripts = true
-		}
 		pk.TexturePacks = append(pk.TexturePacks, texturePack)
 	}
 	// Finally we send the packet after the play status.

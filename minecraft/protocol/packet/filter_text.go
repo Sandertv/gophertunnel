@@ -4,11 +4,13 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// FilterText ...Cus
+// FilterText is sent by the both the client and the server. The client sends the packet to the server to
+// allow the server to filter the text server-side. The server then responds with the same packet and the
+// safer version of the text.
 type FilterText struct {
-	// Text ...
+	// Text is either the text from the client or the safer version of the text sent by the server.
 	Text string
-	// FromServer ...
+	// FromServer indicates if the packet was sent by the server or not.
 	FromServer bool
 }
 
