@@ -48,7 +48,7 @@ type TexturePackInfo struct {
 	// HasScripts specifies if the texture packs has any scripts in it. A client will only download the
 	// behaviour pack if it supports scripts, which, up to 1.11, only includes Windows 10.
 	HasScripts bool
-	// RTXEnabled ...
+	// RTXEnabled specifies if the texture pack uses the raytracing technology introduced in 1.16.200.
 	RTXEnabled bool
 }
 

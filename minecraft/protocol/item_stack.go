@@ -152,7 +152,7 @@ type StackResponseSlotInfo struct {
 	Count byte
 	// StackNetworkID is the network ID of the new stack at a specific slot.
 	StackNetworkID int32
-	// CustomName ...
+	// CustomName is the custom name of the item stack. It is used in relation to text filtering.
 	CustomName string
 }
 
