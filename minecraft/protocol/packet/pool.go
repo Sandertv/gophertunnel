@@ -186,6 +186,7 @@ func init() {
 		IDPlayerFog:                         func() Packet { return &PlayerFog{} },
 		IDCorrectPlayerMovePrediction:       func() Packet { return &CorrectPlayerMovePrediction{} },
 		IDItemComponent:                     func() Packet { return &ItemComponent{} },
+		IDFilterText:                        func() Packet { return &FilterText{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

@@ -16,11 +16,11 @@ type ResourcePacksInfo struct {
 	HasScripts bool
 	// BehaviourPack is a list of behaviour packs that the client needs to download before joining the server.
 	// All of these behaviour packs will be applied together.
-	BehaviourPacks []protocol.ResourcePackInfo
+	BehaviourPacks []protocol.BehaviourPackInfo
 	// TexturePacks is a list of texture packs that the client needs to download before joining the server.
 	// The order of these texture packs is not relevant in this packet. It is however important in the
 	// ResourcePackStack packet.
-	TexturePacks []protocol.ResourcePackInfo
+	TexturePacks []protocol.TexturePackInfo
 }
 
 // ID ...
@@ -35,12 +35,12 @@ func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	l := uint16(len(pk.BehaviourPacks))
 	w.Uint16(&l)
 	for _, pack := range pk.BehaviourPacks {
-		protocol.PackInfo(w, &pack)
+		protocol.BehaviourPackInformation(w, &pack)
 	}
 	l = uint16(len(pk.TexturePacks))
 	w.Uint16(&l)
 	for _, pack := range pk.TexturePacks {
-		protocol.PackInfo(w, &pack)
+		protocol.TexturePackInformation(w, &pack)
 	}
 }
 
@@ -51,14 +51,14 @@ func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.HasScripts)
 	r.Uint16(&length)
 
-	pk.BehaviourPacks = make([]protocol.ResourcePackInfo, length)
+	pk.BehaviourPacks = make([]protocol.BehaviourPackInfo, length)
 	for i := uint16(0); i < length; i++ {
-		protocol.PackInfo(r, &pk.BehaviourPacks[i])
+		protocol.BehaviourPackInformation(r, &pk.BehaviourPacks[i])
 	}
 
 	r.Uint16(&length)
-	pk.TexturePacks = make([]protocol.ResourcePackInfo, length)
+	pk.TexturePacks = make([]protocol.TexturePackInfo, length)
 	for i := uint16(0); i < length; i++ {
-		protocol.PackInfo(r, &pk.TexturePacks[i])
+		protocol.TexturePackInformation(r, &pk.TexturePacks[i])
 	}
 }

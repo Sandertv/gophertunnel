@@ -637,19 +637,20 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		resourcePack := protocol.ResourcePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
-		if pack.HasScripts() {
-			// One of the resource packs has scripts, so we set HasScripts in the packet to true.
-			pk.HasScripts = true
-			resourcePack.HasScripts = true
-		}
 		// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
 		// list.
 		if pack.HasBehaviours() {
-			pk.BehaviourPacks = append(pk.BehaviourPacks, resourcePack)
+			behaviourPack := protocol.BehaviourPackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
+			if pack.HasScripts() {
+				// One of the resource packs has scripts, so we set HasScripts in the packet to true.
+				pk.HasScripts = true
+				behaviourPack.HasScripts = true
+			}
+			pk.BehaviourPacks = append(pk.BehaviourPacks, behaviourPack)
 			continue
 		}
-		pk.TexturePacks = append(pk.TexturePacks, resourcePack)
+		texturePack := protocol.TexturePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
+		pk.TexturePacks = append(pk.TexturePacks, texturePack)
 	}
 	// Finally we send the packet after the play status.
 	if err := conn.WritePacket(pk); err != nil {
