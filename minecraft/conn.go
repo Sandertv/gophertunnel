@@ -67,8 +67,9 @@ type Conn struct {
 	identityData login.IdentityData
 	clientData   login.ClientData
 
-	gameData    GameData
-	chunkRadius int
+	gameData         GameData
+	gameDataReceived atomic.Bool
+	chunkRadius      int
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -214,6 +215,9 @@ func (conn *Conn) StartGameTimeout(data GameData, timeout time.Duration) error {
 // be used to spawn the player in the world of the server. To spawn a Conn obtained from a call to
 // minecraft.Dial(), use Conn.DoSpawn().
 func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
+	if conn.gameDataReceived.Load() {
+		panic("(*Conn).StartGame must only be called on Listener connections")
+	}
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
 	}
@@ -267,6 +271,9 @@ func (conn *Conn) DoSpawnTimeout(timeout time.Duration) error {
 // DoSpawnContext will start the spawning sequence using the game data found in conn.GameData(), which was
 // sent earlier by the server.
 func (conn *Conn) DoSpawnContext(ctx context.Context) error {
+	if !conn.gameDataReceived.Load() {
+		panic("(*Conn).DoSpawn must only be called on Dialer connections")
+	}
 	conn.waitingForSpawn.Store(true)
 
 	select {
@@ -1049,6 +1056,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
+	conn.gameDataReceived.Store(true)
 	conn.gameData = GameData{
 		Difficulty:                      pk.Difficulty,
 		WorldName:                       pk.WorldName,
