@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"fmt"
 )
 
@@ -13,7 +14,10 @@ type ItemStackRequest struct {
 	RequestID int32
 	// Actions is a list of actions performed by the client. The actual type of the actions depends on which
 	// ID was present, and is one of the concrete types below.
-	Actions []StackRequestActionContainer
+	Actions []StackRequestAction
+	// CustomNames is a list of custom names involved in the request. This is typically filled with one string
+	// when an anvil is used.
+	CustomNames []string
 }
 
 // WriteStackRequest writes an ItemStackRequest x to Writer w.
@@ -23,7 +27,7 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 	w.Varuint32(&l)
 	for _, action := range x.Actions {
 		var id byte
-		switch action.Action.(type) {
+		switch action.(type) {
 		case *TakeStackRequestAction:
 			id = StackRequestActionTake
 		case *PlaceStackRequestAction:
@@ -58,9 +62,12 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 			w.UnknownEnumOption(fmt.Sprintf("%T", action), "stack request action type")
 		}
 		w.Uint8(&id)
-		action.Action.Marshal(w)
-
-		w.String(&action.CustomName)
+		action.Marshal(w)
+	}
+	l = uint32(len(x.CustomNames))
+	w.Varuint32(&l)
+	for _, n := range x.CustomNames {
+		w.String(&n)
 	}
 }
 
@@ -71,7 +78,7 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 	r.Varuint32(&count)
 	r.LimitUint32(count, mediumLimit)
 
-	x.Actions = make([]StackRequestActionContainer, count)
+	x.Actions = make([]StackRequestAction, count)
 	for i := uint32(0); i < count; i++ {
 		var id uint8
 		r.Uint8(&id)
@@ -113,9 +120,15 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			return
 		}
 		action.Unmarshal(r)
-		x.Actions[i].Action = action
+		x.Actions[i] = action
+	}
 
-		r.String(&x.Actions[i].CustomName)
+	r.Varuint32(&count)
+	r.LimitUint32(count, 64)
+
+	x.CustomNames = make([]string, count)
+	for i := uint32(0); i < count; i++ {
+		r.String(&x.CustomNames[i])
 	}
 }
 
@@ -226,16 +239,6 @@ func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
 	r.String(&x.CustomName)
-}
-
-// StackRequestActionContainer is a container of a StackRequestAction with additional information present in
-// every action.
-type StackRequestActionContainer struct {
-	// Action is the action held.
-	Action StackRequestAction
-	// CustomName is a custom name created by the stack request action. This is typically present for an
-	// item stack request initiated by changing the name of an item in an anvil.
-	CustomName string
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
@@ -475,10 +478,32 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
 	r.Varuint32(&a.CreativeItemNetworkID)
 }
 
-// CraftRecipeOptionalStackRequestAction ...
-// TODO: Figure out when this is triggered.
+// CraftRecipeOptionalStackRequestAction is sent when using an anvil. When this action is sent, the
+// CustomNames field in the respective stack request is non-empty and contains the name of the item created
+// using the anvil.
 type CraftRecipeOptionalStackRequestAction struct {
-	CraftRecipeStackRequestAction
+	// UnknownBytes currently has an unknown usage. It seems to always be 5 zero bytes when using an anvil.
+	UnknownBytes [5]byte
+}
+
+// Marshal ...
+func (c *CraftRecipeOptionalStackRequestAction) Marshal(w *Writer) {
+	for i := 0; i < len(c.UnknownBytes); i++ {
+		w.Uint8(&c.UnknownBytes[i])
+	}
+}
+
+// zeroBytes holds 5 zero bytes.
+var zeroBytes = make([]byte, 5)
+
+// Unmarshal ...
+func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
+	for i := 0; i < len(c.UnknownBytes); i++ {
+		r.Uint8(&c.UnknownBytes[i])
+	}
+	if !bytes.Equal(c.UnknownBytes[:], zeroBytes) {
+		panic(fmt.Sprintf("craft recipe optional stack request action unknown bytes are not all 0: %x", c.UnknownBytes))
+	}
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
