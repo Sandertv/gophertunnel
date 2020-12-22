@@ -13,7 +13,7 @@ type ItemStackRequest struct {
 	RequestID int32
 	// Actions is a list of actions performed by the client. The actual type of the actions depends on which
 	// ID was present, and is one of the concrete types below.
-	Actions []StackRequestAction
+	Actions []StackRequestActionContainer
 }
 
 // WriteStackRequest writes an ItemStackRequest x to Writer w.
@@ -23,7 +23,7 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 	w.Varuint32(&l)
 	for _, action := range x.Actions {
 		var id byte
-		switch action.(type) {
+		switch action.Action.(type) {
 		case *TakeStackRequestAction:
 			id = StackRequestActionTake
 		case *PlaceStackRequestAction:
@@ -48,6 +48,8 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 			id = StackRequestActionCraftRecipeAuto
 		case *CraftCreativeStackRequestAction:
 			id = StackRequestActionCraftCreative
+		case *CraftRecipeOptionalStackRequestAction:
+			id = StackRequestActionCraftRecipeOptional
 		case *CraftNonImplementedStackRequestAction:
 			id = StackRequestActionCraftNonImplementedDeprecated
 		case *CraftResultsDeprecatedStackRequestAction:
@@ -56,7 +58,9 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 			w.UnknownEnumOption(fmt.Sprintf("%T", action), "stack request action type")
 		}
 		w.Uint8(&id)
-		action.Marshal(w)
+		action.Action.Marshal(w)
+
+		w.String(&action.CustomName)
 	}
 }
 
@@ -67,7 +71,7 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 	r.Varuint32(&count)
 	r.LimitUint32(count, mediumLimit)
 
-	x.Actions = make([]StackRequestAction, count)
+	x.Actions = make([]StackRequestActionContainer, count)
 	for i := uint32(0); i < count; i++ {
 		var id uint8
 		r.Uint8(&id)
@@ -98,6 +102,8 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &AutoCraftRecipeStackRequestAction{}
 		case StackRequestActionCraftCreative:
 			action = &CraftCreativeStackRequestAction{}
+		case StackRequestActionCraftRecipeOptional:
+			action = &CraftRecipeOptionalStackRequestAction{}
 		case StackRequestActionCraftNonImplementedDeprecated:
 			action = &CraftNonImplementedStackRequestAction{}
 		case StackRequestActionCraftResultsDeprecated:
@@ -107,7 +113,9 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			return
 		}
 		action.Unmarshal(r)
-		x.Actions[i] = action
+		x.Actions[i].Action = action
+
+		r.String(&x.Actions[i].CustomName)
 	}
 }
 
@@ -220,6 +228,16 @@ func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 	r.String(&x.CustomName)
 }
 
+// StackRequestActionContainer is a container of a StackRequestAction with additional information present in
+// every action.
+type StackRequestActionContainer struct {
+	// Action is the action held.
+	Action StackRequestAction
+	// CustomName is a custom name created by the stack request action. This is typically present for an
+	// item stack request initiated by changing the name of an item in an anvil.
+	CustomName string
+}
+
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
 // The action is one of the concrete types below, each of which are indicative of a different action by the
 // client, such as moving an item around the inventory or placing a block.
@@ -244,6 +262,7 @@ const (
 	StackRequestActionCraftRecipe
 	StackRequestActionCraftRecipeAuto
 	StackRequestActionCraftCreative
+	StackRequestActionCraftRecipeOptional
 	StackRequestActionCraftNonImplementedDeprecated
 	StackRequestActionCraftResultsDeprecated
 )
@@ -454,6 +473,12 @@ func (a *CraftCreativeStackRequestAction) Marshal(w *Writer) {
 // Unmarshal ...
 func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
 	r.Varuint32(&a.CreativeItemNetworkID)
+}
+
+// CraftRecipeOptionalStackRequestAction ...
+// TODO: Figure out when this is triggered.
+type CraftRecipeOptionalStackRequestAction struct {
+	CraftRecipeStackRequestAction
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
