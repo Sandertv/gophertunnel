@@ -55,7 +55,7 @@ type ListenConfig struct {
 
 	//AcceptProtocols contains a slice of protocols that should be accepted by the listener
 	//rather than just the protocol.CurrentProtocol
-	AcceptProtocols map[int32]uint8
+	AcceptProtocols []int32
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the

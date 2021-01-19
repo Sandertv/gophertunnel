@@ -129,7 +129,7 @@ type Conn struct {
 
 	//acceptProtocols contains a slice of protocols that should be accepted by the conn.handleLogin function
 	//rather than just the protocol.CurrentProtocol
-	acceptProtocols map[int32]uint8
+	acceptProtocols []int32
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -620,7 +620,13 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	// Make sure protocol numbers match.
 	if conn.acceptProtocols != nil {
 		//if the protocol isn't in the array.
-		if _, ok := conn.acceptProtocols[pk.ClientProtocol]; !ok {
+		var found bool
+		for _, ap := range conn.acceptProtocols {
+			if ap == pk.ClientProtocol {
+				found = true
+			}
+		}
+		if !found {
 			// By default we assume the client is outdated.
 			status := packet.PlayStatusLoginFailedClient
 			if pk.ClientProtocol > protocol.CurrentProtocol {
