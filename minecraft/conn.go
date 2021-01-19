@@ -628,6 +628,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 				status = packet.PlayStatusLoginFailedServer
 			}
 			_ = conn.WritePacket(&packet.PlayStatus{Status: status})
+			return fmt.Errorf("%v connected with an incompatible protocol: expected protocols = %v, client protocol = %v", conn.identityData.DisplayName, conn.acceptProtocols, pk.ClientProtocol)
 		}
 		//If the protocol was found in the accept protocol we just let it continue with the login stack.
 	} else {
