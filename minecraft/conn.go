@@ -126,6 +126,10 @@ type Conn struct {
 	disconnectMessage atomic.String
 
 	shieldID atomic.Int32
+
+	//acceptProtocols contains a slice of protocols that should be accepted by the conn.handleLogin function
+	//rather than just the protocol.CurrentProtocol
+	acceptProtocols map[int32]uint8
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -614,15 +618,29 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
 	// Make sure protocol numbers match.
-	if pk.ClientProtocol != protocol.CurrentProtocol {
-		// By default we assume the client is outdated.
-		status := packet.PlayStatusLoginFailedClient
-		if pk.ClientProtocol > protocol.CurrentProtocol {
-			// The server is outdated in this case, so we have to change the status we send.
-			status = packet.PlayStatusLoginFailedServer
+	if conn.acceptProtocols != nil {
+		//if the protocol isn't in the array.
+		if _, ok := conn.acceptProtocols[pk.ClientProtocol]; !ok {
+			// By default we assume the client is outdated.
+			status := packet.PlayStatusLoginFailedClient
+			if pk.ClientProtocol > protocol.CurrentProtocol {
+				// The server is outdated in this case, so we have to change the status we send.
+				status = packet.PlayStatusLoginFailedServer
+			}
+			_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		}
-		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
-		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
+		//If the protocol was found in the accept protocol we just let it continue with the login stack.
+	} else {
+		if pk.ClientProtocol != protocol.CurrentProtocol {
+			// By default we assume the client is outdated.
+			status := packet.PlayStatusLoginFailedClient
+			if pk.ClientProtocol > protocol.CurrentProtocol {
+				// The server is outdated in this case, so we have to change the status we send.
+				status = packet.PlayStatusLoginFailedServer
+			}
+			_ = conn.WritePacket(&packet.PlayStatus{Status: status})
+			return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
+		}
 	}
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)

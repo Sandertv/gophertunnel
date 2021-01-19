@@ -52,6 +52,10 @@ type ListenConfig struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	//AcceptProtocols contains a slice of protocols that should be accepted by the listener
+	//rather than just the protocol.CurrentProtocol
+	AcceptProtocols map[int32]uint8
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -212,6 +216,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.resourcePacks = listener.cfg.ResourcePacks
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
+	conn.acceptProtocols = listener.cfg.AcceptProtocols
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
