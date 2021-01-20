@@ -5,6 +5,7 @@ import (
 	"crypto/aes"
 	"fmt"
 	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
@@ -12,10 +13,14 @@ import (
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
 // multiple compressed packets.
 type Decoder struct {
-	buf          []byte
-	decompressor io.ReadCloser
-	reader       io.Reader
-	packetReader packetReader
+	// r holds the io.Reader that packets are read from if the reader does not implement packetReader. When
+	// this is the case, the buf field has a non-zero length.
+	r   io.Reader
+	buf []byte
+
+	// pr holds a packetReader (and io.Reader) that packets are read from if the io.Reader passed to
+	// NewDecoder implements the packetReader interface.
+	pr packetReader
 
 	encrypt *encrypt
 
@@ -28,14 +33,14 @@ type packetReader interface {
 	ReadPacket() ([]byte, error)
 }
 
-// NewDecoder returns a new decoder decoding data from the reader passed. One read call from the reader is
+// NewDecoder returns a new decoder decoding data from the io.Reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
 	if pr, ok := reader.(packetReader); ok {
-		return &Decoder{checkPacketLimit: true, packetReader: pr}
+		return &Decoder{checkPacketLimit: true, pr: pr}
 	}
 	return &Decoder{
-		reader:           reader,
+		r:                reader,
 		buf:              make([]byte, 1024*1024*3),
 		checkPacketLimit: true,
 	}
@@ -62,16 +67,16 @@ const (
 	maximumInBatch = 512 + 256
 )
 
-// Decode decodes one 'packet' from the reader passed in NewDecoder(), producing a slice of packets that it
+// Decode decodes one 'packet' from the io.Reader passed in NewDecoder(), producing a slice of packets that it
 // held and an error if not successful.
 func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	var data []byte
-	if decoder.packetReader == nil {
+	if decoder.pr == nil {
 		var n int
-		n, err = decoder.reader.Read(decoder.buf)
+		n, err = decoder.r.Read(decoder.buf)
 		data = decoder.buf[:n]
 	} else {
-		data, err = decoder.packetReader.ReadPacket()
+		data, err = decoder.pr.ReadPacket()
 	}
 	if err != nil {
 		return nil, fmt.Errorf("error reading batch from reader: %v", err)
@@ -100,9 +105,6 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		if err := protocol.Varuint32(b, &length); err != nil {
 			return nil, fmt.Errorf("error reading packet length: %v", err)
 		}
-		if length == 0 {
-			continue
-		}
 		packets = append(packets, b.Next(int(length)))
 	}
 	if len(packets) > maximumInBatch && decoder.checkPacketLimit {
@@ -113,24 +115,18 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 
 // decompress decompresses the data passed and returns it as a byte slice.
 func (decoder *Decoder) decompress(data []byte) (*bytes.Buffer, error) {
-	if err := decoder.init(bytes.NewBuffer(data)); err != nil {
-		return nil, fmt.Errorf("error decompressing data: %v", err)
+	buf := bytes.NewBuffer(data)
+	c := internal.DecompressPool.Get().(io.ReadCloser)
+	defer internal.DecompressPool.Put(c)
+
+	if err := c.(flate.Resetter).Reset(buf, nil); err != nil {
+		return nil, fmt.Errorf("error resetting flate decompressor: %w", err)
 	}
-	_ = decoder.decompressor.Close()
+	_ = c.Close()
 
 	raw := bytes.NewBuffer(make([]byte, 0, len(data)*2))
-	if _, err := io.Copy(raw, decoder.decompressor); err != nil {
+	if _, err := io.Copy(raw, c); err != nil {
 		return nil, fmt.Errorf("error reading decompressed data: %v", err)
 	}
 	return raw, nil
-}
-
-// init initialises the decompression reader if it wasn't already.
-func (decoder *Decoder) init(buf *bytes.Buffer) (err error) {
-	if decoder.decompressor == nil {
-		decoder.decompressor = flate.NewReader(buf)
-		return
-	}
-	// The reader was already initialised, so we reset it to the buffer passed.
-	return decoder.decompressor.(flate.Resetter).Reset(buf, nil)
 }
