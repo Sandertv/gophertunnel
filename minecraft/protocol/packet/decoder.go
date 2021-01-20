@@ -5,9 +5,9 @@ import (
 	"crypto/aes"
 	"fmt"
 	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
-	"sync"
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
@@ -116,8 +116,8 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 // decompress decompresses the data passed and returns it as a byte slice.
 func (decoder *Decoder) decompress(data []byte) (*bytes.Buffer, error) {
 	buf := bytes.NewBuffer(data)
-	c := decompressPool.Get().(io.ReadCloser)
-	defer decompressPool.Put(c)
+	c := internal.DecompressPool.Get().(io.ReadCloser)
+	defer internal.DecompressPool.Put(c)
 
 	if err := c.(flate.Resetter).Reset(buf, nil); err != nil {
 		return nil, fmt.Errorf("error resetting flate decompressor: %w", err)
@@ -129,11 +129,4 @@ func (decoder *Decoder) decompress(data []byte) (*bytes.Buffer, error) {
 		return nil, fmt.Errorf("error reading decompressed data: %v", err)
 	}
 	return raw, nil
-}
-
-// decompressPool is a sync.Pool for io.ReadCloser flate readers. These are pooled for connections.
-var decompressPool = sync.Pool{
-	New: func() interface{} {
-		return flate.NewReader(bytes.NewReader(nil))
-	},
 }

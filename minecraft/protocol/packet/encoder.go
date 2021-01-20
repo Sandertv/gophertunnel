@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"crypto/aes"
 	"fmt"
-	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/internal"
 	"io"
-	"io/ioutil"
-	"sync"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
@@ -41,18 +39,18 @@ func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and
 // optionally encrypted.
 func (encoder *Encoder) Encode(packets [][]byte) error {
-	buf := bufferPool.Get().(*bytes.Buffer)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
 	defer func() {
 		// Reset the buffer so we can return it to the buffer pool safely.
 		buf.Reset()
-		bufferPool.Put(buf)
+		internal.BufferPool.Put(buf)
 	}()
 	if err := buf.WriteByte(header); err != nil {
 		return fmt.Errorf("error writing 0xfe header: %v", err)
 	}
 
-	w := compressPool.Get().(writeCloseResetter)
-	defer compressPool.Put(w)
+	w := internal.CompressPool.Get().(writeCloseResetter)
+	defer internal.CompressPool.Put(w)
 
 	w.Reset(buf)
 	l := make([]byte, 5)
@@ -112,19 +110,4 @@ func writeVaruint32(dst writeCloseResetter, x uint32, b []byte) error {
 	b[i] = byte(x)
 	_, err := dst.Write(b[:i+1])
 	return err
-}
-
-// compressPool is a sync.Pool for writeCloseResetter flate readers. These are pooled for connections.
-var compressPool = sync.Pool{
-	New: func() interface{} {
-		w, _ := flate.NewWriter(ioutil.Discard, 6)
-		return w
-	},
-}
-
-// bufferPool is a sync.Pool for buffers used to write compressed data to.
-var bufferPool = sync.Pool{
-	New: func() interface{} {
-		return bytes.NewBuffer(make([]byte, 0, 256))
-	},
 }
