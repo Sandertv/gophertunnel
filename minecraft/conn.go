@@ -399,7 +399,13 @@ func (conn *Conn) Flush() error {
 			// Should never happen.
 			panic(fmt.Errorf("error encoding packet batch: %v", err))
 		}
-		// Reset the send slice so that we don't accidentally send the same packets.
+		// First manually clear out conn.bufferedSend so that re-using the slice after resetting its length to
+		// 0 doesn't result in an 'invisible' memory leak.
+		for i := range conn.bufferedSend {
+			conn.bufferedSend[i] = nil
+		}
+		// Slice the conn.bufferedSend to a length of 0 so we don't have to re-allocate space in this slice
+		// every time.
 		conn.bufferedSend = conn.bufferedSend[:0]
 	}
 	return nil
