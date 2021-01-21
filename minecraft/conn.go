@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
-	"github.com/sandertv/gophertunnel/internal/dynamic"
+	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
@@ -93,7 +93,6 @@ type Conn struct {
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
 	bufferedSend [][]byte
-	w            *dynamic.Buffer
 	hdr          *packet.Header
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
@@ -137,7 +136,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		enc:         packet.NewEncoder(netConn),
 		dec:         packet.NewDecoder(netConn),
 		pool:        packet.NewPool(),
-		w:           dynamic.NewBuffer(make([]byte, 0, 4096)),
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 8),
 		close:       make(chan struct{}),
@@ -298,17 +296,23 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	conn.sendMu.Lock()
 	defer conn.sendMu.Unlock()
 
-	conn.hdr.PacketID = pk.ID()
-	_ = conn.hdr.Write(conn.w)
-	l := conn.w.Len()
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	defer func() {
+		// Reset the buffer so we can return it to the buffer pool safely.
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
 
-	pk.Marshal(protocol.NewWriter(conn.w, conn.shieldID.Load()))
+	conn.hdr.PacketID = pk.ID()
+	_ = conn.hdr.Write(buf)
+	l := buf.Len()
+
+	pk.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
 	if conn.packetFunc != nil {
-		conn.packetFunc(*conn.hdr, conn.w.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
+		conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
 
-	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), conn.w.Bytes()...))
-	conn.w.Reset()
+	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), buf.Bytes()...))
 	return nil
 }
 
