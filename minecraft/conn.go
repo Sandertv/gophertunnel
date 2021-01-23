@@ -498,6 +498,10 @@ func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
 		return nil, false
 	}
 	data := conn.deferredPackets[0]
+	// Explicitly clear out the packet at offset 0. When we slice it to remove the first element, that element
+	// will not be garbage collectable, because the array it's in is still referenced by the slice. Doing this
+	// makes sure garbage collecting the packet is possible.
+	conn.deferredPackets[0] = nil
 	conn.deferredPackets = conn.deferredPackets[1:]
 	return data, true
 }
