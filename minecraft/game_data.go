@@ -57,12 +57,8 @@ type GameData struct {
 	CustomBlocks []protocol.BlockEntry
 	// Items is a list of all items existing in the game, including custom items registered by the server.
 	Items []protocol.ItemEntry
-	// ServerAuthoritativeMovementMode specifies the way the server handles player movement. Available options
-	// are packet.AuthoritativeMovementModeClient, packet.AuthoritativeMovementModeServer and
-	// packet.AuthoritativeMovementModeServerWithRewind, where server the server authoritative types result in
-	// the client sending PlayerAuthInput packets instead of MovePlayer packets and the rewind mode requires
-	// sending the tick of movement and several actions.
-	ServerAuthoritativeMovementMode uint32
+	// PlayerMovementSettings ...
+	PlayerMovementSettings protocol.PlayerMovementSettings
 	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.
