@@ -158,15 +158,10 @@ func (listener *Listener) Close() error {
 func (listener *Listener) updatePongData() {
 	s := listener.status()
 
-	var ver string
-	if s.ShowVersion {
-		ver = protocol.CurrentVersion
-	}
-
 	rakListener := listener.listener.(*raknet.Listener)
 
 	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
-		s.ServerName, protocol.CurrentProtocol, ver, s.PlayerCount, s.MaxPlayers, rakListener.ID(),
+		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers, rakListener.ID(),
 		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
