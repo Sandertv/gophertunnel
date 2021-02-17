@@ -202,10 +202,6 @@ const (
 	SoundEventLtReactionBleach
 	SoundEventLtReactionEPaste
 	SoundEventLtReactionEPaste2
-	_
-	_
-	_
-	_
 	SoundEventLtReactionFertilizer
 	SoundEventLtReactionFireball
 	SoundEventLtReactionMgsalt
@@ -229,12 +225,12 @@ const (
 	SoundEventHurtBaby
 	SoundEventDeathBaby
 	SoundEventStepBaby
-	_
+	SoundEventBabySpawn
 	SoundEventBorn
 	SoundEventBlockTurtleEggBreak
 	SoundEventBlockTurtleEggCrack
 	SoundEventBlockTurtleEggHatch
-	_
+	SoundEventTurtleLayEgg
 	SoundEventBlockTurtleEggAttack
 	SoundEventBeaconActivate
 	SoundEventBeaconAmbient
@@ -281,6 +277,64 @@ const (
 	SoundEventBlockBarrelClose
 	SoundEventRaidHorn
 	SoundEventBlockLoomUse
+	SoundEventAmbientRaid
+	SoundEventUICartographyTableUse
+	SoundEventUIStoneCutterUse
+	SoundEventUILoomUse
+	SoundEventSmokerUse
+	SoundEventBlastFurnaceUse
+	SoundEventSmithingTableUse
+	SoundEventScreech
+	SoundEventSleep
+	SoundEventFurnaceUse
+	SoundEventMooshroomConvert
+	SoundEventMilkSuspiciously
+	SoundEventCelebrate
+	SoundEventJumpPrevent
+	SoundEventAmbientPollinate
+	SoundEventBeeHiveDrip
+	SoundEventBeeHiveEnter
+	SoundEventBeeHiveExit
+	SoundEventBeeHiveWork
+	SoundEventBeeHiveShear
+	SoundEventHoneyBottleDrink
+	SoundEventAmbientCave
+	SoundEventRetreat
+	SoundEventConvertToZombified
+	SoundEventAdmire
+	SoundEventStepLava
+	SoundEventTempt
+	SoundEventPanic
+	SoundEventAngry
+	SoundEventAmbientWarpedForest
+	SoundEventAmbientSoulsandValley
+	SoundEventAmbientNetherWastes
+	SoundEventAmbientBasaltDeltas
+	SoundEventAmbientCrimsonForest
+	SoundEventRespawnAnchorCharge
+	SoundEventRespawnAnchorDeplete
+	SoundEventRespawnAnchorSetSpawn
+	SoundEventRespawnAnchorAmbient
+	SoundEventSoulEscapeQuiet
+	SoundEventSoulEscapeLoud
+	SoundEventRecordPigstep
+	SoundEventLinkCompassToLodestone
+	SoundEventBlockSmithingTableUse
+	SoundEventEquipNetherite
+	SoundEventAmbientLoopWarpedForest
+	SoundEventAmbientLoopSoulsandValley
+	SoundEventAmbientLoopNetherWastes
+	SoundEventAmbientLoopBasaltDeltas
+	SoundEventAmbientLoopCrimsonForest
+	SoundEventAmbientAdditionWarpedForest
+	SoundEventAmbientAdditionSoulsandValley
+	SoundEventAmbientAdditionNetherWastes
+	SoundEventAmbientAdditionBasaltDeltas
+	SoundEventAmbientAdditionCrimsonForest
+	SoundEventSculkSensorPowerOn
+	SoundEventSculkSensorPowerOff
+	SoundEventBucketFillPowderSnow
+	SoundEventBucketEmptyPowderSnow
 	SoundEventUndefined
 )
 

@@ -5,6 +5,37 @@ import (
 )
 
 const (
+	PlayerActionStartBreak = iota
+	PlayerActionAbortBreak
+	PlayerActionStopBreak
+	PlayerActionGetUpdatedBlock
+	PlayerActionDropItem
+	PlayerActionStartSleeping
+	PlayerActionStopSleeping
+	PlayerActionRespawn
+	PlayerActionJump
+	PlayerActionStartSprint
+	PlayerActionStopSprint
+	PlayerActionStartSneak
+	PlayerActionStopSneak
+	PlayerActionCreativePlayerDestroyBlock
+	PlayerActionDimensionChangeDone
+	PlayerActionStartGlide
+	PlayerActionStopGlide
+	PlayerActionBuildDenied
+	PlayerActionContinueBreak
+	PlayerActionChangeSkin
+	PlayerActionSetEnchantmentSeed
+	PlayerActionStartSwimming
+	PlayerActionStopSwimming
+	PlayerActionStartSpinAttack
+	PlayerActionStopSpinAttack
+	PlayerActionStartBuildingBlock
+	PlayerActionBlockPredictDestroy
+	PlayerActionBlockContinueDestroy
+)
+
+const (
 	PlayerMovementModeClient = iota
 	PlayerMovementModeServer
 	PlayerMovementModeServerWithRewind
@@ -82,4 +113,24 @@ func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
 	r.Varuint32(&x.MovementType)
 	r.Varuint32(&x.RewindHistorySize)
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
+}
+
+// PlayerBlockAction ...
+type PlayerBlockAction struct {
+	// Action ...
+	Action uint64
+	// BlockPos ...
+	BlockPos BlockPos
+	// Face ...
+	Face int32
+}
+
+// BlockAction ...
+func BlockAction(r IO, x *PlayerBlockAction) {
+	r.Varuint64(&x.Action)
+	switch x.Action {
+	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionContinueBreak, PlayerActionBlockPredictDestroy, PlayerActionBlockContinueDestroy:
+		r.BlockPos(&x.BlockPos)
+		r.Int32(&x.Face)
+	}
 }

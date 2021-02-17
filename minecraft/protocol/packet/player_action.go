@@ -4,35 +4,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const (
-	PlayerActionStartBreak = iota
-	PlayerActionAbortBreak
-	PlayerActionStopBreak
-	PlayerActionGetUpdatedBlock
-	PlayerActionDropItem
-	PlayerActionStartSleeping
-	PlayerActionStopSleeping
-	PlayerActionRespawn
-	PlayerActionJump
-	PlayerActionStartSprint
-	PlayerActionStopSprint
-	PlayerActionStartSneak
-	PlayerActionStopSneak
-	PlayerActionCreativePlayerDestroyBlock
-	PlayerActionDimensionChangeDone
-	PlayerActionStartGlide
-	PlayerActionStopGlide
-	PlayerActionBuildDenied
-	PlayerActionContinueBreak
-	PlayerActionChangeSkin
-	PlayerActionSetEnchantmentSeed
-	PlayerActionStartSwimming
-	PlayerActionStopSwimming
-	PlayerActionStartSpinAttack
-	PlayerActionStopSpinAttack
-	PlayerActionStartBuildingBlock
-)
-
 // PlayerAction is sent by the client when it executes any action, for example starting to sprint, swim,
 // starting the breaking of a block, dropping an item, etc.
 type PlayerAction struct {
@@ -40,7 +11,7 @@ type PlayerAction struct {
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// ActionType is the ID of the action that was executed by the player. It is one of the constants that may
-	// be found above.
+	// be found in protocol/player.go.
 	ActionType int32
 	// BlockPosition is the position of the target block, if the action with the ActionType set concerned a
 	// block. If that is not the case, the block position will be zero.

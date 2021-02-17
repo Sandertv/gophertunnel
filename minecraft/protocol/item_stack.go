@@ -175,6 +175,8 @@ type StackResponseSlotInfo struct {
 	StackNetworkID int32
 	// CustomName is the custom name of the item stack. It is used in relation to text filtering.
 	CustomName string
+	// DurabilityCorrection ...
+	DurabilityCorrection int32
 }
 
 // WriteStackResponse writes an ItemStackResponse x to Writer w.
@@ -239,6 +241,7 @@ func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
 	r.String(&x.CustomName)
+	r.Varint32(&x.DurabilityCorrection)
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
@@ -262,6 +265,7 @@ const (
 	StackRequestActionCreate
 	StackRequestActionLabTableCombine
 	StackRequestActionBeaconPayment
+	StackRequestActionMineBlock
 	StackRequestActionCraftRecipe
 	StackRequestActionCraftRecipeAuto
 	StackRequestActionCraftCreative
