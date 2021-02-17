@@ -38,7 +38,6 @@ const (
 	InputFlagStartSwimming
 	InputFlagStopSwimming
 	InputFlagStartJumping
-	InputFlagStopJumping
 	InputFlagStartGliding
 	InputFlagPerformItemInteraction
 	InputFlagPerformBlockActions
