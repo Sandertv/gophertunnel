@@ -10,7 +10,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"go.uber.org/atomic"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -80,7 +80,7 @@ func (cfg ListenConfig) Listen(network, address string) (*Listener, error) {
 
 	switch network {
 	case "raknet":
-		netListener, err = raknet.ListenConfig{ErrorLog: log.New(ioutil.Discard, "", 0)}.Listen(address)
+		netListener, err = raknet.ListenConfig{ErrorLog: log.New(io.Discard, "", 0)}.Listen(address)
 	default:
 		// Fall back to the standard net.Listen.
 		netListener, err = net.Listen(network, address)

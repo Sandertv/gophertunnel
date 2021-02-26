@@ -8,7 +8,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
-	"io/ioutil"
 	"math"
 	"unsafe"
 )
@@ -138,7 +137,7 @@ func (r *Reader) VarRGBA(x *color.RGBA) {
 // Bytes reads the leftover bytes into a byte slice.
 func (r *Reader) Bytes(p *[]byte) {
 	var err error
-	*p, err = ioutil.ReadAll(r.r)
+	*p, err = io.ReadAll(r.r)
 	if err != nil {
 		r.panic(err)
 	}

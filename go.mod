@@ -1,6 +1,6 @@
 module github.com/sandertv/gophertunnel
 
-go 1.13
+go 1.16
 
 require (
 	github.com/go-gl/mathgl v1.0.0

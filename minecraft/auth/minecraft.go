@@ -7,7 +7,7 @@ import (
 	"encoding/base64"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 )
@@ -41,7 +41,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, resp.Status)
 	}
-	data, err = ioutil.ReadAll(resp.Body)
+	data, err = io.ReadAll(resp.Body)
 	_ = resp.Body.Close()
 	c.CloseIdleConnections()
 	return string(data), err
