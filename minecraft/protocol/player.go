@@ -23,7 +23,7 @@ const (
 	PlayerActionStartGlide
 	PlayerActionStopGlide
 	PlayerActionBuildDenied
-	PlayerActionContinueBreak
+	PlayerActionCrackBreak
 	PlayerActionChangeSkin
 	PlayerActionSetEnchantmentSeed
 	PlayerActionStartSwimming
@@ -31,8 +31,8 @@ const (
 	PlayerActionStartSpinAttack
 	PlayerActionStopSpinAttack
 	PlayerActionStartBuildingBlock
-	PlayerActionBlockPredictDestroy
-	PlayerActionBlockContinueDestroy
+	PlayerActionPredictDestroyBlock
+	PlayerActionContinueDestroyBlock
 )
 
 const (
@@ -101,24 +101,24 @@ func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
 // PlayerMovementSettings ...
 type PlayerMovementSettings struct {
 	// MovementType ...
-	MovementType uint32
+	MovementType int32
 	// RewindHistorySize ...
-	RewindHistorySize uint32
+	RewindHistorySize int32
 	// ServerAuthoritativeBlockBreaking ...
 	ServerAuthoritativeBlockBreaking bool
 }
 
 // PlayerMoveSettings ...
 func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
-	r.Varuint32(&x.MovementType)
-	r.Varuint32(&x.RewindHistorySize)
+	r.Varint32(&x.MovementType)
+	r.Varint32(&x.RewindHistorySize)
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
 }
 
 // PlayerBlockAction ...
 type PlayerBlockAction struct {
 	// Action ...
-	Action uint64
+	Action int32
 	// BlockPos ...
 	BlockPos BlockPos
 	// Face ...
@@ -127,9 +127,9 @@ type PlayerBlockAction struct {
 
 // BlockAction ...
 func BlockAction(r IO, x *PlayerBlockAction) {
-	r.Varuint64(&x.Action)
+	r.Varint32(&x.Action)
 	switch x.Action {
-	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionContinueBreak, PlayerActionBlockPredictDestroy, PlayerActionBlockContinueDestroy:
+	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
 		r.BlockPos(&x.BlockPos)
 		r.Int32(&x.Face)
 	}

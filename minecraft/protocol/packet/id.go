@@ -164,4 +164,5 @@ const (
 	IDCorrectPlayerMovePrediction
 	IDItemComponent
 	IDFilterText
+	IDClientBoundDebugRenderer
 )

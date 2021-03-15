@@ -187,6 +187,7 @@ func init() {
 		IDCorrectPlayerMovePrediction:       func() Packet { return &CorrectPlayerMovePrediction{} },
 		IDItemComponent:                     func() Packet { return &ItemComponent{} },
 		IDFilterText:                        func() Packet { return &FilterText{} },
+		IDClientBoundDebugRenderer:          func() Packet { return &ClientBoundDebugRenderer{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

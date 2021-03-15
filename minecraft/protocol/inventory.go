@@ -87,6 +87,25 @@ const (
 // UseItemTransactionData represents an inventory transaction data object sent when the client uses an item on
 // a block.
 type UseItemTransactionData struct {
+	// LegacyRequestID is an ID that is only non-zero at times when sent by the client. The server should
+	// always send 0 for this. When this field is not 0, the LegacySetItemSlots slice below will have values
+	// in it.
+	// LegacyRequestID ties in with the ItemStackResponse packet. If this field is non-0, the server should
+	// respond with an ItemStackResponse packet. Some inventory actions such as dropping an item out of the
+	// hotbar are still one using this packet, and the ItemStackResponse packet needs to tie in with it.
+	LegacyRequestID int32
+	// LegacySetItemSlots are only present if the LegacyRequestID is non-zero. These item slots inform the
+	// server of the slots that were changed during the inventory transaction, and the server should send
+	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
+	LegacySetItemSlots []LegacySetItemSlot
+	// HasNetworkIDs specifies if the inventory actions below have network IDs associated with them. It is
+	// always set to false when a client sends this packet to the server.
+	HasNetworkIDs bool
+	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
+	// these actions hold one slot in which one item was changed to another. In general, the combination of
+	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
+	// no items are cheated into the inventory.
+	Actions []InventoryAction
 	// ActionType is the type of the UseItem inventory transaction. It is one of the action types found above,
 	// and specifies the way the player interacted with the block.
 	ActionType uint32

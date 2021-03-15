@@ -437,6 +437,32 @@ func (a *BeaconPaymentStackRequestAction) Unmarshal(r *Reader) {
 	r.Varint32(&a.SecondaryEffect)
 }
 
+// MineBlockStackRequestAction is sent by the client when it breaks a block.
+type MineBlockStackRequestAction struct {
+	// Unknown1 ...
+	Unknown1 int32
+	// PredictedDurability is the durability of the item that the client assumes to be present at the time.
+	PredictedDurability int32
+	// StackNetworkID is the unique stack ID that the client assumes to be present at the time. The server
+	// must check if these IDs match. If they do not match, servers should reject the stack request that the
+	// action holding this info was in.
+	StackNetworkID int32
+}
+
+// Marshal ...
+func (a *MineBlockStackRequestAction) Marshal(w *Writer) {
+	w.Varint32(&a.Unknown1)
+	w.Varint32(&a.PredictedDurability)
+	w.Varint32(&a.StackNetworkID)
+}
+
+// Unmarshal ...
+func (a *MineBlockStackRequestAction) Unmarshal(r *Reader) {
+	r.Varint32(&a.Unknown1)
+	r.Varint32(&a.PredictedDurability)
+	r.Varint32(&a.StackNetworkID)
+}
+
 // CraftRecipeStackRequestAction is sent by the client the moment it begins crafting an item. This is the
 // first action sent, before the Consume and Create item stack request actions.
 // This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
