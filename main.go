@@ -1,25 +1,31 @@
 package main
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/pelletier/go-toml"
+	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
 	"io/ioutil"
 	"log"
 	"os"
+	"os/signal"
 	"sync"
+	"syscall"
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
 func main() {
 	config := readConfig()
-	token, err := auth.RequestLiveToken()
-	if err != nil {
+	if _, err := raknet.Ping(config.Connection.RemoteAddress); err != nil {
 		panic(err)
 	}
-	src := auth.RefreshTokenSource(token)
+
+	src := tokenSource()
 
 	p, err := minecraft.NewForeignStatusProvider(config.Connection.RemoteAddress)
 	if err != nil {
@@ -93,6 +99,12 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 				}
 				return
 			}
+
+			switch pk := pk.(type) {
+			case *packet.UpdateBlock:
+				fmt.Println(pk.NewBlockRuntimeID)
+			}
+
 			if err := conn.WritePacket(pk); err != nil {
 				return
 			}
@@ -138,4 +150,42 @@ func readConfig() config {
 		log.Fatalf("error writing config file: %v", err)
 	}
 	return c
+}
+
+// tokenSource returns a token source for using with a gophertunnel client. It either reads it from the
+// token.tok file if cached or requests logging in with a device code.
+func tokenSource() oauth2.TokenSource {
+	check := func(err error) {
+		if err != nil {
+			panic(err)
+		}
+	}
+	token := new(oauth2.Token)
+	tokenData, err := ioutil.ReadFile("token.tok")
+	if err == nil {
+		_ = json.Unmarshal(tokenData, token)
+	} else {
+		token, err = auth.RequestLiveToken()
+		check(err)
+	}
+	src := auth.RefreshTokenSource(token)
+	_, err = src.Token()
+	if err != nil {
+		// The cached refresh token expired and can no longer be used to obtain a new token. We require the
+		// user to log in again and use that token instead.
+		token, err = auth.RequestLiveToken()
+		check(err)
+		src = auth.RefreshTokenSource(token)
+	}
+	go func() {
+		c := make(chan os.Signal, 3)
+		signal.Notify(c, syscall.SIGTERM, syscall.SIGINT)
+		<-c
+
+		tok, _ := src.Token()
+		b, _ := json.Marshal(tok)
+		_ = ioutil.WriteFile("token.tok", b, 0644)
+		os.Exit(0)
+	}()
+	return src
 }

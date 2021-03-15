@@ -156,8 +156,8 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		l := uint32(len(pk.BlockActions))
-		w.Varuint32(&l)
+		l := int32(len(pk.BlockActions))
+		w.Varint32(&l)
 		for _, action := range pk.BlockActions {
 			protocol.BlockAction(w, &action)
 		}
@@ -203,6 +203,7 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 		r.Item(&pk.ItemInteractionData.HeldItem)
 		r.Vec3(&pk.ItemInteractionData.Position)
 		r.Vec3(&pk.ItemInteractionData.ClickedPosition)
+		r.Varuint32(&pk.ItemInteractionData.BlockRuntimeID)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
@@ -210,10 +211,10 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		var l uint32
-		r.Varuint32(&l)
+		var l int32
+		r.Varint32(&l)
 		pk.BlockActions = make([]protocol.PlayerBlockAction, l)
-		for i := uint32(0); i < l; i++ {
+		for i := int32(0); i < l; i++ {
 			protocol.BlockAction(r, &pk.BlockActions[i])
 		}
 	}
