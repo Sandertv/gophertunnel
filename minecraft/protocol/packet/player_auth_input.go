@@ -39,6 +39,7 @@ const (
 	InputFlagStopSwimming
 	InputFlagStartJumping
 	InputFlagStartGliding
+	InputFlagStopGliding
 	InputFlagPerformItemInteraction
 	InputFlagPerformBlockActions
 	InputFlagPerformItemStackRequest
@@ -147,6 +148,7 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 		w.Item(&pk.ItemInteractionData.HeldItem)
 		w.Vec3(&pk.ItemInteractionData.Position)
 		w.Vec3(&pk.ItemInteractionData.ClickedPosition)
+		w.Varuint32(&pk.ItemInteractionData.BlockRuntimeID)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {

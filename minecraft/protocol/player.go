@@ -131,6 +131,6 @@ func BlockAction(r IO, x *PlayerBlockAction) {
 	switch x.Action {
 	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
 		r.BlockPos(&x.BlockPos)
-		r.Int32(&x.Face)
+		r.Varint32(&x.Face)
 	}
 }
