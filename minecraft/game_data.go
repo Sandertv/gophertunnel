@@ -57,7 +57,8 @@ type GameData struct {
 	CustomBlocks []protocol.BlockEntry
 	// Items is a list of all items existing in the game, including custom items registered by the server.
 	Items []protocol.ItemEntry
-	// PlayerMovementSettings ...
+	// PlayerMovementSettings specify the different server authoritative movement settings that it has
+	// enabled.
 	PlayerMovementSettings protocol.PlayerMovementSettings
 	// ServerAuthoritativeInventory specifies if the server authoritative inventory system is enabled. This
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to

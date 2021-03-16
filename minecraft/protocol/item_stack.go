@@ -175,7 +175,8 @@ type StackResponseSlotInfo struct {
 	StackNetworkID int32
 	// CustomName is the custom name of the item stack. It is used in relation to text filtering.
 	CustomName string
-	// DurabilityCorrection ...
+	// DurabilityCorrection is the current durability of the item stack. This durability will be shown
+	// client-side after the response is sent to the client.
 	DurabilityCorrection int32
 }
 
@@ -439,7 +440,7 @@ func (a *BeaconPaymentStackRequestAction) Unmarshal(r *Reader) {
 
 // MineBlockStackRequestAction is sent by the client when it breaks a block.
 type MineBlockStackRequestAction struct {
-	// Unknown1 ...
+	// Unknown1 ... TODO: Find out what this is for
 	Unknown1 int32
 	// PredictedDurability is the durability of the item that the client assumes to be present at the time.
 	PredictedDurability int32

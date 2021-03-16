@@ -97,11 +97,11 @@ type PlayerAuthInput struct {
 	// Delta was the delta between the old and the new position. There isn't any practical use for this field
 	// as it can be calculated by the server itself.
 	Delta mgl32.Vec3
-	// ItemInteractionData ...
+	// ItemInteractionData is the transaction data if the InputData includes an item interaction.
 	ItemInteractionData protocol.UseItemTransactionData
-	// ItemStackRequest ...
+	// ItemStackRequest is sent by the client to change an item in their inventory.
 	ItemStackRequest protocol.ItemStackRequest
-	// BlockActions ...
+	// BlockActions is a slice of block actions that the client has interacted with.
 	BlockActions []protocol.PlayerBlockAction
 }
 

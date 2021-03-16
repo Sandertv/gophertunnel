@@ -23,7 +23,8 @@ type CameraShake struct {
 	// Type is the type of shake, and is one of the constants listed above. The different type affects how
 	// the shake looks in game.
 	Type uint8
-	// Action ...
+	// Action is the action to be performed, and is one of the constants listed above. Currently the
+	// different actions will either add or stop shaking the client.
 	Action uint8
 }
 
