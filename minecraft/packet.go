@@ -40,11 +40,11 @@ func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 	}
 
 	r := protocol.NewReader(p.payload, conn.shieldID.Load())
-	/*defer func() {
+	defer func() {
 		if recoveredErr := recover(); recoveredErr != nil {
 			err = fmt.Errorf("%T: %w", pk, recoveredErr.(error))
 		}
-	}()*/
+	}()
 	pk.Unmarshal(r)
 	if p.payload.Len() != 0 {
 		fmt.Printf("%#v\n", pk)
