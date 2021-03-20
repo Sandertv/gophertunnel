@@ -39,9 +39,7 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.Type)
 
-	switch pk.Type {
-	case ClientBoundDebugRendererTypeClear:
-	case ClientBoundDebugRendererTypeAddCube:
+	if pk.Type == ClientBoundDebugRendererTypeAddCube { 
 		w.String(&pk.Text)
 		w.Vec3(&pk.Position)
 		w.Float32(&pk.Red)
@@ -56,9 +54,7 @@ func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 func (pk *ClientBoundDebugRenderer) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.Type)
 
-	switch pk.Type {
-	case ClientBoundDebugRendererTypeClear:
-	case ClientBoundDebugRendererTypeAddCube:
+	if pk.Type == ClientBoundDebugRendererTypeAddCube {
 		r.String(&pk.Text)
 		r.Vec3(&pk.Position)
 		r.Float32(&pk.Red)
