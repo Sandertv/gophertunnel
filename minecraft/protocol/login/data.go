@@ -118,6 +118,10 @@ type ClientData struct {
 	// PlatformUserID holds a UUID which is only sent if the DeviceOS is of type device.XBOX. Its function
 	// is not exactly clear.
 	PlatformUserID string `json:"PlatformUserId,omitempty"`
+	// PlayFabID is the PlayFab ID produced for the skin. PlayFab is the company that hosts the Marketplace,
+	// skins and other related features from the game. This ID is the ID of the skin used to store the skin
+	// inside of PlayFab.
+	PlayFabID string `json:"PlayFabId,omitempty"`
 	// PremiumSkin indicates if the skin the player held was a premium skin, meaning it was obtained through
 	// payment.
 	PremiumSkin bool
