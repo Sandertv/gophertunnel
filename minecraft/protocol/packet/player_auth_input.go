@@ -127,28 +127,7 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	w.Vec3(&pk.Delta)
 
 	if pk.InputData&InputFlagPerformItemInteraction != 0 {
-		w.Varint32(&pk.ItemInteractionData.LegacyRequestID)
-		if pk.ItemInteractionData.LegacyRequestID != 0 {
-			l := uint32(len(pk.ItemInteractionData.LegacySetItemSlots))
-			w.Varuint32(&l)
-			for _, slot := range pk.ItemInteractionData.LegacySetItemSlots {
-				protocol.SetItemSlot(w, &slot)
-			}
-		}
-		w.Bool(&pk.ItemInteractionData.HasNetworkIDs)
-		l := uint32(len(pk.ItemInteractionData.Actions))
-		w.Varuint32(&l)
-		for _, a := range pk.ItemInteractionData.Actions {
-			protocol.InvAction(w, &a, pk.ItemInteractionData.HasNetworkIDs)
-		}
-		w.Varuint32(&pk.ItemInteractionData.ActionType)
-		w.BlockPos(&pk.ItemInteractionData.BlockPosition)
-		w.Varint32(&pk.ItemInteractionData.BlockFace)
-		w.Varint32(&pk.ItemInteractionData.HotBarSlot)
-		w.Item(&pk.ItemInteractionData.HeldItem)
-		w.Vec3(&pk.ItemInteractionData.Position)
-		w.Vec3(&pk.ItemInteractionData.ClickedPosition)
-		w.Varuint32(&pk.ItemInteractionData.BlockRuntimeID)
+		protocol.PlayerInventoryAction(w, &pk.ItemInteractionData)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
@@ -181,29 +160,7 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.Delta)
 
 	if pk.InputData&InputFlagPerformItemInteraction != 0 {
-		r.Varint32(&pk.ItemInteractionData.LegacyRequestID)
-		if pk.ItemInteractionData.LegacyRequestID != 0 {
-			l := uint32(len(pk.ItemInteractionData.LegacySetItemSlots))
-			r.Varuint32(&l)
-			for _, slot := range pk.ItemInteractionData.LegacySetItemSlots {
-				protocol.SetItemSlot(r, &slot)
-			}
-		}
-		r.Bool(&pk.ItemInteractionData.HasNetworkIDs)
-		var l uint32
-		r.Varuint32(&l)
-		pk.ItemInteractionData.Actions = make([]protocol.InventoryAction, l)
-		for i := uint32(0); i < l; i++ {
-			protocol.InvAction(r, &pk.ItemInteractionData.Actions[i], pk.ItemInteractionData.HasNetworkIDs)
-		}
-		r.Varuint32(&pk.ItemInteractionData.ActionType)
-		r.BlockPos(&pk.ItemInteractionData.BlockPosition)
-		r.Varint32(&pk.ItemInteractionData.BlockFace)
-		r.Varint32(&pk.ItemInteractionData.HotBarSlot)
-		r.Item(&pk.ItemInteractionData.HeldItem)
-		r.Vec3(&pk.ItemInteractionData.Position)
-		r.Vec3(&pk.ItemInteractionData.ClickedPosition)
-		r.Varuint32(&pk.ItemInteractionData.BlockRuntimeID)
+		protocol.PlayerInventoryAction(r, &pk.ItemInteractionData)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
