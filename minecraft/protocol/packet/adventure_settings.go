@@ -27,13 +27,15 @@ const (
 )
 
 const (
-	ActionPermissionBuildAndMine = 1 << iota
+	ActionPermissionBuild = 1 << iota
 	ActionPermissionDoorsAndSwitched
 	ActionPermissionOpenContainers
 	ActionPermissionAttackPlayers
 	ActionPermissionAttackMobs
 	ActionPermissionOperator
 	ActionPermissionTeleport
+	ActionPermissionMine
+	ActionPermissionDefault
 )
 
 const (

@@ -31,6 +31,18 @@ const (
 	InputFlagDescendScaffolding
 	InputFlagSneakToggleDown
 	InputFlagPersistSneak
+	InputFlagStartSprinting
+	InputFlagStopSprinting
+	InputFlagStartSneaking
+	InputFlagStopSneaking
+	InputFlagStartSwimming
+	InputFlagStopSwimming
+	InputFlagStartJumping
+	InputFlagStartGliding
+	InputFlagStopGliding
+	InputFlagPerformItemInteraction
+	InputFlagPerformBlockActions
+	InputFlagPerformItemStackRequest
 )
 
 const (
@@ -85,6 +97,12 @@ type PlayerAuthInput struct {
 	// Delta was the delta between the old and the new position. There isn't any practical use for this field
 	// as it can be calculated by the server itself.
 	Delta mgl32.Vec3
+	// ItemInteractionData is the transaction data if the InputData includes an item interaction.
+	ItemInteractionData protocol.UseItemTransactionData
+	// ItemStackRequest is sent by the client to change an item in their inventory.
+	ItemStackRequest protocol.ItemStackRequest
+	// BlockActions is a slice of block actions that the client has interacted with.
+	BlockActions []protocol.PlayerBlockAction
 }
 
 // ID ...
@@ -107,6 +125,22 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	}
 	w.Varuint64(&pk.Tick)
 	w.Vec3(&pk.Delta)
+
+	if pk.InputData&InputFlagPerformItemInteraction != 0 {
+		protocol.PlayerInventoryAction(w, &pk.ItemInteractionData)
+	}
+
+	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
+		protocol.WriteStackRequest(w, &pk.ItemStackRequest)
+	}
+
+	if pk.InputData&InputFlagPerformBlockActions != 0 {
+		l := int32(len(pk.BlockActions))
+		w.Varint32(&l)
+		for _, action := range pk.BlockActions {
+			protocol.BlockAction(w, &action)
+		}
+	}
 }
 
 // Unmarshal ...
@@ -124,4 +158,21 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	}
 	r.Varuint64(&pk.Tick)
 	r.Vec3(&pk.Delta)
+
+	if pk.InputData&InputFlagPerformItemInteraction != 0 {
+		protocol.PlayerInventoryAction(r, &pk.ItemInteractionData)
+	}
+
+	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
+		protocol.StackRequest(r, &pk.ItemStackRequest)
+	}
+
+	if pk.InputData&InputFlagPerformBlockActions != 0 {
+		var l int32
+		r.Varint32(&l)
+		pk.BlockActions = make([]protocol.PlayerBlockAction, l)
+		for i := int32(0); i < l; i++ {
+			protocol.BlockAction(r, &pk.BlockActions[i])
+		}
+	}
 }

@@ -11,6 +11,10 @@ type Skin struct {
 	// SkinID is a unique ID produced for the skin, for example 'c18e65aa-7b21-4637-9b63-8ad63622ef01_Alex'
 	// for the default Alex skin.
 	SkinID string
+	// PlayFabID is the PlayFab ID produced for the skin. PlayFab is the company that hosts the Marketplace,
+	// skins and other related features from the game. This ID is the ID of the skin used to store the skin
+	// inside of PlayFab.
+	PlayFabID string
 	// SkinResourcePatch is a JSON encoded object holding some fields that point to the geometry that the
 	// skin has.
 	// The JSON object that this holds specifies the way that the geometry of animations and the default skin
@@ -70,6 +74,7 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 		panic(err)
 	}
 	w.String(&x.SkinID)
+	w.String(&x.PlayFabID)
 	w.ByteSlice(&x.SkinResourcePatch)
 	w.Uint32(&x.SkinImageWidth)
 	w.Uint32(&x.SkinImageHeight)
@@ -108,6 +113,7 @@ func SerialisedSkin(r *Reader, x *Skin) {
 	var animationCount, count uint32
 
 	r.String(&x.SkinID)
+	r.String(&x.PlayFabID)
 	r.ByteSlice(&x.SkinResourcePatch)
 	r.Uint32(&x.SkinImageWidth)
 	r.Uint32(&x.SkinImageHeight)

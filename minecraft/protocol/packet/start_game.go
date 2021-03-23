@@ -6,10 +6,6 @@ import (
 )
 
 const (
-	AuthoritativeMovementModeClient = iota
-	AuthoritativeMovementModeServer
-	AuthoritativeMovementModeServerWithRewind
-
 	SpawnBiomeTypeDefault = iota
 	SpawnBiomeTypeUserDefined
 )
@@ -174,13 +170,8 @@ type StartGame struct {
 	// Trial specifies if the world was a trial world, meaning features are limited and there is a time limit
 	// on the world.
 	Trial bool
-	// ServerAuthoritativeMovementMode specifies if the server is authoritative over the movement of the player,
-	// meaning it controls the movement of it.
-	// In reality, the only thing that changes when this field is set to true is the packet sent by the player
-	// when it moves. When set to AuthoritativeMovementModeServer or
-	// AuthoritativeMovementModeServerWithRewind, it will send the PlayerAuthInput packet instead of the
-	// MovePlayer packet.
-	ServerAuthoritativeMovementMode uint32
+	// PlayerMovementSettings ...
+	PlayerMovementSettings protocol.PlayerMovementSettings
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
 	// EnchantmentSeed is the seed used to seed the random used to produce enchantments in the enchantment
@@ -268,7 +259,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.String(&pk.WorldName)
 	w.String(&pk.TemplateContentIdentity)
 	w.Bool(&pk.Trial)
-	w.Varuint32(&pk.ServerAuthoritativeMovementMode)
+	protocol.PlayerMoveSettings(w, &pk.PlayerMovementSettings)
 	w.Int64(&pk.Time)
 	w.Varint32(&pk.EnchantmentSeed)
 
@@ -352,7 +343,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.WorldName)
 	r.String(&pk.TemplateContentIdentity)
 	r.Bool(&pk.Trial)
-	r.Varuint32(&pk.ServerAuthoritativeMovementMode)
+	protocol.PlayerMoveSettings(r, &pk.PlayerMovementSettings)
 	r.Int64(&pk.Time)
 	r.Varint32(&pk.EnchantmentSeed)
 

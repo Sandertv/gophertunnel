@@ -32,8 +32,6 @@ type ServerStatus struct {
 	// MaxPlayers is the maximum amount of players in the server. If set to 0, MaxPlayers is set to
 	// PlayerCount + 1.
 	MaxPlayers int
-	// ShowVersion specifies if the Minecraft version of the server is displayed in the server list.
-	ShowVersion bool
 }
 
 // ListenerStatusProvider is the default ServerStatusProvider of a Listener. It displays a static server name/
@@ -125,7 +123,6 @@ func parsePongData(pong []byte) ServerStatus {
 		}
 	}
 	serverName := frag[1]
-	ver := frag[3]
 	online, err := strconv.Atoi(frag[4])
 	if err != nil {
 		return ServerStatus{
@@ -142,6 +139,5 @@ func parsePongData(pong []byte) ServerStatus {
 		ServerName:  serverName,
 		PlayerCount: online,
 		MaxPlayers:  max,
-		ShowVersion: ver != "",
 	}
 }

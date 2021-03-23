@@ -7,6 +7,11 @@ const (
 	CameraShakeTypeRotational
 )
 
+const (
+	CameraShakeActionAdd = iota
+	CameraShakeActionStop
+)
+
 // CameraShake is sent by the server to make the camera shake client-side. This feature was added for map-
 // making partners.
 type CameraShake struct {
@@ -18,6 +23,9 @@ type CameraShake struct {
 	// Type is the type of shake, and is one of the constants listed above. The different type affects how
 	// the shake looks in game.
 	Type uint8
+	// Action is the action to be performed, and is one of the constants listed above. Currently the
+	// different actions will either add or stop shaking the client.
+	Action uint8
 }
 
 // ID ...
@@ -30,6 +38,7 @@ func (pk *CameraShake) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Intensity)
 	w.Float32(&pk.Duration)
 	w.Uint8(&pk.Type)
+	w.Uint8(&pk.Action)
 }
 
 // Unmarshal ...
@@ -37,4 +46,5 @@ func (pk *CameraShake) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Intensity)
 	r.Float32(&pk.Duration)
 	r.Uint8(&pk.Type)
+	r.Uint8(&pk.Action)
 }
