@@ -139,6 +139,10 @@ type ClientData struct {
 	// for the default Alex skin.
 	SkinID string `json:"SkinId"`
 	// SkinImageHeight and SkinImageWidth are the dimensions of the skin's image data.
+	PlayFabID string `json:"PlayFabId"`
+	// PlayFabID is the PlayFab ID produced for the player's skin. PlayFab is the company that hosts the
+	// Marketplace, skins and other related features from the game. This ID is the ID of the skin used to
+	// store the skin inside of PlayFab.
 	SkinImageHeight, SkinImageWidth int
 	// SkinResourcePatch is a base64 encoded string which holds JSON data. The content of the JSON data points
 	// to the assets that should be used to shape the skin. An example with a head animation can be found
