@@ -18,13 +18,13 @@ type ClientBoundDebugRenderer struct {
 	Text string
 	// Position is the position to spawn the debug on.
 	Position mgl32.Vec3
-	// Red is the red value from the RGBA colour rendered on the debug.
+	// Red is the red value from the RGBA colour rendered on the debug. This value is in the range 0-1.
 	Red float32
-	// Green is the green value from the RGBA colour rendered on the debug.
+	// Green is the green value from the RGBA colour rendered on the debug. This value is in the range 0-1.
 	Green float32
-	// Blue is the blue value from the RGBA colour rendered on the debug.
+	// Blue is the blue value from the RGBA colour rendered on the debug. This value is in the range 0-1.
 	Blue float32
-	// Alpha is the alpha value from the RGBA colour rendered on the debug.
+	// Alpha is the alpha value from the RGBA colour rendered on the debug. This value is in the range 0-1.
 	Alpha float32
 	// Duration is how long the debug will last in the world for. It is measured in milliseconds.
 	Duration int64
@@ -39,9 +39,7 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.Type)
 
-	switch pk.Type {
-	case ClientBoundDebugRendererTypeClear:
-	case ClientBoundDebugRendererTypeAddCube:
+	if pk.Type == ClientBoundDebugRendererTypeAddCube {
 		w.String(&pk.Text)
 		w.Vec3(&pk.Position)
 		w.Float32(&pk.Red)
@@ -56,9 +54,7 @@ func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 func (pk *ClientBoundDebugRenderer) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.Type)
 
-	switch pk.Type {
-	case ClientBoundDebugRendererTypeClear:
-	case ClientBoundDebugRendererTypeAddCube:
+	if pk.Type == ClientBoundDebugRendererTypeAddCube {
 		r.String(&pk.Text)
 		r.Vec3(&pk.Position)
 		r.Float32(&pk.Red)
