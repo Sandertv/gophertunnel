@@ -32,10 +32,6 @@ type IdentityData struct {
 	// Nintendo: 2047319603
 	// Note that these IDs are protected using XBOX Live, making the spoofing of this data very difficult.
 	TitleID string `json:"titleId,omitempty"`
-	// PlayFabID is the PlayFab ID produced for the player's skin. PlayFab is the company that hosts the
-	// Marketplace, skins and other related features from the game. This ID is the ID of the skin used to
-	// store the skin inside of PlayFab.
-	PlayFabID string `json:"PlayFabId"`
 }
 
 // checkUsername is used to check if a username is valid according to the Microsoft specification: "You can
