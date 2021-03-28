@@ -168,10 +168,7 @@ type littleEndian struct{}
 
 // WriteInt16 ...
 func (littleEndian) WriteInt16(w *offsetWriter, x int16) error {
-	b := make([]byte, 2)
-	b[0] = byte(x)
-	b[1] = byte(x >> 8)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x), byte(x >> 8)}); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
 	return nil
@@ -179,12 +176,7 @@ func (littleEndian) WriteInt16(w *offsetWriter, x int16) error {
 
 // WriteInt32 ...
 func (littleEndian) WriteInt32(w *offsetWriter, x int32) error {
-	b := make([]byte, 4)
-	b[0] = byte(x)
-	b[1] = byte(x >> 8)
-	b[2] = byte(x >> 16)
-	b[3] = byte(x >> 24)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x), byte(x >> 8), byte(x >> 16), byte(x >> 24)}); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -192,16 +184,8 @@ func (littleEndian) WriteInt32(w *offsetWriter, x int32) error {
 
 // WriteInt64 ...
 func (littleEndian) WriteInt64(w *offsetWriter, x int64) error {
-	b := make([]byte, 8)
-	b[0] = byte(x)
-	b[1] = byte(x >> 8)
-	b[2] = byte(x >> 16)
-	b[3] = byte(x >> 24)
-	b[4] = byte(x >> 32)
-	b[5] = byte(x >> 40)
-	b[6] = byte(x >> 48)
-	b[7] = byte(x >> 56)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x), byte(x >> 8), byte(x >> 16), byte(x >> 24),
+		byte(x >> 32), byte(x >> 40), byte(x >> 48), byte(x >> 56)}); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
@@ -210,12 +194,7 @@ func (littleEndian) WriteInt64(w *offsetWriter, x int64) error {
 // WriteFloat32 ...
 func (littleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	bits := math.Float32bits(x)
-	b := make([]byte, 4)
-	b[0] = byte(bits)
-	b[1] = byte(bits >> 8)
-	b[2] = byte(bits >> 16)
-	b[3] = byte(bits >> 24)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(bits), byte(bits >> 8), byte(bits >> 16), byte(bits >> 24)}); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
 	}
 	return nil
@@ -224,16 +203,8 @@ func (littleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 // WriteFloat64 ...
 func (littleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	bits := math.Float64bits(x)
-	b := make([]byte, 8)
-	b[0] = byte(bits)
-	b[1] = byte(bits >> 8)
-	b[2] = byte(bits >> 16)
-	b[3] = byte(bits >> 24)
-	b[4] = byte(bits >> 32)
-	b[5] = byte(bits >> 40)
-	b[6] = byte(bits >> 48)
-	b[7] = byte(bits >> 56)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(bits), byte(bits >> 8), byte(bits >> 16), byte(bits >> 24),
+		byte(bits >> 32), byte(bits >> 40), byte(bits >> 48), byte(bits >> 56)}); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
 	}
 	return nil
@@ -245,9 +216,7 @@ func (littleEndian) WriteString(w *offsetWriter, x string) error {
 		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
 	}
 	length := int16(len(x))
-	b := make([]byte, 2)
-	b[0], b[1] = byte(length), byte(length>>8)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(length), byte(length >> 8)}); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
@@ -322,10 +291,7 @@ type bigEndian struct{}
 
 // WriteInt16 ...
 func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
-	b := make([]byte, 2)
-	b[0] = byte(x >> 8)
-	b[1] = byte(x)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x >> 8), byte(x)}); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
 	return nil
@@ -333,12 +299,7 @@ func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
 
 // WriteInt32 ...
 func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
-	b := make([]byte, 4)
-	b[0] = byte(x >> 24)
-	b[1] = byte(x >> 16)
-	b[2] = byte(x >> 8)
-	b[3] = byte(x)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x >> 24), byte(x >> 16), byte(x >> 8), byte(x)}); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -346,16 +307,8 @@ func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 
 // WriteInt64 ...
 func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
-	b := make([]byte, 8)
-	b[0] = byte(x >> 56)
-	b[1] = byte(x >> 48)
-	b[2] = byte(x >> 40)
-	b[3] = byte(x >> 32)
-	b[4] = byte(x >> 24)
-	b[5] = byte(x >> 16)
-	b[6] = byte(x >> 8)
-	b[7] = byte(x)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(x >> 56), byte(x >> 48), byte(x >> 40), byte(x >> 32),
+		byte(x >> 24), byte(x >> 16), byte(x >> 8), byte(x)}); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
@@ -364,12 +317,7 @@ func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 // WriteFloat32 ...
 func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	bits := math.Float32bits(x)
-	b := make([]byte, 8)
-	b[0] = byte(bits >> 24)
-	b[1] = byte(bits >> 16)
-	b[2] = byte(bits >> 8)
-	b[3] = byte(bits)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits)}); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
 	}
 	return nil
@@ -378,16 +326,8 @@ func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 // WriteFloat64 ...
 func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	bits := math.Float64bits(x)
-	b := make([]byte, 8)
-	b[0] = byte(bits >> 56)
-	b[1] = byte(bits >> 48)
-	b[2] = byte(bits >> 40)
-	b[3] = byte(bits >> 32)
-	b[4] = byte(bits >> 24)
-	b[5] = byte(bits >> 16)
-	b[6] = byte(bits >> 8)
-	b[7] = byte(bits)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(bits >> 56), byte(bits >> 48), byte(bits >> 40), byte(bits >> 32),
+		byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits)}); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
 	}
 	return nil
@@ -399,9 +339,7 @@ func (bigEndian) WriteString(w *offsetWriter, x string) error {
 		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
 	}
 	length := int16(len(x))
-	b := make([]byte, 2)
-	b[0], b[1] = byte(length>>8), byte(length)
-	if _, err := w.Write(b); err != nil {
+	if _, err := w.Write([]byte{byte(length >> 8), byte(length)}); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
