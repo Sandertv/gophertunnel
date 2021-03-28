@@ -41,18 +41,7 @@ var _ = BigEndian
 var _ = LittleEndian
 var _ = NetworkLittleEndian
 
-type networkLittleEndian struct{}
-
-// WriteInt16 ...
-func (networkLittleEndian) WriteInt16(w *offsetWriter, x int16) error {
-	b := make([]byte, 2)
-	b[0] = byte(x)
-	b[1] = byte(x >> 8)
-	if _, err := w.Write(b); err != nil {
-		return FailedWriteError{Op: "WriteInt16", Off: w.off}
-	}
-	return nil
-}
+type networkLittleEndian struct{ littleEndian }
 
 // WriteInt32 ...
 func (networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
@@ -90,38 +79,6 @@ func (networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 	return nil
 }
 
-// WriteFloat32 ...
-func (networkLittleEndian) WriteFloat32(w *offsetWriter, x float32) error {
-	bits := math.Float32bits(x)
-	b := make([]byte, 4)
-	b[0] = byte(bits)
-	b[1] = byte(bits >> 8)
-	b[2] = byte(bits >> 16)
-	b[3] = byte(bits >> 24)
-	if _, err := w.Write(b); err != nil {
-		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
-	}
-	return nil
-}
-
-// WriteFloat64 ...
-func (networkLittleEndian) WriteFloat64(w *offsetWriter, x float64) error {
-	bits := math.Float64bits(x)
-	b := make([]byte, 8)
-	b[0] = byte(bits)
-	b[1] = byte(bits >> 8)
-	b[2] = byte(bits >> 16)
-	b[3] = byte(bits >> 24)
-	b[4] = byte(bits >> 32)
-	b[5] = byte(bits >> 40)
-	b[6] = byte(bits >> 48)
-	b[7] = byte(bits >> 56)
-	if _, err := w.Write(b); err != nil {
-		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
-	}
-	return nil
-}
-
 // WriteString ...
 func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 	if len(x) > math.MaxInt16 {
@@ -142,15 +99,6 @@ func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	return nil
-}
-
-// Int16 ...
-func (networkLittleEndian) Int16(r *offsetReader) (int16, error) {
-	b, err := consumeN(2, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Int16"}
-	}
-	return int16(uint16(b[0]) | uint16(b[1])<<8), nil
 }
 
 // Int32 ...
@@ -191,25 +139,6 @@ func (networkLittleEndian) Int64(r *offsetReader) (int64, error) {
 		x = ^x
 	}
 	return x, nil
-}
-
-// Float32 ...
-func (networkLittleEndian) Float32(r *offsetReader) (float32, error) {
-	b, err := consumeN(4, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float32"}
-	}
-	return math.Float32frombits(uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24), nil
-}
-
-// Float64 ...
-func (networkLittleEndian) Float64(r *offsetReader) (float64, error) {
-	b, err := consumeN(8, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float64"}
-	}
-	return math.Float64frombits(uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
-		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56), nil
 }
 
 // String ...
