@@ -33,11 +33,12 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
 func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 	// Attempt to fetch the packet with the right packet ID from the pool.
-	pk, ok := conn.pool[p.h.PacketID]
+	pkFunc, ok := conn.pool[p.h.PacketID]
 	if !ok {
 		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
 	}
+	pk = pkFunc()
 
 	r := protocol.NewReader(p.payload, conn.shieldID.Load())
 	defer func() {

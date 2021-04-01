@@ -641,8 +641,6 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)
 	}
-	// Clear out the start game packet from the pool.
-	conn.pool[packet.IDLogin] = &packet.Login{}
 	return nil
 }
 
@@ -992,9 +990,6 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		// Finally we add the resource to the resource packs slice.
 		conn.resourcePacks = append(conn.resourcePacks, pack)
 		if conn.packQueue.packAmount == 0 {
-			// Clear out the start game packet from the pool.
-			conn.pool[packet.IDResourcePackChunkData] = &packet.ResourcePackChunkData{}
-
 			conn.expect(packet.IDResourcePackStack)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		}
@@ -1096,8 +1091,6 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 			conn.shieldID.Store(int32(item.RuntimeID))
 		}
 	}
-	// Clear out the start game packet from the pool.
-	conn.pool[packet.IDStartGame] = &packet.StartGame{}
 
 	conn.loggedIn = true
 
