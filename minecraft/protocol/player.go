@@ -124,6 +124,7 @@ func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
 }
 
+// PlayerInventoryAction reads/writes a PlayerInventoryAction x to/from IO r.
 func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
 	if x.LegacyRequestID != 0 {
@@ -140,7 +141,7 @@ func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
 		InvAction(r, &a, x.HasNetworkIDs)
 	}
 	r.Varuint32(&x.ActionType)
-	r.BlockPos(&x.BlockPosition)
+	r.UBlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	r.Item(&x.HeldItem)
