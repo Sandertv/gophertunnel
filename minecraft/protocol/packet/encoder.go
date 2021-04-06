@@ -33,7 +33,12 @@ func NewEncoder(w io.Writer) *Encoder {
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 	block, _ := aes.NewCipher(keyBytes[:])
-	encoder.encrypt = newEncrypt(keyBytes[:], newCFB8Encrypter(block, keyBytes[:aes.BlockSize]))
+	gcm, err := NewGCM(block)
+	if err != nil {
+		// Should never happen.
+		panic(err)
+	}
+	encoder.encrypt = newEncrypt(keyBytes[:], keyBytes[:gcm.NonceSize()], gcm)
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and
