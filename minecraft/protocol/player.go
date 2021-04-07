@@ -134,11 +134,11 @@ func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
 			SetItemSlot(r, &slot)
 		}
 	}
-	r.Bool(&x.HasNetworkIDs)
+	r.Bool(&x.UsingNetworkIDs)
 	l := uint32(len(x.Actions))
 	r.Varuint32(&l)
 	for _, a := range x.Actions {
-		InvAction(r, &a, x.HasNetworkIDs)
+		InvAction(r, &a, x.UsingNetworkIDs)
 	}
 	r.Varuint32(&x.ActionType)
 	r.UBlockPos(&x.BlockPosition)
@@ -164,7 +164,7 @@ type PlayerBlockAction struct {
 func BlockAction(r IO, x *PlayerBlockAction) {
 	r.Varint32(&x.Action)
 	switch x.Action {
-	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
+	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock, PlayerActionStopBreak:
 		r.BlockPos(&x.BlockPos)
 		r.Varint32(&x.Face)
 	}

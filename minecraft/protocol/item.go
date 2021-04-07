@@ -35,6 +35,8 @@ type ItemStack struct {
 	CanBePlacedOn []string
 	// CanBreak is a list of block identifiers like 'minecraft:dirt' that the item is able to break.
 	CanBreak []string
+	// HasNetworkID ...
+	HasNetworkID bool
 }
 
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually

@@ -335,6 +335,13 @@ const (
 	SoundEventSculkSensorPowerOff
 	SoundEventBucketFillPowderSnow
 	SoundEventBucketEmptyPowderSnow
+	SoundEventPointedDripstoneCauldronDripWater
+	SoundEventPointedDripstoneCauldronDripLava
+	SoundEventPointedDripstoneDripWater
+	SoundEventPointedDripstoneDripLava
+	SoundEventCaveVinesPickBerries
+	SoundEventBigDripleafTiltDown
+	SoundEventBigDripleafTiltUp
 	SoundEventUndefined
 )
 
