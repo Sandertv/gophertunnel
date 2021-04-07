@@ -324,10 +324,6 @@ func (g *gcm) counterCrypt(out, in []byte, counter *[gcmBlockSize]byte) {
 //noinspection ALL
 func xorBytes(dst, a, b []byte) int
 
-//go:linkname xorWords crypto/cipher.xorWords
-//noinspection ALL
-func xorWords(dst, a, b []byte)
-
 // deriveCounter computes the initial GCM counter state from the given nonce.
 // See NIST SP 800-38D, section 7.1. This assumes that counter is filled with
 // zeros on entry.
