@@ -1,4 +1,4 @@
 
 [Connection]
   LocalAddress = "0.0.0.0:19132"
-  RemoteAddress = "0.0.0.0:19131"
+  RemoteAddress = ""
