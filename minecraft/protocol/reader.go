@@ -230,7 +230,7 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 }
 
 // Item reads an ItemStack x from the underlying buffer.
-func (r *Reader) Item(x *ItemStack) {
+func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 	x.NBTData = make(map[string]interface{})
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
@@ -239,28 +239,34 @@ func (r *Reader) Item(x *ItemStack) {
 		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
 		return
 	}
-	var auxValue int32
-	r.Varint32(&auxValue)
-	x.MetadataValue = int16(auxValue >> 8)
-	x.Count = int16(auxValue & 0xff)
 
-	var userDataMarker int16
-	r.Int16(&userDataMarker)
+	r.Int16(&x.Count)
+	r.Varuint32(&x.MetadataValue)
 
-	if userDataMarker == -1 {
-		var userDataVersion uint8
-		r.Uint8(&userDataVersion)
+	if len(stackIDReader) != 0 {
+		stackIDReader[0]()
+	}
 
-		switch userDataVersion {
+	r.Varint32(&x.BlockRuntimeID)
+
+	var length int16
+	r.Int16(&length)
+
+	if length == -1 {
+		var version uint8
+		r.Uint8(&version)
+
+		switch version {
 		case 1:
 			r.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 		default:
-			r.UnknownEnumOption(userDataVersion, "item user data version")
+			r.UnknownEnumOption(version, "item user data version")
 			return
 		}
-	} else if userDataMarker > 0 {
+	} else if length > 0 {
 		r.NBT(&x.NBTData, nbt.LittleEndian)
 	}
+
 	var count int32
 	r.Varint32(&count)
 	r.LimitInt32(count, 0, higherLimit)

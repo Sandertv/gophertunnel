@@ -152,26 +152,34 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 }
 
 // Item writes an ItemStack x to the underlying buffer.
-func (w *Writer) Item(x *ItemStack) {
+func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 	w.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there's no more data to follow. Return immediately.
 		return
 	}
-	aux := int32(x.MetadataValue<<8) | int32(x.Count)
-	w.Varint32(&aux)
-	if len(x.NBTData) != 0 {
-		userDataMarker := int16(-1)
-		userDataVer := uint8(1)
 
-		w.Int16(&userDataMarker)
-		w.Uint8(&userDataVer)
+	w.Int16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+
+	if len(stackIDWriter) != 0 {
+		stackIDWriter[0]()
+	}
+
+	w.Varint32(&x.BlockRuntimeID)
+
+	var length int16
+	if len(x.NBTData) != 0 {
+		length = int16(-1)
+		version := uint8(1)
+
+		w.Int16(&length)
+		w.Uint8(&version)
 		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 	} else {
-		userDataMarker := int16(0)
-
-		w.Int16(&userDataMarker)
+		w.Int16(&length)
 	}
+
 	placeOnLen := int32(len(x.CanBePlacedOn))
 	canBreak := int32(len(x.CanBreak))
 

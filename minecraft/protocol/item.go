@@ -15,8 +15,28 @@ type ItemInstance struct {
 
 // ItemInst reads/writes an ItemInstance x using IO r.
 func ItemInst(r IO, x *ItemInstance) {
-	r.Varint32(&x.StackNetworkID)
-	r.Item(&x.Stack)
+	switch r := r.(type) {
+	case *Writer:
+		r.Item(&x.Stack, func() {
+			hasNetID := x.StackNetworkID != 0
+			r.Bool(&hasNetID)
+
+			if hasNetID {
+				r.Varint32(&x.StackNetworkID)
+			}
+		})
+	case *Reader:
+		r.Item(&x.Stack, func() {
+			var hasNetID bool
+			r.Bool(&hasNetID)
+
+			if hasNetID {
+				r.Varint32(&x.StackNetworkID)
+			}
+		})
+	default:
+		panic("should never happen")
+	}
 	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
 		r.InvalidValue(x.StackNetworkID, "stack network ID", "stack is empty but network ID is non-zero")
 	}
@@ -26,6 +46,8 @@ func ItemInst(r IO, x *ItemInstance) {
 // define its type.
 type ItemStack struct {
 	ItemType
+	// BlockRuntimeID ...
+	BlockRuntimeID int32
 	// Count is the count of items that the item stack holds.
 	Count int16
 	// NBTData is a map that is serialised to its NBT representation when sent in a packet.
@@ -47,7 +69,7 @@ type ItemType struct {
 	NetworkID int32
 	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
 	// other items it is simply an identifier of a variant of the item.
-	MetadataValue int16
+	MetadataValue uint32
 }
 
 // RecipeIngredientItem represents an item that may be used as a recipe ingredient.
