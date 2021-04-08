@@ -240,7 +240,7 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 		return
 	}
 
-	r.Int16(&x.Count)
+	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 
 	if len(stackIDReader) != 0 {
@@ -258,7 +258,7 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 
 		switch version {
 		case 1:
-			r.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+			r.NBT(&x.NBTData, nbt.LittleEndian)
 		default:
 			r.UnknownEnumOption(version, "item user data version")
 			return
@@ -268,7 +268,7 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 	}
 
 	var count int32
-	r.Varint32(&count)
+	r.Int32(&count)
 	r.LimitInt32(count, 0, higherLimit)
 
 	x.CanBePlacedOn = make([]string, count)
@@ -276,16 +276,17 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 		r.String(&x.CanBePlacedOn[i])
 	}
 
-	r.Varint32(&count)
+	r.Int32(&count)
 	r.LimitInt32(count, 0, higherLimit)
 
 	x.CanBreak = make([]string, count)
 	for i := int32(0); i < count; i++ {
 		r.String(&x.CanBreak[i])
 	}
+
 	if x.NetworkID == r.shieldID {
 		var blockingTick int64
-		r.Varint64(&blockingTick)
+		r.Int64(&blockingTick)
 	}
 }
 

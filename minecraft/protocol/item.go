@@ -49,7 +49,7 @@ type ItemStack struct {
 	// BlockRuntimeID ...
 	BlockRuntimeID int32
 	// Count is the count of items that the item stack holds.
-	Count int16
+	Count uint16
 	// NBTData is a map that is serialised to its NBT representation when sent in a packet.
 	NBTData map[string]interface{}
 	// CanBePlacedOn is a list of block identifiers like 'minecraft:stone' which the item, if it is an item

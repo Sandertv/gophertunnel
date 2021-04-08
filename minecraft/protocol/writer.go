@@ -159,7 +159,7 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 		return
 	}
 
-	w.Int16(&x.Count)
+	w.Uint16(&x.Count)
 	w.Varuint32(&x.MetadataValue)
 
 	if len(stackIDWriter) != 0 {
@@ -183,17 +183,17 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 	placeOnLen := int32(len(x.CanBePlacedOn))
 	canBreak := int32(len(x.CanBreak))
 
-	w.Varint32(&placeOnLen)
+	w.Int32(&placeOnLen)
 	for _, block := range x.CanBePlacedOn {
 		w.String(&block)
 	}
-	w.Varint32(&canBreak)
+	w.Int32(&canBreak)
 	for _, block := range x.CanBreak {
 		w.String(&block)
 	}
 	if x.NetworkID == w.shieldID {
 		var blockingTick int64
-		w.Varint64(&blockingTick)
+		w.Int64(&blockingTick)
 	}
 }
 
