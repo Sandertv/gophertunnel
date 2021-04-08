@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -42,6 +43,13 @@ func (w *Writer) Bool(x *bool) {
 		return
 	}
 	_ = w.w.WriteByte(0)
+}
+
+// StringUTF ...
+func (w *Writer) StringUTF(x *string) {
+	l := uint16(len(*x))
+	w.Uint16(&l)
+	_, _ = w.w.Write([]byte(*x))
 }
 
 // String writes a string, prefixed with a varuint32, to the underlying buffer.
@@ -168,33 +176,39 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 
 	w.Varint32(&x.BlockRuntimeID)
 
+	var b []byte
+	buf := bytes.NewBuffer(b)
+	bufWriter := NewWriter(buf, w.shieldID)
+
 	var length int16
 	if len(x.NBTData) != 0 {
 		length = int16(-1)
 		version := uint8(1)
 
-		w.Int16(&length)
-		w.Uint8(&version)
-		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 	} else {
-		w.Int16(&length)
+		bufWriter.Int16(&length)
 	}
 
 	placeOnLen := int32(len(x.CanBePlacedOn))
 	canBreak := int32(len(x.CanBreak))
 
-	w.Int32(&placeOnLen)
+	bufWriter.Int32(&placeOnLen)
 	for _, block := range x.CanBePlacedOn {
-		w.String(&block)
+		bufWriter.StringUTF(&block)
 	}
-	w.Int32(&canBreak)
+	bufWriter.Int32(&canBreak)
 	for _, block := range x.CanBreak {
-		w.String(&block)
+		bufWriter.StringUTF(&block)
 	}
-	if x.NetworkID == w.shieldID {
+	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
-		w.Int64(&blockingTick)
+		bufWriter.Int64(&blockingTick)
 	}
+
+	w.ByteSlice(&b)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

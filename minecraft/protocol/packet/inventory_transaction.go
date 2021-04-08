@@ -76,7 +76,7 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 	l := uint32(len(pk.Actions))
 	w.Varuint32(&l)
 	for _, action := range pk.Actions {
-		protocol.InvAction(w, &action, pk.HasNetworkIDs)
+		protocol.InvAction(w, &action)
 	}
 	if pk.TransactionData != nil {
 		pk.TransactionData.Marshal(w)
@@ -104,7 +104,7 @@ func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < length; i++ {
 		// Each InventoryTransaction packet has a list of actions at the start, with a transaction data object
 		// after that, depending on the transaction type.
-		protocol.InvAction(r, &pk.Actions[i], pk.HasNetworkIDs)
+		protocol.InvAction(r, &pk.Actions[i])
 	}
 	switch transactionType {
 	case InventoryTransactionTypeNormal:

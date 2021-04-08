@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
@@ -56,6 +57,21 @@ func (r *Reader) Bool(x *bool) {
 
 // errStringTooLong is an error set if a string decoded using the String method has a length that is too long.
 var errStringTooLong = errors.New("string length overflows a 32-bit integer")
+
+// StringUTF ...
+func (r *Reader) StringUTF(x *string) {
+	var length uint16
+	r.Uint16(&length)
+	l := int(length)
+	if l > math.MaxUint16 {
+		r.panic(errStringTooLong)
+	}
+	data := make([]byte, l)
+	if _, err := r.r.Read(data); err != nil {
+		r.panic(err)
+	}
+	*x = *(*string)(unsafe.Pointer(&data))
+}
 
 // String reads a string from the underlying buffer.
 func (r *Reader) String(x *string) {
@@ -240,53 +256,68 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 		return
 	}
 
+	// Count and metadata
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 
+	// Stack ID reading if needed
 	if len(stackIDReader) != 0 {
 		stackIDReader[0]()
 	}
 
+	// Block runtime ID
 	r.Varint32(&x.BlockRuntimeID)
 
+	// New buffer
+	var size int32
+	r.Varint32(&size)
+
+	b := make([]byte, size)
+	r.Bytes(&b)
+
+	buf := bytes.NewBuffer(b)
+	bufReader := NewReader(buf, r.shieldID)
+
+	// NBT
 	var length int16
-	r.Int16(&length)
+	bufReader.Int16(&length)
 
 	if length == -1 {
 		var version uint8
-		r.Uint8(&version)
+		bufReader.Uint8(&version)
 
 		switch version {
 		case 1:
-			r.NBT(&x.NBTData, nbt.LittleEndian)
+			bufReader.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 		default:
-			r.UnknownEnumOption(version, "item user data version")
+			bufReader.UnknownEnumOption(version, "item user data version")
 			return
 		}
 	} else if length > 0 {
-		r.NBT(&x.NBTData, nbt.LittleEndian)
+		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 	}
 
+	// Extra shit
 	var count int32
-	r.Int32(&count)
-	r.LimitInt32(count, 0, higherLimit)
+	bufReader.Int32(&count)
+	bufReader.LimitInt32(count, 0, higherLimit)
 
 	x.CanBePlacedOn = make([]string, count)
 	for i := int32(0); i < count; i++ {
-		r.String(&x.CanBePlacedOn[i])
+		bufReader.StringUTF(&x.CanBePlacedOn[i])
 	}
 
-	r.Int32(&count)
-	r.LimitInt32(count, 0, higherLimit)
+	bufReader.Int32(&count)
+	bufReader.LimitInt32(count, 0, higherLimit)
 
 	x.CanBreak = make([]string, count)
 	for i := int32(0); i < count; i++ {
-		r.String(&x.CanBreak[i])
+		bufReader.StringUTF(&x.CanBreak[i])
 	}
 
-	if x.NetworkID == r.shieldID {
+	if x.NetworkID == bufReader.shieldID {
 		var blockingTick int64
-		r.Int64(&blockingTick)
+		bufReader.Int64(&blockingTick)
 	}
 }
 

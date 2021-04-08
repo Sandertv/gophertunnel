@@ -138,7 +138,7 @@ func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
 	l := uint32(len(x.Actions))
 	r.Varuint32(&l)
 	for _, a := range x.Actions {
-		InvAction(r, &a, x.UsingNetworkIDs)
+		InvAction(r, &a)
 	}
 	r.Varuint32(&x.ActionType)
 	r.UBlockPos(&x.BlockPosition)

@@ -34,18 +34,14 @@ type InventoryAction struct {
 	InventorySlot uint32
 	// OldItem is the item that was present in the slot before the inventory action. It should be checked by
 	// the server to ensure the inventories were not out of sync.
-	OldItem ItemStack
+	OldItem ItemInstance
 	// NewItem is the new item that was put in the InventorySlot that the OldItem was in. It must be checked
 	// in combination with other inventory actions to ensure that the transaction is balanced.
-	NewItem ItemStack
-	// StackNetworkID is the unique network ID of the new stack. This is always 0 when an InventoryTransaction
-	// packet is sent by the client. It is also always 0 when the HasNetworkIDs field in the
-	// InventoryTransaction packet is set to false.
-	StackNetworkID int32
+	NewItem ItemInstance
 }
 
 // InvAction reads/writes an InventoryAction x using IO r.
-func InvAction(r IO, x *InventoryAction, netIDs bool) {
+func InvAction(r IO, x *InventoryAction) {
 	r.Varuint32(&x.SourceType)
 	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
@@ -54,11 +50,8 @@ func InvAction(r IO, x *InventoryAction, netIDs bool) {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	r.Item(&x.OldItem)
-	r.Item(&x.NewItem)
-	if netIDs {
-		r.Varint32(&x.StackNetworkID)
-	}
+	ItemInst(r, &x.OldItem)
+	ItemInst(r, &x.NewItem)
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
