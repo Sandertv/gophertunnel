@@ -310,10 +310,11 @@ func (g *gcm) counterCrypt(out, in []byte, counter *[gcmBlockSize]byte) {
 	}
 
 	if len(in) > 0 {
-		g.cipher.Encrypt(g.currentMask[:], counter[:])
-		gcmInc32(counter)
-
-		g.current += xorBytes(out, in, g.currentMask[:])
+		if g.current == 0 {
+			g.cipher.Encrypt(g.currentMask[:], counter[:])
+			gcmInc32(counter)
+		}
+		g.current += xorBytes(out, in, g.currentMask[g.current:])
 	}
 }
 
