@@ -47,8 +47,8 @@ func (w *Writer) Bool(x *bool) {
 
 // StringUTF ...
 func (w *Writer) StringUTF(x *string) {
-	l := uint16(len(*x))
-	w.Uint16(&l)
+	l := int16(len(*x))
+	w.Int16(&l)
 	_, _ = w.w.Write([]byte(*x))
 }
 
@@ -195,6 +195,8 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 	placeOnLen := int32(len(x.CanBePlacedOn))
 	canBreak := int32(len(x.CanBreak))
 
+	bufWriter.ByteSlice(&b)
+
 	bufWriter.Int32(&placeOnLen)
 	for _, block := range x.CanBePlacedOn {
 		bufWriter.StringUTF(&block)
@@ -207,8 +209,6 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 		var blockingTick int64
 		bufWriter.Int64(&blockingTick)
 	}
-
-	w.ByteSlice(&b)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

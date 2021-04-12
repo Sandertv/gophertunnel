@@ -60,10 +60,10 @@ var errStringTooLong = errors.New("string length overflows a 32-bit integer")
 
 // StringUTF ...
 func (r *Reader) StringUTF(x *string) {
-	var length uint16
-	r.Uint16(&length)
+	var length int16
+	r.Int16(&length)
 	l := int(length)
-	if l > math.MaxUint16 {
+	if l > math.MaxInt16 {
 		r.panic(errStringTooLong)
 	}
 	data := make([]byte, l)
@@ -269,8 +269,8 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 	r.Varint32(&x.BlockRuntimeID)
 
 	// New buffer
-	var size int32
-	r.Varint32(&size)
+	var size uint32
+	r.Varuint32(&size)
 
 	b := make([]byte, size)
 	r.Bytes(&b)
