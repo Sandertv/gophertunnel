@@ -496,11 +496,6 @@ func (r *Reader) panicf(format string, a ...interface{}) {
 	panic(fmt.Errorf(format, a...))
 }
 
-// ShieldID ...
-func (r *Reader) ShieldID() int32 {
-	return r.shieldID
-}
-
 // panic panics with the error passed, similarly to panicf.
 func (r *Reader) panic(err error) {
 	panic(err)

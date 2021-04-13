@@ -334,11 +334,6 @@ func (w *Writer) InvalidValue(value interface{}, forField, reason string) {
 	w.panicf("invalid value '%v' for %v: %v", value, forField, reason)
 }
 
-// ShieldID ...
-func (w *Writer) ShieldID() int32 {
-	return w.shieldID
-}
-
 // panicf panics with the format and values passed.
 func (w *Writer) panicf(format string, a ...interface{}) {
 	panic(fmt.Errorf(format, a...))
