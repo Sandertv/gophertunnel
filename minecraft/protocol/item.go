@@ -1,6 +1,8 @@
 package protocol
 
-import "github.com/sandertv/gophertunnel/minecraft/nbt"
+import (
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
+)
 
 // ItemInstance represents a unique instance of an item stack. These instances carry a specific network ID
 // that is persistent for the stack.
@@ -13,21 +15,14 @@ type ItemInstance struct {
 	Stack ItemStack
 }
 
-// ItemInst reads/writes an ItemInstance x using IO r.
-func ItemInst(r IO, x *ItemInstance) {
-	r.Varint32(&x.StackNetworkID)
-	r.Item(&x.Stack)
-	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
-		r.InvalidValue(x.StackNetworkID, "stack network ID", "stack is empty but network ID is non-zero")
-	}
-}
-
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that
 // define its type.
 type ItemStack struct {
 	ItemType
+	// BlockRuntimeID ...
+	BlockRuntimeID int32
 	// Count is the count of items that the item stack holds.
-	Count int16
+	Count uint16
 	// NBTData is a map that is serialised to its NBT representation when sent in a packet.
 	NBTData map[string]interface{}
 	// CanBePlacedOn is a list of block identifiers like 'minecraft:stone' which the item, if it is an item
@@ -35,6 +30,8 @@ type ItemStack struct {
 	CanBePlacedOn []string
 	// CanBreak is a list of block identifiers like 'minecraft:dirt' that the item is able to break.
 	CanBreak []string
+	// HasNetworkID ...
+	HasNetworkID bool
 }
 
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually
@@ -45,7 +42,7 @@ type ItemType struct {
 	NetworkID int32
 	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
 	// other items it is simply an identifier of a variant of the item.
-	MetadataValue int16
+	MetadataValue uint32
 }
 
 // RecipeIngredientItem represents an item that may be used as a recipe ingredient.

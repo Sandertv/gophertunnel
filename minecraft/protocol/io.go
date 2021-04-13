@@ -26,6 +26,7 @@ type IO interface {
 	Varint32(x *int32)
 	Varuint32(x *uint32)
 	String(x *string)
+	StringUTF(x *string)
 	ByteSlice(x *[]byte)
 	Vec3(x *mgl32.Vec3)
 	Vec2(x *mgl32.Vec2)
@@ -39,6 +40,7 @@ type IO interface {
 	VarRGBA(x *color.RGBA)
 	EntityMetadata(x *map[uint32]interface{})
 	Item(x *ItemStack)
+	ItemInstance(i *ItemInstance)
 
 	UnknownEnumOption(value interface{}, enum string)
 	InvalidValue(value interface{}, forField, reason string)

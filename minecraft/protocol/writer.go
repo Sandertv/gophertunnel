@@ -1,6 +1,7 @@
 package protocol
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -42,6 +43,13 @@ func (w *Writer) Bool(x *bool) {
 		return
 	}
 	_ = w.w.WriteByte(0)
+}
+
+// StringUTF ...
+func (w *Writer) StringUTF(x *string) {
+	l := int16(len(*x))
+	w.Int16(&l)
+	_, _ = w.w.Write([]byte(*x))
 }
 
 // String writes a string, prefixed with a varuint32, to the underlying buffer.
@@ -151,6 +159,62 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	}
 }
 
+// ItemInstance writes an ItemInstance x to the underlying buffer.
+func (w *Writer) ItemInstance(i *ItemInstance) {
+	x := &i.Stack
+	w.Varint32(&x.NetworkID)
+	if x.NetworkID == 0 {
+		// The item was air, so there's no more data to follow. Return immediately.
+		return
+	}
+
+	w.Uint16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+
+	hasNetID := i.StackNetworkID != 0
+	w.Bool(&hasNetID)
+
+	if hasNetID {
+		w.Varint32(&i.StackNetworkID)
+	}
+
+	w.Varint32(&x.BlockRuntimeID)
+
+	var extraData []byte
+	buf := bytes.NewBuffer(extraData)
+	bufWriter := NewWriter(buf, w.shieldID)
+
+	var length int16
+	if len(x.NBTData) != 0 {
+		length = int16(-1)
+		version := uint8(1)
+
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+	} else {
+		bufWriter.Int16(&length)
+	}
+
+	placeOnLen := int32(len(x.CanBePlacedOn))
+	canBreak := int32(len(x.CanBreak))
+
+	bufWriter.Int32(&placeOnLen)
+	for _, block := range x.CanBePlacedOn {
+		bufWriter.StringUTF(&block)
+	}
+	bufWriter.Int32(&canBreak)
+	for _, block := range x.CanBreak {
+		bufWriter.StringUTF(&block)
+	}
+	if x.NetworkID == bufWriter.shieldID {
+		var blockingTick int64
+		bufWriter.Int64(&blockingTick)
+	}
+
+	w.ByteSlice(&extraData)
+}
+
 // Item writes an ItemStack x to the underlying buffer.
 func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)
@@ -158,35 +222,44 @@ func (w *Writer) Item(x *ItemStack) {
 		// The item was air, so there's no more data to follow. Return immediately.
 		return
 	}
-	aux := int32(x.MetadataValue<<8) | int32(x.Count)
-	w.Varint32(&aux)
+
+	w.Uint16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+	w.Varint32(&x.BlockRuntimeID)
+
+	var extraData []byte
+	buf := bytes.NewBuffer(extraData)
+	bufWriter := NewWriter(buf, w.shieldID)
+
+	var length int16
 	if len(x.NBTData) != 0 {
-		userDataMarker := int16(-1)
-		userDataVer := uint8(1)
+		length = int16(-1)
+		version := uint8(1)
 
-		w.Int16(&userDataMarker)
-		w.Uint8(&userDataVer)
-		w.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
 	} else {
-		userDataMarker := int16(0)
-
-		w.Int16(&userDataMarker)
+		bufWriter.Int16(&length)
 	}
+
 	placeOnLen := int32(len(x.CanBePlacedOn))
 	canBreak := int32(len(x.CanBreak))
 
-	w.Varint32(&placeOnLen)
+	bufWriter.Int32(&placeOnLen)
 	for _, block := range x.CanBePlacedOn {
-		w.String(&block)
+		bufWriter.StringUTF(&block)
 	}
-	w.Varint32(&canBreak)
+	bufWriter.Int32(&canBreak)
 	for _, block := range x.CanBreak {
-		w.String(&block)
+		bufWriter.StringUTF(&block)
 	}
-	if x.NetworkID == w.shieldID {
+	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
-		w.Varint64(&blockingTick)
+		bufWriter.Int64(&blockingTick)
 	}
+
+	w.ByteSlice(&extraData)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

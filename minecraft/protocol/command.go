@@ -124,6 +124,9 @@ const (
 	CommandOriginVirtual
 	CommandOriginGameArgument
 	CommandOriginEntityServer
+	CommandOriginPrecompiled
+	CommandOriginGameDirectorEntityServer
+	CommandOriginScript
 )
 
 // CommandOrigin holds data that identifies the origin of the requesting of a command. It holds several
@@ -290,7 +293,8 @@ func CommandParam(r *Reader, x *CommandParameter, enums []CommandEnum, suffixes 
 
 const (
 	CommandEnumConstraintCheatsEnabled = iota
-	_
+	CommandEnumConstraintOperatorPermissions
+	CommandEnumConstraintHostPermissions
 	_
 )
 

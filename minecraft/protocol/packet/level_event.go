@@ -42,10 +42,13 @@ const (
 	EventSoundOrb    = 1051
 	EventSoundTotem  = 1052
 
-	EventSoundArmourStandBreak = 1060
-	EventSoundArmourStandHit   = 1061
-	EventSoundArmourStandFall  = 1062
-	EventSoundArmourStandPlace = 1063
+	EventSoundArmourStandBreak     = 1060
+	EventSoundArmourStandHit       = 1061
+	EventSoundArmourStandFall      = 1062
+	EventSoundArmourStandPlace     = 1063
+	EventSoundPointedDripstoneLand = 1064
+	EventSoundDyeUsed              = 1065
+	EventSoundInkSackUsed          = 1066
 
 	EventParticleShoot               = 2000
 	EventParticleDestroy             = 2001
@@ -74,6 +77,13 @@ const (
 	EventParticlePointCloud          = 2024
 	EventParticleExplosion           = 2025
 	EventParticleBlockExplosion      = 2026
+	EventParticleVibrationSignal     = 2027
+	EventParticleParticleDripstoneDrip
+	EventParticleParticleFizzEffect
+	EventParticleParticleWaxOn
+	EventParticleParticleWaxOff
+	EventParticleParticleScrape
+	EventParticleParticleElectricSpark
 
 	EventStartRain           = 3001
 	EventStartThunder        = 3002

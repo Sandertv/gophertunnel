@@ -270,7 +270,7 @@ func (recipe *FurnaceDataRecipe) Unmarshal(r *Reader) {
 	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
 
-	recipe.InputType.MetadataValue = int16(dataValue)
+	recipe.InputType.MetadataValue = uint32(dataValue)
 }
 
 // Marshal ...

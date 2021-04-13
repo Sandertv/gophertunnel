@@ -34,18 +34,14 @@ type InventoryAction struct {
 	InventorySlot uint32
 	// OldItem is the item that was present in the slot before the inventory action. It should be checked by
 	// the server to ensure the inventories were not out of sync.
-	OldItem ItemStack
+	OldItem ItemInstance
 	// NewItem is the new item that was put in the InventorySlot that the OldItem was in. It must be checked
 	// in combination with other inventory actions to ensure that the transaction is balanced.
-	NewItem ItemStack
-	// StackNetworkID is the unique network ID of the new stack. This is always 0 when an InventoryTransaction
-	// packet is sent by the client. It is also always 0 when the HasNetworkIDs field in the
-	// InventoryTransaction packet is set to false.
-	StackNetworkID int32
+	NewItem ItemInstance
 }
 
 // InvAction reads/writes an InventoryAction x using IO r.
-func InvAction(r IO, x *InventoryAction, netIDs bool) {
+func InvAction(r IO, x *InventoryAction) {
 	r.Varuint32(&x.SourceType)
 	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
@@ -54,11 +50,8 @@ func InvAction(r IO, x *InventoryAction, netIDs bool) {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	r.Item(&x.OldItem)
-	r.Item(&x.NewItem)
-	if netIDs {
-		r.Varint32(&x.StackNetworkID)
-	}
+	r.ItemInstance(&x.OldItem)
+	r.ItemInstance(&x.NewItem)
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
@@ -98,9 +91,6 @@ type UseItemTransactionData struct {
 	// server of the slots that were changed during the inventory transaction, and the server should send
 	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
 	LegacySetItemSlots []LegacySetItemSlot
-	// HasNetworkIDs specifies if the inventory actions below have network IDs associated with them. It is
-	// always set to false when a client sends this packet to the server.
-	HasNetworkIDs bool
 	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
@@ -120,7 +110,7 @@ type UseItemTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was held to interact with the block. The server should check if this item
 	// is actually present in the HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// Position is the position of the player at the time of interaction. For clicking a block, this is the
 	// position at that time, whereas for breaking the block it is the position at the time of breaking.
 	Position mgl32.Vec3
@@ -151,7 +141,7 @@ type UseItemOnEntityTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was held to interact with the entity. The server should check if this item
 	// is actually present in the HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// Position is the position of the player at the time of clicking the entity.
 	Position mgl32.Vec3
 	// ClickedPosition is the position that was clicked relative to the entity's base coordinate. It can be
@@ -177,7 +167,7 @@ type ReleaseItemTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was released. The server should check if this item is actually present in the
 	// HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// HeadPosition is the position of the player's head at the time of releasing the item. This is used
 	// mainly for purposes such as spawning eating particles at that position.
 	HeadPosition mgl32.Vec3
@@ -189,7 +179,7 @@ func (data *UseItemTransactionData) Marshal(w *Writer) {
 	w.UBlockPos(&data.BlockPosition)
 	w.Varint32(&data.BlockFace)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 	w.Varuint32(&data.BlockRuntimeID)
@@ -201,7 +191,7 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -212,7 +202,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
 	w.Varuint64(&data.TargetEntityRuntimeID)
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 }
@@ -222,7 +212,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -231,7 +221,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.HeadPosition)
 }
 
@@ -239,7 +229,7 @@ func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 

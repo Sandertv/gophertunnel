@@ -27,7 +27,7 @@ func (pk *InventoryContent) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.WindowID)
 	w.Varuint32(&l)
 	for _, item := range pk.Content {
-		protocol.ItemInst(w, &item)
+		w.ItemInstance(&item)
 	}
 }
 
@@ -39,6 +39,6 @@ func (pk *InventoryContent) Unmarshal(r *protocol.Reader) {
 
 	pk.Content = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		protocol.ItemInst(r, &pk.Content[i])
+		r.ItemInstance(&pk.Content[i])
 	}
 }
