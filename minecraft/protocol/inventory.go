@@ -113,7 +113,7 @@ type UseItemTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was held to interact with the block. The server should check if this item
 	// is actually present in the HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// Position is the position of the player at the time of interaction. For clicking a block, this is the
 	// position at that time, whereas for breaking the block it is the position at the time of breaking.
 	Position mgl32.Vec3
@@ -182,7 +182,7 @@ func (data *UseItemTransactionData) Marshal(w *Writer) {
 	w.UBlockPos(&data.BlockPosition)
 	w.Varint32(&data.BlockFace)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	ItemInst(w, &data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 	w.Varuint32(&data.BlockRuntimeID)
@@ -194,7 +194,7 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	ItemInst(r, &data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)

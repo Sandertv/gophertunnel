@@ -12,15 +12,15 @@ type MobArmourEquipment struct {
 	EntityRuntimeID uint64
 	// Helmet is the equipped helmet of the entity. Items that are not wearable on the head will not be
 	// rendered by the client. Unlike in Java Edition, blocks cannot be worn.
-	Helmet protocol.ItemStack
+	Helmet protocol.ItemInstance
 	// Chestplate is the chestplate of the entity. Items that are not wearable as chestplate will not be
 	// rendered.
-	Chestplate protocol.ItemStack
+	Chestplate protocol.ItemInstance
 	// Leggings is the item worn as leggings by the entity. Items not wearable as leggings will not be
 	// rendered client-side.
-	Leggings protocol.ItemStack
+	Leggings protocol.ItemInstance
 	// Boots is the item worn as boots by the entity. Items not wearable as boots will not be rendered.
-	Boots protocol.ItemStack
+	Boots protocol.ItemInstance
 }
 
 // ID ...
@@ -31,17 +31,17 @@ func (*MobArmourEquipment) ID() uint32 {
 // Marshal ...
 func (pk *MobArmourEquipment) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
-	w.Item(&pk.Helmet)
-	w.Item(&pk.Chestplate)
-	w.Item(&pk.Leggings)
-	w.Item(&pk.Boots)
+	protocol.ItemInst(w, &pk.Helmet)
+	protocol.ItemInst(w, &pk.Chestplate)
+	protocol.ItemInst(w, &pk.Leggings)
+	protocol.ItemInst(w, &pk.Boots)
 }
 
 // Unmarshal ...
 func (pk *MobArmourEquipment) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
-	r.Item(&pk.Helmet)
-	r.Item(&pk.Chestplate)
-	r.Item(&pk.Leggings)
-	r.Item(&pk.Boots)
+	protocol.ItemInst(r, &pk.Helmet)
+	protocol.ItemInst(r, &pk.Chestplate)
+	protocol.ItemInst(r, &pk.Leggings)
+	protocol.ItemInst(r, &pk.Boots)
 }

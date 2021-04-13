@@ -44,7 +44,7 @@ type AddPlayer struct {
 	// HeldItem is the item that the player is holding. The item is shown to the viewer as soon as the player
 	// itself shows up. Needless to say that this field is rather pointless, as additional packets still must
 	// be sent for armour to show up.
-	HeldItem protocol.ItemStack
+	HeldItem protocol.ItemInstance
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
@@ -94,7 +94,7 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Pitch)
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
-	w.Item(&pk.HeldItem)
+	protocol.ItemInst(w, &pk.HeldItem)
 	w.EntityMetadata(&pk.EntityMetadata)
 	w.Varuint32(&pk.Flags)
 	w.Varuint32(&pk.CommandPermissionLevel)
@@ -119,7 +119,7 @@ func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
-	r.Item(&pk.HeldItem)
+	protocol.ItemInst(r, &pk.HeldItem)
 	r.EntityMetadata(&pk.EntityMetadata)
 	r.Varuint32(&pk.Flags)
 	r.Varuint32(&pk.CommandPermissionLevel)

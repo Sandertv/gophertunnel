@@ -260,13 +260,17 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 
+	reading := false
 	// Stack ID reading if needed
 	if len(stackIDReader) != 0 {
+		reading = true
 		stackIDReader[0]()
 	}
 
 	// Block runtime ID
 	r.Varint32(&x.BlockRuntimeID)
+
+	fmt.Println(x.NetworkID, x.Count, x.MetadataValue, x.BlockRuntimeID, reading)
 
 	// New buffer
 	var size uint32

@@ -19,9 +19,9 @@ type CraftingEvent struct {
 	RecipeUUID uuid.UUID
 	// Input is a list of items that the player put into the recipe so that it could create the Output items.
 	// These items are consumed in the process.
-	Input []protocol.ItemStack
+	Input []protocol.ItemInstance
 	// Output is a list of items that were obtained as a result of crafting the recipe.
-	Output []protocol.ItemStack
+	Output []protocol.ItemInstance
 }
 
 // ID ...
@@ -37,11 +37,11 @@ func (pk *CraftingEvent) Marshal(w *protocol.Writer) {
 	w.UUID(&pk.RecipeUUID)
 	w.Varuint32(&inputLen)
 	for _, input := range pk.Input {
-		w.Item(&input)
+		protocol.ItemInst(w, &input)
 	}
 	w.Varuint32(&outputLen)
 	for _, output := range pk.Output {
-		w.Item(&output)
+		protocol.ItemInst(w, &output)
 	}
 }
 
@@ -54,15 +54,15 @@ func (pk *CraftingEvent) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&length)
 	r.LimitUint32(length, 64)
 
-	pk.Input = make([]protocol.ItemStack, length)
+	pk.Input = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		r.Item(&pk.Input[i])
+		protocol.ItemInst(r, &pk.Input[i])
 	}
 	r.Varuint32(&length)
 	r.LimitUint32(length, 64)
 
-	pk.Output = make([]protocol.ItemStack, length)
+	pk.Output = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		r.Item(&pk.Output[i])
+		protocol.ItemInst(r, &pk.Output[i])
 	}
 }

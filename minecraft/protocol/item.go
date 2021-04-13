@@ -17,31 +17,18 @@ type ItemInstance struct {
 
 // ItemInst reads/writes an ItemInstance x using IO r.
 func ItemInst(r IO, x *ItemInstance) {
-	switch r := r.(type) {
-	case *Writer:
-		r.Item(&x.Stack, func() {
-			hasNetID := x.StackNetworkID != 0
-			r.Bool(&hasNetID)
-
-			if hasNetID {
-				r.Varint32(&x.StackNetworkID)
-			}
-		})
-	case *Reader:
-		r.Item(&x.Stack, func() {
-			var hasNetID bool
-			r.Bool(&hasNetID)
-
-			if hasNetID {
-				r.Varint32(&x.StackNetworkID)
-			}
-		})
-	default:
-		panic("should never happen")
+	var hasNetID bool
+	if _, ok := r.(*Writer); ok {
+		hasNetID = x.StackNetworkID != 0
 	}
-	if (x.Stack.Count == 0 || x.Stack.NetworkID == 0) && x.StackNetworkID != 0 {
-		r.InvalidValue(x.StackNetworkID, "stack network ID", "stack is empty but network ID is non-zero")
-	}
+
+	r.Item(&x.Stack, func() {
+		r.Bool(&hasNetID)
+
+		if hasNetID {
+			r.Varint32(&x.StackNetworkID)
+		}
+	})
 }
 
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that
