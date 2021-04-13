@@ -42,7 +42,7 @@ func ItemInst(r IO, i *ItemInstance) {
 
 	r.Varint32(&x.BlockRuntimeID)
 
-	// Initialize the extra data (NBT, can place on, can break, and the blocking tick)
+	// Initialize the extra data. (NBT, can place on, can break, and the blocking tick)
 	var extraData []byte
 	if isReader {
 		r.ByteSlice(&extraData)
@@ -50,13 +50,13 @@ func ItemInst(r IO, i *ItemInstance) {
 
 	buf := bytes.NewBuffer(extraData)
 
-	// Initialize our writer/reader for the extra data
+	// Initialize our writer/reader for the extra data.
 	var bufIO IO = NewWriter(buf, r.ShieldID())
 	if isReader {
 		bufIO = NewReader(buf, r.ShieldID())
 	}
 
-	// Read/write the NBT data
+	// Read/write the NBT data.
 	var length int16
 	if isReader {
 		bufIO.Int16(&length)
@@ -88,7 +88,7 @@ func ItemInst(r IO, i *ItemInstance) {
 		}
 	}
 
-	// Read the CanBePlacedOn and CanBreak slices
+	// Read the CanBePlacedOn and CanBreak slices.
 	var count int32
 	bufIO.Int32(&count)
 	if isReader {
@@ -115,7 +115,7 @@ func ItemInst(r IO, i *ItemInstance) {
 		bufIO.Int64(&blockingTick)
 	}
 
-	// If our IO is a Writer, then we want to send the extra data now
+	// If our IO is a Writer, then we want to send the extra data now.
 	if !isReader {
 		r.ByteSlice(&extraData)
 	}
