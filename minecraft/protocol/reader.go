@@ -270,14 +270,11 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 	// Block runtime ID
 	r.Varint32(&x.BlockRuntimeID)
 
-	fmt.Println(x.NetworkID, x.Count, x.MetadataValue, x.BlockRuntimeID, reading)
-
 	// New buffer
-	var size uint32
-	r.Varuint32(&size)
+	var b []byte
+	r.ByteSlice(&b)
 
-	b := make([]byte, size)
-	r.Bytes(&b)
+	fmt.Println(x.NetworkID, x.Count, x.MetadataValue, x.BlockRuntimeID, reading, len(b))
 
 	buf := bytes.NewBuffer(b)
 	bufReader := NewReader(buf, r.shieldID)

@@ -144,7 +144,7 @@ type UseItemOnEntityTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was held to interact with the entity. The server should check if this item
 	// is actually present in the HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// Position is the position of the player at the time of clicking the entity.
 	Position mgl32.Vec3
 	// ClickedPosition is the position that was clicked relative to the entity's base coordinate. It can be
@@ -170,7 +170,7 @@ type ReleaseItemTransactionData struct {
 	HotBarSlot int32
 	// HeldItem is the item that was released. The server should check if this item is actually present in the
 	// HotBarSlot.
-	HeldItem ItemStack
+	HeldItem ItemInstance
 	// HeadPosition is the position of the player's head at the time of releasing the item. This is used
 	// mainly for purposes such as spawning eating particles at that position.
 	HeadPosition mgl32.Vec3
@@ -205,7 +205,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
 	w.Varuint64(&data.TargetEntityRuntimeID)
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	ItemInst(w, &data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 }
@@ -215,7 +215,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	ItemInst(r, &data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -224,7 +224,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	w.Item(&data.HeldItem)
+	ItemInst(w, &data.HeldItem)
 	w.Vec3(&data.HeadPosition)
 }
 
@@ -232,7 +232,7 @@ func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.Item(&data.HeldItem)
+	ItemInst(r, &data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 
