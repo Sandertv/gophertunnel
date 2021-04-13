@@ -17,12 +17,9 @@ type ItemInstance struct {
 
 // ItemInst reads/writes an ItemInstance x using IO r.
 func ItemInst(r IO, x *ItemInstance) {
-	var hasNetID bool
-	if _, ok := r.(*Writer); ok {
-		hasNetID = x.StackNetworkID != 0
-	}
-
 	r.Item(&x.Stack, func() {
+		// This will be overridden if the IO is a Reader anyways.
+		hasNetID := x.StackNetworkID != 0
 		r.Bool(&hasNetID)
 
 		if hasNetID {

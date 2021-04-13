@@ -163,7 +163,7 @@ type PlayerBlockAction struct {
 func BlockAction(r IO, x *PlayerBlockAction) {
 	r.Varint32(&x.Action)
 	switch x.Action {
-	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock, PlayerActionStopBreak:
+	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
 		r.BlockPos(&x.BlockPos)
 		r.Varint32(&x.Face)
 	}
