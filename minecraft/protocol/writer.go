@@ -159,6 +159,62 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	}
 }
 
+// ItemInstance writes an ItemInstance x to the underlying buffer.
+func (w *Writer) ItemInstance(i *ItemInstance) {
+	x := &i.Stack
+	w.Varint32(&x.NetworkID)
+	if x.NetworkID == 0 {
+		// The item was air, so there's no more data to follow. Return immediately.
+		return
+	}
+
+	w.Uint16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+
+	hasNetID := i.StackNetworkID != 0
+	w.Bool(&hasNetID)
+
+	if hasNetID {
+		w.Varint32(&i.StackNetworkID)
+	}
+
+	w.Varint32(&x.BlockRuntimeID)
+
+	var extraData []byte
+	buf := bytes.NewBuffer(extraData)
+	bufWriter := NewWriter(buf, w.shieldID)
+
+	var length int16
+	if len(x.NBTData) != 0 {
+		length = int16(-1)
+		version := uint8(1)
+
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+	} else {
+		bufWriter.Int16(&length)
+	}
+
+	placeOnLen := int32(len(x.CanBePlacedOn))
+	canBreak := int32(len(x.CanBreak))
+
+	bufWriter.Int32(&placeOnLen)
+	for _, block := range x.CanBePlacedOn {
+		bufWriter.StringUTF(&block)
+	}
+	bufWriter.Int32(&canBreak)
+	for _, block := range x.CanBreak {
+		bufWriter.StringUTF(&block)
+	}
+	if x.NetworkID == bufWriter.shieldID {
+		var blockingTick int64
+		bufWriter.Int64(&blockingTick)
+	}
+
+	w.ByteSlice(&extraData)
+}
+
 // Item writes an ItemStack x to the underlying buffer.
 func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)

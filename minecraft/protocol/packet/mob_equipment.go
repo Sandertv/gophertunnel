@@ -33,7 +33,7 @@ func (*MobEquipment) ID() uint32 {
 // Marshal ...
 func (pk *MobEquipment) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
-	protocol.ItemInst(w, &pk.NewItem)
+	w.ItemInstance(&pk.NewItem)
 	w.Uint8(&pk.InventorySlot)
 	w.Uint8(&pk.HotBarSlot)
 	w.Uint8(&pk.WindowID)
@@ -42,7 +42,7 @@ func (pk *MobEquipment) Marshal(w *protocol.Writer) {
 // Unmarshal ...
 func (pk *MobEquipment) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
-	protocol.ItemInst(r, &pk.NewItem)
+	r.ItemInstance(&pk.NewItem)
 	r.Uint8(&pk.InventorySlot)
 	r.Uint8(&pk.HotBarSlot)
 	r.Uint8(&pk.WindowID)

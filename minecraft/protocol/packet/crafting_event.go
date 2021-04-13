@@ -37,11 +37,11 @@ func (pk *CraftingEvent) Marshal(w *protocol.Writer) {
 	w.UUID(&pk.RecipeUUID)
 	w.Varuint32(&inputLen)
 	for _, input := range pk.Input {
-		protocol.ItemInst(w, &input)
+		w.ItemInstance(&input)
 	}
 	w.Varuint32(&outputLen)
 	for _, output := range pk.Output {
-		protocol.ItemInst(w, &output)
+		w.ItemInstance(&output)
 	}
 }
 
@@ -56,13 +56,13 @@ func (pk *CraftingEvent) Unmarshal(r *protocol.Reader) {
 
 	pk.Input = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		protocol.ItemInst(r, &pk.Input[i])
+		r.ItemInstance(&pk.Input[i])
 	}
 	r.Varuint32(&length)
 	r.LimitUint32(length, 64)
 
 	pk.Output = make([]protocol.ItemInstance, length)
 	for i := uint32(0); i < length; i++ {
-		protocol.ItemInst(r, &pk.Output[i])
+		r.ItemInstance(&pk.Output[i])
 	}
 }

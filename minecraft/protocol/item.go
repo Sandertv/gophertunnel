@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"bytes"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
@@ -14,111 +13,6 @@ type ItemInstance struct {
 	StackNetworkID int32
 	// Stack is the actual item stack of the item instance.
 	Stack ItemStack
-}
-
-// ItemInst reads/writes an ItemInstance x using IO r.
-func ItemInst(r IO, i *ItemInstance) {
-	x := &i.Stack
-	x.NBTData = make(map[string]interface{})
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
-		return
-	}
-	_, isReader := r.(*Reader)
-
-	r.Uint16(&x.Count)
-	r.Varuint32(&x.MetadataValue)
-
-	// This will be overridden if the IO is a Reader anyways.
-	hasNetID := i.StackNetworkID != 0
-	r.Bool(&hasNetID)
-
-	if hasNetID {
-		r.Varint32(&i.StackNetworkID)
-	}
-
-	r.Varint32(&x.BlockRuntimeID)
-
-	// Initialize the extra data. (NBT, can place on, can break, and the blocking tick)
-	var extraData []byte
-	if isReader {
-		r.ByteSlice(&extraData)
-	}
-
-	buf := bytes.NewBuffer(extraData)
-
-	// Initialize our writer/reader for the extra data.
-	var bufIO IO = NewWriter(buf, r.ShieldID())
-	if isReader {
-		bufIO = NewReader(buf, r.ShieldID())
-	}
-
-	// Read/write the NBT data.
-	var length int16
-	if isReader {
-		bufIO.Int16(&length)
-
-		if length == -1 {
-			var version uint8
-			bufIO.Uint8(&version)
-
-			switch version {
-			case 1:
-				bufIO.NBT(&x.NBTData, nbt.NetworkLittleEndian)
-			default:
-				bufIO.UnknownEnumOption(version, "item user data version")
-				return
-			}
-		} else if length > 0 {
-			bufIO.NBT(&x.NBTData, nbt.LittleEndian)
-		}
-	} else {
-		if len(x.NBTData) != 0 {
-			length = int16(-1)
-			version := uint8(1)
-
-			bufIO.Int16(&length)
-			bufIO.Uint8(&version)
-			bufIO.NBT(&x.NBTData, nbt.NetworkLittleEndian)
-		} else {
-			bufIO.Int16(&length)
-		}
-	}
-
-	// Read the CanBePlacedOn and CanBreak slices.
-	var count int32
-	bufIO.Int32(&count)
-	if isReader {
-		bufIO.(*Reader).LimitInt32(count, 0, higherLimit)
-	}
-
-	x.CanBePlacedOn = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufIO.StringUTF(&x.CanBePlacedOn[i])
-	}
-
-	bufIO.Int32(&count)
-	if isReader {
-		bufIO.(*Reader).LimitInt32(count, 0, higherLimit)
-	}
-
-	x.CanBreak = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufIO.StringUTF(&x.CanBreak[i])
-	}
-
-	if x.NetworkID == bufIO.ShieldID() {
-		var blockingTick int64
-		bufIO.Int64(&blockingTick)
-	}
-
-	// If our IO is a Writer, then we want to send the extra data now.
-	if !isReader {
-		r.ByteSlice(&extraData)
-	}
 }
 
 // ItemStack represents an item instance/stack over network. It has a network ID and a metadata value that

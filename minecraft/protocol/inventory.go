@@ -50,8 +50,8 @@ func InvAction(r IO, x *InventoryAction) {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	ItemInst(r, &x.OldItem)
-	ItemInst(r, &x.NewItem)
+	r.ItemInstance(&x.OldItem)
+	r.ItemInstance(&x.NewItem)
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
@@ -179,7 +179,7 @@ func (data *UseItemTransactionData) Marshal(w *Writer) {
 	w.UBlockPos(&data.BlockPosition)
 	w.Varint32(&data.BlockFace)
 	w.Varint32(&data.HotBarSlot)
-	ItemInst(w, &data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 	w.Varuint32(&data.BlockRuntimeID)
@@ -191,7 +191,7 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
-	ItemInst(r, &data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -202,7 +202,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
 	w.Varuint64(&data.TargetEntityRuntimeID)
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	ItemInst(w, &data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.Position)
 	w.Vec3(&data.ClickedPosition)
 }
@@ -212,7 +212,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	ItemInst(r, &data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -221,7 +221,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 	w.Varuint32(&data.ActionType)
 	w.Varint32(&data.HotBarSlot)
-	ItemInst(w, &data.HeldItem)
+	w.ItemInstance(&data.HeldItem)
 	w.Vec3(&data.HeadPosition)
 }
 
@@ -229,7 +229,7 @@ func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
 func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	ItemInst(r, &data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 

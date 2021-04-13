@@ -245,6 +245,77 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 	}
 }
 
+// ItemInstance reads an ItemInstance x to the underlying buffer.
+func (r *Reader) ItemInstance(i *ItemInstance) {
+	x := &i.Stack
+	x.NBTData = make(map[string]interface{})
+	r.Varint32(&x.NetworkID)
+	if x.NetworkID == 0 {
+		// The item was air, so there is no more data we should read for the item instance. After all, air
+		// items aren't really anything.
+		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
+		return
+	}
+
+	r.Uint16(&x.Count)
+	r.Varuint32(&x.MetadataValue)
+
+	var hasNetID bool
+	r.Bool(&hasNetID)
+
+	if hasNetID {
+		r.Varint32(&i.StackNetworkID)
+	}
+
+	r.Varint32(&x.BlockRuntimeID)
+
+	var extraData []byte
+	r.ByteSlice(&extraData)
+
+	buf := bytes.NewBuffer(extraData)
+	bufReader := NewReader(buf, r.shieldID)
+
+	var length int16
+	bufReader.Int16(&length)
+
+	if length == -1 {
+		var version uint8
+		bufReader.Uint8(&version)
+
+		switch version {
+		case 1:
+			bufReader.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		default:
+			bufReader.UnknownEnumOption(version, "item user data version")
+			return
+		}
+	} else if length > 0 {
+		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+	}
+
+	var count int32
+	bufReader.Int32(&count)
+	bufReader.LimitInt32(count, 0, higherLimit)
+
+	x.CanBePlacedOn = make([]string, count)
+	for i := int32(0); i < count; i++ {
+		bufReader.StringUTF(&x.CanBePlacedOn[i])
+	}
+
+	bufReader.Int32(&count)
+	bufReader.LimitInt32(count, 0, higherLimit)
+
+	x.CanBreak = make([]string, count)
+	for i := int32(0); i < count; i++ {
+		bufReader.StringUTF(&x.CanBreak[i])
+	}
+
+	if x.NetworkID == bufReader.shieldID {
+		var blockingTick int64
+		bufReader.Int64(&blockingTick)
+	}
+}
+
 // Item reads an ItemStack x from the underlying buffer.
 func (r *Reader) Item(x *ItemStack) {
 	x.NBTData = make(map[string]interface{})
