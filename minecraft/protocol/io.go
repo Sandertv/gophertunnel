@@ -41,7 +41,6 @@ type IO interface {
 	EntityMetadata(x *map[uint32]interface{})
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
-	ShieldID() int32
 
 	UnknownEnumOption(value interface{}, enum string)
 	InvalidValue(value interface{}, forField, reason string)
