@@ -160,7 +160,7 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 }
 
 // Item writes an ItemStack x to the underlying buffer.
-func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
+func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there's no more data to follow. Return immediately.
@@ -169,15 +169,10 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 
 	w.Uint16(&x.Count)
 	w.Varuint32(&x.MetadataValue)
-
-	if len(stackIDWriter) != 0 {
-		stackIDWriter[0]()
-	}
-
 	w.Varint32(&x.BlockRuntimeID)
 
-	var b []byte
-	buf := bytes.NewBuffer(b)
+	var extraData []byte
+	buf := bytes.NewBuffer(extraData)
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -208,7 +203,7 @@ func (w *Writer) Item(x *ItemStack, stackIDWriter ...func()) {
 		bufWriter.Int64(&blockingTick)
 	}
 
-	w.ByteSlice(&b)
+	w.ByteSlice(&extraData)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
@@ -281,6 +276,11 @@ func (w *Writer) UnknownEnumOption(value interface{}, enum string) {
 // InvalidValue panics with an invalid value error.
 func (w *Writer) InvalidValue(value interface{}, forField, reason string) {
 	w.panicf("invalid value '%v' for %v: %v", value, forField, reason)
+}
+
+// ShieldID ...
+func (w *Writer) ShieldID() int32 {
+	return w.shieldID
 }
 
 // panicf panics with the format and values passed.

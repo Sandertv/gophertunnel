@@ -246,7 +246,7 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 }
 
 // Item reads an ItemStack x from the underlying buffer.
-func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
+func (r *Reader) Item(x *ItemStack) {
 	x.NBTData = make(map[string]interface{})
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
@@ -258,11 +258,6 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
-
-	if len(stackIDReader) != 0 {
-		stackIDReader[0]()
-	}
-
 	r.Varint32(&x.BlockRuntimeID)
 
 	var extraData []byte
@@ -428,6 +423,11 @@ func (r *Reader) Varuint32(x *uint32) {
 // panicf panics with the format and values passed and assigns the error created to the Reader.
 func (r *Reader) panicf(format string, a ...interface{}) {
 	panic(fmt.Errorf(format, a...))
+}
+
+// ShieldID ...
+func (r *Reader) ShieldID() int32 {
+	return r.shieldID
 }
 
 // panic panics with the error passed, similarly to panicf.
