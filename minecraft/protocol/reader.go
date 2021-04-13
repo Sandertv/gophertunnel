@@ -256,30 +256,21 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 		return
 	}
 
-	// Count and metadata
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 
-	reading := false
-	// Stack ID reading if needed
 	if len(stackIDReader) != 0 {
-		reading = true
 		stackIDReader[0]()
 	}
 
-	// Block runtime ID
 	r.Varint32(&x.BlockRuntimeID)
 
-	// New buffer
-	var b []byte
-	r.ByteSlice(&b)
+	var extraData []byte
+	r.ByteSlice(&extraData)
 
-	fmt.Println(x.NetworkID, x.Count, x.MetadataValue, x.BlockRuntimeID, reading, len(b))
-
-	buf := bytes.NewBuffer(b)
+	buf := bytes.NewBuffer(extraData)
 	bufReader := NewReader(buf, r.shieldID)
 
-	// NBT
 	var length int16
 	bufReader.Int16(&length)
 
@@ -298,7 +289,6 @@ func (r *Reader) Item(x *ItemStack, stackIDReader ...func()) {
 		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 	}
 
-	// Extra shit
 	var count int32
 	bufReader.Int32(&count)
 	bufReader.LimitInt32(count, 0, higherLimit)

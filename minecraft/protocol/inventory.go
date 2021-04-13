@@ -91,9 +91,6 @@ type UseItemTransactionData struct {
 	// server of the slots that were changed during the inventory transaction, and the server should send
 	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
 	LegacySetItemSlots []LegacySetItemSlot
-	// UsingNetworkIDs specifies if the inventory actions below have network IDs associated with them. It is
-	// always set to false when a client sends this packet to the server.
-	UsingNetworkIDs bool
 	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that

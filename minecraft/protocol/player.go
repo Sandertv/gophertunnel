@@ -134,14 +134,13 @@ func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
 			SetItemSlot(r, &slot)
 		}
 	}
-	r.Bool(&x.UsingNetworkIDs)
 	l := uint32(len(x.Actions))
 	r.Varuint32(&l)
 	for _, a := range x.Actions {
 		InvAction(r, &a)
 	}
 	r.Varuint32(&x.ActionType)
-	r.UBlockPos(&x.BlockPosition)
+	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	ItemInst(r, &x.HeldItem)
