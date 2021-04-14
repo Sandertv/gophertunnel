@@ -284,7 +284,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 
 		switch version {
 		case 1:
-			bufReader.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 		default:
 			bufReader.UnknownEnumOption(version, "item user data version")
 			return
@@ -346,7 +346,7 @@ func (r *Reader) Item(x *ItemStack) {
 
 		switch version {
 		case 1:
-			bufReader.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 		default:
 			bufReader.UnknownEnumOption(version, "item user data version")
 			return
