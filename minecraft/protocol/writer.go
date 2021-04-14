@@ -180,8 +180,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 
 	w.Varint32(&x.BlockRuntimeID)
 
-	var extraData []byte
-	buf := bytes.NewBuffer(extraData)
+	buf := new(bytes.Buffer)
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -191,7 +190,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 
 		bufWriter.Int16(&length)
 		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
 	} else {
 		bufWriter.Int16(&length)
 	}
@@ -212,7 +211,8 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		bufWriter.Int64(&blockingTick)
 	}
 
-	w.ByteSlice(&extraData)
+	b := buf.Bytes()
+	w.ByteSlice(&b)
 }
 
 // Item writes an ItemStack x to the underlying buffer.
@@ -238,7 +238,7 @@ func (w *Writer) Item(x *ItemStack) {
 
 		bufWriter.Int16(&length)
 		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.NetworkLittleEndian)
+		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
 	} else {
 		bufWriter.Int16(&length)
 	}
