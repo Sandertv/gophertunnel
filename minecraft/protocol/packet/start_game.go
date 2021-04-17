@@ -190,6 +190,8 @@ type StartGame struct {
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.
 	ServerAuthoritativeInventory bool
+	// GameVersion is the version of the game the server is running. The exact function of this field isn't clear.
+	GameVersion string
 }
 
 // ID ...
@@ -276,6 +278,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	}
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
+	w.String(&pk.GameVersion)
 }
 
 // Unmarshal ...
@@ -360,4 +363,5 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	}
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
+	r.String(&pk.GameVersion)
 }
