@@ -908,6 +908,7 @@ func (conn *Conn) startGame() {
 		WorldGameMode:                data.WorldGameMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		Experiments:                  data.Experiments,
+		GameVersion:                  protocol.CurrentVersion,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
