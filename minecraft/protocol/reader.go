@@ -48,11 +48,7 @@ func (r *Reader) Bool(x *bool) {
 	if err != nil {
 		r.panic(err)
 	}
-	if u == 0 {
-		*x = false
-		return
-	}
-	*x = true
+	*x = *(*bool)(unsafe.Pointer(&u))
 }
 
 // errStringTooLong is an error set if a string decoded using the String method has a length that is too long.
