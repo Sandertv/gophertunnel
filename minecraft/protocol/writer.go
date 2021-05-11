@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"io"
 	"reflect"
+	"unsafe"
 )
 
 // Writer implements writing methods for data types from Minecraft packets. Each Packet implementation has one
@@ -38,11 +39,7 @@ func (w *Writer) Uint8(x *uint8) {
 
 // Bool writes a bool as either 0 or 1 to the underlying buffer.
 func (w *Writer) Bool(x *bool) {
-	if *x {
-		_ = w.w.WriteByte(1)
-		return
-	}
-	_ = w.w.WriteByte(0)
+	_ = w.w.WriteByte(*(*byte)(unsafe.Pointer(x)))
 }
 
 // StringUTF ...
