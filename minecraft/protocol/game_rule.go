@@ -18,7 +18,11 @@ func GameRules(r *Reader, x *map[string]interface{}) {
 		var valueType uint32
 
 		r.String(&name)
+
+		// No, this is not a mistake. Mojang is in fact reading the value type 2 times.
 		r.Varuint32(&valueType)
+		r.Varuint32(&valueType)
+
 		switch valueType {
 		case 1:
 			var v bool
@@ -46,17 +50,22 @@ func WriteGameRules(w *Writer, x *map[string]interface{}) {
 	w.Varuint32(&l)
 	for name, value := range *x {
 		w.String(&name)
+
+		// No, this is not a mistake. Mojang is in fact writing the value type 2 times.
 		switch v := value.(type) {
 		case bool:
 			id := uint32(1)
+			w.Varuint32(&id)
 			w.Varuint32(&id)
 			w.Bool(&v)
 		case uint32:
 			id := uint32(2)
 			w.Varuint32(&id)
+			w.Varuint32(&id)
 			w.Varuint32(&v)
 		case float32:
 			id := uint32(3)
+			w.Varuint32(&id)
 			w.Varuint32(&id)
 			w.Float32(&v)
 		default:
