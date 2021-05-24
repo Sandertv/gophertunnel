@@ -37,4 +37,4 @@ Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to th
 <a href="https://github.com/AndreasHGK"><img src="https://avatars2.githubusercontent.com/u/36563463?s=400&u=e2c20031872bd0b5eed292e1d81ceb5c5775f36d&v=4" width="60" height="60"></a>
 
 ## Contact
-[![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.gg/kNaScn8D)
+[![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.com/invite/U4kFWHhTNR)
