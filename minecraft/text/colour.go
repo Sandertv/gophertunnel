@@ -62,13 +62,18 @@ func (e *enc) process(tok html.Token) {
 	case html.StartTagToken:
 		if format, ok := strMap[tok.Data]; ok {
 			e.formatStack = append(e.formatStack, format)
+			return
 		}
+		// Not a known colour, so just write the token as a string.
+		e.w.WriteString("<" + tok.Data + ">")
 	case html.EndTagToken:
 		for i, format := range e.formatStack {
 			if f, ok := strMap[tok.Data]; ok && f == format {
 				e.formatStack = append(e.formatStack[:i], e.formatStack[i+1:]...)
-				break
+				return
 			}
 		}
+		// Not a known colour, so just write the token as a string.
+		e.w.WriteString("</" + tok.Data + ">")
 	}
 }
