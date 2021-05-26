@@ -104,7 +104,7 @@ type StartGame struct {
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.
-	GameRules map[string]interface{}
+	GameRules []protocol.GameRule
 	// Experiments holds a list of experiments that are either enabled or disabled in the world that the
 	// player spawns in.
 	Experiments []protocol.ExperimentData
@@ -283,7 +283,6 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(r *protocol.Reader) {
-	pk.GameRules = make(map[string]interface{})
 	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
