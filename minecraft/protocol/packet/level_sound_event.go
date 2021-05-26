@@ -342,7 +342,32 @@ const (
 	SoundEventCaveVinesPickBerries
 	SoundEventBigDripleafTiltDown
 	SoundEventBigDripleafTiltUp
-	SoundEventUndefined
+	_
+	_
+	_
+	_
+	SoundEventCopperWaxOn
+	SoundEventCopperWaxOff
+	SoundEventScrape
+	SoundEventPlayerHurtDrown
+	SoundEventPlayerHurtOnFire
+	SoundEventPlayerHurtFreeze
+	SoundEventUseSpyglass
+	SoundEventStopUsingSpyglass
+	SoundEventAmetheystBlockChime
+	SoundEventAmbientScreamer
+	SoundEventHurtScreamer
+	SoundEventDeathScreamer
+	SoundEventMilkScreamer
+	SoundEventJumpToBlock
+	SoundEventPreRam
+	SoundEventPreRamScreamer
+	SoundEventRamImpact
+	SoundEventRamImpactScreamer
+	SoundEventSquidInkSquirt
+	SoundEventGlowSquidInkSquirt
+	SoundEventConvertToStray
+	SoundEventUnknown
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

@@ -18,6 +18,7 @@ const (
 	EventBannerPatternRemoved
 	EventCommandExecuted
 	EventFishBucketed
+	EventPlayerWaxedOrUnwaxedCopper = 25
 )
 
 // Event is sent by the server to send an event with additional data. It is typically sent to the client for

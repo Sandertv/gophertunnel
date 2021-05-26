@@ -50,40 +50,42 @@ const (
 	EventSoundDyeUsed              = 1065
 	EventSoundInkSackUsed          = 1066
 
-	EventParticleShoot               = 2000
-	EventParticleDestroy             = 2001
-	EventParticleSplash              = 2002
-	EventParticleEyeDespawn          = 2003
-	EventParticleSpawn               = 2004
-	EventParticleCropGrowth          = 2005
-	EventParticleSoundGuardianCurse  = 2006
-	EventParticleDeathSmoke          = 2007
-	EventParticleBlockForceField     = 2008
-	EventParticleProjectileHit       = 2009
-	EventParticleDragonEggTeleport   = 2010
-	EventParticleCropEaten           = 2011
-	EventParticleCritical            = 2012
-	EventParticleEndermanTeleport    = 2013
-	EventParticlePunchBlock          = 2014
-	EventParticleBubble              = 2015
-	EventParticleEvaporate           = 2016
-	EventParticleDestroyArmorStand   = 2017
-	EventParticleBreakingEgg         = 2018
-	EventParticleDestroyEgg          = 2019
-	EventParticleEvaporateWater      = 2020
-	EventParticleDestroyBlockNoSound = 2021
-	EventParticleKnockbackRoar       = 2022
-	EventParticleTeleportTrail       = 2023
-	EventParticlePointCloud          = 2024
-	EventParticleExplosion           = 2025
-	EventParticleBlockExplosion      = 2026
-	EventParticleVibrationSignal     = 2027
-	EventParticleParticleDripstoneDrip
-	EventParticleParticleFizzEffect
-	EventParticleParticleWaxOn
-	EventParticleParticleWaxOff
-	EventParticleParticleScrape
-	EventParticleParticleElectricSpark
+	EventParticleShoot                 = 2000
+	EventParticleDestroy               = 2001
+	EventParticleSplash                = 2002
+	EventParticleEyeDespawn            = 2003
+	EventParticleSpawn                 = 2004
+	EventParticleCropGrowth            = 2005
+	EventParticleSoundGuardianCurse    = 2006
+	EventParticleDeathSmoke            = 2007
+	EventParticleBlockForceField       = 2008
+	EventParticleProjectileHit         = 2009
+	EventParticleDragonEggTeleport     = 2010
+	EventParticleCropEaten             = 2011
+	EventParticleCritical              = 2012
+	EventParticleEndermanTeleport      = 2013
+	EventParticlePunchBlock            = 2014
+	EventParticleBubble                = 2015
+	EventParticleEvaporate             = 2016
+	EventParticleDestroyArmorStand     = 2017
+	EventParticleBreakingEgg           = 2018
+	EventParticleDestroyEgg            = 2019
+	EventParticleEvaporateWater        = 2020
+	EventParticleDestroyBlockNoSound   = 2021
+	EventParticleKnockbackRoar         = 2022
+	EventParticleTeleportTrail         = 2023
+	EventParticlePointCloud            = 2024
+	EventParticleExplosion             = 2025
+	EventParticleBlockExplosion        = 2026
+	EventParticleVibrationSignal       = 2027
+	EventParticleParticleDripstoneDrip = 2028
+	EventParticleParticleFizzEffect    = 2029
+
+	EventWaxOn  = 2030
+	EventWaxOff = 2031
+	EventScrape = 2032
+
+	EventParticleElectricSpark = 2033
 
 	EventStartRain           = 3001
 	EventStartThunder        = 3002
