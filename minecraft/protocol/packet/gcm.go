@@ -32,7 +32,7 @@ type gcm struct {
 
 	counter     *[gcmBlockSize]byte
 	currentMask [gcmBlockSize]byte
-	current     int
+	blockOffset int
 }
 
 // NewGCM returns the given 128-bit, block cipher wrapped in Galois Counter Mode
@@ -105,7 +105,7 @@ func (g *gcm) Seal(dst, nonce, plaintext, data []byte) []byte {
 		panic("crypto/cipher: message too large for GCM")
 	}
 
-	ret, out := sliceForAppend(dst, len(plaintext)+g.tagSize)
+	ret, out := sliceForAppend(dst, len(plaintext))
 	if inexactOverlap(out, plaintext) {
 		panic("crypto/cipher: invalid buffer overlap")
 	}
@@ -297,25 +297,26 @@ func sliceForAppend(in []byte, n int) (head, tail []byte) {
 
 // counterCrypt crypts in to out using g.cipher in counter mode.
 func (g *gcm) counterCrypt(out, in []byte, counter *[gcmBlockSize]byte) {
-	for len(in) >= gcmBlockSize-g.current {
-		if g.current == 0 {
-			g.cipher.Encrypt(g.currentMask[:], counter[:])
-			gcmInc32(counter)
+	for len(in) != 0 {
+		nextBlockSize := gcmBlockSize - g.blockOffset
+		if nextBlockSize > len(in) {
+			nextBlockSize = len(in)
 		}
-		xorBytes(out, in, g.currentMask[g.current:])
-		out = out[gcmBlockSize-g.current:]
-		in = in[gcmBlockSize-g.current:]
+		g.blockOffset += xorBytes(out, in, g.currentMask[g.blockOffset:])
+		out = out[nextBlockSize:]
+		in = in[nextBlockSize:]
 
-		g.current = 0
-	}
-
-	if len(in) > 0 {
-		if g.current == 0 {
-			g.cipher.Encrypt(g.currentMask[:], counter[:])
-			gcmInc32(counter)
+		if g.blockOffset == gcmBlockSize {
+			g.incCounter(counter)
 		}
-		g.current += xorBytes(out, in, g.currentMask[g.current:])
 	}
+}
+
+// incCounter increments the gcm counter passed.
+func (g *gcm) incCounter(counter *[gcmBlockSize]byte) {
+	g.blockOffset = 0
+	g.cipher.Encrypt(g.currentMask[:], counter[:])
+	gcmInc32(counter)
 }
 
 // xorBytes xors the bytes in a and b. The destination should have enough

@@ -40,9 +40,7 @@ func (encrypt *encrypt) encrypt(data []byte) []byte {
 	// We add the first 8 bytes of the checksum to the data and encrypt it.
 	data = append(data, hash.Sum(nil)[:8]...)
 
-	encrypt.stream.Seal(data[1:1], encrypt.iv, data[1:], nil)
-
-	return data
+	return append(data[0:1], encrypt.stream.Seal(data[1:1], encrypt.iv, data[1:], nil)...)
 }
 
 // decrypt decrypts the data passed. It does not verify the packet checksum. Verifying the checksum should be
