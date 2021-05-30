@@ -2,14 +2,12 @@ package nbt
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/ast"
 	"io"
 	"reflect"
 	"strings"
 	"sync"
-	"unicode/utf8"
 )
 
 // Decoder reads NBT objects from an NBT input stream.
@@ -211,9 +209,6 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		value, err := d.Encoding.String(d.r)
 		if err != nil {
 			return err
-		}
-		if !utf8.ValidString(value) {
-			return InvalidStringError{Off: d.r.off, String: value, Err: errors.New("string does not exist out of utf8 only")}
 		}
 		if val.Kind() != reflect.String {
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
