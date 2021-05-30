@@ -105,7 +105,7 @@ func (g *gcm) Seal(dst, nonce, plaintext, data []byte) []byte {
 		panic("crypto/cipher: message too large for GCM")
 	}
 
-	ret, out := sliceForAppend(dst, len(plaintext)+g.tagSize)
+	ret, out := sliceForAppend(dst, len(plaintext))
 	if inexactOverlap(out, plaintext) {
 		panic("crypto/cipher: invalid buffer overlap")
 	}
