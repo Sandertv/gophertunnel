@@ -46,6 +46,8 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 			id = StackRequestActionLabTableCombine
 		case *BeaconPaymentStackRequestAction:
 			id = StackRequestActionBeaconPayment
+		case *MineBlockStackRequestAction:
+			id = StackRequestActionMineBlock
 		case *CraftRecipeStackRequestAction:
 			id = StackRequestActionCraftRecipe
 		case *AutoCraftRecipeStackRequestAction:
@@ -103,6 +105,8 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &LabTableCombineStackRequestAction{}
 		case StackRequestActionBeaconPayment:
 			action = &BeaconPaymentStackRequestAction{}
+		case StackRequestActionMineBlock:
+			action = &MineBlockStackRequestAction{}
 		case StackRequestActionCraftRecipe:
 			action = &CraftRecipeStackRequestAction{}
 		case StackRequestActionCraftRecipeAuto:
