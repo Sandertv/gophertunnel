@@ -104,7 +104,7 @@ type StartGame struct {
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.
-	GameRules map[string]interface{}
+	GameRules []protocol.GameRule
 	// Experiments holds a list of experiments that are either enabled or disabled in the world that the
 	// player spawns in.
 	Experiments []protocol.ExperimentData
@@ -190,6 +190,8 @@ type StartGame struct {
 	// is a new system introduced in 1.16. Backwards compatibility with the inventory transactions has to
 	// some extent been preserved, but will eventually be removed.
 	ServerAuthoritativeInventory bool
+	// GameVersion is the version of the game the server is running. The exact function of this field isn't clear.
+	GameVersion string
 }
 
 // ID ...
@@ -276,11 +278,11 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	}
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
+	w.String(&pk.GameVersion)
 }
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(r *protocol.Reader) {
-	pk.GameRules = make(map[string]interface{})
 	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
@@ -360,4 +362,5 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	}
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
+	r.String(&pk.GameVersion)
 }

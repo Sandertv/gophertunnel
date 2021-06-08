@@ -342,6 +342,31 @@ const (
 	SoundEventCaveVinesPickBerries
 	SoundEventBigDripleafTiltDown
 	SoundEventBigDripleafTiltUp
+	_
+	_
+	_
+	_
+	SoundEventCopperWaxOn
+	SoundEventCopperWaxOff
+	SoundEventScrape
+	SoundEventPlayerHurtDrown
+	SoundEventPlayerHurtOnFire
+	SoundEventPlayerHurtFreeze
+	SoundEventUseSpyglass
+	SoundEventStopUsingSpyglass
+	SoundEventAmetheystBlockChime
+	SoundEventAmbientScreamer
+	SoundEventHurtScreamer
+	SoundEventDeathScreamer
+	SoundEventMilkScreamer
+	SoundEventJumpToBlock
+	SoundEventPreRam
+	SoundEventPreRamScreamer
+	SoundEventRamImpact
+	SoundEventRamImpactScreamer
+	SoundEventSquidInkSquirt
+	SoundEventGlowSquidInkSquirt
+	SoundEventConvertToStray
 	SoundEventUndefined
 )
 

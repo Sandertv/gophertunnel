@@ -188,6 +188,9 @@ func init() {
 		IDItemComponent:                     func() Packet { return &ItemComponent{} },
 		IDFilterText:                        func() Packet { return &FilterText{} },
 		IDClientBoundDebugRenderer:          func() Packet { return &ClientBoundDebugRenderer{} },
+		IDSyncActorProperty:                 func() Packet { return &SyncActorProperty{} },
+		IDAddVolumeEntity:                   func() Packet { return &AddVolumeEntity{} },
+		IDRemoveVolumeEntity:                func() Packet { return &RemoveVolumeEntity{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

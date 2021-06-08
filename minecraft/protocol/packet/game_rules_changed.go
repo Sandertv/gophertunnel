@@ -12,7 +12,7 @@ type GameRulesChanged struct {
 	// Note that some game rules are server side only, and don't necessarily need to be sent to the client.
 	// Only changed game rules need to be sent in this packet. Game rules that were not changed do not need to
 	// be sent if the client is already updated on them.
-	GameRules map[string]interface{}
+	GameRules []protocol.GameRule
 }
 
 // ID ...
@@ -27,6 +27,5 @@ func (pk *GameRulesChanged) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *GameRulesChanged) Unmarshal(r *protocol.Reader) {
-	pk.GameRules = make(map[string]interface{})
 	protocol.GameRules(r, &pk.GameRules)
 }

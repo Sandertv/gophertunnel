@@ -165,4 +165,7 @@ const (
 	IDItemComponent
 	IDFilterText
 	IDClientBoundDebugRenderer
+	IDSyncActorProperty
+	IDAddVolumeEntity
+	IDRemoveVolumeEntity
 )
