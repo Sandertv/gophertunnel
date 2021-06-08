@@ -119,8 +119,6 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &CraftNonImplementedStackRequestAction{}
 		case StackRequestActionCraftResultsDeprecated:
 			action = &CraftResultsDeprecatedStackRequestAction{}
-		case StackRequestActionMineBlock:
-			action = &CraftMineStackRequestAction{}
 		default:
 			r.UnknownEnumOption(id, "stack request action type")
 			return
@@ -541,30 +539,6 @@ func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
 	if !bytes.Equal(c.UnknownBytes[:], zeroBytes) {
 		panic(fmt.Sprintf("craft recipe optional stack request action unknown bytes are not all 0: %x", c.UnknownBytes))
 	}
-}
-
-// CraftMineStackRequestAction is an action sent when a player mines a block
-type CraftMineStackRequestAction struct {
-	// Unknown1 ...
-	Unknown1 int32
-	// PredictedDurability ...
-	PredictedDurability int32
-	// StackNetworkID
-	StackNetworkID int32
-}
-
-// Marshal ...
-func (c *CraftMineStackRequestAction) Marshal(w *Writer) {
-	w.Varint32(&c.Unknown1)
-	w.Varint32(&c.PredictedDurability)
-	w.Varint32(&c.StackNetworkID)
-}
-
-// Unmarshal ...
-func (c *CraftMineStackRequestAction) Unmarshal(r *Reader) {
-	r.Varint32(&c.Unknown1)
-	r.Varint32(&c.PredictedDurability)
-	r.Varint32(&c.StackNetworkID)
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
