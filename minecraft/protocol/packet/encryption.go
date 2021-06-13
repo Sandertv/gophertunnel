@@ -15,14 +15,13 @@ type encrypt struct {
 	sendCounter uint64
 	buf         [8]byte
 	keyBytes    []byte
-	iv          []byte
-	stream      cipher.AEAD
+	stream      cipher.Stream
 }
 
 // newEncrypt returns a new encryption 'session' using the secret key bytes passed. The session has its cipher
 // block and IV prepared so that it may be used to decrypt and encrypt data.
-func newEncrypt(keyBytes []byte, iv []byte, stream cipher.AEAD) *encrypt {
-	return &encrypt{keyBytes: keyBytes, iv: iv, stream: stream}
+func newEncrypt(keyBytes []byte, stream cipher.Stream) *encrypt {
+	return &encrypt{keyBytes: keyBytes, stream: stream}
 }
 
 // encrypt encrypts the data passed, adding the packet checksum at the end of it before CFB8 encrypting it.
@@ -40,16 +39,14 @@ func (encrypt *encrypt) encrypt(data []byte) []byte {
 	// We add the first 8 bytes of the checksum to the data and encrypt it.
 	data = append(data, hash.Sum(nil)[:8]...)
 
-	return append(data[0:1], encrypt.stream.Seal(data[1:1], encrypt.iv, data[1:], nil)...)
+	encrypt.stream.XORKeyStream(data[1:], data[1:])
+	return data
 }
 
 // decrypt decrypts the data passed. It does not verify the packet checksum. Verifying the checksum should be
 // done using encrypt.verify(data).
-func (encrypt *encrypt) decrypt(data []byte) error {
-	if _, err := encrypt.stream.Open(data[:0], encrypt.iv, data, nil); err != nil {
-		return err
-	}
-	return nil
+func (encrypt *encrypt) decrypt(data []byte) {
+	encrypt.stream.XORKeyStream(data, data)
 }
 
 // verify verifies the packet checksum of the decrypted data passed. If successful, nil is returned. Otherwise
