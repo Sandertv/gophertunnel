@@ -2,6 +2,7 @@ package packet
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/sandertv/gophertunnel/minecraft/constants"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -26,7 +27,7 @@ type StartGame struct {
 	// creative spectator.
 	// This field may be set to 5 to make the client fall back to the game mode set in the WorldGameMode
 	// field.
-	PlayerGameMode int32
+	PlayerGameMode constants.GameMode
 	// PlayerPosition is the spawn position of the player in the world. In servers this is often the same as
 	// the world's spawn position found below.
 	PlayerPosition mgl32.Vec3
@@ -46,17 +47,17 @@ type StartGame struct {
 	UserDefinedBiomeName string
 	// Dimension is the ID of the dimension that the player spawns in. It is a value from 0-2, with 0 being
 	// the overworld, 1 being the nether and 2 being the end.
-	Dimension int32
+	Dimension constants.Dimension
 	// Generator is the generator used for the world. It is a value from 0-4, with 0 being old limited worlds,
 	// 1 being infinite worlds, 2 being flat worlds, 3 being nether worlds and 4 being end worlds. A value of
 	// 0 will actually make the client stop rendering chunks you send beyond the world limit.
 	Generator int32
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
-	WorldGameMode int32
+	WorldGameMode constants.GameMode
 	// Difficulty is the difficulty of the world. It is a value from 0-3, with 0 being peaceful, 1 being easy,
 	// 2 being normal and 3 being hard.
-	Difficulty int32
+	Difficulty constants.Difficulty
 	// WorldSpawn is the block on which the world spawn of the world. This coordinate has no effect on the
 	// place that the client spawns, but it does have an effect on the direction that a compass points.
 	WorldSpawn protocol.BlockPos
@@ -120,7 +121,7 @@ type StartGame struct {
 	StartWithMapEnabled bool
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions constants.PlayerPermissionLevel
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -203,17 +204,17 @@ func (*StartGame) ID() uint32 {
 func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Varint64(&pk.EntityUniqueID)
 	w.Varuint64(&pk.EntityRuntimeID)
-	w.Varint32(&pk.PlayerGameMode)
+	w.Varint32((*int32)(&pk.PlayerGameMode))
 	w.Vec3(&pk.PlayerPosition)
 	w.Float32(&pk.Pitch)
 	w.Float32(&pk.Yaw)
 	w.Varint32(&pk.WorldSeed)
 	w.Int16(&pk.SpawnBiomeType)
 	w.String(&pk.UserDefinedBiomeName)
-	w.Varint32(&pk.Dimension)
+	w.Varint32((*int32)(&pk.Dimension))
 	w.Varint32(&pk.Generator)
-	w.Varint32(&pk.WorldGameMode)
-	w.Varint32(&pk.Difficulty)
+	w.Varint32((*int32)(&pk.WorldGameMode))
+	w.Varint32((*int32)(&pk.Difficulty))
 	w.UBlockPos(&pk.WorldSpawn)
 	w.Bool(&pk.AchievementsDisabled)
 	w.Varint32(&pk.DayCycleLockTime)
@@ -238,7 +239,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
-	w.Varint32(&pk.PlayerPermissions)
+	w.Varint32((*int32)(&pk.PlayerPermissions))
 	w.Int32(&pk.ServerChunkTickRadius)
 	w.Bool(&pk.HasLockedBehaviourPack)
 	w.Bool(&pk.HasLockedTexturePack)
@@ -286,17 +287,17 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
-	r.Varint32(&pk.PlayerGameMode)
+	r.Varint32((*int32)(&pk.PlayerGameMode))
 	r.Vec3(&pk.PlayerPosition)
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
 	r.Varint32(&pk.WorldSeed)
 	r.Int16(&pk.SpawnBiomeType)
 	r.String(&pk.UserDefinedBiomeName)
-	r.Varint32(&pk.Dimension)
+	r.Varint32((*int32)(&pk.Dimension))
 	r.Varint32(&pk.Generator)
-	r.Varint32(&pk.WorldGameMode)
-	r.Varint32(&pk.Difficulty)
+	r.Varint32((*int32)(&pk.WorldGameMode))
+	r.Varint32((*int32)(&pk.Difficulty))
 	r.UBlockPos(&pk.WorldSpawn)
 	r.Bool(&pk.AchievementsDisabled)
 	r.Varint32(&pk.DayCycleLockTime)
@@ -322,7 +323,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
-	r.Varint32(&pk.PlayerPermissions)
+	r.Varint32((*int32)(&pk.PlayerPermissions))
 	r.Int32(&pk.ServerChunkTickRadius)
 	r.Bool(&pk.HasLockedBehaviourPack)
 	r.Bool(&pk.HasLockedTexturePack)
