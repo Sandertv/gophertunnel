@@ -34,7 +34,8 @@ func NewEncoder(w io.Writer) *Encoder {
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 	block, _ := aes.NewCipher(keyBytes[:])
-	stream := cipher.NewCTR(block, append(keyBytes[:12], 0, 0, 0, 2))
+	first12 := append([]byte(nil), keyBytes[:12]...)
+	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
 	encoder.encrypt = newEncrypt(keyBytes[:], stream)
 }
 

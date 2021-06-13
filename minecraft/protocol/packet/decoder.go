@@ -51,7 +51,8 @@ func NewDecoder(reader io.Reader) *Decoder {
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 	block, _ := aes.NewCipher(keyBytes[:])
-	stream := cipher.NewCTR(block, append(keyBytes[:12], 0, 0, 0, 2))
+	first12 := append([]byte(nil), keyBytes[:12]...)
+	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
 	decoder.encrypt = newEncrypt(keyBytes[:], stream)
 }
 
