@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"crypto/aes"
+	"crypto/cipher"
 	"fmt"
 	"github.com/sandertv/gophertunnel/internal"
 	"io"
@@ -33,12 +34,9 @@ func NewEncoder(w io.Writer) *Encoder {
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 	block, _ := aes.NewCipher(keyBytes[:])
-	gcm, err := NewGCM(block)
-	if err != nil {
-		// Should never happen.
-		panic(err)
-	}
-	encoder.encrypt = newEncrypt(keyBytes[:], keyBytes[:gcm.NonceSize()], gcm)
+	first12 := append([]byte(nil), keyBytes[:12]...)
+	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
+	encoder.encrypt = newEncrypt(keyBytes[:], stream)
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and

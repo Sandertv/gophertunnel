@@ -3,6 +3,7 @@ package packet
 import (
 	"bytes"
 	"crypto/aes"
+	"crypto/cipher"
 	"fmt"
 	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/internal"
@@ -50,12 +51,9 @@ func NewDecoder(reader io.Reader) *Decoder {
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 	block, _ := aes.NewCipher(keyBytes[:])
-	gcm, err := NewGCM(block)
-	if err != nil {
-		// Should never happen.
-		panic(err)
-	}
-	decoder.encrypt = newEncrypt(keyBytes[:], keyBytes[:gcm.NonceSize()], gcm)
+	first12 := append([]byte(nil), keyBytes[:12]...)
+	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
+	decoder.encrypt = newEncrypt(keyBytes[:], stream)
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -94,9 +92,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	}
 	data = data[1:]
 	if decoder.encrypt != nil {
-		if err := decoder.encrypt.decrypt(data); err != nil {
-			return nil, fmt.Errorf("error decrypting packet: %w", err)
-		}
+		decoder.encrypt.decrypt(data)
 		if err := decoder.encrypt.verify(data); err != nil {
 			// The packet did not have a correct checksum.
 			return nil, fmt.Errorf("error verifying packet: %v", err)
