@@ -418,13 +418,13 @@ func (conn *Conn) Flush() error {
 // Close closes the Conn and its underlying connection. Before closing, it also calls Flush() so that any
 // packets currently pending are sent out.
 func (conn *Conn) Close() error {
-	var err error
-	conn.once.Do(func() {
-		close(conn.close)
-		_ = conn.Flush()
-		err = conn.conn.Close()
-	})
-	return err
+    var err error
+    conn.once.Do(func() {
+        err = conn.Flush()
+        close(conn.close)
+        _ = conn.conn.Close()
+    })
+    return err
 }
 
 // LocalAddr returns the local address of the underlying connection.
