@@ -59,6 +59,12 @@ type Dialer struct {
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
 	EnableClientCache bool
+
+	// KeepXBLIdentityData, if set to true, enables passing XUID and other Identity data to target server
+	// if the authentication token has not been set. This is only know to work with BDS and client might
+	// be kicked in other servers due sending a XUID without any authentication.
+	// For getting this to work with BDS the authentication in BDS should be disabled
+	KeepXBLIdentityData bool
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -160,7 +166,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
-		clearXBLIdentityData(&conn.identityData)
+		if !d.KeepXBLIdentityData {
+			clearXBLIdentityData(&conn.identityData)
+		}
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
 	} else {
 		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
