@@ -60,10 +60,10 @@ type Dialer struct {
 	// transmitted every time, resulting in less network transmission.
 	EnableClientCache bool
 
-	// KeepXBLIdentityData, if set to true, enables passing XUID and other Identity data to target server
-	// if the authentication token has not been set. This is only know to work with BDS and client might
-	// be kicked in other servers due sending a XUID without any authentication.
-	// For getting this to work with BDS the authentication in BDS should be disabled
+	// KeepXBLIdentityData, if set to true, enables passing XUID and title ID to the target server
+	// if the authentication token is not set. This is technically not valid and some servers might kick
+	// the client when an XUID is present without logging in.
+	// For getting this to work with BDS, authentication should be disabled.
 	KeepXBLIdentityData bool
 }
 
