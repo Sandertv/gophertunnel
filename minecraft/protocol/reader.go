@@ -187,6 +187,39 @@ func (r *Reader) UUID(x *uuid.UUID) {
 	*x = arr
 }
 
+// PlayerInventoryAction reads a PlayerInventoryAction.
+func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
+	r.Varint32(&x.LegacyRequestID)
+	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
+		var l uint32
+		r.Varuint32(&l)
+
+		x.LegacySetItemSlots = make([]LegacySetItemSlot, l)
+
+		for _, slot := range x.LegacySetItemSlots {
+			SetItemSlot(r, &slot)
+		}
+	}
+
+	var l uint32
+	r.Varuint32(&l)
+
+	x.Actions = make([]InventoryAction, l)
+
+	for _, a := range x.Actions {
+		InvAction(r, &a)
+	}
+
+	r.Varuint32(&x.ActionType)
+	r.BlockPos(&x.BlockPosition)
+	r.Varint32(&x.BlockFace)
+	r.Varint32(&x.HotBarSlot)
+	r.ItemInstance(&x.HeldItem)
+	r.Vec3(&x.Position)
+	r.Vec3(&x.ClickedPosition)
+	r.Varuint32(&x.BlockRuntimeID)
+}
+
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
 func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 	*x = map[uint32]interface{}{}

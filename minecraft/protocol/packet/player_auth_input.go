@@ -127,7 +127,7 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	w.Vec3(&pk.Delta)
 
 	if pk.InputData&InputFlagPerformItemInteraction != 0 {
-		protocol.PlayerInventoryAction(w, &pk.ItemInteractionData)
+		w.PlayerInventoryAction(&pk.ItemInteractionData)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
@@ -160,7 +160,7 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.Delta)
 
 	if pk.InputData&InputFlagPerformItemInteraction != 0 {
-		protocol.PlayerInventoryAction(r, &pk.ItemInteractionData)
+		r.PlayerInventoryAction(&pk.ItemInteractionData)
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
