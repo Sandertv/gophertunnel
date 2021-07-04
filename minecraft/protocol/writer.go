@@ -9,6 +9,7 @@ import (
 	"image/color"
 	"io"
 	"reflect"
+	"sort"
 	"unsafe"
 )
 
@@ -120,7 +121,19 @@ func (w *Writer) UUID(x *uuid.UUID) {
 func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
-	for key, value := range *x {
+
+	// Entity metadata needs to be sorted for some functionality to work. NPCs, for example, need to have their fields
+	// set in the wrong order, or the text or buttons won't be shown to the client. See #88.
+	// Sorting these is probably not very fast, but it'll have to do for now: We can change entity metadata to a slice
+	// later on.
+	keys := make([]int, 0, l)
+	for k := range *x {
+		keys = append(keys, int(k))
+	}
+	sort.Ints(keys)
+	for _, k := range keys {
+		key := uint32(k)
+		value := (*x)[uint32(k)]
 		w.Varuint32(&key)
 		switch v := value.(type) {
 		case byte:
