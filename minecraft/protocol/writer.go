@@ -117,6 +117,33 @@ func (w *Writer) UUID(x *uuid.UUID) {
 	_, _ = w.w.Write(b)
 }
 
+// PlayerInventoryAction writes a PlayerInventoryAction.
+func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
+	w.Varint32(&x.LegacyRequestID)
+	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
+		l := uint32(len(x.LegacySetItemSlots))
+		w.Varuint32(&l)
+
+		for _, slot := range x.LegacySetItemSlots {
+			SetItemSlot(w, &slot)
+		}
+	}
+	l := uint32(len(x.Actions))
+	w.Varuint32(&l)
+
+	for _, a := range x.Actions {
+		InvAction(w, &a)
+	}
+	w.Varuint32(&x.ActionType)
+	w.BlockPos(&x.BlockPosition)
+	w.Varint32(&x.BlockFace)
+	w.Varint32(&x.HotBarSlot)
+	w.ItemInstance(&x.HeldItem)
+	w.Vec3(&x.Position)
+	w.Vec3(&x.ClickedPosition)
+	w.Varuint32(&x.BlockRuntimeID)
+}
+
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
 func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	l := uint32(len(*x))

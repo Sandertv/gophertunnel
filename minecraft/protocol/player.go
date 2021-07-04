@@ -124,31 +124,6 @@ func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
 }
 
-// PlayerInventoryAction reads/writes a PlayerInventoryAction x to/from IO r.
-func PlayerInventoryAction(r IO, x *UseItemTransactionData) {
-	r.Varint32(&x.LegacyRequestID)
-	if x.LegacyRequestID != 0 {
-		l := uint32(len(x.LegacySetItemSlots))
-		r.Varuint32(&l)
-		for _, slot := range x.LegacySetItemSlots {
-			SetItemSlot(r, &slot)
-		}
-	}
-	l := uint32(len(x.Actions))
-	r.Varuint32(&l)
-	for _, a := range x.Actions {
-		InvAction(r, &a)
-	}
-	r.Varuint32(&x.ActionType)
-	r.BlockPos(&x.BlockPosition)
-	r.Varint32(&x.BlockFace)
-	r.Varint32(&x.HotBarSlot)
-	r.ItemInstance(&x.HeldItem)
-	r.Vec3(&x.Position)
-	r.Vec3(&x.ClickedPosition)
-	r.Varuint32(&x.BlockRuntimeID)
-}
-
 // PlayerBlockAction ...
 type PlayerBlockAction struct {
 	// Action is the action to be performed, and is one of the constants listed above.
