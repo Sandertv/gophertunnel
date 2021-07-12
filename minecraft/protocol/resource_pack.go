@@ -43,7 +43,8 @@ type TexturePackInfo struct {
 	ContentKey string
 	// SubPackName ...
 	SubPackName string
-	// ContentIdentity ...
+	// ContentIdentity is another UUID for the resource pack, and is generally set for marketplace texture
+	// packs. It is also required for client-side validations when the resource pack is encrypted.
 	ContentIdentity string
 	// HasScripts specifies if the texture packs has any scripts in it. A client will only download the
 	// behaviour pack if it supports scripts, which, up to 1.11, only includes Windows 10.
