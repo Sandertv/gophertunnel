@@ -1,7 +1,15 @@
 package packet
 
-import (
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
+import "github.com/sandertv/gophertunnel/minecraft/protocol"
+
+const (
+	ActionTypeSetActions = iota
+	ActionTypeExecuteAction
+	ActionTypeExecuteClosingCommands
+	ActionTypeSetName
+	ActionTypeSetSkin
+	ActionTypeSetInteractText
+	ActionTypeExecuteOpeningCommands
 )
 
 // NPCRequest is sent by the client when it interacts with an NPC.
@@ -19,6 +27,8 @@ type NPCRequest struct {
 	CommandString string
 	// ActionType is the type of the action to execute.
 	ActionType byte
+	// SceneName is the name of the scene.
+	SceneName string
 }
 
 // ID ...
@@ -32,6 +42,7 @@ func (pk *NPCRequest) Marshal(w *protocol.Writer) {
 	w.Uint8(&pk.RequestType)
 	w.String(&pk.CommandString)
 	w.Uint8(&pk.ActionType)
+	w.String(&pk.SceneName)
 }
 
 // Unmarshal ...
@@ -40,4 +51,5 @@ func (pk *NPCRequest) Unmarshal(r *protocol.Reader) {
 	r.Uint8(&pk.RequestType)
 	r.String(&pk.CommandString)
 	r.Uint8(&pk.ActionType)
+	r.String(&pk.SceneName)
 }

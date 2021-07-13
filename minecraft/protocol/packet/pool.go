@@ -191,6 +191,8 @@ func init() {
 		IDSyncActorProperty:                 func() Packet { return &SyncActorProperty{} },
 		IDAddVolumeEntity:                   func() Packet { return &AddVolumeEntity{} },
 		IDRemoveVolumeEntity:                func() Packet { return &RemoveVolumeEntity{} },
+		IDSimulationType:                    func() Packet { return &SimulationType{} },
+		IDNPCDialogue:                       func() Packet { return &NPCDialogue{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)
