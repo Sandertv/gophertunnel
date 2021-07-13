@@ -27,8 +27,8 @@ const (
 	InputFlagWantDownSlow
 	InputFlagWantUpSlow
 	InputFlagSprinting
-	InputFlagAscendScaffolding
-	InputFlagDescendScaffolding
+	InputFlagAscendBlock
+	InputFlagDescendBlock
 	InputFlagSneakToggleDown
 	InputFlagPersistSneak
 	InputFlagStartSprinting

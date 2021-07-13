@@ -168,4 +168,6 @@ const (
 	IDSyncActorProperty
 	IDAddVolumeEntity
 	IDRemoveVolumeEntity
+	IDSimulationType
+	IDNPCDialogue
 )

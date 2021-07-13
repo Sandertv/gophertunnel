@@ -21,6 +21,8 @@ type ResourcePacksInfo struct {
 	// The order of these texture packs is not relevant in this packet. It is however important in the
 	// ResourcePackStack packet.
 	TexturePacks []protocol.TexturePackInfo
+	// ForcingServerPacks is currently an unclear field.
+	ForcingServerPacks bool
 }
 
 // ID ...
@@ -42,6 +44,7 @@ func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	for _, pack := range pk.TexturePacks {
 		protocol.TexturePackInformation(w, &pack)
 	}
+	w.Bool(&pk.ForcingServerPacks)
 }
 
 // Unmarshal ...
@@ -61,4 +64,5 @@ func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	for i := uint16(0); i < length; i++ {
 		protocol.TexturePackInformation(r, &pk.TexturePacks[i])
 	}
+	r.Bool(&pk.ForcingServerPacks)
 }

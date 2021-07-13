@@ -367,6 +367,9 @@ const (
 	SoundEventSquidInkSquirt
 	SoundEventGlowSquidInkSquirt
 	SoundEventConvertToStray
+	SoundEventCakeAddCandle
+	SoundEventExtinguishCandle
+	SoundEventAmbientCandle
 	SoundEventUndefined
 )
 
