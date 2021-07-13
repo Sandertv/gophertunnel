@@ -3,8 +3,8 @@ package packet
 import "github.com/sandertv/gophertunnel/minecraft/protocol"
 
 const (
-	ActionTypeOpen int32 = iota
-	ActionTypeClose
+	NPCDialogueActionTypeOpen int32 = iota
+	NPCDialogueActionTypeClose
 )
 
 // NPCDialogue is a packet that allows the client to display dialog boxes for interacting with NPCs.
