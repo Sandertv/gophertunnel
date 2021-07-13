@@ -3,13 +3,13 @@ package packet
 import "github.com/sandertv/gophertunnel/minecraft/protocol"
 
 const (
-	NPCRequestActionTypeSetActions = iota
-	NPCRequestActionTypeExecuteAction
-	NPCRequestActionTypeExecuteClosingCommands
-	NPCRequestActionTypeSetName
-	NPCRequestActionTypeSetSkin
-	NPCRequestActionTypeSetInteractText
-	NPCRequestActionTypeExecuteOpeningCommands
+	NPCRequestActionSetActions = iota
+	NPCRequestActionExecuteAction
+	NPCRequestActionExecuteClosingCommands
+	NPCRequestActionSetName
+	NPCRequestActionSetSkin
+	NPCRequestActionSetInteractText
+	NPCRequestActionExecuteOpeningCommands
 )
 
 // NPCRequest is sent by the client when it interacts with an NPC.
