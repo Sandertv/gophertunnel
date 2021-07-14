@@ -418,13 +418,13 @@ func (conn *Conn) Flush() error {
 // Close closes the Conn and its underlying connection. Before closing, it also calls Flush() so that any
 // packets currently pending are sent out.
 func (conn *Conn) Close() error {
-    var err error
-    conn.once.Do(func() {
-        err = conn.Flush()
-        close(conn.close)
-        _ = conn.conn.Close()
-    })
-    return err
+	var err error
+	conn.once.Do(func() {
+		err = conn.Flush()
+		close(conn.close)
+		_ = conn.conn.Close()
+	})
+	return err
 }
 
 // LocalAddr returns the local address of the underlying connection.
@@ -593,6 +593,9 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	case *packet.PlayStatus:
 		return conn.handlePlayStatus(pk)
 	case *packet.ResourcePacksInfo:
+		for _, p := range pk.TexturePacks {
+			fmt.Printf("[%s] Key: '%s'\n", p.UUID, p.ContentKey)
+		}
 		return conn.handleResourcePacksInfo(pk)
 	case *packet.ResourcePackDataInfo:
 		return conn.handleResourcePackDataInfo(pk)
@@ -669,6 +672,10 @@ func (conn *Conn) handleClientToServerHandshake() error {
 			continue
 		}
 		texturePack := protocol.TexturePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
+		if pack.Encrypted() {
+			texturePack.ContentKey = pack.ContentKey()
+			texturePack.ContentIdentity = pack.Manifest().Header.UUID
+		}
 		pk.TexturePacks = append(pk.TexturePacks, texturePack)
 	}
 	// Finally we send the packet after the play status.
