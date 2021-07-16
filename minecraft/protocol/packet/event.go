@@ -31,6 +31,8 @@ type Event struct {
 	EventType int32
 	// UsePlayerID ... TODO: Figure out what this is for.
 	UsePlayerID byte
+	// Extra bytes TODO: Map correctly for every event
+	ExtraBytes []byte
 }
 
 // ID ...
@@ -44,6 +46,7 @@ func (pk *Event) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.EventType)
 	w.Uint8(&pk.UsePlayerID)
 
+	w.Bytes(&pk.ExtraBytes)
 	// TODO: Add fields for all Event types.
 }
 
@@ -53,5 +56,6 @@ func (pk *Event) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.EventType)
 	r.Uint8(&pk.UsePlayerID)
 
+	r.Bytes(&pk.ExtraBytes)
 	// TODO: Add fields for all Event types.
 }
