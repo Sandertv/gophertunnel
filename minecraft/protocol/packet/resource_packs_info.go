@@ -34,6 +34,7 @@ func (*ResourcePacksInfo) ID() uint32 {
 func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.TexturePackRequired)
 	w.Bool(&pk.HasScripts)
+	w.Bool(&pk.ForcingServerPacks)
 	l := uint16(len(pk.BehaviourPacks))
 	w.Uint16(&l)
 	for _, pack := range pk.BehaviourPacks {
@@ -52,8 +53,9 @@ func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	var length uint16
 	r.Bool(&pk.TexturePackRequired)
 	r.Bool(&pk.HasScripts)
-	r.Uint16(&length)
+	r.Bool(&pk.ForcingServerPacks)
 
+	r.Uint16(&length)
 	pk.BehaviourPacks = make([]protocol.BehaviourPackInfo, length)
 	for i := uint16(0); i < length; i++ {
 		protocol.BehaviourPackInformation(r, &pk.BehaviourPacks[i])
