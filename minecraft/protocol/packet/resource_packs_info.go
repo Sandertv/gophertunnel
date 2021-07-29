@@ -45,7 +45,6 @@ func (pk *ResourcePacksInfo) Marshal(w *protocol.Writer) {
 	for _, pack := range pk.TexturePacks {
 		protocol.TexturePackInformation(w, &pack)
 	}
-	w.Bool(&pk.ForcingServerPacks)
 }
 
 // Unmarshal ...
@@ -66,5 +65,4 @@ func (pk *ResourcePacksInfo) Unmarshal(r *protocol.Reader) {
 	for i := uint16(0); i < length; i++ {
 		protocol.TexturePackInformation(r, &pk.TexturePacks[i])
 	}
-	r.Bool(&pk.ForcingServerPacks)
 }
