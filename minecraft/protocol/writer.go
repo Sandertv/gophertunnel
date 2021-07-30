@@ -296,6 +296,7 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int64(&blockingTick)
 	}
 
+	extraData = buf.Bytes()
 	w.ByteSlice(&extraData)
 }
 
