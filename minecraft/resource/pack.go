@@ -24,6 +24,9 @@ type Pack struct {
 	// content is a bytes.Reader that contains the full content of the zip file. It is used to send the full
 	// data to a client.
 	content *bytes.Reader
+	// contentKey is the key used to encrypt the files. The client uses this to decrypt the resource pack if encrypted.
+	// If nothing is encrypted, this field can be left as an empty string.
+	contentKey string
 
 	// checksum is the SHA256 checksum of the full content of the file. It is sent to the client so that it
 	// can 'verify' the download.
@@ -168,10 +171,28 @@ func (pack *Pack) DataChunkCount(length int) int {
 	return count
 }
 
+// Encrypted returns if the resource pack has been encrypted with a content key or not.
+func (pack *Pack) Encrypted() bool {
+	return pack.contentKey != ""
+}
+
+// ContentKey returns the encryption key used to encrypt the resource pack. If the pack is not encrypted then
+// this can be empty.
+func (pack *Pack) ContentKey() string {
+	return pack.contentKey
+}
+
 // ReadAt reads len(b) bytes from the resource pack's archive data at offset off and copies it into b. The
 // amount of bytes read n is returned.
 func (pack *Pack) ReadAt(b []byte, off int64) (n int, err error) {
 	return pack.content.ReadAt(b, off)
+}
+
+// WithContentKey creates a copy of the pack and sets the encryption key to the key provided, after which the
+// new Pack is returned.
+func (pack Pack) WithContentKey(key string) *Pack {
+	pack.contentKey = key
+	return &pack
 }
 
 // Manifest returns the manifest found in the manifest.json of the resource pack. It contains information
