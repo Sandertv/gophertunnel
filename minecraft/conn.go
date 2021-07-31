@@ -593,9 +593,6 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	case *packet.PlayStatus:
 		return conn.handlePlayStatus(pk)
 	case *packet.ResourcePacksInfo:
-		for _, p := range pk.TexturePacks {
-			fmt.Printf("[%s] Key: '%s'\n", p.UUID, p.ContentKey)
-		}
 		return conn.handleResourcePacksInfo(pk)
 	case *packet.ResourcePackDataInfo:
 		return conn.handleResourcePackDataInfo(pk)
