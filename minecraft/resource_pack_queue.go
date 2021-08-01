@@ -27,6 +27,7 @@ type downloadingPack struct {
 	size          uint64
 	expectedIndex uint32
 	newFrag       chan []byte
+	contentKey    string
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. If not,

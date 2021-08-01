@@ -756,7 +756,12 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
-		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
+		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{
+			size:       pack.Size,
+			buf:        bytes.NewBuffer(make([]byte, 0, pack.Size)),
+			newFrag:    make(chan []byte),
+			contentKey: pack.ContentKey,
+		}
 	}
 	for _, pack := range pk.BehaviourPacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
@@ -766,7 +771,12 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
-		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{size: pack.Size, buf: bytes.NewBuffer(make([]byte, 0, pack.Size)), newFrag: make(chan []byte)}
+		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{
+			size:       pack.Size,
+			buf:        bytes.NewBuffer(make([]byte, 0, pack.Size)),
+			newFrag:    make(chan []byte),
+			contentKey: pack.ContentKey,
+		}
 	}
 
 	if len(packsToDownload) != 0 {
@@ -986,14 +996,14 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 			return
 		}
 		// First parse the resource pack from the total byte buffer we obtained.
-		pack, err := resource.FromBytes(pack.buf.Bytes())
+		newPack, err := resource.FromBytes(pack.buf.Bytes())
 		if err != nil {
 			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", id, err)
 			return
 		}
 		conn.packQueue.packAmount--
 		// Finally we add the resource to the resource packs slice.
-		conn.resourcePacks = append(conn.resourcePacks, pack)
+		conn.resourcePacks = append(conn.resourcePacks, newPack.WithContentKey(pack.contentKey))
 		if conn.packQueue.packAmount == 0 {
 			conn.expect(packet.IDResourcePackStack)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
