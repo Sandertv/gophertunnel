@@ -272,7 +272,6 @@ func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 	if !conn.gameDataReceived.Load() {
 		panic("(*Conn).DoSpawn must only be called on Dialer connections")
 	}
-	conn.waitingForSpawn.Store(true)
 
 	select {
 	case <-conn.close:
@@ -1108,7 +1107,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	}
 
 	conn.loggedIn = true
-
+	conn.waitingForSpawn.Store(true)
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
 	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: int32(conn.chunkRadius)})
 	return nil
