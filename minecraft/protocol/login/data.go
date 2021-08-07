@@ -45,7 +45,7 @@ func (data IdentityData) Validate() error {
 	if _, err := strconv.ParseInt(data.XUID, 10, 64); err != nil && len(data.XUID) != 0 {
 		return fmt.Errorf("XUID must be parseable as an int64, but got %v", data.XUID)
 	}
-	if _, err := uuid.Parse(data.Identity); err != nil {
+	if id, err := uuid.Parse(data.Identity); err != nil || id == uuid.Nil {
 		return fmt.Errorf("UUID must be parseable as a valid UUID, but got %v", data.Identity)
 	}
 	if len(data.DisplayName) == 0 || len(data.DisplayName) > 15 {
