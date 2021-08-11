@@ -103,7 +103,7 @@ func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
 type PlayerMovementSettings struct {
 	// MovementType specifies the way the server handles player movement. Available options are
 	// packet.AuthoritativeMovementModeClient, packet.AuthoritativeMovementModeServer and
-	// packet.AuthoritativeMovementModeServerWithRewind, where server the server authoritative types result
+	// packet.AuthoritativeMovementModeServerWithRewind, where the server authoritative types result
 	// in the client sending PlayerAuthInput packets instead of MovePlayer packets and the rewind mode
 	// requires sending the tick of movement and several actions.
 	MovementType int32
