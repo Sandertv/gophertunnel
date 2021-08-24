@@ -191,7 +191,7 @@ func (conn *Conn) GameData() GameData {
 // obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
 func (conn *Conn) StartGame(data GameData) error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	return conn.StartGameContext(ctx, data)
 }
@@ -244,10 +244,10 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 // minecraft.Dial(). Use Conn.StartGame to spawn a Conn obtained using a minecraft.Listener.
 // DoSpawn will start the spawning sequence using the game data found in conn.GameData(), which was sent
 // earlier by the server.
-// DoSpawn has a default timeout of 30 seconds. DoSpawnContext or DoSpawnTimeout may be used for cancellation
+// DoSpawn has a default timeout of 1 minute. DoSpawnContext or DoSpawnTimeout may be used for cancellation
 // at any other times.
 func (conn *Conn) DoSpawn() error {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 	return conn.DoSpawnContext(ctx)
 }
