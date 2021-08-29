@@ -43,3 +43,6 @@ Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to th
 
 ## Contact
 [![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.com/invite/U4kFWHhTNR)
+
+### Note: We do not under any circumstance support or endorse the usage of gophertunnel with malicious intent.
+
