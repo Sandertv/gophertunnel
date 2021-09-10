@@ -353,10 +353,12 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 					// We reached the end of the fields.
 					break
 				}
+				if !tagExists(nestedTagType) {
+					return UnknownTagError{Off: d.r.off, Op: "Struct", TagType: nestedTagType}
+				}
 				field, ok := fields[nestedTagName]
 				if ok {
-					err = d.unmarshalTag(field, nestedTagType, nestedTagName)
-					if err != nil {
+					if err = d.unmarshalTag(field, nestedTagType, nestedTagName); err != nil {
 						return err
 					}
 					continue
@@ -384,6 +386,9 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 				nestedTagType, nestedTagName, err := d.tag()
 				if err != nil {
 					return err
+				}
+				if !tagExists(nestedTagType) {
+					return UnknownTagError{Off: d.r.off, Op: "Map", TagType: nestedTagType}
 				}
 				if nestedTagType == tagEnd {
 					// We reached the end of the compound.

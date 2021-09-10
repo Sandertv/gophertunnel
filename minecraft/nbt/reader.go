@@ -28,7 +28,7 @@ func newOffsetReader(r io.Reader) *offsetReader {
 	} else {
 		reader.ReadByte = func() (byte, error) {
 			data := make([]byte, 1)
-			_, err := reader.Read(data)
+			_, err := io.ReadAtLeast(reader, data, 1)
 			return data[0], err
 		}
 	}
@@ -36,13 +36,14 @@ func newOffsetReader(r io.Reader) *offsetReader {
 		Next(n int) []byte
 	}); ok {
 		reader.Next = func(n int) []byte {
-			reader.off += int64(n)
-			return r.Next(n)
+			data := r.Next(n)
+			reader.off += int64(len(data))
+			return data
 		}
 	} else {
 		reader.Next = func(n int) []byte {
 			data := make([]byte, n)
-			_, _ = reader.Read(data)
+			_, _ = io.ReadAtLeast(reader, data, n)
 			return data
 		}
 	}
@@ -51,7 +52,7 @@ func newOffsetReader(r io.Reader) *offsetReader {
 
 // Read reads from the io.Reader and increases the reader's offset by exactly n.
 func (b *offsetReader) Read(p []byte) (n int, err error) {
-	n, err = b.Reader.Read(p)
+	n, err = io.ReadAtLeast(b.Reader, p, len(p))
 	b.off += int64(n)
 	return
 }
