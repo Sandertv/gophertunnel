@@ -17,7 +17,7 @@ type CraftingData struct {
 	// PotionContainerChangeRecipes is a list of all recipes to convert a potion from one type to another,
 	// such as from a drinkable potion to a splash potion, or from a splash potion to a lingering potion.
 	PotionContainerChangeRecipes []protocol.PotionContainerChangeRecipe
-	// MaterialReducers ...
+	// MaterialReducers is a list of all material reducers which is used in education edition chemistry.
 	MaterialReducers []protocol.MaterialReducer
 	// ClearRecipes indicates if all recipes currently active on the client should be cleaned. Doing this
 	// means that the client will have no recipes active by itself: Any CraftingData packets previously sent
