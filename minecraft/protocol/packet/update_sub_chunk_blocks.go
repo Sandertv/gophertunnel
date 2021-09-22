@@ -45,11 +45,15 @@ func (pk *UpdateSubChunkBlocks) Unmarshal(r *protocol.Reader) {
 	var blocksLen, extraLen uint32
 
 	r.Varuint32(&blocksLen)
+
+	pk.Blocks = make([]protocol.BlockChangeEntry, blocksLen)
 	for i := uint32(0); i < blocksLen; i++ {
 		protocol.BlockChange(r, &pk.Blocks[i])
 	}
 
 	r.Varuint32(&extraLen)
+
+	pk.Extra = make([]protocol.BlockChangeEntry, extraLen)
 	for i := uint32(0); i < extraLen; i++ {
 		protocol.BlockChange(r, &pk.Extra[i])
 	}
