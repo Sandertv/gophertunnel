@@ -28,7 +28,7 @@ type EducationSettings struct {
 	// HasQuiz specifies if the world has a quiz connected to it.
 	HasQuiz bool
 	// ExternalLinkSettings ...
-	ExternalLinkSettings *bool
+	ExternalLinkSettings *protocol.EducationExternalLinkSettings
 }
 
 // ID ...
@@ -39,6 +39,9 @@ func (*EducationSettings) ID() uint32 {
 // Marshal ...
 func (pk *EducationSettings) Marshal(w *protocol.Writer) {
 	hasOverrideURI := pk.OverrideURI != ""
+	hasAgentCapabilities := pk.AgentCapabilities != nil
+	hasExternalLinkSettings := pk.ExternalLinkSettings != nil
+
 	w.String(&pk.CodeBuilderDefaultURI)
 	w.String(&pk.CodeBuilderTitle)
 	w.Bool(&pk.CanResizeCodeBuilder)
@@ -46,12 +49,8 @@ func (pk *EducationSettings) Marshal(w *protocol.Writer) {
 	w.String(&pk.PostProcessFilter)
 	w.String(&pk.ScreenshotBorderPath)
 
-	if pk.AgentCapabilities == nil {
-		hasAgentCapabilities := false
-		w.Bool(&hasAgentCapabilities)
-	} else {
-		hasAgentCapabilities := true
-		w.Bool(&hasAgentCapabilities)
+	w.Bool(&hasAgentCapabilities)
+	if hasAgentCapabilities {
 		w.Bool(pk.AgentCapabilities)
 	}
 
@@ -59,15 +58,14 @@ func (pk *EducationSettings) Marshal(w *protocol.Writer) {
 	if hasOverrideURI {
 		w.String(&pk.OverrideURI)
 	}
+
 	w.Bool(&pk.HasQuiz)
 
-	if pk.ExternalLinkSettings == nil {
-		hasExternalLinkSettings := false
+	w.Bool(&hasExternalLinkSettings)
+	if hasExternalLinkSettings {
 		w.Bool(&hasExternalLinkSettings)
-	} else {
-		hasExternalLinkSettings := true
-		w.Bool(&hasExternalLinkSettings)
-		w.Bool(pk.ExternalLinkSettings)
+		w.String(&pk.ExternalLinkSettings.URL)
+		w.String(&pk.ExternalLinkSettings.DisplayName)
 	}
 }
 
@@ -96,6 +94,7 @@ func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
 	var hasExternalLinkSettings bool
 	r.Bool(&hasExternalLinkSettings)
 	if hasExternalLinkSettings {
-		r.Bool(pk.ExternalLinkSettings)
+		r.String(&pk.ExternalLinkSettings.URL)
+		r.String(&pk.ExternalLinkSettings.DisplayName)
 	}
 }

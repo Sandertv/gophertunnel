@@ -14,3 +14,11 @@ func EducationResourceURI(r IO, x *EducationSharedResourceURI) {
 	r.String(&x.ButtonName)
 	r.String(&x.LinkURI)
 }
+
+// EducationExternalLinkSettings ...
+type EducationExternalLinkSettings struct {
+	// URL is the external link URL.
+	URL string
+	// DisplayName is the display name in game.
+	DisplayName string
+}
