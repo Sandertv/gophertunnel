@@ -4,8 +4,8 @@ import "github.com/sandertv/gophertunnel/minecraft/protocol"
 
 // UpdateSubChunkBlocks is essentially just UpdateBlock packet, however for a set of blocks in a sub chunk.
 type UpdateSubChunkBlocks struct {
-	// ChunkX, ChunkY, and ChunkZ help identify the sub chunk.
-	ChunkX, ChunkY, ChunkZ int32
+	// SubChunkX, SubChunkY, and SubChunkZ help identify the sub chunk.
+	SubChunkX, SubChunkY, SubChunkZ int32
 	// Blocks contains each updated block change entry.
 	Blocks []protocol.BlockChangeEntry
 	// Extra contains each updated block change entry for the second layer, usually for waterlogged blocks.
@@ -21,9 +21,9 @@ func (*UpdateSubChunkBlocks) ID() uint32 {
 func (pk *UpdateSubChunkBlocks) Marshal(w *protocol.Writer) {
 	blocksLen, extraLen := uint32(len(pk.Blocks)), uint32(len(pk.Extra))
 
-	w.Varint32(&pk.ChunkX)
-	w.Varint32(&pk.ChunkY)
-	w.Varint32(&pk.ChunkZ)
+	w.Varint32(&pk.SubChunkX)
+	w.Varint32(&pk.SubChunkY)
+	w.Varint32(&pk.SubChunkZ)
 
 	w.Varuint32(&blocksLen)
 	for _, entry := range pk.Blocks {
@@ -38,9 +38,9 @@ func (pk *UpdateSubChunkBlocks) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *UpdateSubChunkBlocks) Unmarshal(r *protocol.Reader) {
-	r.Varint32(&pk.ChunkX)
-	r.Varint32(&pk.ChunkY)
-	r.Varint32(&pk.ChunkZ)
+	r.Varint32(&pk.SubChunkX)
+	r.Varint32(&pk.SubChunkY)
+	r.Varint32(&pk.SubChunkZ)
 
 	var blocksLen, extraLen uint32
 

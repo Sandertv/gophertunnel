@@ -13,7 +13,7 @@ type ActorPickRequest struct {
 	// HotBarSlot is the held hot bar slot of the player at the time of trying to pick the entity. If empty,
 	// the resulting spawn egg should be put into this slot.
 	HotBarSlot byte
-	// WithData ...
+	// WithData is true if the pick request requests the entity metadata.
 	WithData bool
 }
 
