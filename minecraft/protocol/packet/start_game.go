@@ -155,6 +155,8 @@ type StartGame struct {
 	LimitedWorldWidth, LimitedWorldDepth int32
 	// NewNether specifies if the server runs with the new nether introduced in the 1.16 update.
 	NewNether bool
+	// EducationSharedResourceURI is an education edition feature that transmits education resource settings to clients.
+	EducationSharedResourceURI protocol.EducationSharedResourceURI
 	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
 	// should always be set to false.
 	ForceExperimentalGameplay bool
@@ -251,6 +253,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.LimitedWorldWidth)
 	w.Int32(&pk.LimitedWorldDepth)
 	w.Bool(&pk.NewNether)
+	protocol.EducationResourceURI(w, &pk.EducationSharedResourceURI)
 	w.Bool(&pk.ForceExperimentalGameplay)
 	if pk.ForceExperimentalGameplay {
 		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
@@ -335,6 +338,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.LimitedWorldWidth)
 	r.Int32(&pk.LimitedWorldDepth)
 	r.Bool(&pk.NewNether)
+	protocol.EducationResourceURI(r, &pk.EducationSharedResourceURI)
 	r.Bool(&pk.ForceExperimentalGameplay)
 	if pk.ForceExperimentalGameplay {
 		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above

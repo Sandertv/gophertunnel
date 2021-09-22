@@ -300,6 +300,20 @@ func (w *Writer) Item(x *ItemStack) {
 	w.ByteSlice(&extraData)
 }
 
+// MaterialReducer writes a material reducer to the writer.
+func (w *Writer) MaterialReducer(m *MaterialReducer) {
+	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
+	itemCountsLen := uint32(len(m.Outputs))
+
+	w.Varint32(&mix)
+	w.Varuint32(&itemCountsLen)
+
+	for _, out := range m.Outputs {
+		w.Varint32(&out.NetworkID)
+		w.Varint32(&out.Count)
+	}
+}
+
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x

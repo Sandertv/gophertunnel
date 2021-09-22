@@ -193,6 +193,9 @@ func init() {
 		IDRemoveVolumeEntity:                func() Packet { return &RemoveVolumeEntity{} },
 		IDSimulationType:                    func() Packet { return &SimulationType{} },
 		IDNPCDialogue:                       func() Packet { return &NPCDialogue{} },
+		IDEducationResourceURI:              func() Packet { return &EducationResourceURI{} },
+		IDCreatePhoto:                       func() Packet { return &CreatePhoto{} },
+		IDUpdateSubChunkBlocks:              func() Packet { return &UpdateSubChunkBlocks{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

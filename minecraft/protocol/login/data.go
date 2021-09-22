@@ -135,6 +135,8 @@ type ClientData struct {
 	// SkinGeometry is a base64 JSON encoded structure of the geometry data of a skin, containing properties
 	// such as bones, uv, pivot etc.
 	SkinGeometry string `json:"SkinGeometryData"`
+	// SkinGeometryVersion is the version for SkinGeometry.
+	SkinGeometryVersion string `json:"SkinGeometryDataEngineVersion"`
 	// SkinID is a unique ID produced for the skin, for example 'c18e65aa-7b21-4637-9b63-8ad63622ef01_Alex'
 	// for the default Alex skin.
 	SkinID string `json:"SkinId"`

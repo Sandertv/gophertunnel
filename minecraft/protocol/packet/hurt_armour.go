@@ -14,6 +14,8 @@ type HurtArmour struct {
 	// calculated by the client based upon this damage, and will also be based upon any enchantments like
 	// thorns that the armour may have.
 	Damage int32
+	// ArmourSlots is a bitset of all armour slots affected.
+	ArmourSlots int64
 }
 
 // ID ...
@@ -25,10 +27,12 @@ func (*HurtArmour) ID() uint32 {
 func (pk *HurtArmour) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.Cause)
 	w.Varint32(&pk.Damage)
+	w.Varint64(&pk.ArmourSlots)
 }
 
 // Unmarshal ...
 func (pk *HurtArmour) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.Cause)
 	r.Varint32(&pk.Damage)
+	r.Varint64(&pk.ArmourSlots)
 }

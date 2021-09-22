@@ -17,3 +17,28 @@ func Block(r IO, x *BlockEntry) {
 	r.String(&x.Name)
 	r.NBT(&x.Properties, nbt.NetworkLittleEndian)
 }
+
+// BlockChangeEntry is used by the UpdateSubChunkBlocks packet.
+type BlockChangeEntry struct {
+	BlockPos
+	// BlockRuntimeID is the runtime ID of the block.
+	BlockRuntimeID uint32
+	// Flags is a combination of flags that specify the way the block is updated client-side.
+	Flags uint32
+	// SyncedUpdateEntityUniqueID  is the unique ID of the falling block entity that the block transitions to or that the entity transitions from if the block change entry is synced.
+	SyncedUpdateEntityUniqueID uint64
+	// SyncedUpdateType is the type of the transition that happened. It is either BlockToEntityTransition, when
+	// a block placed becomes a falling entity, or EntityToBlockTransition, when a falling entity hits the
+	// ground and becomes a solid block again.
+	SyncedUpdateType uint32
+}
+
+// BlockChange reads/writes a BlockChangeEntry from an IO.
+func BlockChange(r IO, x *BlockChangeEntry) {
+	r.BlockPos(&x.BlockPos)
+
+	r.Varuint32(&x.BlockRuntimeID)
+	r.Varuint32(&x.Flags)
+	r.Varuint64(&x.SyncedUpdateEntityUniqueID)
+	r.Varuint32(&x.SyncedUpdateType)
+}

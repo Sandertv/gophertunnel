@@ -80,12 +80,12 @@ const (
 	EventParticleVibrationSignal       = 2027
 	EventParticleParticleDripstoneDrip = 2028
 	EventParticleParticleFizzEffect    = 2029
-
-	EventWaxOn  = 2030
-	EventWaxOff = 2031
-	EventScrape = 2032
-
-	EventParticleElectricSpark = 2033
+	EventParticleWaxOn                 = 2030
+	EventParticleWaxOff                = 2031
+	EventParticleScrape                = 2032
+	EventParticleElectricSpark         = 2033
+	EventParticleTurtleEgg             = 2034
+	EventParticleSkulkShriek           = 2035
 
 	EventStartRain           = 3001
 	EventStartThunder        = 3002

@@ -100,3 +100,19 @@ func ItemComponents(r IO, x *ItemComponentEntry) {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
+
+// MaterialReducerOutput is an output from a material reducer.
+type MaterialReducerOutput struct {
+	// NetworkID is the network ID of the output.
+	NetworkID int32
+	// Count is the quantity of the output.
+	Count int32
+}
+
+// MaterialReducer is a craft in a material reducer block in education edition.
+type MaterialReducer struct {
+	// InputItem is the starting item.
+	InputItem ItemType
+	// Outputs contain all outputting items.
+	Outputs []MaterialReducerOutput
+}

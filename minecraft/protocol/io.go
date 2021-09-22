@@ -41,6 +41,7 @@ type IO interface {
 	EntityMetadata(x *map[uint32]interface{})
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
+	MaterialReducer(x *MaterialReducer)
 
 	UnknownEnumOption(value interface{}, enum string)
 	InvalidValue(value interface{}, forField, reason string)

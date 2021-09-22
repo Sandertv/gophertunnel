@@ -65,6 +65,7 @@ const (
 	// <false|true|yes|no> <$Name: bool>.
 	ParamOptionCollapseEnum = iota + 1
 	ParamOptionHasSemanticConstraint
+	ParamOptionAsChainedCommand
 )
 
 // CommandParameter represents a single parameter of a command overload, which accepts a certain type of input

@@ -13,6 +13,8 @@ type ActorPickRequest struct {
 	// HotBarSlot is the held hot bar slot of the player at the time of trying to pick the entity. If empty,
 	// the resulting spawn egg should be put into this slot.
 	HotBarSlot byte
+	// WithData is true if the pick request requests the entity metadata.
+	WithData bool
 }
 
 // ID ...
@@ -24,10 +26,12 @@ func (*ActorPickRequest) ID() uint32 {
 func (pk *ActorPickRequest) Marshal(w *protocol.Writer) {
 	w.Int64(&pk.EntityUniqueID)
 	w.Uint8(&pk.HotBarSlot)
+	w.Bool(&pk.WithData)
 }
 
 // Unmarshal ...
 func (pk *ActorPickRequest) Unmarshal(r *protocol.Reader) {
 	r.Int64(&pk.EntityUniqueID)
 	r.Uint8(&pk.HotBarSlot)
+	r.Bool(&pk.WithData)
 }
