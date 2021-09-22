@@ -14,7 +14,7 @@ type HurtArmour struct {
 	// calculated by the client based upon this damage, and will also be based upon any enchantments like
 	// thorns that the armour may have.
 	Damage int32
-	// ArmourSlots ...
+	// ArmourSlots is a bitset of all armour slots affected.
 	ArmourSlots int64
 }
 
