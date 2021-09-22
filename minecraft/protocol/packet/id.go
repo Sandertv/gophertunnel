@@ -170,4 +170,7 @@ const (
 	IDRemoveVolumeEntity
 	IDSimulationType
 	IDNPCDialogue
+	IDEducationResourceURI
+	IDCreatePhoto
+	IDUpdateSubChunkBlocks
 )

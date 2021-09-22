@@ -66,6 +66,8 @@ const (
 	ActorEventTreasureHunt
 	ActorEventSummonAgent
 	ActorEventCrossbowCharged
+	ActorEventLandedOnGround
+	ActorEventEntityGrowUp
 )
 
 // ActorEvent is sent by the server when a particular event happens that has to do with an entity. Some of

@@ -11,6 +11,8 @@ type AddVolumeEntity struct {
 	EntityRuntimeID uint64
 	// VolumeEntityData ...
 	VolumeEntityData map[string]interface{}
+	// EngineVersion ...
+	EngineVersion string
 }
 
 // ID ...
@@ -22,10 +24,12 @@ func (*AddVolumeEntity) ID() uint32 {
 func (pk *AddVolumeEntity) Marshal(w *protocol.Writer) {
 	w.Uint64(&pk.EntityRuntimeID)
 	w.NBT(&pk.VolumeEntityData, nbt.NetworkLittleEndian)
+	w.String(&pk.EngineVersion)
 }
 
 // Unmarshal ...
 func (pk *AddVolumeEntity) Unmarshal(r *protocol.Reader) {
 	r.Uint64(&pk.EntityRuntimeID)
 	r.NBT(&pk.VolumeEntityData, nbt.NetworkLittleEndian)
+	r.String(&pk.EngineVersion)
 }

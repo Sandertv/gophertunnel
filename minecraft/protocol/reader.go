@@ -407,6 +407,26 @@ func (r *Reader) Item(x *ItemStack) {
 	}
 }
 
+// MaterialReducer writes a material reducer to the writer.
+func (r *Reader) MaterialReducer(m *MaterialReducer) {
+	var mix int32
+	var itemCountsLen uint32
+
+	r.Varint32(&mix)
+	r.Varuint32(&itemCountsLen)
+
+	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
+
+	for i := uint32(0); i < itemCountsLen; i++ {
+		var out MaterialReducerOutput
+
+		r.Varint32(&out.NetworkID)
+		r.Varint32(&out.Count)
+
+		m.Outputs = append(m.Outputs, out)
+	}
+}
+
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {

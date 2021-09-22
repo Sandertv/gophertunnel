@@ -17,6 +17,8 @@ type CraftingData struct {
 	// PotionContainerChangeRecipes is a list of all recipes to convert a potion from one type to another,
 	// such as from a drinkable potion to a splash potion, or from a splash potion to a lingering potion.
 	PotionContainerChangeRecipes []protocol.PotionContainerChangeRecipe
+	// MaterialReducers ...
+	MaterialReducers []protocol.MaterialReducer
 	// ClearRecipes indicates if all recipes currently active on the client should be cleaned. Doing this
 	// means that the client will have no recipes active by itself: Any CraftingData packets previously sent
 	// will also be discarded, and only the recipes in this CraftingData packet will be used.
@@ -30,7 +32,7 @@ func (*CraftingData) ID() uint32 {
 
 // Marshal ...
 func (pk *CraftingData) Marshal(w *protocol.Writer) {
-	l, potRecipesLen, containerRecipesLen := uint32(len(pk.Recipes)), uint32(len(pk.PotionRecipes)), uint32(len(pk.PotionContainerChangeRecipes))
+	l, potRecipesLen, containerRecipesLen, materialReducersLen := uint32(len(pk.Recipes)), uint32(len(pk.PotionRecipes)), uint32(len(pk.PotionContainerChangeRecipes)), uint32(len(pk.MaterialReducers))
 	w.Varuint32(&l)
 	for _, recipe := range pk.Recipes {
 		var c int32
@@ -65,6 +67,11 @@ func (pk *CraftingData) Marshal(w *protocol.Writer) {
 	for _, mix := range pk.PotionContainerChangeRecipes {
 		protocol.PotContainerChangeRecipe(w, &mix)
 	}
+	w.Varuint32(&materialReducersLen)
+	for _, mat := range pk.MaterialReducers {
+		w.MaterialReducer(&mat)
+	}
+
 	w.Bool(&pk.ClearRecipes)
 }
 
@@ -112,5 +119,10 @@ func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < length; i++ {
 		protocol.PotContainerChangeRecipe(r, &pk.PotionContainerChangeRecipes[i])
 	}
+	r.Varuint32(&length)
+	for i := uint32(0); i < length; i++ {
+		r.MaterialReducer(&pk.MaterialReducers[i])
+	}
+
 	r.Bool(&pk.ClearRecipes)
 }

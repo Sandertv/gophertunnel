@@ -370,6 +370,13 @@ const (
 	SoundEventCakeAddCandle
 	SoundEventExtinguishCandle
 	SoundEventAmbientCandle
+	SoundEventBlockClick
+	SoundEventBlockClickFail
+	SoundEventSculkShriekerShriek
+	SoundEventWardenNearbyClose
+	SoundEventWardenNearbyCloser
+	SoundEventWardenNearbyClosest
+	SoundEventWardenSlightlyAngry
 	SoundEventUndefined
 )
 

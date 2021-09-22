@@ -100,3 +100,19 @@ func ItemComponents(r IO, x *ItemComponentEntry) {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
+
+// MaterialReducerOutput ...
+type MaterialReducerOutput struct {
+	// NetworkID ...
+	NetworkID int32
+	// Count ...
+	Count int32
+}
+
+// MaterialReducer ...
+type MaterialReducer struct {
+	// InputItem ...
+	InputItem ItemType
+	// Outputs ...
+	Outputs []MaterialReducerOutput
+}

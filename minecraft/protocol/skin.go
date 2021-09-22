@@ -39,6 +39,8 @@ type Skin struct {
 	SkinGeometry []byte
 	// TODO: Find out what value AnimationData holds and when it does hold something.
 	AnimationData []byte
+	// GeometryDataEngineVersion ...
+	GeometryDataEngineVersion []byte
 	// PremiumSkin specifies if this is a skin that was purchased from the marketplace.
 	PremiumSkin bool
 	// PersonaSkin specifies if this is a skin that was created using the in-game skin creator.
@@ -46,6 +48,8 @@ type Skin struct {
 	// PersonaCapeOnClassicSkin specifies if the skin had a Persona cape (in-game skin creator cape) equipped
 	// on a classic skin.
 	PersonaCapeOnClassicSkin bool
+	// PrimaryUser ...
+	PrimaryUser bool
 	// CapeID is a unique identifier that identifies the cape. It usually holds a UUID in it.
 	CapeID string
 	// FullSkinID is an ID that represents the skin in full. The actual functionality is unknown: The client
@@ -88,10 +92,8 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 	w.Uint32(&x.CapeImageHeight)
 	w.ByteSlice(&x.CapeData)
 	w.ByteSlice(&x.SkinGeometry)
+	w.ByteSlice(&x.GeometryDataEngineVersion)
 	w.ByteSlice(&x.AnimationData)
-	w.Bool(&x.PremiumSkin)
-	w.Bool(&x.PersonaSkin)
-	w.Bool(&x.PersonaCapeOnClassicSkin)
 	w.String(&x.CapeID)
 	w.String(&x.FullSkinID)
 	w.String(&x.ArmSize)
@@ -106,6 +108,11 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 	for _, tint := range x.PieceTintColours {
 		WriteSkinPieceTint(w, &tint)
 	}
+
+	w.Bool(&x.PremiumSkin)
+	w.Bool(&x.PersonaSkin)
+	w.Bool(&x.PersonaCapeOnClassicSkin)
+	w.Bool(&x.PrimaryUser)
 }
 
 // SerialisedSkin reads a Skin x from Reader r.
@@ -128,10 +135,8 @@ func SerialisedSkin(r *Reader, x *Skin) {
 	r.Uint32(&x.CapeImageHeight)
 	r.ByteSlice(&x.CapeData)
 	r.ByteSlice(&x.SkinGeometry)
+	r.ByteSlice(&x.GeometryDataEngineVersion)
 	r.ByteSlice(&x.AnimationData)
-	r.Bool(&x.PremiumSkin)
-	r.Bool(&x.PersonaSkin)
-	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.String(&x.CapeID)
 	r.String(&x.FullSkinID)
 	r.String(&x.ArmSize)
@@ -150,6 +155,11 @@ func SerialisedSkin(r *Reader, x *Skin) {
 	if err := x.validate(); err != nil {
 		r.InvalidValue(fmt.Sprintf("Skin %v", x.SkinID), "serialised skin", err.Error())
 	}
+
+	r.Bool(&x.PremiumSkin)
+	r.Bool(&x.PersonaSkin)
+	r.Bool(&x.PersonaCapeOnClassicSkin)
+	r.Bool(&x.PrimaryUser)
 }
 
 // validate checks the skin and makes sure every one of its values are correct. It checks the image dimensions
