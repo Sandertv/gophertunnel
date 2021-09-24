@@ -492,7 +492,24 @@ func (a *CraftRecipeStackRequestAction) Unmarshal(r *Reader) {
 // AutoCraftRecipeStackRequestAction is sent by the client similarly to the CraftRecipeStackRequestAction. The
 // only difference is that the recipe is automatically created and crafted by shift clicking the recipe book.
 type AutoCraftRecipeStackRequestAction struct {
-	CraftRecipeStackRequestAction
+	// RecipeNetworkID is the network ID of the recipe that is about to be crafted. This network ID matches
+	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
+	// of 1.16.
+	RecipeNetworkID uint32
+	// TimesCrafted is how many times the recipe was crafted.
+	TimesCrafted byte
+}
+
+// Marshal ...
+func (a *AutoCraftRecipeStackRequestAction) Marshal(w *Writer) {
+	w.Varuint32(&a.RecipeNetworkID)
+	w.Uint8(&a.TimesCrafted)
+}
+
+// Unmarshal ...
+func (a *AutoCraftRecipeStackRequestAction) Unmarshal(r *Reader) {
+	r.Varuint32(&a.RecipeNetworkID)
+	r.Uint8(&a.TimesCrafted)
 }
 
 // CraftCreativeStackRequestAction is sent by the client when it takes an item out fo the creative inventory.
