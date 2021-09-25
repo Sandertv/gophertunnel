@@ -20,7 +20,8 @@ versions for past Minecraft versions is listed below.
 
 | Version  | Tag      |
 |----------|----------|
-| 1.17.10  | Latest   |
+| 1.17.30  | Latest   |
+| 1.17.10  | v1.14.3  |
 | 1.17.0   | v1.13.0  |
 | 1.16.220 | v1.12.1  |
 | 1.16.210 | v1.11.0  |
