@@ -16,8 +16,11 @@ type NPCDialogue struct {
 	// Dialogue is the text that the client should see.
 	Dialogue string
 	// SceneName is the scene the data was pulled from for the client.
+	// Note setting this to "" or a empty string will result in the client using the last / default scene json
+	// More info can be found at https://docs.microsoft.com/en-us/minecraft/creator/documents/npcdialogue
 	SceneName string
-	// NPCName is the name of the NPC to be displayed to the client.
+	// NPCName is the name of the NPC to be displayed to the client
+	// Note this isn't the name displayed as the nametag or in the ui, but seems to be never used
 	NPCName string
 	// ActionJSON is the JSON string of the buttons/actions the server can perform.
 	ActionJSON string
