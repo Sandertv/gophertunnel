@@ -134,7 +134,7 @@ func (listener *Listener) Accept() (net.Conn, error) {
 
 // Disconnect disconnects a Minecraft Conn passed by first sending a disconnect with the message passed, and
 // closing the connection after. If the message passed is empty, the client will be immediately sent to the
-// player list instead of a disconnect screen.
+// server list instead of a disconnect screen.
 func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	_ = conn.WritePacket(&packet.Disconnect{
 		HideDisconnectionScreen: message == "",
