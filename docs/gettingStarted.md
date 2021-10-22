@@ -2,12 +2,19 @@
 Gophertunnel is written in Golang to work with Gophertunnel you must have Golang compiler installed. Information on the golang [compiler is avilible here](https://golang.org/)
 
 In addition there are several learning tools you can go through to learn go. 
+
 [Go by Example]( https://gobyexample.com/) - recommended by Skippy
+
 [Getting Started with go.dev]( https://learn.go.dev/) - recommended by Doad
+
 [A Tour of Go](https://tour.golang.org/welcome/1) - recommended by Skippy
+
 [Effective Go]( https://golang.org/doc/effective_go.html) - recommended by Skippy
+
 [Gopher Reading List] (https://github.com/enocom/gopher-reading-list) - recommended by Strum355
-Gophercises - 
+
+** Gophercises ** 
+
 [coding exercises for budding gophers], (https://gophercises.com/) - recommended by Skippy
 [TutorialEdge Golang Courses] (https://tutorialedge.net/course/golang/) - recommended by Skippy
 
