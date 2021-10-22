@@ -41,40 +41,40 @@ The connection handler function sets up the server dialer to connect to the remo
 This loops hands packets coming from the client going to the server
 ```golang
 go func() {
-		defer listener.Disconnect(conn, "connection lost")
-		defer serverConn.Close()
-		for {
-			pk, err := conn.ReadPacket()
-			if err != nil {
-				return
-			}
-			if err := serverConn.WritePacket(pk); err != nil {
-				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
-					_ = listener.Disconnect(conn, disconnect.Error())
-				}
-				return
-			}
+	defer listener.Disconnect(conn, "connection lost")
+	defer serverConn.Close()
+	for {
+		pk, err := conn.ReadPacket()
+		if err != nil {
+			return
 		}
-	}()
+		if err := serverConn.WritePacket(pk); err != nil {
+			if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
+				_ = listener.Disconnect(conn, disconnect.Error())
+			}
+			return
+		}
+	}
+}()
 ```
 This loops hands packets coming from the server going to the client
 ```golang
 go func() {
-		defer serverConn.Close()
-		defer listener.Disconnect(conn, "connection lost")
-		for {
-			pk, err := serverConn.ReadPacket()
-			if err != nil {
-				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
-					_ = listener.Disconnect(conn, disconnect.Error())
-				}
-				return
+	defer serverConn.Close()
+	defer listener.Disconnect(conn, "connection lost")
+	for {
+		pk, err := serverConn.ReadPacket()
+		if err != nil {
+			if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
+				_ = listener.Disconnect(conn, disconnect.Error())
 			}
-			if err := conn.WritePacket(pk); err != nil {
-				return
-			}
+			return
 		}
-	}()
+		if err := conn.WritePacket(pk); err != nil {
+			return
+		}
+	}
+}()
 ```
 To add in packet sniffing the supported paket types can befoud in the [minecraft/protocol/packet](https://github.com/Sandertv/gophertunnel/tree/master/minecraft/protocol/packet) folder. An example on how to use these type can be found in [example_listener_test.go] (https://github.com/Sandertv/gophertunnel/blob/master/minecraft/example_listener_test.go) but simply build an expression such as the below switch case in the respective loop you want to sniff.
 ```golang
