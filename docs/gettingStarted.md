@@ -16,6 +16,7 @@ In addition there are several learning tools you can go through to learn go.
 ### Gophercises
 
 [coding exercises for budding gophers](https://gophercises.com/) - recommended by Skippy
+
 [TutorialEdge Golang Courses](https://tutorialedge.net/course/golang/) - recommended by Skippy
 
 These may not be required for everyone, however they can help you understand the language if you are new.
