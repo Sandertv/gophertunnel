@@ -1,4 +1,4 @@
-#Getting Started
+# Getting Started
 Gophertunnel is written in Golang to work with Gophertunnel you must have Golang compiler installed. Information on the golang [compiler is avilible here](https://golang.org/)
 
 In addition there are several learning tools you can go through to learn go. 
