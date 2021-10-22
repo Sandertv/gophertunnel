@@ -11,15 +11,15 @@ In addition there are several learning tools you can go through to learn go.
 
 [Effective Go]( https://golang.org/doc/effective_go.html) - recommended by Skippy
 
-[Gopher Reading List] (https://github.com/enocom/gopher-reading-list) - recommended by Strum355
+[Gopher Reading List](https://github.com/enocom/gopher-reading-list) - recommended by Strum355
 
-**Gophercises** 
+### Gophercises
 
 [coding exercises for budding gophers], (https://gophercises.com/) - recommended by Skippy
 [TutorialEdge Golang Courses] (https://tutorialedge.net/course/golang/) - recommended by Skippy
 
 These may not be required for everyone, however they can help you understand the language if you are new.
-##Example 1: MITM proxy
+## Example 1: MITM proxy
 If you want an example of gophertunnel being used a simple proxy server is included in the root of the git repository in the main.go file. To get this to work clone the repository, or download the zip. Then execute the following steps:
 * Edit the config.toml file
   * LocalAddress is the port and address your client will connect to in game
