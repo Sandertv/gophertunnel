@@ -13,7 +13,7 @@ In addition there are several learning tools you can go through to learn go.
 
 [Gopher Reading List] (https://github.com/enocom/gopher-reading-list) - recommended by Strum355
 
-** Gophercises ** 
+**Gophercises** 
 
 [coding exercises for budding gophers], (https://gophercises.com/) - recommended by Skippy
 [TutorialEdge Golang Courses] (https://tutorialedge.net/course/golang/) - recommended by Skippy
@@ -22,12 +22,12 @@ These may not be required for everyone, however they can help you understand the
 ##Example 1: MITM proxy
 If you want an example of gophertunnel being used a simple proxy server is included in the root of the git repository in the main.go file. To get this to work clone the repository, or download the zip. Then execute the following steps:
 * Edit the config.toml file
-** LocalAddress is the port and address your client will connect to in game
-** RemoteAddress is the server you want to play on
+  * LocalAddress is the port and address your client will connect to in game
+  * RemoteAddress is the server you want to play on
 * enable loop back (assuming the proxy server is running on the same machine as your proxy)
-** run as admin: `CheckNetIsolation LoopbackExempt -a -n="Microsoft.MinecraftUWP_8wekyb3d8bbwe"`
+  * run as admin: `CheckNetIsolation LoopbackExempt -a -n="Microsoft.MinecraftUWP_8wekyb3d8bbwe"`
 * start the server
-** `go run .`
+  * `go run .`
 * authenticate by copying the provided link into a web browser then copying the oauth key and logging in.
 
 You proxy server is up and running. you are now able to edit the code as you wish
