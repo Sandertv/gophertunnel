@@ -20,7 +20,7 @@ const (
 	IDTakeItemActor
 	IDMoveActorAbsolute
 	IDMovePlayer
-	IDRiderJump
+	IDPassengerJump
 	IDUpdateBlock
 	IDAddPainting
 	IDTickSync
@@ -173,4 +173,7 @@ const (
 	IDEducationResourceURI
 	IDCreatePhoto
 	IDUpdateSubChunkBlocks
+	IDPhotoInfoRequest
+	IDSubChunk
+	IDSubChunkRequest
 )

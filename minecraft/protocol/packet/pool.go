@@ -44,7 +44,7 @@ func init() {
 		IDTakeItemActor:     func() Packet { return &TakeItemActor{} },
 		IDMoveActorAbsolute: func() Packet { return &MoveActorAbsolute{} },
 		IDMovePlayer:        func() Packet { return &MovePlayer{} },
-		IDRiderJump:         func() Packet { return &RiderJump{} },
+		IDPassengerJump:     func() Packet { return &PassengerJump{} },
 		IDUpdateBlock:       func() Packet { return &UpdateBlock{} },
 		IDAddPainting:       func() Packet { return &AddPainting{} },
 		IDTickSync:          func() Packet { return &TickSync{} },
@@ -196,6 +196,9 @@ func init() {
 		IDEducationResourceURI:              func() Packet { return &EducationResourceURI{} },
 		IDCreatePhoto:                       func() Packet { return &CreatePhoto{} },
 		IDUpdateSubChunkBlocks:              func() Packet { return &UpdateSubChunkBlocks{} },
+		IDPhotoInfoRequest:                  func() Packet { return &PhotoInfoRequest{} },
+		IDSubChunk:                          func() Packet { return &SubChunk{} },
+		IDSubChunkRequest:                   func() Packet { return &SubChunkRequest{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)
