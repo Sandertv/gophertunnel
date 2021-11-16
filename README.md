@@ -20,7 +20,9 @@ versions for past Minecraft versions is listed below.
 
 | Version  | Tag      |
 |----------|----------|
-| 1.17.30  | Latest   |
+| 1.18.0   | Latest   |
+| 1.17.40  | v1.16.1  |
+| 1.17.30  | v1.15.1  |
 | 1.17.10  | v1.14.3  |
 | 1.17.0   | v1.13.0  |
 | 1.16.220 | v1.12.1  |
@@ -45,4 +47,3 @@ Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to th
 [![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.com/invite/U4kFWHhTNR)
 
 ### Note: We do not under any circumstance support or endorse the usage of gophertunnel with malicious intent.
-
