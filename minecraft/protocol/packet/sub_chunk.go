@@ -34,6 +34,10 @@ type SubChunk struct {
 	HeightMapType byte
 	// HeightMapData is the data for the height map.
 	HeightMapData []byte
+	// CacheEnabled is whether the sub chunk caching is enabled or not.
+	CacheEnabled bool
+	// BlobID is ID of the blob. It is only set if CacheEnabled is true.
+	BlobID uint64
 }
 
 // ID ...
@@ -51,6 +55,10 @@ func (pk *SubChunk) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.RequestResult)
 	w.Uint8(&pk.HeightMapType)
 	w.Bytes(&pk.HeightMapData)
+	w.Bool(&pk.CacheEnabled)
+	if pk.CacheEnabled {
+		w.Uint64(&pk.BlobID)
+	}
 }
 
 // Unmarshal ...
@@ -63,4 +71,8 @@ func (pk *SubChunk) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.RequestResult)
 	r.Uint8(&pk.HeightMapType)
 	r.Bytes(&pk.HeightMapData)
+	r.Bool(&pk.CacheEnabled)
+	if pk.CacheEnabled {
+		r.Uint64(&pk.BlobID)
+	}
 }
