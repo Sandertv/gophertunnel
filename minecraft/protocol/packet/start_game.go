@@ -194,8 +194,9 @@ type StartGame struct {
 	ServerAuthoritativeInventory bool
 	// GameVersion is the version of the game the server is running. The exact function of this field isn't clear.
 	GameVersion string
-	// ServerBlockTypeRegistryChecksum is a checksum to ensure block types between the server and client match.
-	ServerBlockTypeRegistryChecksum uint64
+	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
+	// This can simply be left empty, and the client will avoid trying to verify it.
+	ServerBlockStateChecksum uint64
 }
 
 // ID ...
@@ -284,7 +285,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
 	w.String(&pk.GameVersion)
-	w.Uint64(&pk.ServerBlockTypeRegistryChecksum)
+	w.Uint64(&pk.ServerBlockStateChecksum)
 }
 
 // Unmarshal ...
@@ -370,5 +371,5 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
 	r.String(&pk.GameVersion)
-	r.Uint64(&pk.ServerBlockTypeRegistryChecksum)
+	r.Uint64(&pk.ServerBlockStateChecksum)
 }
