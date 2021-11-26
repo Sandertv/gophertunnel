@@ -19,7 +19,7 @@ type AnimateEntity struct {
 	// StopCondition is a MoLang expression that specifies when the animation should be stopped.
 	StopCondition string
 	// StopConditionVersion is the MoLang stop condition version.
-	StopConditionVersion int64
+	StopConditionVersion int32
 	// Controller is the animation controller that is used to manage animations. These controllers decide when
 	// to play which animation.
 	Controller string
@@ -39,7 +39,7 @@ func (pk *AnimateEntity) Marshal(w *protocol.Writer) {
 	w.String(&pk.Animation)
 	w.String(&pk.NextState)
 	w.String(&pk.StopCondition)
-	w.Int64(&pk.StopConditionVersion)
+	w.Int32(&pk.StopConditionVersion)
 	w.String(&pk.Controller)
 	w.Float32(&pk.BlendOutTime)
 	l := uint32(len(pk.EntityRuntimeIDs))
@@ -54,7 +54,7 @@ func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.Animation)
 	r.String(&pk.NextState)
 	r.String(&pk.StopCondition)
-	r.Int64(&pk.StopConditionVersion)
+	r.Int32(&pk.StopConditionVersion)
 	r.String(&pk.Controller)
 	var count uint32
 	r.Varuint32(&count)
