@@ -56,6 +56,10 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 			id = StackRequestActionCraftCreative
 		case *CraftRecipeOptionalStackRequestAction:
 			id = StackRequestActionCraftRecipeOptional
+		case *CraftGrindstoneRecipeStackRequestAction:
+			id = StackRequestActionCraftGrindstone
+		case *CraftLoomRecipeStackRequestAction:
+			id = StackRequestActionCraftLoom
 		case *CraftNonImplementedStackRequestAction:
 			id = StackRequestActionCraftNonImplementedDeprecated
 		case *CraftResultsDeprecatedStackRequestAction:
@@ -115,6 +119,10 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &CraftCreativeStackRequestAction{}
 		case StackRequestActionCraftRecipeOptional:
 			action = &CraftRecipeOptionalStackRequestAction{}
+		case StackRequestActionCraftGrindstone:
+			action = &CraftGrindstoneRecipeStackRequestAction{}
+		case StackRequestActionCraftLoom:
+			action = &CraftLoomRecipeStackRequestAction{}
 		case StackRequestActionCraftNonImplementedDeprecated:
 			action = &CraftNonImplementedStackRequestAction{}
 		case StackRequestActionCraftResultsDeprecated:
@@ -275,6 +283,8 @@ const (
 	StackRequestActionCraftRecipeAuto
 	StackRequestActionCraftCreative
 	StackRequestActionCraftRecipeOptional
+	StackRequestActionCraftGrindstone
+	StackRequestActionCraftLoom
 	StackRequestActionCraftNonImplementedDeprecated
 	StackRequestActionCraftResultsDeprecated
 )
@@ -556,6 +566,46 @@ func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
 	if !bytes.Equal(c.UnknownBytes[:], zeroBytes) {
 		panic(fmt.Sprintf("craft recipe optional stack request action unknown bytes are not all 0: %x", c.UnknownBytes))
 	}
+}
+
+// CraftGrindstoneRecipeStackRequestAction is sent when a grindstone recipe is crafted. It contains the RecipeNetworkID
+// to identify the recipe crafted, and the cost for crafting the recipe.
+type CraftGrindstoneRecipeStackRequestAction struct {
+	// RecipeNetworkID is the network ID of the recipe that is about to be crafted. This network ID matches
+	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
+	// of 1.16.
+	RecipeNetworkID uint32
+	// Cost is the cost of the recipe that was crafted.
+	Cost int32
+}
+
+// Marshal ...
+func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(w *Writer) {
+	w.Varuint32(&c.RecipeNetworkID)
+	w.Varint32(&c.Cost)
+}
+
+// Unmarshal ...
+func (c *CraftGrindstoneRecipeStackRequestAction) Unmarshal(r *Reader) {
+	r.Varuint32(&c.RecipeNetworkID)
+	r.Varint32(&c.Cost)
+}
+
+// CraftLoomRecipeStackRequestAction is sent when a loom recipe is crafted. It simply contains the
+// pattern identifier to figure out what pattern is meant to be applied to the item.
+type CraftLoomRecipeStackRequestAction struct {
+	// Pattern is the pattern identifier for the loom recipe.
+	Pattern string
+}
+
+// Marshal ...
+func (c *CraftLoomRecipeStackRequestAction) Marshal(w *Writer) {
+	w.String(&c.Pattern)
+}
+
+// Unmarshal ...
+func (c *CraftLoomRecipeStackRequestAction) Unmarshal(r *Reader) {
+	r.String(&c.Pattern)
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
