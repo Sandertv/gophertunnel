@@ -52,6 +52,9 @@ type GameData struct {
 	GameRules []protocol.GameRule
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
+	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
+	// This can simply be left empty, and the client will avoid trying to verify it.
+	ServerBlockStateChecksum uint64
 	// CustomBlocks is a list of custom blocks added to the game by the server. These blocks all have a name
 	// and block properties.
 	CustomBlocks []protocol.BlockEntry

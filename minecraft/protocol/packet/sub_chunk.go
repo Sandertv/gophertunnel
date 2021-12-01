@@ -34,6 +34,10 @@ type SubChunk struct {
 	HeightMapType byte
 	// HeightMapData is the data for the height map.
 	HeightMapData []byte
+	// CacheEnabled is whether the sub chunk caching is enabled or not.
+	CacheEnabled bool
+	// BlobHash is the hash of the blob.
+	BlobHash uint64
 }
 
 // ID ...
@@ -49,8 +53,18 @@ func (pk *SubChunk) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.SubChunkZ)
 	w.ByteSlice(&pk.Data)
 	w.Varint32(&pk.RequestResult)
+
 	w.Uint8(&pk.HeightMapType)
-	w.Bytes(&pk.HeightMapData)
+	if pk.HeightMapType == HeightMapDataTypeHasData {
+		for i := 0; i < 256; i++ {
+			w.Uint8(&pk.HeightMapData[i])
+		}
+	}
+
+	w.Bool(&pk.CacheEnabled)
+	if pk.CacheEnabled {
+		w.Uint64(&pk.BlobHash)
+	}
 }
 
 // Unmarshal ...
@@ -61,6 +75,17 @@ func (pk *SubChunk) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.SubChunkZ)
 	r.ByteSlice(&pk.Data)
 	r.Varint32(&pk.RequestResult)
+
 	r.Uint8(&pk.HeightMapType)
-	r.Bytes(&pk.HeightMapData)
+	if pk.HeightMapType == HeightMapDataTypeHasData {
+		pk.HeightMapData = make([]uint8, 256)
+		for i := 0; i < 256; i++ {
+			r.Uint8(&pk.HeightMapData[i])
+		}
+	}
+
+	r.Bool(&pk.CacheEnabled)
+	if pk.CacheEnabled {
+		r.Uint64(&pk.BlobHash)
+	}
 }

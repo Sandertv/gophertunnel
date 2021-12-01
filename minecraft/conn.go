@@ -922,6 +922,7 @@ func (conn *Conn) startGame() {
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		Experiments:                  data.Experiments,
 		GameVersion:                  protocol.CurrentVersion,
+		BaseGameVersion:              protocol.CurrentVersion,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1093,6 +1094,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		WorldSpawn:                   pk.WorldSpawn,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
+		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
 		CustomBlocks:                 pk.Blocks,
 		Items:                        pk.Items,
 		PlayerMovementSettings:       pk.PlayerMovementSettings,

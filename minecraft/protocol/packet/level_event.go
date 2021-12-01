@@ -117,6 +117,7 @@ const (
 	EventSetData = 4000
 
 	EventPlayersSleeping = 9800
+	EventSleepingPlayers = 9801
 	EventJumpPrevented   = 9810
 
 	EventAddParticleMask = 0x4000
