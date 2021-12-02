@@ -17,6 +17,16 @@ const (
 	BossEventTexture
 )
 
+const (
+	BossEventColourGrey = iota
+	BossEventColourBlue
+	BossEventColourRed
+	BossEventColourGreen
+	BossEventColourYellow
+	BossEventColourPurple
+	BossEventColourWhite
+)
+
 // BossEvent is sent by the server to make a specific 'boss event' occur in the world. It includes features
 // such as showing a boss bar to the player and turning the sky dark.
 type BossEvent struct {
@@ -40,9 +50,9 @@ type BossEvent struct {
 	HealthPercentage float32
 	// ScreenDarkening currently seems not to do anything.
 	ScreenDarkening int16
-	// Colour is the colour of the boss bar that is shown when a player is subscribed. It currently does not
-	// function. It is only set if the EventType is BossEventShow, BossEventAppearanceProperties or
-	// BossEventTexture.
+	// Colour is the colour of the boss bar that is shown when a player is subscribed. It is only set if the
+	// EventType is BossEventShow, BossEventAppearanceProperties or BossEventTexture. This is functional as
+	// of 1.18 and can be any of the BossEventColour constants listed above.
 	Colour uint32
 	// Overlay is the overlay of the boss bar that is shown on top of the boss bar when a player is
 	// subscribed. It currently does not function. It is only set if the EventType is BossEventShow,
