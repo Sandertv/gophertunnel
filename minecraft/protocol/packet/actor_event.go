@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	ActorEventJump = iota
+	ActorEventJump = iota + 1
 	ActorEventHurt
 	ActorEventDeath
 	ActorEventStartAttacking
