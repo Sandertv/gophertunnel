@@ -4,6 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+// TODO: Support the last seven new events.
 const (
 	EventTypeAchievementAwarded = iota
 	EventTypeEntityInteract
@@ -28,7 +29,13 @@ const (
 	EventTypeMovementAnomaly
 	EventTypeMovementCorrected
 	EventTypeExtractHoney
-	EventTypeUndefined
+	EventTypeTargetBlockHit
+	EventTypePiglinBarter
+	EventTypePlayerWaxedOrUnwaxedCopper
+	EventTypeCodeBuilderRuntimeAction
+	EventTypeCodeBuilderScoreboard
+	EventTypeStriderRiddenInLavaInOverworld
+	EventTypeSneakCloseToSculkSensor
 )
 
 // Event is sent by the server to send an event with additional data. It is typically sent to the client for
@@ -65,10 +72,6 @@ func (pk *Event) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.EventType)
 	r.Uint8(&pk.UsePlayerID)
-
-	if pk.EventType >= EventTypeUndefined {
-		r.UnknownEnumOption(pk.EventType, "event type")
-	}
 
 	switch pk.EventType {
 	case EventTypeAchievementAwarded:

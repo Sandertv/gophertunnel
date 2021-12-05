@@ -45,7 +45,7 @@ const (
 	SoundEventLand
 	SoundEventSaddle
 	SoundEventArmor
-	SoundEventMobArmorStandPlace
+	SoundEventArmorPlace
 	SoundEventAddChest
 	SoundEventThrow
 	SoundEventAttack
@@ -68,7 +68,7 @@ const (
 	SoundEventLargeBlast
 	SoundEventTwinkle
 	SoundEventRemedy
-	SoundEventInfect
+	SoundEventUnfect
 	SoundEventLevelUp
 	SoundEventBowHit
 	SoundEventBulletHit
@@ -101,13 +101,13 @@ const (
 	SoundEventBucketFillLava
 	SoundEventBucketEmptyWater
 	SoundEventBucketEmptyLava
-	SoundEventArmorEquipChain
-	SoundEventArmorEquipDiamond
-	SoundEventArmorEquipGeneric
-	SoundEventArmorEquipGold
-	SoundEventArmorEquipIron
-	SoundEventArmorEquipLeather
-	SoundEventArmorEquipElytra
+	SoundEventEquipChain
+	SoundEventEquipDiamond
+	SoundEventEquipGeneric
+	SoundEventEquipGold
+	SoundEventEquipIron
+	SoundEventEquipLeather
+	SoundEventEquipElytra
 	SoundEventRecord13
 	SoundEventRecordCat
 	SoundEventRecordBlocks
@@ -120,9 +120,9 @@ const (
 	SoundEventRecordWard
 	SoundEventRecord11
 	SoundEventRecordWait
-	_
+	SoundEventRecordNull
 	SoundEventFlop
-	SoundEventElderGuardianCurse
+	SoundEventGuardianCurse
 	SoundEventMobWarning
 	SoundEventMobWarningBaby
 	SoundEventTeleport
@@ -137,28 +137,28 @@ const (
 	SoundEventGlass
 	SoundEventPotionBrewed
 	SoundEventCastSpell
-	SoundEventPrepareAttack
+	SoundEventPrepareAttackSpell
 	SoundEventPrepareSummon
 	SoundEventPrepareWololo
 	SoundEventFang
 	SoundEventCharge
-	SoundEventCameraTakePicture
-	SoundEventLeashKnotPlace
-	SoundEventLeashKnotBreak
-	SoundEventGrowl
-	SoundEventWhine
-	SoundEventPant
-	SoundEventPurr
-	SoundEventPurreow
+	SoundEventTakePicture
+	SoundEventPlaceLeashKnot
+	SoundEventBreakLeashKnot
+	SoundEventAmbientGrowl
+	SoundEventAmbientWhine
+	SoundEventAmbientPant
+	SoundEventAmbientPurr
+	SoundEventAmbientPurreow
 	SoundEventDeathMinVolume
 	SoundEventDeathMidVolume
-	_
+	SoundEventImitateBlaze
 	SoundEventImitateCaveSpider
 	SoundEventImitateCreeper
 	SoundEventImitateElderGuardian
 	SoundEventImitateEnderDragon
 	SoundEventImitateEnderman
-	_
+	SoundEventImitateEndermite
 	SoundEventImitateEvocationIllager
 	SoundEventImitateGhast
 	SoundEventImitateHusk
@@ -180,58 +180,62 @@ const (
 	SoundEventImitateZombie
 	SoundEventImitateZombiePigman
 	SoundEventImitateZombieVillager
-	SoundEventBlockEndPortalFrameFill
-	SoundEventBlockEndPortalSpawn
-	SoundEventRandomAnvilUse
+	SoundEventEnderEyePlaced
+	SoundEventEndPortalCreated
+	SoundEventAnvilUse
 	SoundEventBottleDragonBreath
 	SoundEventPortalTravel
-	SoundEventItemTridentHit
-	SoundEventItemTridentReturn
-	SoundEventItemTridentRiptide1
-	SoundEventItemTridentRiptide2
-	SoundEventItemTridentRiptide3
-	SoundEventItemTridentThrow
-	SoundEventItemTridentThunder
-	SoundEventItemTridentHitGround
+	SoundEventTridentHit
+	SoundEventTridentReturn
+	SoundEventTridentRiptide1
+	SoundEventTridentRiptide2
+	SoundEventTridentRiptide3
+	SoundEventTridentThrow
+	SoundEventTridentThunder
+	SoundEventTridentHitGround
 	SoundEventDefault
-	SoundEventBlockFletchingTableUse
+	SoundEventFletchingTableUse
 	SoundEventElemConstructOpen
 	SoundEventIceBombHit
 	SoundEventBalloonPop
 	SoundEventLtReactionIceBomb
 	SoundEventLtReactionBleach
-	SoundEventLtReactionEPaste
-	SoundEventLtReactionEPaste2
+	SoundEventLtReactionElephantToothpaste
+	SoundEventLtReactionElephantToothpaste2
+	SoundEventLtReactionGlowStick
+	SoundEventLtReactionGlowStick2
+	SoundEventLtReactionLuminol
+	SoundEventLtReactionSalt
 	SoundEventLtReactionFertilizer
 	SoundEventLtReactionFireball
-	SoundEventLtReactionMgsalt
-	SoundEventLtReactionMiscfire
+	SoundEventLtReactionMagnesiumSalt
+	SoundEventLtReactionMiscFire
 	SoundEventLtReactionFire
-	SoundEventLtReactionMiscexplosion
-	SoundEventLtReactionMiscmystical
-	SoundEventLtReactionMiscmystical2
+	SoundEventLtReactionMiscExplosion
+	SoundEventLtReactionMiscMystical
+	SoundEventLtReactionMiscMystical2
 	SoundEventLtReactionProduct
 	SoundEventSparklerUse
-	SoundEventGlowstickUse
+	SoundEventGlowStickUse
 	SoundEventSparklerActive
 	SoundEventConvertToDrowned
 	SoundEventBucketFillFish
 	SoundEventBucketEmptyFish
-	SoundEventBubbleUp
-	SoundEventBubbleDown
+	SoundEventBubbleColumnUpwards
+	SoundEventBubbleColumnDownwards
 	SoundEventBubblePop
 	SoundEventBubbleUpInside
 	SoundEventBubbleDownInside
 	SoundEventHurtBaby
 	SoundEventDeathBaby
 	SoundEventStepBaby
-	SoundEventBabySpawn
+	SoundEventSpawnBaby
 	SoundEventBorn
-	SoundEventBlockTurtleEggBreak
-	SoundEventBlockTurtleEggCrack
-	SoundEventBlockTurtleEggHatch
-	SoundEventTurtleLayEgg
-	SoundEventBlockTurtleEggAttack
+	SoundEventTurtleEggBreak
+	SoundEventTurtleEggCrack
+	SoundEventTurtleEggHatched
+	SoundEventLayEgg
+	SoundEventTurtleEggAttacked
 	SoundEventBeaconActivate
 	SoundEventBeaconAmbient
 	SoundEventBeaconDeactivate
@@ -242,12 +246,12 @@ const (
 	SoundEventConduitDeactivate
 	SoundEventConduitShort
 	SoundEventSwoop
-	SoundEventBlockBambooSaplingPlace
+	SoundEventBambooSaplingPlace
 	SoundEventPreSneeze
 	SoundEventSneeze
 	SoundEventAmbientTame
 	SoundEventScared
-	SoundEventBlockScaffoldingClimb
+	SoundEventScaffoldingClimb
 	SoundEventCrossbowLoadingStart
 	SoundEventCrossbowLoadingMiddle
 	SoundEventCrossbowLoadingEnd
@@ -258,29 +262,29 @@ const (
 	SoundEventAmbientAggressive
 	SoundEventAmbientWorried
 	SoundEventCantBreed
-	SoundEventItemShieldBlock
-	SoundEventItemBookPut
-	SoundEventBlockGrindstoneUse
-	SoundEventBlockBellHit
-	SoundEventBlockCampfireCrackle
+	SoundEventShieldBlock
+	SoundEventLecternBookPlace
+	SoundEventGrindstoneUse
+	SoundEventBell
+	SoundEventCampfireCrackle
 	SoundEventRoar
 	SoundEventStun
-	SoundEventBlockSweetBerryBushHurt
-	SoundEventBlockSweetBerryBushPick
-	SoundEventUICartographyTableTakeResult
-	SoundEventUIStoneCutterTakeResult
-	SoundEventBlockComposterEmpty
-	SoundEventBlockComposterFill
-	SoundEventBlockComposterFillSuccess
-	SoundEventBlockComposterReady
-	SoundEventBlockBarrelOpen
-	SoundEventBlockBarrelClose
+	SoundEventSweetBerryBushHurt
+	SoundEventSweetBerryBushPick
+	SoundEventCartographyTableUse
+	SoundEventStonecutterUse
+	SoundEventComposterEmpty
+	SoundEventComposterFill
+	SoundEventComposterFillLayer
+	SoundEventComposterReady
+	SoundEventBarrelOpen
+	SoundEventBarrelClose
 	SoundEventRaidHorn
-	SoundEventBlockLoomUse
-	SoundEventAmbientRaid
-	SoundEventUICartographyTableUse
-	SoundEventUIStoneCutterUse
-	SoundEventUILoomUse
+	SoundEventLoomUse
+	SoundEventAmbientInRaid
+	SoundEventUicartographyTableUse
+	SoundEventUistonecutterUse
+	SoundEventUiloomUse
 	SoundEventSmokerUse
 	SoundEventBlastFurnaceUse
 	SoundEventSmithingTableUse
@@ -292,12 +296,12 @@ const (
 	SoundEventCelebrate
 	SoundEventJumpPrevent
 	SoundEventAmbientPollinate
-	SoundEventBeeHiveDrip
-	SoundEventBeeHiveEnter
-	SoundEventBeeHiveExit
-	SoundEventBeeHiveWork
-	SoundEventBeeHiveShear
-	SoundEventHoneyBottleDrink
+	SoundEventBeehiveDrip
+	SoundEventBeehiveEnter
+	SoundEventBeehiveExit
+	SoundEventBeehiveWork
+	SoundEventBeehiveShear
+	SoundEventHoneybottleDrink
 	SoundEventAmbientCave
 	SoundEventRetreat
 	SoundEventConvertToZombified
@@ -306,11 +310,11 @@ const (
 	SoundEventTempt
 	SoundEventPanic
 	SoundEventAngry
-	SoundEventAmbientWarpedForest
-	SoundEventAmbientSoulsandValley
-	SoundEventAmbientNetherWastes
-	SoundEventAmbientBasaltDeltas
-	SoundEventAmbientCrimsonForest
+	SoundEventAmbientMoodWarpedForest
+	SoundEventAmbientMoodSoulsandValley
+	SoundEventAmbientMoodNetherWastes
+	SoundEventAmbientMoodBasaltDeltas
+	SoundEventAmbientMoodCrimsonForest
 	SoundEventRespawnAnchorCharge
 	SoundEventRespawnAnchorDeplete
 	SoundEventRespawnAnchorSetSpawn
@@ -319,7 +323,7 @@ const (
 	SoundEventSoulEscapeLoud
 	SoundEventRecordPigstep
 	SoundEventLinkCompassToLodestone
-	SoundEventBlockSmithingTableUse
+	SoundEventUseSmithingTable
 	SoundEventEquipNetherite
 	SoundEventAmbientLoopWarpedForest
 	SoundEventAmbientLoopSoulsandValley
@@ -342,10 +346,6 @@ const (
 	SoundEventCaveVinesPickBerries
 	SoundEventBigDripleafTiltDown
 	SoundEventBigDripleafTiltUp
-	_
-	_
-	_
-	_
 	SoundEventCopperWaxOn
 	SoundEventCopperWaxOff
 	SoundEventScrape
@@ -354,7 +354,7 @@ const (
 	SoundEventPlayerHurtFreeze
 	SoundEventUseSpyglass
 	SoundEventStopUsingSpyglass
-	SoundEventAmetheystBlockChime
+	SoundEventAmethystBlockChime
 	SoundEventAmbientScreamer
 	SoundEventHurtScreamer
 	SoundEventDeathScreamer
@@ -372,11 +372,13 @@ const (
 	SoundEventAmbientCandle
 	SoundEventBlockClick
 	SoundEventBlockClickFail
+	SoundEventSculkCatalystBloom
 	SoundEventSculkShriekerShriek
 	SoundEventWardenNearbyClose
 	SoundEventWardenNearbyCloser
 	SoundEventWardenNearbyClosest
 	SoundEventWardenSlightlyAngry
+	SoundEventRecordOtherside
 	SoundEventUndefined
 )
 

@@ -5,122 +5,114 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+//noinspection SpellCheckingInspection
 const (
-	EventSoundClick         = 1000
-	EventSoundClickFail     = 1001
-	EventSoundShoot         = 1002
-	EventSoundDoor          = 1003
-	EventSoundFizz          = 1004
-	EventSoundIgnite        = 1005
-	EventSoundPlayRecording = 1006
-	EventSoundGhast         = 1007
-	EventSoundGhastShoot    = 1008
-	EventSoundBlazeShoot    = 1009
-	EventSoundDoorBump      = 1010
-
-	EventSoundDoorCrash = 1012
-
-	EventSoundZombieInfected   = 1016
-	EventSoundZombieConverted  = 1017
-	EventSoundEndermanTeleport = 1018
-
-	EventSoundAnvilBreak = 1020
-	EventSoundAnvilUse   = 1021
-	EventSoundAnvilFall  = 1022
-
-	EventSoundPop = 1030
-
-	EventSoundPortal = 1032
-
-	EventSoundItemFrameAddItem    = 1040
-	EventSoundItemFrameBreak      = 1041
-	EventSoundItemFramePlace      = 1042
-	EventSoundItemFrameRemoveItem = 1043
-	EventSoundItemFrameRotateItem = 1044
-
-	EventSoundCamera = 1050
-	EventSoundOrb    = 1051
-	EventSoundTotem  = 1052
-
-	EventSoundArmourStandBreak     = 1060
-	EventSoundArmourStandHit       = 1061
-	EventSoundArmourStandFall      = 1062
-	EventSoundArmourStandPlace     = 1063
-	EventSoundPointedDripstoneLand = 1064
-	EventSoundDyeUsed              = 1065
-	EventSoundInkSackUsed          = 1066
-
-	EventParticleShoot                 = 2000
-	EventParticleDestroy               = 2001
-	EventParticleSplash                = 2002
-	EventParticleEyeDespawn            = 2003
-	EventParticleSpawn                 = 2004
-	EventParticleCropGrowth            = 2005
-	EventParticleSoundGuardianCurse    = 2006
-	EventParticleDeathSmoke            = 2007
-	EventParticleBlockForceField       = 2008
-	EventParticleProjectileHit         = 2009
-	EventParticleDragonEggTeleport     = 2010
-	EventParticleCropEaten             = 2011
-	EventParticleCritical              = 2012
-	EventParticleEndermanTeleport      = 2013
-	EventParticlePunchBlock            = 2014
-	EventParticleBubble                = 2015
-	EventParticleEvaporate             = 2016
-	EventParticleDestroyArmorStand     = 2017
-	EventParticleBreakingEgg           = 2018
-	EventParticleDestroyEgg            = 2019
-	EventParticleEvaporateWater        = 2020
-	EventParticleDestroyBlockNoSound   = 2021
-	EventParticleKnockbackRoar         = 2022
-	EventParticleTeleportTrail         = 2023
-	EventParticlePointCloud            = 2024
-	EventParticleExplosion             = 2025
-	EventParticleBlockExplosion        = 2026
-	EventParticleVibrationSignal       = 2027
-	EventParticleParticleDripstoneDrip = 2028
-	EventParticleParticleFizzEffect    = 2029
-	EventParticleWaxOn                 = 2030
-	EventParticleWaxOff                = 2031
-	EventParticleScrape                = 2032
-	EventParticleElectricSpark         = 2033
-	EventParticleTurtleEgg             = 2034
-	EventParticleSkulkShriek           = 2035
-
-	EventStartRain           = 3001
-	EventStartThunder        = 3002
-	EventStopRain            = 3003
-	EventStopThunder         = 3004
-	EventPauseGame           = 3005
-	EventSimulationTimeStep  = 3006
-	EventSimulationTimeScale = 3007
-
-	EventRedstoneTrigger     = 3500
-	EventCauldronExplode     = 3501
-	EventCauldronDyeArmour   = 3502
-	EventCauldronCleanArmour = 3503
-	EventCauldronFillPotion  = 3504
-	EventCauldronTakePotion  = 3505
-	EventCauldronFillWater   = 3506
-	EventCauldronTakeWater   = 3507
-	EventCauldronAddDye      = 3508
-	EventCauldronCleanBanner = 3509
-	EventCauldronFlush       = 3510
-	EventAgentSpawnEffect    = 3511
-	EventCauldronFillLava    = 3512
-	EventCauldronTakeLava    = 3513
-
-	EventBlockStartBreak     = 3600
-	EventBlockStopBreak      = 3601
-	EventUpdateBlockCracking = 3602
-
-	EventSetData = 4000
-
-	EventPlayersSleeping = 9800
-	EventSleepingPlayers = 9801
-	EventJumpPrevented   = 9810
-
-	EventAddParticleMask = 0x4000
+	LevelEventUndefined                    = 0
+	LevelEventSoundClick                   = 1000
+	LevelEventSoundClickFail               = 1001
+	LevelEventSoundLaunch                  = 1002
+	LevelEventSoundOpenDoor                = 1003
+	LevelEventSoundFizz                    = 1004
+	LevelEventSoundFuse                    = 1005
+	LevelEventSoundPlayRecording           = 1006
+	LevelEventSoundGhastWarning            = 1007
+	LevelEventSoundGhastFireball           = 1008
+	LevelEventSoundBlazeFireball           = 1009
+	LevelEventSoundZombieWoodenDoor        = 1010
+	LevelEventSoundZombieDoorCrash         = 1012
+	LevelEventSoundZombieInfected          = 1016
+	LevelEventSoundZombieConverted         = 1017
+	LevelEventSoundEndermanTeleport        = 1018
+	LevelEventSoundAnvilBroken             = 1020
+	LevelEventSoundAnvilUsed               = 1021
+	LevelEventSoundAnvilLand               = 1022
+	LevelEventSoundInfinityArrowPickup     = 1030
+	LevelEventSoundTeleportEnderPearl      = 1032
+	LevelEventSoundAddItem                 = 1040
+	LevelEventSoundItemFrameBreak          = 1041
+	LevelEventSoundItemFramePlace          = 1042
+	LevelEventSoundItemFrameRemoveItem     = 1043
+	LevelEventSoundItemFrameRotateItem     = 1044
+	LevelEventSoundExperienceOrbPickup     = 1051
+	LevelEventSoundTotemUsed               = 1052
+	LevelEventSoundArmorStandBreak         = 1060
+	LevelEventSoundArmorStandHit           = 1061
+	LevelEventSoundArmorStandLand          = 1062
+	LevelEventSoundArmorStandPlace         = 1063
+	LevelEventSoundPointedDripstoneLand    = 1064
+	LevelEventSoundDyeUsed                 = 1065
+	LevelEventSoundInkSacUsed              = 1066
+	LevelEventQueueCustomMusic             = 1900
+	LevelEventPlayCustomMusic              = 1901
+	LevelEventStopCustomMusic              = 1902
+	LevelEventSetMusicVolume               = 1903
+	LevelEventParticlesShoot               = 2000
+	LevelEventParticlesDestroyBlock        = 2001
+	LevelEventParticlesPotionSplash        = 2002
+	LevelEventParticlesEyeOfEnderDeath     = 2003
+	LevelEventParticlesMobBlockSpawn       = 2004
+	LevelEventParticleCropGrowth           = 2005
+	LevelEventParticleSoundGuardianGhost   = 2006
+	LevelEventParticleDeathSmoke           = 2007
+	LevelEventParticleDenyBlock            = 2008
+	LevelEventParticleGenericSpawn         = 2009
+	LevelEventParticlesDragonEgg           = 2010
+	LevelEventParticlesCropEaten           = 2011
+	LevelEventParticlesCritical            = 2012
+	LevelEventParticlesTeleport            = 2013
+	LevelEventParticlesCrackBlock          = 2014
+	LevelEventParticlesBubble              = 2015
+	LevelEventParticlesEvaporate           = 2016
+	LevelEventParticlesDestroyArmorStand   = 2017
+	LevelEventParticlesBreakingEgg         = 2018
+	LevelEventParticleDestroyEgg           = 2019
+	LevelEventParticlesEvaporateWater      = 2020
+	LevelEventParticlesDestroyBlockNoSound = 2021
+	LevelEventParticlesKnockbackRoar       = 2022
+	LevelEventParticlesTeleportTrail       = 2023
+	LevelEventParticlesPointCloud          = 2024
+	LevelEventParticlesExplosion           = 2025
+	LevelEventParticlesBlockExplosion      = 2026
+	LevelEventParticlesVibrationSignal     = 2027
+	LevelEventParticlesDripstoneDrip       = 2028
+	LevelEventParticlesFizzEffect          = 2029
+	LevelEventWaxOn                        = 2030
+	LevelEventWaxOff                       = 2031
+	LevelEventScrape                       = 2032
+	LevelEventParticlesElectricSpark       = 2033
+	LevelEventParticleTurtleEgg            = 2034
+	LevelEventParticleSculkShriek          = 2035
+	LevelEventSculkCatalystBloom           = 2036
+	LevelEventStartRaining                 = 3001
+	LevelEventStartThunderstorm            = 3002
+	LevelEventStopRaining                  = 3003
+	LevelEventStopThunderstorm             = 3004
+	LevelEventGlobalPause                  = 3005
+	LevelEventSimTimeStep                  = 3006
+	LevelEventSimTimeScale                 = 3007
+	LevelEventActivateBlock                = 3500
+	LevelEventCauldronExplode              = 3501
+	LevelEventCauldronDyeArmor             = 3502
+	LevelEventCauldronCleanArmor           = 3503
+	LevelEventCauldronFillPotion           = 3504
+	LevelEventCauldronTakePotion           = 3505
+	LevelEventCauldronFillWater            = 3506
+	LevelEventCauldronTakeWater            = 3507
+	LevelEventCauldronAddDye               = 3508
+	LevelEventCauldronCleanBanner          = 3509
+	LevelEventCauldronFlush                = 3510
+	LevelEventAgentSpawnEffect             = 3511
+	LevelEventCauldronFillLava             = 3512
+	LevelEventCauldronTakeLava             = 3513
+	LevelEventCauldronFillPowderSnow       = 3514
+	LevelEventCauldronTakePowderSnow       = 3515
+	LevelEventStartBlockCracking           = 3600
+	LevelEventStopBlockCracking            = 3601
+	LevelEventUpdateBlockCracking          = 3602
+	LevelEventAllPlayersSleeping           = 9800
+	LevelEventSleepingPlayers              = 9801
+	LevelEventJumpPrevented                = 9810
+	LevelEventParticleLegacyEvent          = 0x4000
 )
 
 // LevelEvent is sent by the server to make a certain event in the level occur. It ranges from particles, to

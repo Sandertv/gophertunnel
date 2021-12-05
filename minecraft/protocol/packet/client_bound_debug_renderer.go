@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	ClientBoundDebugRendererTypeClear int32 = iota + 1
-	ClientBoundDebugRendererTypeAddCube
+	ClientBoundDebugRendererClear int32 = iota + 1
+	ClientBoundDebugRendererAddCube
 )
 
 // ClientBoundDebugRenderer is sent by the server to spawn an outlined cube on client-side.
@@ -39,7 +39,7 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.Type)
 
-	if pk.Type == ClientBoundDebugRendererTypeAddCube {
+	if pk.Type == ClientBoundDebugRendererAddCube {
 		w.String(&pk.Text)
 		w.Vec3(&pk.Position)
 		w.Float32(&pk.Red)
@@ -54,7 +54,7 @@ func (pk *ClientBoundDebugRenderer) Marshal(w *protocol.Writer) {
 func (pk *ClientBoundDebugRenderer) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.Type)
 
-	if pk.Type == ClientBoundDebugRendererTypeAddCube {
+	if pk.Type == ClientBoundDebugRendererAddCube {
 		r.String(&pk.Text)
 		r.Vec3(&pk.Position)
 		r.Float32(&pk.Red)

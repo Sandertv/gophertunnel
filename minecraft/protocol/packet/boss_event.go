@@ -6,10 +6,8 @@ import (
 
 const (
 	BossEventShow = iota
-	// BossEventRegisterPlayer is sent by the client to the server to request being shown the boss bar.
 	BossEventRegisterPlayer
 	BossEventHide
-	// BossEventUnregisterPlayer is sent by the client to request the removal of the boss bar.
 	BossEventUnregisterPlayer
 	BossEventHealthPercentage
 	BossEventTitle

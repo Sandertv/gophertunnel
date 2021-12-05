@@ -7,6 +7,7 @@ import (
 const (
 	LabTableActionCombine = iota
 	LabTableActionReact
+	LabTableActionReset
 )
 
 // LabTable is sent by the client to let the server know it started a chemical reaction in Education Edition,
