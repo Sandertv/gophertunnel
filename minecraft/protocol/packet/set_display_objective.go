@@ -4,16 +4,16 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	ScoreboardSortOrderAscending = iota
+	ScoreboardSortOrderDescending
+)
+
 //noinspection SpellCheckingInspection
 const (
 	ScoreboardSlotList      = "list"
 	ScoreboardSlotSidebar   = "sidebar"
 	ScoreboardSlotBelowName = "belowname"
-)
-
-const (
-	ScoreboardSortOrderAscending = iota
-	ScoreboardSortOrderDescending
 )
 
 // SetDisplayObjective is sent by the server to display an object as a scoreboard to the player. Once sent,

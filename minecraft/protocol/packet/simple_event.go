@@ -7,6 +7,7 @@ import (
 const (
 	SimpleEventCommandsEnabled = iota + 1
 	SimpleEventCommandsDisabled
+	SimpleEventUnlockWorldTemplateSettings
 )
 
 // SimpleEvent is sent by the server to send a 'simple event' to the client, meaning an event without any

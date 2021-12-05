@@ -11,6 +11,9 @@ const (
 	TitleActionSetSubtitle
 	TitleActionSetActionBar
 	TitleActionSetDurations
+	TitleActionTitleTextObject
+	TitleActionSubtitleTextObject
+	TitleActionActionbarTextObject
 )
 
 // SetTitle is sent by the server to make a title, subtitle or action bar shown to a player. It has several

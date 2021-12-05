@@ -9,6 +9,12 @@ const (
 	_
 	AnimateActionStopSleep
 	AnimateActionCriticalHit
+	AnimateActionMagicCriticalHit
+)
+
+const (
+	AnimateActionRowRight = iota + 128
+	AnimateActionRowLeft
 )
 
 // Animate is sent by the server to send a player animation from one player to all viewers of that player. It

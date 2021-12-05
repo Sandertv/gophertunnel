@@ -6,10 +6,10 @@ import (
 
 const (
 	AdventureFlagWorldImmutable = 1 << iota
-	AdventureFlagNoPVP
-	_
-	_
-	_
+	AdventureSettingsFlagsNoPvM
+	AdventureSettingsFlagsNoMvP
+	AdventureSettingsFlagsUnused
+	AdventureSettingsFlagsShowNameTags
 	AdventureFlagAutoJump
 	AdventureFlagAllowFlight
 	AdventureFlagNoClip
@@ -20,21 +20,22 @@ const (
 
 const (
 	CommandPermissionLevelNormal = iota
-	CommandPermissionLevelOperator
-	CommandPermissionLevelHost
-	CommandPermissionLevelAutomation
+	CommandPermissionLevelGameDirectors
 	CommandPermissionLevelAdmin
+	CommandPermissionLevelHost
+	CommandPermissionLevelOwner
+	CommandPermissionLevelInternal
 )
 
 const (
-	ActionPermissionBuild = 1 << iota
-	ActionPermissionDoorsAndSwitched
+	ActionPermissionMine = 1 << iota
+	ActionPermissionDoorsAndSwitches
 	ActionPermissionOpenContainers
 	ActionPermissionAttackPlayers
 	ActionPermissionAttackMobs
 	ActionPermissionOperator
 	ActionPermissionTeleport
-	ActionPermissionMine
+	ActionPermissionBuild
 	ActionPermissionDefault
 )
 

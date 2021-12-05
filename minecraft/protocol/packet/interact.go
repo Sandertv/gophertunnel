@@ -6,12 +6,11 @@ import (
 )
 
 const (
-	_ = iota
-	_
+	_ = iota + 1
 	_
 	InteractActionLeaveVehicle
 	InteractActionMouseOverEntity
-	_
+	InteractActionNPCOpen
 	InteractActionOpenInventory
 )
 

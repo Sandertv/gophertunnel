@@ -9,7 +9,7 @@ const (
 	StructureBlockSave
 	StructureBlockLoad
 	StructureBlockCorner
-	_
+	StructureBlockInvalid
 	StructureBlockExport
 )
 

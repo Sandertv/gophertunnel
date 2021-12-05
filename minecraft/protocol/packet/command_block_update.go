@@ -6,7 +6,7 @@ import (
 
 const (
 	CommandBlockImpulse = iota
-	CommandBlockRepeat
+	CommandBlockRepeating
 	CommandBlockChain
 )
 
