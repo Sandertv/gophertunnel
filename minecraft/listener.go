@@ -43,6 +43,9 @@ type ListenConfig struct {
 	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
 	// Listener.AddResourcePack() to add a resource pack after having called Listener.Listen().
 	ResourcePacks []*resource.Pack
+	// BiomeDefinitions is a list of encoded biome definitions that the server may use. If these are nil,
+	// the default biome definitions will be used.
+	BiomeDefinitions []byte
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
