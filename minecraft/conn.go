@@ -921,8 +921,8 @@ func (conn *Conn) startGame() {
 		WorldGameMode:                data.WorldGameMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		Experiments:                  data.Experiments,
+		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
-		BaseGameVersion:              protocol.CurrentVersion,
 	})
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1087,6 +1087,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		EntityUniqueID:               pk.EntityUniqueID,
 		EntityRuntimeID:              pk.EntityRuntimeID,
 		PlayerGameMode:               pk.PlayerGameMode,
+		BaseGameVersion:              pk.BaseGameVersion,
 		PlayerPosition:               pk.PlayerPosition,
 		Pitch:                        pk.Pitch,
 		Yaw:                          pk.Yaw,
