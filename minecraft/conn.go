@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/internal"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
@@ -113,7 +114,7 @@ type Conn struct {
 	resourcePacks []*resource.Pack
 	// biomeDefinitions is a slice of biome definitions that the listener may hold. Each client will be sent
 	// these biome definitions upon joining.
-	biomeDefinitions []byte
+	biomeDefinitions map[string]interface{}
 	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
@@ -1138,7 +1139,8 @@ func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error 
 			SerialisedBiomeDefinitions: b,
 		})
 	} else {
-		_ = conn.WritePacket(&packet.BiomeDefinitionList{SerialisedBiomeDefinitions: conn.biomeDefinitions})
+		b, _ := nbt.MarshalEncoding(conn.biomeDefinitions, nbt.NetworkLittleEndian)
+		_ = conn.WritePacket(&packet.BiomeDefinitionList{SerialisedBiomeDefinitions: b})
 	}
 
 	_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusPlayerSpawn})
