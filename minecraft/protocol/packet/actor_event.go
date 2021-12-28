@@ -44,7 +44,10 @@ const (
 	ActorEventDragonStartDeathAnim
 	ActorEventGroundDust
 	ActorEventShake
-	ActorEventFeed
+)
+
+const (
+	ActorEventFeed = iota + 57
 	ActorEventBabyEat
 	ActorEventInstantDeath
 	ActorEventNotifyTrade
