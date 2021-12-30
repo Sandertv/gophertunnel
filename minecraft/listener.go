@@ -43,6 +43,9 @@ type ListenConfig struct {
 	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
 	// Listener.AddResourcePack() to add a resource pack after having called Listener.Listen().
 	ResourcePacks []*resource.Pack
+	// Biomes contains information about all biomes that the server has registered, which the client can use
+	// to render the world more effectively. If these are nil, the default biome definitions will be used.
+	Biomes map[string]interface{}
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
@@ -205,6 +208,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
 	conn.resourcePacks = listener.cfg.ResourcePacks
+	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 
