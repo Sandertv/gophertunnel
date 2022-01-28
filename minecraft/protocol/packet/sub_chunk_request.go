@@ -4,7 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// SubChunkRequest requests a specific sub-chunk from the server using the dimension and sub-chunk position.
+// SubChunkRequest requests specific sub-chunks from the server using a center point.
 type SubChunkRequest struct {
 	// Dimension is the dimension of the sub-chunk.
 	Dimension int32

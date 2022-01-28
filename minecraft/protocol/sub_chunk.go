@@ -18,7 +18,7 @@ const (
 )
 
 // SubChunkEntry contains the data of a sub-chunk entry relative to a center sub chunk position, used for the sub-chunk
-// requesting system introduced in v1.18.0.
+// requesting system introduced in v1.18.10.
 type SubChunkEntry struct {
 	// Offset contains the offset between the sub-chunk position and the center position.
 	Offset [3]byte

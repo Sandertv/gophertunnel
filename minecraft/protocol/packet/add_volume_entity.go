@@ -5,7 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// AddVolumeEntity sends a volume entity's definition and components from server to client.
+// AddVolumeEntity sends a volume entity's definition and metadata from server to client.
 type AddVolumeEntity struct {
 	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
