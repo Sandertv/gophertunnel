@@ -12,12 +12,12 @@ type LevelChunk struct {
 	// Position contains the X and Z coordinates of the chunk sent. You can convert a block coordinate to a chunk
 	// coordinate by right-shifting it four bits.
 	Position protocol.ChunkPos
+	// SubChunkRequestLimit is the maximum number of sub-chunks that the client can request from the server.
+	// If this is more than zero, then the sub-chunk requesting system will be enabled for this chunk.
+	SubChunkRequestLimit uint16
 	// SubChunkCount is the amount of sub-chunks that are part of the chunk sent. Depending on if the cache
 	// is enabled, a list of blob hashes will be sent, or, if disabled, the sub-chunk data.
 	SubChunkCount uint32
-	// ClientSubChunkRequestLimit is the maximum number of sub-chunks that the client can request from the server.
-	// This is only sent to the client if the sub-chunk request system is enabled for the chunk.
-	ClientSubChunkRequestLimit uint16
 	// CacheEnabled specifies if the client blob cache should be enabled. This system is based on hashes of
 	// blobs which are consistent and saved by the client in combination with that blob, so that the server
 	// does not have the same chunk multiple times. If the client does not yet have a blob with the hash sent,
@@ -43,9 +43,12 @@ func (*LevelChunk) ID() uint32 {
 // Marshal ...
 func (pk *LevelChunk) Marshal(w *protocol.Writer) {
 	w.ChunkPos(&pk.Position)
-	w.Varuint32(&pk.SubChunkCount)
-	if pk.SubChunkCount == math.MaxUint32-1 {
-		w.Uint16(&pk.ClientSubChunkRequestLimit)
+	if pk.SubChunkRequestLimit > 0 {
+		permitRequestsFlag := uint32(math.MaxUint32 - 1)
+		w.Varuint32(&permitRequestsFlag)
+		w.Uint16(&pk.SubChunkRequestLimit)
+	} else {
+		w.Varuint32(&pk.SubChunkCount)
 	}
 
 	w.Bool(&pk.CacheEnabled)
@@ -62,9 +65,13 @@ func (pk *LevelChunk) Marshal(w *protocol.Writer) {
 // Unmarshal ...
 func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
 	r.ChunkPos(&pk.Position)
-	r.Varuint32(&pk.SubChunkCount)
-	if pk.SubChunkCount == math.MaxUint32-1 {
-		r.Uint16(&pk.ClientSubChunkRequestLimit)
+
+	var potentialSubCount uint32
+	r.Varuint32(&potentialSubCount)
+	if potentialSubCount == math.MaxUint32-1 {
+		r.Uint16(&pk.SubChunkRequestLimit)
+	} else {
+		pk.SubChunkCount = potentialSubCount
 	}
 
 	r.Bool(&pk.CacheEnabled)
