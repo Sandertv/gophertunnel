@@ -4,12 +4,12 @@ package protocol
 // two varint32s.
 type ChunkPos [2]int32
 
-// X returns the X coordinate of the chunk position. It is equivalent to BlockPos[0].
+// X returns the X coordinate of the chunk position. It is equivalent to ChunkPos[0].
 func (pos ChunkPos) X() int32 {
 	return pos[0]
 }
 
-// Z returns the Z coordinate of the chunk position. It is equivalent to BlockPos[2].
+// Z returns the Z coordinate of the chunk position. It is equivalent to ChunkPos[2].
 func (pos ChunkPos) Z() int32 {
 	return pos[1]
 }
