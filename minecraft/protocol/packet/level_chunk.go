@@ -12,8 +12,7 @@ type LevelChunk struct {
 	// Position contains the X and Z coordinates of the chunk sent. You can convert a block coordinate to a chunk
 	// coordinate by right-shifting it four bits.
 	Position protocol.ChunkPos
-	// SubChunkRequestLimit is the maximum number of sub-chunks that the client can request from the server.
-	// If this is more than zero, then the sub-chunk requesting system will be enabled for this chunk.
+	// SubChunkRequestLimit is the highest sub-chunk at the position that is not all air.
 	SubChunkRequestLimit uint16
 	// SubChunkCount is the amount of sub-chunks that are part of the chunk sent. Depending on if the cache
 	// is enabled, a list of blob hashes will be sent, or, if disabled, the sub-chunk data.
