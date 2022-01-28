@@ -102,6 +102,19 @@ func (w *Writer) UBlockPos(x *BlockPos) {
 	w.Varint32(&x[2])
 }
 
+// ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
+func (w *Writer) ChunkPos(x *ChunkPos) {
+	w.Varint32(&x[0])
+	w.Varint32(&x[1])
+}
+
+// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+func (w *Writer) SubChunkPos(x *SubChunkPos) {
+	w.Varint32(&x[0])
+	w.Varint32(&x[1])
+	w.Varint32(&x[2])
+}
+
 // VarRGBA writes a color.RGBA x as a varuint32 to the underlying buffer.
 func (w *Writer) VarRGBA(x *color.RGBA) {
 	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24

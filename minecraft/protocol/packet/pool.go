@@ -199,6 +199,9 @@ func init() {
 		IDPhotoInfoRequest:                  func() Packet { return &PhotoInfoRequest{} },
 		IDSubChunk:                          func() Packet { return &SubChunk{} },
 		IDSubChunkRequest:                   func() Packet { return &SubChunkRequest{} },
+		IDClientStartItemCooldown:           func() Packet { return &ClientStartItemCooldown{} },
+		IDScriptMessage:                     func() Packet { return &ScriptMessage{} },
+		IDCodeBuilderSource:                 func() Packet { return &CodeBuilderSource{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

@@ -13,6 +13,7 @@ const (
 	BossEventTitle
 	BossEventAppearanceProperties
 	BossEventTexture
+	BossEventRequest
 )
 
 const (
@@ -74,7 +75,7 @@ func (pk *BossEvent) Marshal(w *protocol.Writer) {
 		w.Int16(&pk.ScreenDarkening)
 		w.Varuint32(&pk.Colour)
 		w.Varuint32(&pk.Overlay)
-	case BossEventRegisterPlayer, BossEventUnregisterPlayer:
+	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
 		w.Varint64(&pk.PlayerUniqueID)
 	case BossEventHide:
 		// No extra payload for this boss event type.
@@ -105,7 +106,7 @@ func (pk *BossEvent) Unmarshal(r *protocol.Reader) {
 		r.Int16(&pk.ScreenDarkening)
 		r.Varuint32(&pk.Colour)
 		r.Varuint32(&pk.Overlay)
-	case BossEventRegisterPlayer, BossEventUnregisterPlayer:
+	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
 		r.Varint64(&pk.PlayerUniqueID)
 	case BossEventHide:
 		// No extra payload for this boss event type.

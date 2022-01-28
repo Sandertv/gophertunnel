@@ -7,10 +7,16 @@ import (
 
 // AddVolumeEntity sends a volume entity's definition and components from server to client.
 type AddVolumeEntity struct {
-	// EntityRuntimeID ...
+	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
-	// VolumeEntityData ...
-	VolumeEntityData map[string]interface{}
+	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
+	// particular the way the entity looks.
+	EntityMetadata map[string]interface{}
+	// EncodingIdentifier ...
+	EncodingIdentifier string
+	// InstanceIdentifier ...
+	InstanceIdentifier string
 	// EngineVersion ...
 	EngineVersion string
 }
@@ -23,13 +29,17 @@ func (*AddVolumeEntity) ID() uint32 {
 // Marshal ...
 func (pk *AddVolumeEntity) Marshal(w *protocol.Writer) {
 	w.Uint64(&pk.EntityRuntimeID)
-	w.NBT(&pk.VolumeEntityData, nbt.NetworkLittleEndian)
+	w.NBT(&pk.EntityMetadata, nbt.NetworkLittleEndian)
+	w.String(&pk.EncodingIdentifier)
+	w.String(&pk.InstanceIdentifier)
 	w.String(&pk.EngineVersion)
 }
 
 // Unmarshal ...
 func (pk *AddVolumeEntity) Unmarshal(r *protocol.Reader) {
 	r.Uint64(&pk.EntityRuntimeID)
-	r.NBT(&pk.VolumeEntityData, nbt.NetworkLittleEndian)
+	r.NBT(&pk.EntityMetadata, nbt.NetworkLittleEndian)
+	r.String(&pk.EncodingIdentifier)
+	r.String(&pk.InstanceIdentifier)
 	r.String(&pk.EngineVersion)
 }

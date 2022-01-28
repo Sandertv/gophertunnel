@@ -128,6 +128,19 @@ func (r *Reader) UBlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
+// ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
+func (r *Reader) ChunkPos(x *ChunkPos) {
+	r.Varint32(&x[0])
+	r.Varint32(&x[1])
+}
+
+// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+func (r *Reader) SubChunkPos(x *SubChunkPos) {
+	r.Varint32(&x[0])
+	r.Varint32(&x[1])
+	r.Varint32(&x[2])
+}
+
 // ByteFloat reads a rotational float32 from a single byte.
 func (r *Reader) ByteFloat(x *float32) {
 	var v uint8

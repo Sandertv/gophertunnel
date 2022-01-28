@@ -32,6 +32,8 @@ type IO interface {
 	Vec2(x *mgl32.Vec2)
 	BlockPos(x *BlockPos)
 	UBlockPos(x *BlockPos)
+	ChunkPos(x *ChunkPos)
+	SubChunkPos(x *SubChunkPos)
 	ByteFloat(x *float32)
 	Bytes(p *[]byte)
 	NBT(m *map[string]interface{}, encoding nbt.Encoding)
