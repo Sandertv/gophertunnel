@@ -1,10 +1,16 @@
 package protocol
 
 const (
-	HeightMapDataNone byte = iota
+	HeightMapDataNone = iota
 	HeightMapDataHasData
 	HeightMapDataTooHigh
 	HeightMapDataTooLow
+)
+
+const (
+	SubChunkRequestModeLegacy = iota
+	SubChunkRequestModeLimitless
+	SubChunkRequestModeLimited
 )
 
 const (

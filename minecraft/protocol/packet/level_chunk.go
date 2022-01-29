@@ -12,9 +12,12 @@ type LevelChunk struct {
 	// Position contains the X and Z coordinates of the chunk sent. You can convert a block coordinate to a chunk
 	// coordinate by right-shifting it four bits.
 	Position protocol.ChunkPos
-	// SubChunkRequestLimit is the highest sub-chunk at the position that is not all air.
-	// If this is more than zero, then the sub-chunk requesting system will be enabled for this chunk.
-	SubChunkRequestLimit uint16
+	// SubChunkRequestMode specifies the sub-chunk request format. If it is not set, then sub-chunk requesting will not
+	// be enabled. It is always one of the protocol.SubChunkRequestMode constants.
+	SubChunkRequestMode byte
+	// HighestSubChunk is the highest sub-chunk at the position that is not all air. It is only set if the
+	// RequestMode is set to protocol.SubChunkRequestModeLimited.
+	HighestSubChunk uint16
 	// SubChunkCount is the amount of sub-chunks that are part of the chunk sent. Depending on if the cache
 	// is enabled, a list of blob hashes will be sent, or, if disabled, the sub-chunk data.
 	SubChunkCount uint32
@@ -43,12 +46,16 @@ func (*LevelChunk) ID() uint32 {
 // Marshal ...
 func (pk *LevelChunk) Marshal(w *protocol.Writer) {
 	w.ChunkPos(&pk.Position)
-	if pk.SubChunkRequestLimit > 0 {
-		permitRequestsFlag := uint32(math.MaxUint32 - 1)
-		w.Varuint32(&permitRequestsFlag)
-		w.Uint16(&pk.SubChunkRequestLimit)
-	} else {
+	switch pk.SubChunkRequestMode {
+	case protocol.SubChunkRequestModeLegacy:
 		w.Varuint32(&pk.SubChunkCount)
+	case protocol.SubChunkRequestModeLimitless:
+		limitlessFlag := uint32(math.MaxUint32)
+		w.Varuint32(&limitlessFlag)
+	case protocol.SubChunkRequestModeLimited:
+		limitedFlag := uint32(math.MaxUint32 - 1)
+		w.Varuint32(&limitedFlag)
+		w.Uint16(&pk.HighestSubChunk)
 	}
 
 	w.Bool(&pk.CacheEnabled)
@@ -68,9 +75,14 @@ func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
 
 	var potentialSubCount uint32
 	r.Varuint32(&potentialSubCount)
-	if potentialSubCount == math.MaxUint32-1 {
-		r.Uint16(&pk.SubChunkRequestLimit)
-	} else {
+
+	switch potentialSubCount {
+	case math.MaxUint32:
+		pk.SubChunkRequestMode = protocol.SubChunkRequestModeLimitless
+	case math.MaxUint32 - 1:
+		pk.SubChunkRequestMode = protocol.SubChunkRequestModeLimited
+		r.Uint16(&pk.HighestSubChunk)
+	default:
 		pk.SubChunkCount = potentialSubCount
 	}
 
