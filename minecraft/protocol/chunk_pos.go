@@ -9,7 +9,7 @@ func (pos ChunkPos) X() int32 {
 	return pos[0]
 }
 
-// Z returns the Z coordinate of the chunk position. It is equivalent to ChunkPos[2].
+// Z returns the Z coordinate of the chunk position. It is equivalent to ChunkPos[1].
 func (pos ChunkPos) Z() int32 {
 	return pos[1]
 }
