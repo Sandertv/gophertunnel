@@ -28,6 +28,26 @@ import (
 	"time"
 )
 
+// exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
+// applied by sending them in the ResourcePackStack packet.
+type exemptedResourcePack struct {
+	uuid    string
+	version string
+}
+
+// exemptedPacks is a list of all resource packs that do not need to be downloaded, but may always be applied
+// in the ResourcePackStack packet.
+var exemptedPacks = []exemptedResourcePack{
+	{
+		uuid:    "6baf8b62-8948-4c99-bb1e-a0cb35dc4579",
+		version: "1.0.0",
+	},
+	{
+		uuid:    "0fba4063-dba1-4281-9b89-ff9390653530",
+		version: "1.0.0",
+	},
+}
+
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, but ReadPacket
 // must not be called on multiple goroutines simultaneously.
@@ -807,6 +827,13 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 // hasPack checks if the connection has a resource pack downloaded with the UUID and version passed, provided
 // the pack either has or does not have behaviours in it.
 func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool {
+	for _, exempted := range exemptedPacks {
+		if exempted.uuid == uuid && exempted.version == version {
+			// The server may send this resource pack on the stack without sending it in the info, as the client
+			// always has it downloaded.
+			return true
+		}
+	}
 	conn.packMu.Lock()
 	defer conn.packMu.Unlock()
 
@@ -851,6 +878,12 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 				continue
 			}
 			pk.TexturePacks = append(pk.TexturePacks, resourcePack)
+		}
+		for _, exempted := range exemptedPacks {
+			pk.TexturePacks = append(pk.TexturePacks, protocol.StackResourcePack{
+				UUID:    exempted.uuid,
+				Version: exempted.version,
+			})
 		}
 		if err := conn.WritePacket(pk); err != nil {
 			return fmt.Errorf("error writing resource pack stack packet: %v", err)
