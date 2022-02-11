@@ -15,18 +15,18 @@ type ScriptMessage struct {
 }
 
 // ID ...
-func (s ScriptMessage) ID() uint32 {
+func (s *ScriptMessage) ID() uint32 {
 	return IDScriptMessage
 }
 
 // Marshal ...
-func (s ScriptMessage) Marshal(w *protocol.Writer) {
+func (s *ScriptMessage) Marshal(w *protocol.Writer) {
 	w.String(&s.Identifier)
 	w.ByteSlice(&s.Data)
 }
 
 // Unmarshal ...
-func (s ScriptMessage) Unmarshal(r *protocol.Reader) {
+func (s *ScriptMessage) Unmarshal(r *protocol.Reader) {
 	r.String(&s.Identifier)
 	r.ByteSlice(&s.Data)
 }

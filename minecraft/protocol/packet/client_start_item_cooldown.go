@@ -14,18 +14,18 @@ type ClientStartItemCooldown struct {
 }
 
 // ID ...
-func (ClientStartItemCooldown) ID() uint32 {
+func (*ClientStartItemCooldown) ID() uint32 {
 	return IDClientStartItemCooldown
 }
 
 // Marshal ...
-func (c ClientStartItemCooldown) Marshal(w *protocol.Writer) {
+func (c *ClientStartItemCooldown) Marshal(w *protocol.Writer) {
 	w.String(&c.Category)
 	w.Varint32(&c.Duration)
 }
 
 // Unmarshal ...
-func (c ClientStartItemCooldown) Unmarshal(r *protocol.Reader) {
+func (c *ClientStartItemCooldown) Unmarshal(r *protocol.Reader) {
 	r.String(&c.Category)
 	r.Varint32(&c.Duration)
 }
