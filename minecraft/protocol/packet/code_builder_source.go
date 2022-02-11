@@ -31,20 +31,20 @@ type CodeBuilderSource struct {
 }
 
 // ID ...
-func (c *CodeBuilderSource) ID() uint32 {
+func (pk *CodeBuilderSource) ID() uint32 {
 	return IDCodeBuilderSource
 }
 
 // Marshal ...
-func (c *CodeBuilderSource) Marshal(w *protocol.Writer) {
-	w.Uint8(&c.Operation)
-	w.Uint8(&c.Category)
-	w.ByteSlice(&c.Value)
+func (pk *CodeBuilderSource) Marshal(w *protocol.Writer) {
+	w.Uint8(&pk.Operation)
+	w.Uint8(&pk.Category)
+	w.ByteSlice(&pk.Value)
 }
 
 // Unmarshal ...
-func (c *CodeBuilderSource) Unmarshal(r *protocol.Reader) {
-	r.Uint8(&c.Operation)
-	r.Uint8(&c.Category)
-	r.ByteSlice(&c.Value)
+func (pk *CodeBuilderSource) Unmarshal(r *protocol.Reader) {
+	r.Uint8(&pk.Operation)
+	r.Uint8(&pk.Category)
+	r.ByteSlice(&pk.Value)
 }

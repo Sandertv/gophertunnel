@@ -19,13 +19,13 @@ func (*ClientStartItemCooldown) ID() uint32 {
 }
 
 // Marshal ...
-func (c *ClientStartItemCooldown) Marshal(w *protocol.Writer) {
-	w.String(&c.Category)
-	w.Varint32(&c.Duration)
+func (pk *ClientStartItemCooldown) Marshal(w *protocol.Writer) {
+	w.String(&pk.Category)
+	w.Varint32(&pk.Duration)
 }
 
 // Unmarshal ...
-func (c *ClientStartItemCooldown) Unmarshal(r *protocol.Reader) {
-	r.String(&c.Category)
-	r.Varint32(&c.Duration)
+func (pk *ClientStartItemCooldown) Unmarshal(r *protocol.Reader) {
+	r.String(&pk.Category)
+	r.Varint32(&pk.Duration)
 }
