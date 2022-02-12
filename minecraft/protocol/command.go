@@ -128,6 +128,7 @@ const (
 	CommandOriginPrecompiled
 	CommandOriginGameDirectorEntityServer
 	CommandOriginScript
+	CommandOriginExecutor
 )
 
 // CommandOrigin holds data that identifies the origin of the requesting of a command. It holds several

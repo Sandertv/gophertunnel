@@ -176,4 +176,7 @@ const (
 	IDPhotoInfoRequest
 	IDSubChunk
 	IDSubChunkRequest
+	IDClientStartItemCooldown
+	IDScriptMessage
+	IDCodeBuilderSource
 )

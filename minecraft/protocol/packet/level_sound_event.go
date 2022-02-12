@@ -379,6 +379,9 @@ const (
 	SoundEventWardenNearbyClosest
 	SoundEventWardenSlightlyAngry
 	SoundEventRecordOtherside
+	SoundEventTongue
+	SoundEventCrackIronGolem
+	SoundEventRepairIronGolem
 	SoundEventUndefined
 )
 

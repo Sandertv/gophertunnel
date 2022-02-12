@@ -18,4 +18,5 @@ const (
 	DeviceOrbis
 	DeviceNX
 	DeviceXBOX
+	DeviceWP
 )

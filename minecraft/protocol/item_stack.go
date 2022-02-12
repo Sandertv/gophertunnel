@@ -105,6 +105,10 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			action = &ConsumeStackRequestAction{}
 		case StackRequestActionCreate:
 			action = &CreateStackRequestAction{}
+		case StackRequestActionPlaceInContainer:
+			action = &PlaceInContainerStackRequestAction{}
+		case StackRequestActionTakeOutContainer:
+			action = &TakeOutContainerStackRequestAction{}
 		case StackRequestActionLabTableCombine:
 			action = &LabTableCombineStackRequestAction{}
 		case StackRequestActionBeaconPayment:
@@ -276,6 +280,8 @@ const (
 	StackRequestActionDestroy
 	StackRequestActionConsume
 	StackRequestActionCreate
+	StackRequestActionPlaceInContainer
+	StackRequestActionTakeOutContainer
 	StackRequestActionLabTableCombine
 	StackRequestActionBeaconPayment
 	StackRequestActionMineBlock
@@ -422,6 +428,16 @@ func (a *CreateStackRequestAction) Marshal(w *Writer) {
 // Unmarshal ...
 func (a *CreateStackRequestAction) Unmarshal(r *Reader) {
 	r.Uint8(&a.ResultsSlot)
+}
+
+// PlaceInContainerStackRequestAction currently has no known purpose.
+type PlaceInContainerStackRequestAction struct {
+	transferStackRequestAction
+}
+
+// TakeOutContainerStackRequestAction currently has no known purpose.
+type TakeOutContainerStackRequestAction struct {
+	transferStackRequestAction
 }
 
 // LabTableCombineStackRequestAction is sent by the client when it uses a lab table to combine item stacks.
