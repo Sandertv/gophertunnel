@@ -7,17 +7,18 @@ import (
 
 // AddVolumeEntity sends a volume entity's definition and metadata from server to client.
 type AddVolumeEntity struct {
-	// EntityRuntimeID is the runtime ID of the entity. The runtime ID is unique for each world session, and
+	// EntityRuntimeID is the runtime ID of the volume. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
-	// particular the way the entity looks.
+	// particular the way the volume functions or looks.
 	EntityMetadata map[string]interface{}
-	// EncodingIdentifier ...
+	// EncodingIdentifier is the unique identifier for the volume. It must be of the form 'namespace:name', where
+	// namespace cannot be 'minecraft'.
 	EncodingIdentifier string
-	// InstanceIdentifier ...
+	// InstanceIdentifier is the identifier of a fog definition.
 	InstanceIdentifier string
-	// EngineVersion ...
+	// EngineVersion is the engine version the entity is using, for example, '1.17.0'.
 	EngineVersion string
 }
 
