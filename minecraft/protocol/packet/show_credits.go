@@ -4,6 +4,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	ShowCreditsStatusStart = iota
+	ShowCreditsStatusEnd
+)
+
 // ShowCredits is sent by the server to show the Minecraft credits screen to the client. It is typically sent
 // when the player beats the ender dragon and leaves the End.
 type ShowCredits struct {
