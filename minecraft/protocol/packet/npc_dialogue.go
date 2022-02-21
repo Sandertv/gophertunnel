@@ -15,7 +15,8 @@ type NPCDialogue struct {
 	ActionType int32
 	// Dialogue is the text that the client should see.
 	Dialogue string
-	// SceneName is the scene the data was pulled from for the client.
+	// SceneName is the identifier of the scene. If this is left empty, the client will use the last scene sent to it.
+	// https://docs.microsoft.com/en-us/minecraft/creator/documents/npcdialogue.
 	SceneName string
 	// NPCName is the name of the NPC to be displayed to the client.
 	NPCName string

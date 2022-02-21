@@ -27,7 +27,8 @@ type NPCRequest struct {
 	CommandString string
 	// ActionType is the type of the action to execute.
 	ActionType byte
-	// SceneName is the name of the scene.
+	// SceneName is the name of the scene. This can be left empty to specify the last scene that the player
+	// was sent.
 	SceneName string
 }
 
