@@ -163,7 +163,7 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 	w.Varuint32(&l)
 
 	// Entity metadata needs to be sorted for some functionality to work. NPCs, for example, need to have their fields
-	// set in alphabetical order, or the text or buttons won't be shown to the client. See #88.
+	// set in increasing order, or the text or buttons won't be shown to the client. See #88.
 	// Sorting this is probably not very fast, but it'll have to do for now: We can change entity metadata to a slice
 	// later on.
 	keys := make([]int, 0, l)
