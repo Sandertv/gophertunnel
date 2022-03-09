@@ -470,8 +470,8 @@ func (a *BeaconPaymentStackRequestAction) Unmarshal(r *Reader) {
 
 // MineBlockStackRequestAction is sent by the client when it breaks a block.
 type MineBlockStackRequestAction struct {
-	// Unknown1 ... TODO: Find out what this is for
-	Unknown1 int32
+	// HotbarSlot is the slot held by the player while mining a block.
+	HotbarSlot int32
 	// PredictedDurability is the durability of the item that the client assumes to be present at the time.
 	PredictedDurability int32
 	// StackNetworkID is the unique stack ID that the client assumes to be present at the time. The server
@@ -482,14 +482,14 @@ type MineBlockStackRequestAction struct {
 
 // Marshal ...
 func (a *MineBlockStackRequestAction) Marshal(w *Writer) {
-	w.Varint32(&a.Unknown1)
+	w.Varint32(&a.HotbarSlot)
 	w.Varint32(&a.PredictedDurability)
 	w.Varint32(&a.StackNetworkID)
 }
 
 // Unmarshal ...
 func (a *MineBlockStackRequestAction) Unmarshal(r *Reader) {
-	r.Varint32(&a.Unknown1)
+	r.Varint32(&a.HotbarSlot)
 	r.Varint32(&a.PredictedDurability)
 	r.Varint32(&a.StackNetworkID)
 }
