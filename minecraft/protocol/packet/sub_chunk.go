@@ -30,9 +30,9 @@ func (pk *SubChunk) Marshal(w *protocol.Writer) {
 	count := uint32(len(pk.SubChunkEntries))
 	w.Uint32(&count)
 	for _, entry := range pk.SubChunkEntries {
-		w.Uint8(&entry.Offset[0])
-		w.Uint8(&entry.Offset[1])
-		w.Uint8(&entry.Offset[2])
+		w.Int8(&entry.Offset[0])
+		w.Int8(&entry.Offset[1])
+		w.Int8(&entry.Offset[2])
 
 		w.Uint8(&entry.Result)
 		if !pk.CacheEnabled || entry.Result != protocol.SubChunkResultSuccessAllAir {
@@ -65,9 +65,9 @@ func (pk *SubChunk) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < count; i++ {
 		var entry protocol.SubChunkEntry
 
-		r.Uint8(&entry.Offset[0])
-		r.Uint8(&entry.Offset[1])
-		r.Uint8(&entry.Offset[2])
+		r.Int8(&entry.Offset[0])
+		r.Int8(&entry.Offset[1])
+		r.Int8(&entry.Offset[2])
 
 		r.Uint8(&entry.Result)
 		if !pk.CacheEnabled || entry.Result != protocol.SubChunkResultSuccessAllAir {

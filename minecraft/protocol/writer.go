@@ -38,6 +38,11 @@ func (w *Writer) Uint8(x *uint8) {
 	_ = w.w.WriteByte(*x)
 }
 
+// Int8 writes an int8 to the underlying buffer.
+func (w *Writer) Int8(x *int8) {
+	_ = w.w.WriteByte(byte(*x) & 0xff)
+}
+
 // Bool writes a bool as either 0 or 1 to the underlying buffer.
 func (w *Writer) Bool(x *bool) {
 	_ = w.w.WriteByte(*(*byte)(unsafe.Pointer(x)))

@@ -27,7 +27,7 @@ const (
 // requesting system introduced in v1.18.10.
 type SubChunkEntry struct {
 	// Offset contains the offset between the sub-chunk position and the center position.
-	Offset [3]byte
+	Offset [3]int8
 	// Result is always one of the constants defined in the SubChunkResult constants.
 	Result byte
 	// RawPayload contains the serialized sub-chunk data.

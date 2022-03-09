@@ -42,6 +42,13 @@ func (r *Reader) Uint8(x *uint8) {
 	}
 }
 
+// Int8 reads an int8 from the underlying buffer.
+func (r *Reader) Int8(x *int8) {
+	var b uint8
+	r.Uint8(&b)
+	*x = int8(b)
+}
+
 // Bool reads a bool from the underlying buffer.
 func (r *Reader) Bool(x *bool) {
 	u, err := r.r.ReadByte()
