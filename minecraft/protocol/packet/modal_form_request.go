@@ -12,7 +12,7 @@ type ModalFormRequest struct {
 	FormID uint32
 	// FormData is a JSON encoded object of form data. The content of the object differs, depending on the
 	// type of the form sent, which is also set in the JSON.
-	FormData []byte
+	FormData string
 }
 
 // ID ...
@@ -23,11 +23,11 @@ func (*ModalFormRequest) ID() uint32 {
 // Marshal ...
 func (pk *ModalFormRequest) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.FormID)
-	w.ByteSlice(&pk.FormData)
+	w.String(&pk.FormData)
 }
 
 // Unmarshal ...
 func (pk *ModalFormRequest) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&pk.FormID)
-	r.ByteSlice(&pk.FormData)
+	r.String(&pk.FormData)
 }
