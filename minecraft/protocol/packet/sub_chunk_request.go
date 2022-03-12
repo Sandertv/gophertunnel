@@ -12,7 +12,7 @@ type SubChunkRequest struct {
 	// coordinates represent the chunk coordinates, while the Y coordinate is the absolute sub-chunk index.
 	Position protocol.SubChunkPos
 	// Offsets contains all requested offsets around the center point.
-	Offsets [][3]byte
+	Offsets [][3]int8
 }
 
 // ID ...
@@ -28,9 +28,9 @@ func (pk *SubChunkRequest) Marshal(w *protocol.Writer) {
 	count := uint32(len(pk.Offsets))
 	w.Uint32(&count)
 	for _, offset := range pk.Offsets {
-		w.Uint8(&offset[0])
-		w.Uint8(&offset[1])
-		w.Uint8(&offset[2])
+		w.Int8(&offset[0])
+		w.Int8(&offset[1])
+		w.Int8(&offset[2])
 	}
 }
 
@@ -42,12 +42,12 @@ func (pk *SubChunkRequest) Unmarshal(r *protocol.Reader) {
 	var count uint32
 	r.Uint32(&count)
 
-	pk.Offsets = make([][3]byte, count)
+	pk.Offsets = make([][3]int8, count)
 	for i := uint32(0); i < count; i++ {
-		var offset [3]byte
-		r.Uint8(&offset[0])
-		r.Uint8(&offset[1])
-		r.Uint8(&offset[2])
+		var offset [3]int8
+		r.Int8(&offset[0])
+		r.Int8(&offset[1])
+		r.Int8(&offset[2])
 
 		pk.Offsets[i] = offset
 	}

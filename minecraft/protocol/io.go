@@ -20,6 +20,7 @@ type IO interface {
 	Int64(x *int64)
 	Float32(x *float32)
 	Uint8(x *uint8)
+	Int8(x *int8)
 	Bool(x *bool)
 	Varint64(x *int64)
 	Varuint64(x *uint64)
