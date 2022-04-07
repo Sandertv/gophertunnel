@@ -155,7 +155,7 @@ func init() {
 		IDClientCacheStatus:             func() Packet { return &ClientCacheStatus{} },
 		IDOnScreenTextureAnimation:      func() Packet { return &OnScreenTextureAnimation{} },
 		IDMapCreateLockedCopy:           func() Packet { return &MapCreateLockedCopy{} },
-		IDStructureTemplateDataRequest:  func() Packet { return &StructureTemplateDataResponse{} },
+		IDStructureTemplateDataRequest:  func() Packet { return &StructureTemplateDataRequest{} },
 		IDStructureTemplateDataResponse: func() Packet { return &StructureTemplateDataResponse{} },
 		// ---
 		IDClientCacheBlobStatus:             func() Packet { return &ClientCacheBlobStatus{} },
