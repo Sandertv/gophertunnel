@@ -57,9 +57,11 @@ type Conn struct {
 	log         *log.Logger
 	authEnabled bool
 
-	pool packet.Pool
-	enc  *packet.Encoder
-	dec  *packet.Decoder
+	proto         Protocol
+	acceptedProto []Protocol
+	pool          packet.Pool
+	enc           *packet.Encoder
+	dec           *packet.Decoder
 
 	identityData login.IdentityData
 	clientData   login.ClientData
@@ -135,7 +137,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	conn := &Conn{
 		enc:         packet.NewEncoder(netConn),
 		dec:         packet.NewDecoder(netConn),
-		pool:        packet.NewPool(),
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 8),
 		close:       make(chan struct{}),
@@ -297,7 +298,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 
 	buf := internal.BufferPool.Get().(*bytes.Buffer)
 	defer func() {
-		// Reset the buffer so we can return it to the buffer pool safely.
+		// Reset the buffer, so we can return it to the buffer pool safely.
 		buf.Reset()
 		internal.BufferPool.Put(buf)
 	}()
@@ -306,7 +307,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	_ = conn.hdr.Write(buf)
 	l := buf.Len()
 
-	pk.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
+	conn.proto.ConvertFromLatest(pk).Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
 	if conn.packetFunc != nil {
 		conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 	}
@@ -626,9 +627,15 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
-	// Make sure protocol numbers match.
-	if pk.ClientProtocol != protocol.CurrentProtocol {
-		// By default we assume the client is outdated.
+
+	for _, pro := range conn.acceptedProto {
+		if pro.ID() == pk.ClientProtocol {
+			conn.proto = pro
+			conn.pool = pro.Packets()
+			break
+		}
+	}
+	if conn.proto == nil {
 		status := packet.PlayStatusLoginFailedClient
 		if pk.ClientProtocol > protocol.CurrentProtocol {
 			// The server is outdated in this case, so we have to change the status we send.
