@@ -23,6 +23,9 @@ type SpawnParticleEffect struct {
 	// ParticleName is the name of the particle that should be shown. This name may point to a particle effect
 	// that is built-in, or to one implemented by behaviour packs.
 	ParticleName string
+	// MoLangVariables is an encoded map of MoLang variables that may be applicable to the particle spawn. This can just
+	// be left empty in most cases.
+	MoLangVariables []byte
 }
 
 // ID ...
@@ -36,6 +39,7 @@ func (pk *SpawnParticleEffect) Marshal(w *protocol.Writer) {
 	w.Varint64(&pk.EntityUniqueID)
 	w.Vec3(&pk.Position)
 	w.String(&pk.ParticleName)
+	w.ByteSlice(&pk.MoLangVariables)
 }
 
 // Unmarshal ...
@@ -44,4 +48,5 @@ func (pk *SpawnParticleEffect) Unmarshal(r *protocol.Reader) {
 	r.Varint64(&pk.EntityUniqueID)
 	r.Vec3(&pk.Position)
 	r.String(&pk.ParticleName)
+	r.ByteSlice(&pk.MoLangVariables)
 }
