@@ -45,7 +45,8 @@ type AddPlayer struct {
 	// itself shows up. Needless to say that this field is rather pointless, as additional packets still must
 	// be sent for armour to show up.
 	HeldItem protocol.ItemInstance
-	// GameType is the new game type of the player. It is unclear why this field is sent.
+	// GameType is the game type of the player. If set to GameTypeSpectator, then the player will not be shown to
+	// viewers.
 	GameType int32
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
