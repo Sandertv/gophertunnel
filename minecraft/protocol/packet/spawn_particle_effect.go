@@ -23,8 +23,8 @@ type SpawnParticleEffect struct {
 	// ParticleName is the name of the particle that should be shown. This name may point to a particle effect
 	// that is built-in, or to one implemented by behaviour packs.
 	ParticleName string
-	// MoLangVariables is an encoded map of MoLang variables that may be applicable to the particle spawn. This can just
-	// be left empty in most cases.
+	// MoLangVariables is an encoded JSON map of MoLang variables that may be applicable to the particle spawn. This can
+	// just be left empty in most cases.
 	MoLangVariables []byte
 }
 

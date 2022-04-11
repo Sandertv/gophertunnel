@@ -17,7 +17,7 @@ type DimensionDefinition struct {
 	// Range is the height range of the dimension, where the first value is the minimum and the second is the maximum.
 	Range [2]int32
 	// Generator is the variant of generator that exists in the provided dimension. These can be one of the constants
-	// defined above. It is unclear why this is sent to the client.
+	// defined above. If this is set to GeneratorLegacy, the legacy horizontal world limits will be enforced.
 	Generator int32
 }
 
