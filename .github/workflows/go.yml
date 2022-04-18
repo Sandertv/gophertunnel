@@ -18,6 +18,7 @@ jobs:
 
       - name: Get dependencies
         run: |
+          go get honnef.co/go/tools/cmd/staticcheck
           mkdir -p $GOPATH/bin
           export PATH=$PATH:$GOPATH/bin
 
@@ -26,6 +27,7 @@ jobs:
 
       - name: Staticcheck
         run: |
+          go get honnef.co/go/tools/cmd/staticcheck
           GOBIN=$PWD/bin go install honnef.co/go/tools/cmd/staticcheck
           ./bin/staticcheck ./...
 
