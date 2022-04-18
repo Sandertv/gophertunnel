@@ -37,8 +37,9 @@ func (p *packetData) decode(conn *Conn) (pk packet.Packet, err error) {
 	if !ok {
 		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
+	} else {
+		pk = pkFunc()
 	}
-	pk = pkFunc()
 
 	r := protocol.NewReader(p.payload, conn.shieldID.Load())
 	defer func() {

@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"bytes"
 	"fmt"
 )
 
@@ -15,9 +14,9 @@ type ItemStackRequest struct {
 	// Actions is a list of actions performed by the client. The actual type of the actions depends on which
 	// ID was present, and is one of the concrete types below.
 	Actions []StackRequestAction
-	// CustomNames is a list of custom names involved in the request. This is typically filled with one string
-	// when an anvil is used.
-	CustomNames []string
+	// FilterStrings is a list of filter strings involved in the request. This is typically filled with one string
+	// when an anvil or cartography is used.
+	FilterStrings []string
 }
 
 // WriteStackRequest writes an ItemStackRequest x to Writer w.
@@ -70,9 +69,9 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 		w.Uint8(&id)
 		action.Marshal(w)
 	}
-	l = uint32(len(x.CustomNames))
+	l = uint32(len(x.FilterStrings))
 	w.Varuint32(&l)
-	for _, n := range x.CustomNames {
+	for _, n := range x.FilterStrings {
 		w.String(&n)
 	}
 }
@@ -142,9 +141,9 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 	r.Varuint32(&count)
 	r.LimitUint32(count, 64)
 
-	x.CustomNames = make([]string, count)
+	x.FilterStrings = make([]string, count)
 	for i := uint32(0); i < count; i++ {
-		r.String(&x.CustomNames[i])
+		r.String(&x.FilterStrings[i])
 	}
 }
 
@@ -557,31 +556,26 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
 }
 
 // CraftRecipeOptionalStackRequestAction is sent when using an anvil. When this action is sent, the
-// CustomNames field in the respective stack request is non-empty and contains the name of the item created
-// using the anvil.
+// FilterStrings field in the respective stack request is non-empty and contains the name of the item created
+// using the anvil or cartography table.
 type CraftRecipeOptionalStackRequestAction struct {
-	// UnknownBytes currently has an unknown usage. It seems to always be 5 zero bytes when using an anvil.
-	UnknownBytes [5]byte
+	// RequestID is a unique ID for the request. This ID is used by the server to send a response for this
+	// specific request in the ItemStackResponse packet.
+	RequestID int32
+	// FilterStringIndex is the index of a filter string sent in a ItemStackRequest.
+	FilterStringIndex int32
 }
 
 // Marshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Marshal(w *Writer) {
-	for i := 0; i < len(c.UnknownBytes); i++ {
-		w.Uint8(&c.UnknownBytes[i])
-	}
+	w.Varint32(&c.RequestID)
+	w.Int32(&c.FilterStringIndex)
 }
-
-// zeroBytes holds 5 zero bytes.
-var zeroBytes = make([]byte, 5)
 
 // Unmarshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
-	for i := 0; i < len(c.UnknownBytes); i++ {
-		r.Uint8(&c.UnknownBytes[i])
-	}
-	if !bytes.Equal(c.UnknownBytes[:], zeroBytes) {
-		panic(fmt.Sprintf("craft recipe optional stack request action unknown bytes are not all 0: %x", c.UnknownBytes))
-	}
+	r.Varint32(&c.RequestID)
+	r.Int32(&c.FilterStringIndex)
 }
 
 // CraftGrindstoneRecipeStackRequestAction is sent when a grindstone recipe is crafted. It contains the RecipeNetworkID
