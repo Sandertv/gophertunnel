@@ -19,7 +19,7 @@ require (
 require (
 	github.com/df-mc/atomic v1.10.0 // indirect
 	github.com/golang/protobuf v1.4.2 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/image v0.0.0-20190802002840-cff245a6509b // indirect
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
