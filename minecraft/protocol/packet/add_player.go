@@ -50,7 +50,7 @@ type AddPlayer struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]interface{}
+	EntityMetadata map[uint32]any
 	// Flags is a set of flags that specify certain properties of the player, such as whether it can
 	// fly and/or move through blocks.
 	Flags uint32

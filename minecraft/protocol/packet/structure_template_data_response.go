@@ -23,7 +23,7 @@ type StructureTemplateDataResponse struct {
 	// the StructureTemplateDataRequest packet and is one of the constants above.
 	ResponseType byte
 	// StructureTemplate holds the data of the structure template.
-	StructureTemplate map[string]interface{}
+	StructureTemplate map[string]any
 }
 
 // ID ...

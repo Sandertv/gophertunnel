@@ -14,7 +14,7 @@ type BlockActorData struct {
 	// NBTData is the new data of the block that will be encoded to NBT and applied client-side, so that the
 	// client can see the block update. The NBTData should contain all properties of the block, not just
 	// properties that were changed.
-	NBTData map[string]interface{}
+	NBTData map[string]any
 }
 
 // ID ...
@@ -30,7 +30,7 @@ func (pk *BlockActorData) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *BlockActorData) Unmarshal(r *protocol.Reader) {
-	pk.NBTData = make(map[string]interface{})
+	pk.NBTData = make(map[string]any)
 	r.UBlockPos(&pk.Position)
 	r.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
 }

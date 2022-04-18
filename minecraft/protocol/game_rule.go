@@ -11,7 +11,7 @@ type GameRule struct {
 	// CanBeModifiedByPlayer ...
 	CanBeModifiedByPlayer bool
 	// Value ...
-	Value interface{}
+	Value any
 }
 
 // GameRules reads a map of game rules from Reader r. It sets one of the types 'bool', 'float32' or 'uint32'

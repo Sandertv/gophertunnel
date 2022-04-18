@@ -17,7 +17,7 @@ import (
 // If the serialised NBT data passed is not parsable using the encoding that was passed, an error is returned
 // and the resulting string will always be empty.
 func Dump(data []byte, encoding Encoding) (string, error) {
-	var m map[string]interface{}
+	var m map[string]any
 	if err := UnmarshalEncoding(data, &m, encoding); err != nil {
 		return "", fmt.Errorf("error decoding NBT: %v", err)
 	}
@@ -42,7 +42,7 @@ func (s *dumpState) indent() string {
 
 // encodeTagType encodes the type of the value passed to an NBT tag name. The way these are translated can be
 // found in the doc.go file.
-func (s *dumpState) encodeTagType(val interface{}) string {
+func (s *dumpState) encodeTagType(val any) string {
 	if val == nil {
 		return "nil"
 	}
@@ -90,7 +90,7 @@ func (s *dumpState) encodeTagType(val interface{}) string {
 // encodeTagValue encodes a value passed to a format in which they are displayed in the dump string.
 // encodeTagValue operates recursively: If lists or compounds are nested, encodeTagValue will include all
 // nested tags.
-func (s *dumpState) encodeTagValue(val interface{}) string {
+func (s *dumpState) encodeTagValue(val any) string {
 	//noinspection SpellCheckingInspection
 	const hexTable = "0123456789abcdef"
 

@@ -12,7 +12,7 @@ type AddVolumeEntity struct {
 	EntityRuntimeID uint64
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the volume functions or looks.
-	EntityMetadata map[string]interface{}
+	EntityMetadata map[string]any
 	// EncodingIdentifier is the unique identifier for the volume. It must be of the form 'namespace:name', where
 	// namespace cannot be 'minecraft'.
 	EncodingIdentifier string

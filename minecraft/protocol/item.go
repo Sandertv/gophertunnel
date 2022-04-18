@@ -24,7 +24,7 @@ type ItemStack struct {
 	// Count is the count of items that the item stack holds.
 	Count uint16
 	// NBTData is a map that is serialised to its NBT representation when sent in a packet.
-	NBTData map[string]interface{}
+	NBTData map[string]any
 	// CanBePlacedOn is a list of block identifiers like 'minecraft:stone' which the item, if it is an item
 	// that can be placed, can be placed on top of.
 	CanBePlacedOn []string
@@ -92,7 +92,7 @@ type ItemComponentEntry struct {
 	// Name is the name of the item, which is a name like 'minecraft:stick'.
 	Name string
 	// Data is a map containing the components and properties of the item.
-	Data map[string]interface{}
+	Data map[string]any
 }
 
 // ItemComponents reads/writes an ItemComponentEntry x using IO r.

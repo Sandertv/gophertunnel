@@ -8,7 +8,7 @@ import (
 
 // ANSI converts all Minecraft text formatting codes in the values passed to ANSI formatting codes, so that
 // it may be displayed properly in the terminal.
-func ANSI(a ...interface{}) string {
+func ANSI(a ...any) string {
 	str := make([]string, len(a))
 	for i, v := range a {
 		str[i] = minecraftReplacer.Replace(fmt.Sprint(v))
@@ -22,7 +22,7 @@ func ANSI(a ...interface{}) string {
 // 	red, purple, yellow, white, dark-yellow, obfuscated, bold (b), and italic (i).
 // These HTML tags may also be nested, like so:
 // `<red>Hello <bold>World</bold>!</red>`
-func Colourf(format string, a ...interface{}) string {
+func Colourf(format string, a ...any) string {
 	str := fmt.Sprintf(format, a...)
 
 	e := &enc{w: &strings.Builder{}, first: true}

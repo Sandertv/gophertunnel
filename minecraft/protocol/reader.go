@@ -177,14 +177,14 @@ func (r *Reader) Bytes(p *[]byte) {
 }
 
 // NBT reads a compound tag into a map from the underlying buffer.
-func (r *Reader) NBT(m *map[string]interface{}, encoding nbt.Encoding) {
+func (r *Reader) NBT(m *map[string]any, encoding nbt.Encoding) {
 	if err := nbt.NewDecoderWithEncoding(r.r, encoding).Decode(m); err != nil {
 		r.panic(err)
 	}
 }
 
 // NBTList reads a list of NBT tags from the underlying buffer.
-func (r *Reader) NBTList(m *[]interface{}, encoding nbt.Encoding) {
+func (r *Reader) NBTList(m *[]any, encoding nbt.Encoding) {
 	if err := nbt.NewDecoderWithEncoding(r.r, encoding).Decode(m); err != nil {
 		r.panic(err)
 	}
@@ -241,8 +241,8 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 }
 
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
-func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
-	*x = map[uint32]interface{}{}
+func (r *Reader) EntityMetadata(x *map[uint32]any) {
+	*x = map[uint32]any{}
 
 	var count uint32
 	r.Varuint32(&count)
@@ -273,7 +273,7 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 			r.String(&v)
 			(*x)[key] = v
 		case EntityDataCompoundTag:
-			var v map[string]interface{}
+			var v map[string]any
 			r.NBT(&v, nbt.NetworkLittleEndian)
 			(*x)[key] = v
 		case EntityDataBlockPos:
@@ -297,7 +297,7 @@ func (r *Reader) EntityMetadata(x *map[uint32]interface{}) {
 // ItemInstance reads an ItemInstance x to the underlying buffer.
 func (r *Reader) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
-	x.NBTData = make(map[string]interface{})
+	x.NBTData = make(map[string]any)
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
@@ -367,7 +367,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 
 // Item reads an ItemStack x from the underlying buffer.
 func (r *Reader) Item(x *ItemStack) {
-	x.NBTData = make(map[string]interface{})
+	x.NBTData = make(map[string]any)
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
@@ -469,12 +469,12 @@ func (r *Reader) LimitInt32(value int32, min, max int32) {
 }
 
 // UnknownEnumOption panics with an unknown enum option error.
-func (r *Reader) UnknownEnumOption(value interface{}, enum string) {
+func (r *Reader) UnknownEnumOption(value any, enum string) {
 	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an error indicating that the value passed is not valid for a specific field.
-func (r *Reader) InvalidValue(value interface{}, forField, reason string) {
+func (r *Reader) InvalidValue(value any, forField, reason string) {
 	r.panicf("invalid value '%v' for %v: %v", value, forField, reason)
 }
 
@@ -561,7 +561,7 @@ func (r *Reader) Varuint32(x *uint32) {
 }
 
 // panicf panics with the format and values passed and assigns the error created to the Reader.
-func (r *Reader) panicf(format string, a ...interface{}) {
+func (r *Reader) panicf(format string, a ...any) {
 	panic(fmt.Errorf(format, a...))
 }
 
