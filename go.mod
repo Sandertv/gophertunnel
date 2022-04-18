@@ -4,16 +4,16 @@ go 1.18
 
 require (
 	github.com/go-gl/mathgl v1.0.0
-	github.com/google/uuid v1.1.2
-	github.com/klauspost/compress v1.11.1
-	github.com/muhammadmuzzammil1998/jsonc v0.0.0-20200627155943-e1c384b63054
-	github.com/pelletier/go-toml v1.8.1
+	github.com/google/uuid v1.3.0
+	github.com/klauspost/compress v1.15.1
+	github.com/muhammadmuzzammil1998/jsonc v1.0.0
+	github.com/pelletier/go-toml v1.9.4
 	github.com/sandertv/go-raknet v1.10.5
 	go.uber.org/atomic v1.9.0
-	golang.org/x/net v0.0.0-20210410081132-afb366fc7cd1
-	golang.org/x/oauth2 v0.0.0-20200902213428-5d25da1a8d43
-	golang.org/x/text v0.3.6
-	gopkg.in/square/go-jose.v2 v2.5.1
+	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
+	golang.org/x/text v0.3.7
+	gopkg.in/square/go-jose.v2 v2.6.0
 )
 
 require (
