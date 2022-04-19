@@ -64,7 +64,7 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 }
 
 func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
-	data, _ := json.Marshal(map[string]interface{}{
+	data, _ := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             "0000000048183522",
 		"deviceToken":       device.Token,
@@ -72,7 +72,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 		"UseModernGamertag": true,
 		"SiteName":          "user.auth.xboxlive.com",
 		"RelyingParty":      relyingParty,
-		"ProofKey": map[string]interface{}{
+		"ProofKey": map[string]any{
 			"crv": "P-256",
 			"alg": "ES256",
 			"use": "sig",
@@ -108,15 +108,15 @@ type deviceToken struct {
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
 func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
-	data, _ := json.Marshal(map[string]interface{}{
+	data, _ := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
-		"Properties": map[string]interface{}{
+		"Properties": map[string]any{
 			"AuthMethod": "ProofOfPossession",
 			"Id":         "{" + uuid.New().String() + "}",
 			"DeviceType": "Android",
 			"Version":    "10",
-			"ProofKey": map[string]interface{}{
+			"ProofKey": map[string]any{
 				"crv": "P-256",
 				"alg": "ES256",
 				"use": "sig",

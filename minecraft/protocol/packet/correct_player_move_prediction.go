@@ -9,7 +9,7 @@ import (
 // is set to AuthoritativeMovementModeServerWithRewind. The packet is used to correct movement at a specific
 // point in time.
 type CorrectPlayerMovePrediction struct {
-	// Position is the position that the player is supposed to be at at the tick written in the field below.
+	// Position is the position that the player is supposed to be at the tick written in the field below.
 	// The client will change its current position based on movement after that tick starting from the
 	// Position.
 	Position mgl32.Vec3

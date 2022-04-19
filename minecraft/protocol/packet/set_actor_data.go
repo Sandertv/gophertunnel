@@ -13,7 +13,7 @@ type SetActorData struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]interface{}
+	EntityMetadata map[uint32]any
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
 }

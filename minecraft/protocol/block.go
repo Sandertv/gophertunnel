@@ -9,7 +9,7 @@ type BlockEntry struct {
 	// Name is the name of the custom block.
 	Name string
 	// Properties is a list of properties which, in combination with the name, specify a unique block.
-	Properties map[string]interface{}
+	Properties map[string]any
 }
 
 // Block reads a BlockEntry x from IO r.

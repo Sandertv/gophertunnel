@@ -43,7 +43,7 @@ func NewEncoderWithEncoding(w io.Writer, encoding Encoding) *Encoder {
 
 // Encode encodes an object to NBT and writes it to the NBT output stream of the encoder. See the Marshal
 // docs for the conversion from Go types to NBT tags and special struct tags.
-func (e *Encoder) Encode(v interface{}) error {
+func (e *Encoder) Encode(v any) error {
 	val := reflect.ValueOf(v)
 	return e.marshal(val, "")
 }
@@ -68,19 +68,19 @@ func (e *Encoder) Encode(v interface{}) error {
 //   string: TAG_String
 //   []<type>: TAG_List
 //   struct{...}: TAG_Compound
-//   map[string]<type/interface{}>: TAG_Compound
+//   map[string]<type/any>: TAG_Compound
 //
 // Marshal accepts struct fields with the 'nbt' struct tag. The 'nbt' struct tag allows setting the name of
 // a field that some tag should be decoded in. Setting the struct tag to '-' means that field will never be
 // filled by the decoding of the data passed. Suffixing the 'nbt' struct tag with ',omitempty' will prevent
 // the field from being encoded if it is equal to its default value.
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	return MarshalEncoding(v, NetworkLittleEndian)
 }
 
 // MarshalEncoding encodes an object to its NBT representation and returns it as a byte slice. Its
 // functionality is identical to that of Marshal, except it accepts any NBT encoding.
-func MarshalEncoding(v interface{}, encoding Encoding) ([]byte, error) {
+func MarshalEncoding(v any, encoding Encoding) ([]byte, error) {
 	b := bufferPool.Get().(*bytes.Buffer)
 	err := (&Encoder{w: &offsetWriter{Writer: b, WriteByte: b.WriteByte}, Encoding: encoding}).Encode(v)
 	data := append([]byte(nil), b.Bytes()...)
@@ -94,7 +94,7 @@ func MarshalEncoding(v interface{}, encoding Encoding) ([]byte, error) {
 // bufferPool is a sync.Pool holding bytes.Buffers which are re-used for writing NBT, so that no new buffer
 // needs to be allocated for each write.
 var bufferPool = sync.Pool{
-	New: func() interface{} {
+	New: func() any {
 		return bytes.NewBuffer(make([]byte, 0, 64))
 	},
 }
