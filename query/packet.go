@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"strings"
 )
@@ -154,7 +153,7 @@ func (pk *response) Unmarshal(r io.Reader) error {
 		if _, err := r.Read(v); err != nil {
 			return err
 		}
-		information, err := ioutil.ReadAll(r)
+		information, err := io.ReadAll(r)
 		if err != nil {
 			return err
 		}
