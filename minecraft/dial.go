@@ -16,7 +16,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
-	"io/ioutil"
+	"io"
 	"log"
 	rand2 "math/rand"
 	"net"
@@ -133,7 +133,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	switch network {
 	case "raknet":
 		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
-		dialer := raknet.Dialer{ErrorLog: log.New(ioutil.Discard, "", 0)}
+		dialer := raknet.Dialer{ErrorLog: log.New(io.Discard, "", 0)}
 		var pong []byte
 		pong, err = dialer.PingContext(ctx, address)
 		if err != nil {

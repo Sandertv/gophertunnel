@@ -3,7 +3,7 @@ package internal
 import (
 	"bytes"
 	"github.com/klauspost/compress/flate"
-	"io/ioutil"
+	"io"
 	"sync"
 )
 
@@ -17,7 +17,7 @@ var DecompressPool = sync.Pool{
 // CompressPool is a sync.Pool for writeCloseResetter flate readers. These are pooled for connections.
 var CompressPool = sync.Pool{
 	New: func() any {
-		w, _ := flate.NewWriter(ioutil.Discard, 6)
+		w, _ := flate.NewWriter(io.Discard, 6)
 		return w
 	},
 }
