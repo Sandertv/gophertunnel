@@ -35,7 +35,7 @@ type SubChunkEntry struct {
 	// HeightMapType is always one of the constants defined in the HeightMapData constants.
 	HeightMapType byte
 	// HeightMapData is the data for the height map.
-	HeightMapData []byte
+	HeightMapData []int8
 	// BlobHash is the hash of the blob.
 	BlobHash uint64
 }

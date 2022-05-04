@@ -42,7 +42,7 @@ func (pk *SubChunk) Marshal(w *protocol.Writer) {
 		w.Uint8(&entry.HeightMapType)
 		if entry.HeightMapType == protocol.HeightMapDataHasData {
 			for i := 0; i < 256; i++ {
-				w.Uint8(&entry.HeightMapData[i])
+				w.Int8(&entry.HeightMapData[i])
 			}
 		}
 
@@ -76,9 +76,9 @@ func (pk *SubChunk) Unmarshal(r *protocol.Reader) {
 
 		r.Uint8(&entry.HeightMapType)
 		if entry.HeightMapType == protocol.HeightMapDataHasData {
-			entry.HeightMapData = make([]uint8, 256)
+			entry.HeightMapData = make([]int8, 256)
 			for i := 0; i < 256; i++ {
-				r.Uint8(&entry.HeightMapData[i])
+				r.Int8(&entry.HeightMapData[i])
 			}
 		}
 
