@@ -30,7 +30,7 @@ const (
 // server. These abilities are defined above.
 type RequestAbility struct {
 	// Ability is the ability that the client is requesting. This is one of the constants defined above.
-	Ability int16
+	Ability int32
 	// Value represents the value of the ability. This can either be a boolean or a float32, otherwise the writer/reader
 	// will panic.
 	Value any
@@ -43,7 +43,7 @@ func (*RequestAbility) ID() uint32 {
 
 // Marshal ...
 func (pk *RequestAbility) Marshal(w *protocol.Writer) {
-	w.Int16(&pk.Ability)
+	w.Varint32(&pk.Ability)
 	switch val := pk.Value.(type) {
 	case bool:
 		valType, defaultVal := uint8(1), float32(0)
@@ -63,7 +63,7 @@ func (pk *RequestAbility) Marshal(w *protocol.Writer) {
 // Unmarshal ...
 func (pk *RequestAbility) Unmarshal(r *protocol.Reader) {
 	valType, boolVal, floatVal := uint8(0), false, float32(0)
-	r.Int16(&pk.Ability)
+	r.Varint32(&pk.Ability)
 	r.Uint8(&valType)
 	switch valType {
 	case 1:
