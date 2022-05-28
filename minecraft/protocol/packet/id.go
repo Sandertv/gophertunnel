@@ -183,4 +183,8 @@ const (
 	IDDimensionData
 	IDAgentAction
 	IDChangeMobProperty
+	IDLessonProgress
+	IDRequestAbility
+	IDRequestPermissions
+	IDToastRequest
 )

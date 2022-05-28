@@ -16,6 +16,9 @@ type PlayerAction struct {
 	// BlockPosition is the position of the target block, if the action with the ActionType set concerned a
 	// block. If that is not the case, the block position will be zero.
 	BlockPosition protocol.BlockPos
+	// ResultPosition is the resulting position of the target block. It is unclear what the difference between this
+	// field and BlockPosition is.
+	ResultPosition protocol.BlockPos
 	// BlockFace is the face of the target block that was touched. If the action with the ActionType set
 	// concerned a block. If not, the face is always 0.
 	BlockFace int32
@@ -31,6 +34,7 @@ func (pk *PlayerAction) Marshal(w *protocol.Writer) {
 	w.Varuint64(&pk.EntityRuntimeID)
 	w.Varint32(&pk.ActionType)
 	w.UBlockPos(&pk.BlockPosition)
+	w.UBlockPos(&pk.ResultPosition)
 	w.Varint32(&pk.BlockFace)
 }
 
@@ -39,5 +43,6 @@ func (pk *PlayerAction) Unmarshal(r *protocol.Reader) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.ActionType)
 	r.UBlockPos(&pk.BlockPosition)
+	r.UBlockPos(&pk.ResultPosition)
 	r.Varint32(&pk.BlockFace)
 }

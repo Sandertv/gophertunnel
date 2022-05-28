@@ -206,6 +206,10 @@ func init() {
 		IDDimensionData:                     func() Packet { return &DimensionData{} },
 		IDAgentAction:                       func() Packet { return &AgentAction{} },
 		IDChangeMobProperty:                 func() Packet { return &ChangeMobProperty{} },
+		IDLessonProgress:                    func() Packet { return &LessonProgress{} },
+		IDRequestAbility:                    func() Packet { return &RequestAbility{} },
+		IDRequestPermissions:                func() Packet { return &RequestPermissions{} },
+		IDToastRequest:                      func() Packet { return &ToastRequest{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

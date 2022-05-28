@@ -228,7 +228,7 @@ func (a *AgentCommandEventData) Unmarshal(r *Reader) {
 	r.String(&a.Output)
 }
 
-// PatternRemovedEventData is the event data sent when a pattern is removed.
+// PatternRemovedEventData is the event data sent when a pattern is removed. This is now deprecated.
 type PatternRemovedEventData struct {
 	// ItemID ...
 	ItemID int32
@@ -346,7 +346,7 @@ func (m *MobBornEventData) Unmarshal(r *Reader) {
 	r.Uint8(&m.Colour)
 }
 
-// PetDiedEventData is the event data sent when a pet dies.
+// PetDiedEventData is the event data sent when a pet dies. This is now deprecated.
 type PetDiedEventData struct {
 	// KilledByOwner ...
 	KilledByOwner bool

@@ -33,6 +33,8 @@ const (
 	PlayerActionStartBuildingBlock
 	PlayerActionPredictDestroyBlock
 	PlayerActionContinueDestroyBlock
+	PlayerActionStartItemUseOn
+	PlayerActionStopItemUseOn
 )
 
 const (
