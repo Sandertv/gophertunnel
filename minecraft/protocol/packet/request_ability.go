@@ -65,14 +65,12 @@ func (pk *RequestAbility) Unmarshal(r *protocol.Reader) {
 	valType, boolVal, floatVal := uint8(0), false, float32(0)
 	r.Varint32(&pk.Ability)
 	r.Uint8(&valType)
+	r.Bool(&boolVal)
+	r.Float32(&floatVal)
 	switch valType {
 	case 1:
-		r.Bool(&boolVal)
-		r.Float32(&floatVal)
 		pk.Value = boolVal
 	case 2:
-		r.Bool(&boolVal)
-		r.Float32(&floatVal)
 		pk.Value = floatVal
 	default:
 		r.InvalidValue(valType, "ability value type", "must be bool or float32")
