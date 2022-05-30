@@ -39,7 +39,12 @@ func (pk *SpawnParticleEffect) Marshal(w *protocol.Writer) {
 	w.Varint64(&pk.EntityUniqueID)
 	w.Vec3(&pk.Position)
 	w.String(&pk.ParticleName)
-	w.ByteSlice(&pk.MoLangVariables)
+
+	exists := len(pk.MoLangVariables) > 0
+	w.Bool(&exists)
+	if exists {
+		w.ByteSlice(&pk.MoLangVariables)
+	}
 }
 
 // Unmarshal ...
@@ -49,4 +54,10 @@ func (pk *SpawnParticleEffect) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.Position)
 	r.String(&pk.ParticleName)
 	r.ByteSlice(&pk.MoLangVariables)
+
+	var exists bool
+	r.Bool(&exists)
+	if exists {
+		r.ByteSlice(&pk.MoLangVariables)
+	}
 }
