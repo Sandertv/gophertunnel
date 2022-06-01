@@ -16,8 +16,8 @@ type PlayerAction struct {
 	// BlockPosition is the position of the target block, if the action with the ActionType set concerned a
 	// block. If that is not the case, the block position will be zero.
 	BlockPosition protocol.BlockPos
-	// ResultPosition is the resulting position of the target block. It is unclear what the difference between this
-	// field and BlockPosition is.
+	// ResultPosition is the position of the action's result. When a UseItemOn action is sent, this is the position of
+	// the block clicked, but when a block is placed, this is the position at which the block will be placed.
 	ResultPosition protocol.BlockPos
 	// BlockFace is the face of the target block that was touched. If the action with the ActionType set
 	// concerned a block. If not, the face is always 0.
