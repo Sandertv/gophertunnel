@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
+	"strings"
 	"time"
 )
 
@@ -122,6 +123,12 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 	}
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
 		return iData, cData, res, fmt.Errorf("parse client data: %w", err)
+	}
+	if strings.Count(cData.ServerAddress, ":") > 1 {
+		// IPv6: We can't net.ResolveUDPAddr this directly, because Mojang does not put [] around the IP. We'll have to
+		// do this manually:
+		ind := strings.LastIndex(cData.ServerAddress, ":")
+		cData.ServerAddress = "[" + cData.ServerAddress[:ind] + "]" + cData.ServerAddress[ind:]
 	}
 	if err := cData.Validate(); err != nil {
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
