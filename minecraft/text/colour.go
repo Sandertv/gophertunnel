@@ -52,20 +52,14 @@ func (e *enc) process(tok html.Token) {
 	}
 	switch tok.Type {
 	case html.TextToken:
-		for _, s := range e.formatStack {
-			e.w.WriteString(s)
-		}
-		e.w.WriteString(tok.Data)
-		if len(e.formatStack) != 0 {
-			e.w.WriteString(reset)
-		}
+		e.writeText(tok.Data)
 	case html.StartTagToken:
 		if format, ok := strMap[tok.Data]; ok {
 			e.formatStack = append(e.formatStack, format)
 			return
 		}
 		// Not a known colour, so just write the token as a string.
-		e.w.WriteString("<" + tok.Data + ">")
+		e.writeText("<" + tok.Data + ">")
 	case html.EndTagToken:
 		for i, format := range e.formatStack {
 			if f, ok := strMap[tok.Data]; ok && f == format {
@@ -74,6 +68,17 @@ func (e *enc) process(tok html.Token) {
 			}
 		}
 		// Not a known colour, so just write the token as a string.
-		e.w.WriteString("</" + tok.Data + ">")
+		e.writeText("</" + tok.Data + ">")
+	}
+}
+
+// writeText writes text to the encoder by encasing it in the current format stack.
+func (e *enc) writeText(s string) {
+	for _, format := range e.formatStack {
+		e.w.WriteString(format)
+	}
+	e.w.WriteString(s)
+	if len(e.formatStack) != 0 {
+		e.w.WriteString(reset)
 	}
 }
