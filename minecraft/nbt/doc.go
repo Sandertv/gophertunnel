@@ -20,7 +20,7 @@
 //   string: TAG_String
 //   []<type>: TAG_List
 //   struct{...}: TAG_Compound
-//   map[string]<type/interface{}>: TAG_Compound
+//   map[string]<type/any>: TAG_Compound
 //
 // Structures decoded or encoded may have struct field tags in a comparable way to the JSON standard library.
 // The 'nbt' struct tag may be filled out the following ways:

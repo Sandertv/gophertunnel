@@ -45,11 +45,13 @@ type AddPlayer struct {
 	// itself shows up. Needless to say that this field is rather pointless, as additional packets still must
 	// be sent for armour to show up.
 	HeldItem protocol.ItemInstance
+	// GameType is the game type of the player. If set to GameTypeSpectator, the player will not be shown to viewers.
+	GameType int32
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]interface{}
-	// Flags is a set of flags that specify certain properties of the player, such as whether or not it can
+	EntityMetadata map[uint32]any
+	// Flags is a set of flags that specify certain properties of the player, such as whether it can
 	// fly and/or move through blocks.
 	Flags uint32
 	// CommandPermissionLevel is a set of permissions that specify what commands a player is allowed to execute.
@@ -95,6 +97,7 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
 	w.ItemInstance(&pk.HeldItem)
+	w.Varint32(&pk.GameType)
 	w.EntityMetadata(&pk.EntityMetadata)
 	w.Varuint32(&pk.Flags)
 	w.Varuint32(&pk.CommandPermissionLevel)
@@ -120,6 +123,7 @@ func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
 	r.ItemInstance(&pk.HeldItem)
+	r.Varint32(&pk.GameType)
 	r.EntityMetadata(&pk.EntityMetadata)
 	r.Varuint32(&pk.Flags)
 	r.Varuint32(&pk.CommandPermissionLevel)

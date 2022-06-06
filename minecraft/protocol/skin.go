@@ -52,9 +52,9 @@ type Skin struct {
 	PrimaryUser bool
 	// CapeID is a unique identifier that identifies the cape. It usually holds a UUID in it.
 	CapeID string
-	// FullSkinID is an ID that represents the skin in full. The actual functionality is unknown: The client
+	// FullID is an ID that represents the skin in full. The actual functionality is unknown: The client
 	// does not seem to send a value for this.
-	FullSkinID string
+	FullID string
 	// SkinColour is a hex representation (including #) of the base colour of the skin. An example of the
 	// colour sent here is '#b37b62'.
 	SkinColour string
@@ -95,7 +95,7 @@ func WriteSerialisedSkin(w *Writer, x *Skin) {
 	w.ByteSlice(&x.GeometryDataEngineVersion)
 	w.ByteSlice(&x.AnimationData)
 	w.String(&x.CapeID)
-	w.String(&x.FullSkinID)
+	w.String(&x.FullID)
 	w.String(&x.ArmSize)
 	w.String(&x.SkinColour)
 	l = uint32(len(x.PersonaPieces))
@@ -138,7 +138,7 @@ func SerialisedSkin(r *Reader, x *Skin) {
 	r.ByteSlice(&x.GeometryDataEngineVersion)
 	r.ByteSlice(&x.AnimationData)
 	r.String(&x.CapeID)
-	r.String(&x.FullSkinID)
+	r.String(&x.FullID)
 	r.String(&x.ArmSize)
 	r.String(&x.SkinColour)
 

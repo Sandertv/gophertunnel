@@ -9,8 +9,8 @@ const (
 
 // NPCDialogue is a packet that allows the client to display dialog boxes for interacting with NPCs.
 type NPCDialogue struct {
-	// ActorUniqueID is the ID of the NPC being requested.
-	ActorUniqueID uint64
+	// EntityUniqueID is the unique ID of the NPC being requested.
+	EntityUniqueID uint64
 	// ActionType is the type of action for the packet.
 	ActionType int32
 	// Dialogue is the text that the client should see.
@@ -31,7 +31,7 @@ func (*NPCDialogue) ID() uint32 {
 
 // Marshal ...
 func (pk *NPCDialogue) Marshal(w *protocol.Writer) {
-	w.Uint64(&pk.ActorUniqueID)
+	w.Uint64(&pk.EntityUniqueID)
 	w.Varint32(&pk.ActionType)
 	w.String(&pk.Dialogue)
 	w.String(&pk.SceneName)
@@ -41,7 +41,7 @@ func (pk *NPCDialogue) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *NPCDialogue) Unmarshal(r *protocol.Reader) {
-	r.Uint64(&pk.ActorUniqueID)
+	r.Uint64(&pk.EntityUniqueID)
 	r.Varint32(&pk.ActionType)
 	r.String(&pk.Dialogue)
 	r.String(&pk.SceneName)

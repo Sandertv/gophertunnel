@@ -163,7 +163,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 }
 
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
-func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
+func (w *Writer) EntityMetadata(x *map[uint32]any) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
 
@@ -196,7 +196,7 @@ func (w *Writer) EntityMetadata(x *map[uint32]interface{}) {
 		case string:
 			w.Varuint32(&entityDataString)
 			w.String(&v)
-		case map[string]interface{}:
+		case map[string]any:
 			w.Varuint32(&entityDataCompoundTag)
 			w.NBT(&v, nbt.NetworkLittleEndian)
 		case BlockPos:
@@ -381,30 +381,30 @@ func (w *Writer) Varuint32(x *uint32) {
 }
 
 // NBT writes a map as NBT to the underlying buffer using the encoding passed.
-func (w *Writer) NBT(x *map[string]interface{}, encoding nbt.Encoding) {
+func (w *Writer) NBT(x *map[string]any, encoding nbt.Encoding) {
 	if err := nbt.NewEncoderWithEncoding(w.w, encoding).Encode(*x); err != nil {
 		panic(err)
 	}
 }
 
 // NBTList writes a slice as NBT to the underlying buffer using the encoding passed.
-func (w *Writer) NBTList(x *[]interface{}, encoding nbt.Encoding) {
+func (w *Writer) NBTList(x *[]any, encoding nbt.Encoding) {
 	if err := nbt.NewEncoderWithEncoding(w.w, encoding).Encode(*x); err != nil {
 		panic(err)
 	}
 }
 
 // UnknownEnumOption panics with an unknown enum option error.
-func (w *Writer) UnknownEnumOption(value interface{}, enum string) {
+func (w *Writer) UnknownEnumOption(value any, enum string) {
 	w.panicf("unknown value '%v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an invalid value error.
-func (w *Writer) InvalidValue(value interface{}, forField, reason string) {
+func (w *Writer) InvalidValue(value any, forField, reason string) {
 	w.panicf("invalid value '%v' for %v: %v", value, forField, reason)
 }
 
 // panicf panics with the format and values passed.
-func (w *Writer) panicf(format string, a ...interface{}) {
+func (w *Writer) panicf(format string, a ...any) {
 	panic(fmt.Errorf(format, a...))
 }

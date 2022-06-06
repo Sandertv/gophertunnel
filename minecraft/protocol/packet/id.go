@@ -179,4 +179,8 @@ const (
 	IDClientStartItemCooldown
 	IDScriptMessage
 	IDCodeBuilderSource
+	IDTickingAreasLoadStatus
+	IDDimensionData
+	IDAgentAction
+	IDChangeMobProperty
 )

@@ -15,26 +15,7 @@ Additionally, a MITM proxy is implemented in the [main.go file](https://github.c
 
 ## Versions
 Gophertunnel supports only one version at a time. Generally, a new minor version is tagged when gophertunnel
-supports a new Minecraft version that was not previously supported. A list of the recommended gophertunnel
-versions for past Minecraft versions is listed below.
-
-| Version  | Tag      |
-|----------|----------|
-| 1.18.0   | Latest   |
-| 1.17.40  | v1.16.2  |
-| 1.17.30  | v1.15.1  |
-| 1.17.10  | v1.14.3  |
-| 1.17.0   | v1.13.0  |
-| 1.16.220 | v1.12.1  |
-| 1.16.210 | v1.11.0  |
-| 1.16.200 | v1.10.1  |
-| 1.16.100 | v1.9.2   |
-| 1.16.20  | v1.8.2   |
-| 1.16.0   | v1.7.11  |
-| 1.14.60  | v1.6.5   |
-| 1.14.0   | v1.3.20  |
-| 1.13.0   | v1.3.5   |
-| 1.12.0   | v1.2.11  |
+supports a new Minecraft version that was not previously supported. The latest version of gophertunnel supports **v1.18.30**.
 
 ## Sponsors
 [![Become Patron](https://img.shields.io/badge/dynamic/json?logo=patreon&style=for-the-badge&color=%23e85b46&label=Patreon&query=data.attributes.patron_count&suffix=%20patrons&url=https%3A%2F%2Fwww.patreon.com%2Fapi%2Fcampaigns%2F2832539)](https://patreon.com/sandertv)

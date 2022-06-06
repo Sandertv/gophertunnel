@@ -6,7 +6,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"golang.org/x/oauth2"
-	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -123,7 +122,7 @@ func readConfig() config {
 		}
 		_ = f.Close()
 	}
-	data, err := ioutil.ReadFile("config.toml")
+	data, err := os.ReadFile("config.toml")
 	if err != nil {
 		log.Fatalf("error reading config: %v", err)
 	}
@@ -134,7 +133,7 @@ func readConfig() config {
 		c.Connection.LocalAddress = "0.0.0.0:19132"
 	}
 	data, _ = toml.Marshal(c)
-	if err := ioutil.WriteFile("config.toml", data, 0644); err != nil {
+	if err := os.WriteFile("config.toml", data, 0644); err != nil {
 		log.Fatalf("error writing config file: %v", err)
 	}
 	return c

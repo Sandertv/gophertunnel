@@ -112,7 +112,7 @@ type Conn struct {
 	resourcePacks []*resource.Pack
 	// biomes is a map of biome definitions that the listener may hold. Each client will be sent these biome
 	// definitions upon joining.
-	biomes map[string]interface{}
+	biomes map[string]any
 	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
@@ -1220,7 +1220,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 // handshake packet to the client and enables encryption after that.
 func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	signer, _ := jose.NewSigner(jose.SigningKey{Key: conn.privateKey, Algorithm: jose.ES384}, &jose.SignerOptions{
-		ExtraHeaders: map[jose.HeaderKey]interface{}{"x5u": login.MarshalPublicKey(&conn.privateKey.PublicKey)},
+		ExtraHeaders: map[jose.HeaderKey]any{"x5u": login.MarshalPublicKey(&conn.privateKey.PublicKey)},
 	})
 	// We produce an encoded JWT using the header and payload above, then we send the JWT in a ServerToClient-
 	// Handshake packet so that the client can initialise encryption.

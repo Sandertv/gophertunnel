@@ -48,14 +48,15 @@ const (
 	CommandArgTypeWildcardInt    = 5
 	CommandArgTypeOperator       = 6
 	CommandArgTypeTarget         = 7
-	CommandArgTypeWildcardTarget = 8
+	CommandArgTypeWildcardTarget = 9
 	CommandArgTypeFilepath       = 16
-	CommandArgTypeString         = 32
-	CommandArgTypePosition       = 40
-	CommandArgTypeMessage        = 44
-	CommandArgTypeRawText        = 46
-	CommandArgTypeJSON           = 50
-	CommandArgTypeCommand        = 63
+	CommandArgTypeString         = 38
+	CommandArgTypeBlockPosition  = 46
+	CommandArgTypePosition       = 47
+	CommandArgTypeMessage        = 50
+	CommandArgTypeRawText        = 52
+	CommandArgTypeJSON           = 56
+	CommandArgTypeCommand        = 69
 )
 const (
 	// ParamOptionCollapseEnum specifies if the enum (only if the Type is actually an enum type. If not,

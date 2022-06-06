@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -60,7 +59,7 @@ func MustCompile(path string) *Pack {
 // zip archive and contain a pack manifest in order for the function to succeed.
 // FromBytes saves the data to a temporary archive.
 func FromBytes(data []byte) (*Pack, error) {
-	tempFile, err := ioutil.TempFile("", "resource_pack_archive-*.mcpack")
+	tempFile, err := os.CreateTemp("", "resource_pack_archive-*.mcpack")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
 	}
@@ -236,7 +235,7 @@ func compile(path string) (*Pack, error) {
 
 	// Then we read the entire content of the zip archive into a byte slice and compute the SHA256 checksum
 	// and a reader.
-	content, err := ioutil.ReadFile(path)
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, fmt.Errorf("error reading resource pack file content: %v", err)
 	}
@@ -251,7 +250,7 @@ func compile(path string) (*Pack, error) {
 func createTempArchive(path string) (*os.File, error) {
 	// We've got a directory which we need to load. Provided we need to send compressed zip data to the
 	// client, we compile it to a zip archive in a temporary file.
-	temp, err := ioutil.TempFile("", "resource_pack-*.mcpack")
+	temp, err := os.CreateTemp("", "resource_pack-*.mcpack")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip file: %v", err)
 	}
@@ -287,7 +286,7 @@ func createTempArchive(path string) (*os.File, error) {
 		if err != nil {
 			return fmt.Errorf("error opening resource pack file %v: %v", filePath, err)
 		}
-		data, _ := ioutil.ReadAll(file)
+		data, _ := io.ReadAll(file)
 		// Write the original content into the 'zip file' so that we write compressed data to the file.
 		if _, err := f.Write(data); err != nil {
 			return fmt.Errorf("error writing file data to zip: %v", err)
@@ -345,7 +344,7 @@ func readManifest(path string) (*Manifest, error) {
 	}()
 
 	// Read all data from the manifest file so that we can decode it into a Manifest struct.
-	allData, err := ioutil.ReadAll(manifestFile)
+	allData, err := io.ReadAll(manifestFile)
 	if err != nil {
 		return nil, fmt.Errorf("error reading from manifest file: %v", err)
 	}

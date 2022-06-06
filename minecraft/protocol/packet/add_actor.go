@@ -38,7 +38,7 @@ type AddActor struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]interface{}
+	EntityMetadata map[uint32]any
 	// EntityLinks is a list of entity links that are currently active on the entity. These links alter the
 	// way the entity shows up when first spawned in terms of it shown as riding an entity. Setting these
 	// links is important for new viewers to see the entity is riding another entity.

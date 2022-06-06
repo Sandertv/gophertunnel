@@ -155,7 +155,7 @@ func init() {
 		IDClientCacheStatus:             func() Packet { return &ClientCacheStatus{} },
 		IDOnScreenTextureAnimation:      func() Packet { return &OnScreenTextureAnimation{} },
 		IDMapCreateLockedCopy:           func() Packet { return &MapCreateLockedCopy{} },
-		IDStructureTemplateDataRequest:  func() Packet { return &StructureTemplateDataResponse{} },
+		IDStructureTemplateDataRequest:  func() Packet { return &StructureTemplateDataRequest{} },
 		IDStructureTemplateDataResponse: func() Packet { return &StructureTemplateDataResponse{} },
 		// ---
 		IDClientCacheBlobStatus:             func() Packet { return &ClientCacheBlobStatus{} },
@@ -202,6 +202,10 @@ func init() {
 		IDClientStartItemCooldown:           func() Packet { return &ClientStartItemCooldown{} },
 		IDScriptMessage:                     func() Packet { return &ScriptMessage{} },
 		IDCodeBuilderSource:                 func() Packet { return &CodeBuilderSource{} },
+		IDTickingAreasLoadStatus:            func() Packet { return &TickingAreasLoadStatus{} },
+		IDDimensionData:                     func() Packet { return &DimensionData{} },
+		IDAgentAction:                       func() Packet { return &AgentAction{} },
+		IDChangeMobProperty:                 func() Packet { return &ChangeMobProperty{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

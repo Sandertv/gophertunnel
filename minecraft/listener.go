@@ -10,7 +10,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"go.uber.org/atomic"
-	"io/ioutil"
+	"io"
 	"log"
 	"net"
 	"os"
@@ -50,7 +50,7 @@ type ListenConfig struct {
 	ResourcePacks []*resource.Pack
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
-	Biomes map[string]interface{}
+	Biomes map[string]any
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
@@ -88,7 +88,7 @@ func (cfg ListenConfig) Listen(network, address string) (*Listener, error) {
 
 	switch network {
 	case "raknet":
-		netListener, err = raknet.ListenConfig{ErrorLog: log.New(ioutil.Discard, "", 0)}.Listen(address)
+		netListener, err = raknet.ListenConfig{ErrorLog: log.New(io.Discard, "", 0)}.Listen(address)
 	default:
 		// Fall back to the standard net.Listen.
 		netListener, err = net.Listen(network, address)
