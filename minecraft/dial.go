@@ -55,6 +55,12 @@ type Dialer struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
+	// Protocol is the Protocol version used to communicate with the target server. By default, this field is
+	// set to the current protocol as implemented in the minecraft/protocol package. Note that packets written
+	// to and read from the Conn are always any of those found in the protocol/packet package, as packets
+	// are converted from and to this Protocol.
+	Protocol Protocol
+
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
@@ -128,6 +134,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.ErrorLog == nil {
 		d.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
+	if d.Protocol == nil {
+		d.Protocol = proto{}
+	}
 	var netConn net.Conn
 
 	switch network {
@@ -150,6 +159,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, err
 	}
 	conn = newConn(netConn, key, d.ErrorLog)
+	conn.proto = d.Protocol
+	conn.pool = conn.proto.Packets()
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc
@@ -185,7 +196,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	go listenConn(conn, d.ErrorLog, c)
 
 	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
-	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: protocol.CurrentProtocol}); err != nil {
+	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
 		return nil, err
 	}
 	_ = conn.Flush()

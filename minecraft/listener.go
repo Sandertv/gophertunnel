@@ -38,6 +38,11 @@ type ListenConfig struct {
 	// ListenerStatusProvider, is used as provider.
 	StatusProvider ServerStatusProvider
 
+	// AcceptedProtocols is a slice of Protocol accepted by a Listener created with this ListenConfig. The current
+	// Protocol is always added to this slice. Clients with a protocol version that is not present in this slice will
+	// be disconnected.
+	AcceptedProtocols []Protocol
+
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
 	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
@@ -125,7 +130,7 @@ func Listen(network, address string) (*Listener, error) {
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
 // packets. It is recommended to cast the net.Conn returned to a *minecraft.Conn so that it is possible to
-// use the conn.ReadPacket() and conn.WritePacket() methods.
+// use the Conn.ReadPacket() and Conn.WritePacket() methods.
 // Accept returns an error if the listener is closed.
 func (listener *Listener) Accept() (net.Conn, error) {
 	conn, ok := <-listener.incoming
@@ -205,6 +210,11 @@ func (listener *Listener) listen() {
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog)
+	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
+	// Temporarily set the protocol to the latest: We don't know the actual protocol until we read the Login packet.
+	conn.proto = proto{}
+	conn.pool = conn.proto.Packets()
+
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
 	conn.resourcePacks = listener.cfg.ResourcePacks

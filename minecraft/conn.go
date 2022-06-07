@@ -57,9 +57,11 @@ type Conn struct {
 	log         *log.Logger
 	authEnabled bool
 
-	pool packet.Pool
-	enc  *packet.Encoder
-	dec  *packet.Decoder
+	proto         Protocol
+	acceptedProto []Protocol
+	pool          packet.Pool
+	enc           *packet.Encoder
+	dec           *packet.Decoder
 
 	identityData login.IdentityData
 	clientData   login.ClientData
@@ -125,6 +127,8 @@ type Conn struct {
 	disconnectMessage atomic.String
 
 	shieldID atomic.Int32
+
+	additional chan packet.Packet
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -135,9 +139,9 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	conn := &Conn{
 		enc:         packet.NewEncoder(netConn),
 		dec:         packet.NewDecoder(netConn),
-		pool:        packet.NewPool(),
 		salt:        make([]byte, 16),
 		packets:     make(chan *packetData, 8),
+		additional:  make(chan packet.Packet, 16),
 		close:       make(chan struct{}),
 		spawn:       make(chan struct{}),
 		conn:        netConn,
@@ -297,7 +301,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 
 	buf := internal.BufferPool.Get().(*bytes.Buffer)
 	defer func() {
-		// Reset the buffer so we can return it to the buffer pool safely.
+		// Reset the buffer, so we can return it to the buffer pool safely.
 		buf.Reset()
 		internal.BufferPool.Put(buf)
 	}()
@@ -306,12 +310,14 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	_ = conn.hdr.Write(buf)
 	l := buf.Len()
 
-	pk.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
-	if conn.packetFunc != nil {
-		conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
-	}
+	for _, converted := range conn.proto.ConvertFromLatest(pk, conn) {
+		converted.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
 
-	conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), buf.Bytes()...))
+		if conn.packetFunc != nil {
+			conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
+		}
+		conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), buf.Bytes()...))
+	}
 	return nil
 }
 
@@ -322,13 +328,19 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 // If the packet read was not implemented, a *packet.Unknown is returned, containing the raw payload of the
 // packet read.
 func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
+	if len(conn.additional) > 0 {
+		return <-conn.additional, nil
+	}
 	if data, ok := conn.takeDeferredPacket(); ok {
 		pk, err := data.decode(conn)
 		if err != nil {
 			conn.log.Println(err)
 			return conn.ReadPacket()
 		}
-		return pk, nil
+		for _, additional := range pk[1:] {
+			conn.additional <- additional
+		}
+		return pk[0], nil
 	}
 
 	select {
@@ -342,7 +354,10 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			conn.log.Println(err)
 			return conn.ReadPacket()
 		}
-		return pk, nil
+		for _, additional := range pk[1:] {
+			conn.additional <- additional
+		}
+		return pk[0], nil
 	}
 }
 
@@ -521,9 +536,9 @@ func (conn *Conn) receive(data []byte) error {
 	}
 	if pkData.h.PacketID == packet.IDDisconnect {
 		// We always handle disconnect packets and close the connection if one comes in.
-		pk, _ := pkData.decode(conn)
-
-		conn.disconnectMessage.Store(pk.(*packet.Disconnect).Message)
+		if pks, err := pkData.decode(conn); err != nil {
+			conn.disconnectMessage.Store(pks[0].(*packet.Disconnect).Message)
+		}
 		_ = conn.Close()
 		return nil
 	}
@@ -550,17 +565,29 @@ func (conn *Conn) handle(pkData *packetData) error {
 	for _, id := range conn.expectedIDs.Load().([]uint32) {
 		if id == pkData.h.PacketID {
 			// If the packet was expected, so we handle it right now.
-			pk, err := pkData.decode(conn)
+			pks, err := pkData.decode(conn)
 			if err != nil {
 				return err
 			}
-			return conn.handlePacket(pk)
+			return conn.handleMultiple(pks)
 		}
 	}
 	// This is not the packet we expected next in the login sequence. We push it back so that it may
 	// be handled by the user.
 	conn.deferPacket(pkData)
 	return nil
+}
+
+// handleMultiple handles multiple packets and returns an error if at least one of those packets could not be handled
+// successfully.
+func (conn *Conn) handleMultiple(pks []packet.Packet) error {
+	var err error
+	for _, pk := range pks {
+		if e := conn.handlePacket(pk); e != nil {
+			err = e
+		}
+	}
+	return err
 }
 
 // handlePacket handles an incoming packet. It returns an error if any of the data found in the packet was not
@@ -626,9 +653,15 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
-	// Make sure protocol numbers match.
-	if pk.ClientProtocol != protocol.CurrentProtocol {
-		// By default we assume the client is outdated.
+
+	for _, pro := range conn.acceptedProto {
+		if pro.ID() == pk.ClientProtocol {
+			conn.proto = pro
+			conn.pool = pro.Packets()
+			break
+		}
+	}
+	if conn.proto == nil {
 		status := packet.PlayStatusLoginFailedClient
 		if pk.ClientProtocol > protocol.CurrentProtocol {
 			// The server is outdated in this case, so we have to change the status we send.
