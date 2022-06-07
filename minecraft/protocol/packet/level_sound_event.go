@@ -385,7 +385,7 @@ const (
 	SoundEventListening
 	SoundEventHeartbeat
 	SoundEventHornBreak
-	SoundEventSculkPlace
+	_
 	SoundEventSculkSpread
 	SoundEventSculkCharge
 	SoundEventSculkSensorPlace
@@ -430,6 +430,24 @@ const (
 	SoundEventGoatBass7
 	SoundEventGoatBass8
 	SoundEventGoatBass9
+	_
+	_
+	_
+	SoundEventImitateWarden
+	SoundEventListeningAngry
+	SoundEventItemGiven
+	SoundEventItemTaken
+	SoundEventDisappeared
+	SoundEventReappeared
+	_
+	SoundEventFrogspawnHatched
+	SoundEventLaySpawn
+	SoundEventFrogspawnBreak
+	SoundEventSonicBoom
+	SoundEventSonicCharge
+	SoundeventItemThrown
+	SoundEventRecord5
+	SoundEventConvertToFrog
 	SoundEventUndefined
 )
 

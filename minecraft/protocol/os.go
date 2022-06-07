@@ -19,4 +19,5 @@ const (
 	DeviceNX
 	DeviceXBOX
 	DeviceWP
+	DeviceLinux
 )

@@ -2,6 +2,8 @@ package packet
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -194,9 +196,15 @@ type StartGame struct {
 	ServerAuthoritativeInventory bool
 	// GameVersion is the version of the game the server is running. The exact function of this field isn't clear.
 	GameVersion string
+	// PropertyData contains properties that should be applied on the player. These properties are the same as the
+	// ones that are sent in the SyncActorProperty packet.
+	PropertyData map[string]any
 	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
 	// This can simply be left empty, and the client will avoid trying to verify it.
 	ServerBlockStateChecksum uint64
+	// WorldTemplateID is a UUID that identifies the template that was used to generate the world. Servers that do not
+	// use a world based off of a template can set this to an empty UUID.
+	WorldTemplateID uuid.UUID
 }
 
 // ID ...
@@ -285,7 +293,9 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
 	w.String(&pk.GameVersion)
+	w.NBT(&pk.PropertyData, nbt.NetworkLittleEndian)
 	w.Uint64(&pk.ServerBlockStateChecksum)
+	w.UUID(&pk.WorldTemplateID)
 }
 
 // Unmarshal ...
@@ -371,5 +381,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
 	r.String(&pk.GameVersion)
+	r.NBT(&pk.PropertyData, nbt.NetworkLittleEndian)
 	r.Uint64(&pk.ServerBlockStateChecksum)
+	r.UUID(&pk.WorldTemplateID)
 }
