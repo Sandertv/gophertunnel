@@ -337,6 +337,9 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 			conn.log.Println(err)
 			return conn.ReadPacket()
 		}
+		if len(pk) == 0 {
+			return conn.ReadPacket()
+		}
 		for _, additional := range pk[1:] {
 			conn.additional <- additional
 		}
@@ -352,6 +355,9 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 		pk, err := data.decode(conn)
 		if err != nil {
 			conn.log.Println(err)
+			return conn.ReadPacket()
+		}
+		if len(pk) == 0 {
 			return conn.ReadPacket()
 		}
 		for _, additional := range pk[1:] {
