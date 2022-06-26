@@ -16,7 +16,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
-	"io"
 	"log"
 	rand2 "math/rand"
 	"net"
@@ -137,27 +136,22 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.Protocol == nil {
 		d.Protocol = proto{}
 	}
-	var netConn net.Conn
 
-	switch network {
-	case "raknet":
-		// If the network is specifically 'raknet', we use the raknet library to dial a RakNet connection.
-		dialer := raknet.Dialer{ErrorLog: log.New(io.Discard, "", 0)}
-		var pong []byte
-		pong, err = dialer.PingContext(ctx, address)
-		if err != nil {
-			break
-		}
-		netConn, err = dialer.DialContext(ctx, addressWithPongPort(pong, address))
-	default:
-		// If not set to 'raknet', we fall back to the default net.Dial method to find a proper connection for
-		// the network passed.
-		var d net.Dialer
-		netConn, err = d.DialContext(ctx, network, address)
+	n, ok := NetworkByID(network)
+	if !ok {
+		return nil, fmt.Errorf("listen: no network under id: %v", network)
+	}
+
+	var netConn net.Conn
+	if pong, err := n.PingContext(ctx, address); err == nil {
+		netConn, err = n.DialContext(ctx, addressWithPongPort(pong, address))
+	} else {
+		netConn, err = n.DialContext(ctx, address)
 	}
 	if err != nil {
 		return nil, err
 	}
+
 	conn = newConn(netConn, key, d.ErrorLog)
 	conn.proto = d.Protocol
 	conn.pool = conn.proto.Packets()
