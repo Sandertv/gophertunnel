@@ -10,7 +10,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"go.uber.org/atomic"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -67,7 +66,7 @@ type ListenConfig struct {
 // consistent API.
 type Listener struct {
 	cfg      ListenConfig
-	listener net.Listener
+	listener NetworkListener
 
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
@@ -82,17 +81,13 @@ type Listener struct {
 // Listen announces on the local network address. The network is typically "raknet".
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
-func (cfg ListenConfig) Listen(network, address string) (*Listener, error) {
-	var netListener net.Listener
-	var err error
-
-	switch network {
-	case "raknet":
-		netListener, err = raknet.ListenConfig{ErrorLog: log.New(io.Discard, "", 0)}.Listen(address)
-	default:
-		// Fall back to the standard net.Listen.
-		netListener, err = net.Listen(network, address)
+func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
+	n, ok := networkByID(network)
+	if !ok {
+		return nil, fmt.Errorf("listen: no network under id: %v", network)
 	}
+
+	netListener, err := n.Listen(address)
 	if err != nil {
 		return nil, err
 	}
@@ -165,12 +160,9 @@ func (listener *Listener) Close() error {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	s := listener.status()
-
-	rakListener := listener.listener.(*raknet.Listener)
-
-	rakListener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Minecraft Server;%v;%v;%v;%v;",
-		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers, rakListener.ID(),
-		"Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Gophertunnel;%v;%v;%v;%v;",
+		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
+		listener.listener.ID(), "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
 
