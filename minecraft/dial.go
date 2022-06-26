@@ -142,8 +142,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, fmt.Errorf("listen: no network under id: %v", network)
 	}
 
+	var pong []byte
 	var netConn net.Conn
-	if pong, err := n.PingContext(ctx, address); err == nil {
+	if pong, err = n.PingContext(ctx, address); err == nil {
 		netConn, err = n.DialContext(ctx, addressWithPongPort(pong, address))
 	} else {
 		netConn, err = n.DialContext(ctx, address)
