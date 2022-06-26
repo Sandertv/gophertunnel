@@ -137,7 +137,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.Protocol = proto{}
 	}
 
-	n, ok := NetworkByID(network)
+	n, ok := networkByID(network)
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id: %v", network)
 	}

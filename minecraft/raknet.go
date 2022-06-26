@@ -9,11 +9,6 @@ import (
 // RakNet is an implementation of a RakNet v10 Network.
 type RakNet struct{}
 
-// Dial ...
-func (r RakNet) Dial(address string) (net.Conn, error) {
-	return raknet.Dial(address)
-}
-
 // DialContext ...
 func (r RakNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
 	return raknet.DialContext(ctx, address)

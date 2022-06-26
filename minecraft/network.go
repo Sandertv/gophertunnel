@@ -7,11 +7,6 @@ import (
 
 // Network represents an implementation of a supported network layers, such as RakNet.
 type Network interface {
-	// Dial attempts to dial a connection to the address passed. The address may be either an IP address or a hostname,
-	// combined with a port that is separated with ':'.
-	// Dial will attempt to dial a connection within 10 seconds. If not all packets are received after that, the
-	// connection will time out and an error will be returned.
-	Dial(address string) (net.Conn, error)
 	// DialContext attempts to dial a connection to the address passed. The address may be either an IP address or a
 	// hostname, combined with a port that is separated with ':'.
 	// DialContext will use the deadline (ctx.Deadline) of the context.Context passed for the maximum amount of time that
@@ -53,8 +48,8 @@ func RegisterNetwork(id string, n Network) {
 	networks[id] = n
 }
 
-// NetworkByID returns the network with the ID passed. If no network is found, the second return value will be false.
-func NetworkByID(id string) (Network, bool) {
+// networkByID returns the network with the ID passed. If no network is found, the second return value will be false.
+func networkByID(id string) (Network, bool) {
 	n, ok := networks[id]
 	return n, ok
 }

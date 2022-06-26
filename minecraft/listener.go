@@ -82,7 +82,7 @@ type Listener struct {
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
-	n, ok := NetworkByID(network)
+	n, ok := networkByID(network)
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id: %v", network)
 	}
