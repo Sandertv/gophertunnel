@@ -34,6 +34,7 @@ type Network interface {
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra
 // functionality specific to Minecraft.
 type NetworkListener interface {
+	net.Listener
 	// ID returns the unique ID of the listener. This ID is usually used by a client to identify a specific
 	// server during a single session.
 	ID() int64
@@ -41,15 +42,6 @@ type NetworkListener interface {
 	// specific data that is used to display in a server list.
 	// If a data slice is set with a size bigger than math.MaxInt16, the function panics.
 	PongData(data []byte)
-	// Accept blocks until a connection can be accepted by the listener. If successful, Accept returns a
-	// connection that is ready to send and receive data. If not successful, a nil listener is returned and an
-	// error describing the problem.
-	Accept() (net.Conn, error)
-	// Close closes the listener so that it may be cleaned up. It makes sure the goroutine handling incoming
-	// packets is able to be freed.
-	Close() error
-	// Addr returns the address the Listener is bound to and listening for connections on.
-	Addr() net.Addr
 }
 
 // networks holds a map of id => Network to be used for looking up the network by an ID. It is registered to when calling
