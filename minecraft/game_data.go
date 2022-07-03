@@ -46,6 +46,9 @@ type GameData struct {
 	// WorldSpawn is the block on which the world spawn of the world. This coordinate has no effect on the
 	// place that the client spawns, but it does have an effect on the direction that a compass points.
 	WorldSpawn protocol.BlockPos
+	// EditorWorld is a value to dictate if the world is in editor mode, a special mode recently introduced adding
+	// "powerful tools for editing worlds, intended for experienced creators."
+	EditorWorld bool
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32

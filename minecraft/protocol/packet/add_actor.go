@@ -29,9 +29,13 @@ type AddActor struct {
 	Pitch float32
 	// Yaw is the horizontal rotation of the entity. Yaw is also measured in degrees.
 	Yaw float32
-	// HeadYaw is the same as Yaw, except that it applies specifically to the head of the entity. A different
-	// value for HeadYaw than Yaw means that the entity will have its head turned.
+	// HeadYaw is the same as Yaw, except that it applies specifically to the head of the entity. A different value for
+	// HeadYaw than Yaw means that the entity will have its head turned.
 	HeadYaw float32
+	// BodyYaw is the same as Yaw, except that it applies specifically to the body of the entity. A different value for
+	// BodyYaw than HeadYaw means that the entity will have its body turned, although it is unclear what the difference
+	// between BodyYaw and Yaw is.
+	BodyYaw float32
 	// Attributes is a slice of attributes that the entity has. It includes attributes such as its health,
 	// movement speed, etc.
 	Attributes []protocol.Attribute
@@ -60,6 +64,7 @@ func (pk *AddActor) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Pitch)
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
+	w.Float32(&pk.BodyYaw)
 	protocol.WriteInitialAttributes(w, &pk.Attributes)
 	w.EntityMetadata(&pk.EntityMetadata)
 	protocol.WriteEntityLinks(w, &pk.EntityLinks)
@@ -75,6 +80,7 @@ func (pk *AddActor) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
+	r.Float32(&pk.BodyYaw)
 	protocol.InitialAttributes(r, &pk.Attributes)
 	r.EntityMetadata(&pk.EntityMetadata)
 	protocol.EntityLinks(r, &pk.EntityLinks)

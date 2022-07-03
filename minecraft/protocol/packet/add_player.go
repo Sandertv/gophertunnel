@@ -16,10 +16,6 @@ type AddPlayer struct {
 	// Username is the name of the player. This username is the username that will be set as the initial
 	// name tag of the player.
 	Username string
-	// EntityUniqueID is the unique ID of the player. The unique ID is a value that remains consistent across
-	// different sessions of the same world, but most servers simply fill the runtime ID of the player out for
-	// this field.
-	EntityUniqueID int64
 	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
 	EntityRuntimeID uint64
@@ -88,7 +84,6 @@ func (*AddPlayer) ID() uint32 {
 func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.UUID(&pk.UUID)
 	w.String(&pk.Username)
-	w.Varint64(&pk.EntityUniqueID)
 	w.Varuint64(&pk.EntityRuntimeID)
 	w.String(&pk.PlatformChatID)
 	w.Vec3(&pk.Position)
@@ -114,7 +109,6 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.UUID(&pk.UUID)
 	r.String(&pk.Username)
-	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.String(&pk.PlatformChatID)
 	r.Vec3(&pk.Position)

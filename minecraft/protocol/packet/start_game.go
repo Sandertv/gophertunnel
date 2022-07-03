@@ -66,6 +66,9 @@ type StartGame struct {
 	// value is set to true while the player's or the world's game mode is creative, and it's recommended to
 	// simply always set this to false as a server.
 	AchievementsDisabled bool
+	// EditorWorld is a value to dictate if the world is in editor mode, a special mode recently introduced adding
+	// "powerful tools for editing worlds, intended for experienced creators."
+	EditorWorld bool
 	// DayCycleLockTime is the time at which the day cycle was locked if the day cycle is disabled using the
 	// respective game rule. The client will maintain this time as long as the day cycle is disabled.
 	DayCycleLockTime int32
@@ -120,9 +123,9 @@ type StartGame struct {
 	// player obtains a map. This should always be set to false, because the client obtains a map all on its
 	// own accord if this is set to true.
 	StartWithMapEnabled bool
-	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
+	// PermissionLevel is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PermissionLevel uint8
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -229,6 +232,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.Difficulty)
 	w.UBlockPos(&pk.WorldSpawn)
 	w.Bool(&pk.AchievementsDisabled)
+	w.Bool(&pk.EditorWorld)
 	w.Varint32(&pk.DayCycleLockTime)
 	w.Varint32(&pk.EducationEditionOffer)
 	w.Bool(&pk.EducationFeaturesEnabled)
@@ -251,7 +255,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
-	w.Varint32(&pk.PlayerPermissions)
+	w.Uint8(&pk.PermissionLevel)
 	w.Int32(&pk.ServerChunkTickRadius)
 	w.Bool(&pk.HasLockedBehaviourPack)
 	w.Bool(&pk.HasLockedTexturePack)
@@ -316,6 +320,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.Difficulty)
 	r.UBlockPos(&pk.WorldSpawn)
 	r.Bool(&pk.AchievementsDisabled)
+	r.Bool(&pk.EditorWorld)
 	r.Varint32(&pk.DayCycleLockTime)
 	r.Varint32(&pk.EducationEditionOffer)
 	r.Bool(&pk.EducationFeaturesEnabled)
@@ -339,7 +344,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
-	r.Varint32(&pk.PlayerPermissions)
+	r.Uint8(&pk.PermissionLevel)
 	r.Int32(&pk.ServerChunkTickRadius)
 	r.Bool(&pk.HasLockedBehaviourPack)
 	r.Bool(&pk.HasLockedTexturePack)
