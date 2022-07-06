@@ -123,9 +123,9 @@ type StartGame struct {
 	// player obtains a map. This should always be set to false, because the client obtains a map all on its
 	// own accord if this is set to true.
 	StartWithMapEnabled bool
-	// PermissionLevel is the permission level of the player. It is a value from 0-3, with 0 being visitor,
+	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PermissionLevel uint8
+	PlayerPermissions uint8
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -255,7 +255,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
-	w.Uint8(&pk.PermissionLevel)
+	w.Uint8(&pk.PlayerPermissions)
 	w.Int32(&pk.ServerChunkTickRadius)
 	w.Bool(&pk.HasLockedBehaviourPack)
 	w.Bool(&pk.HasLockedTexturePack)
@@ -344,7 +344,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
-	r.Uint8(&pk.PermissionLevel)
+	r.Uint8(&pk.PlayerPermissions)
 	r.Int32(&pk.ServerChunkTickRadius)
 	r.Bool(&pk.HasLockedBehaviourPack)
 	r.Bool(&pk.HasLockedTexturePack)
