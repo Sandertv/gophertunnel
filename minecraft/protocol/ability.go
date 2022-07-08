@@ -19,6 +19,7 @@ const (
 	AbilityMuted
 	AbilityWorldBuilder
 	AbilityNoClip
+	AbilityCount
 )
 
 const (
@@ -26,6 +27,11 @@ const (
 	AbilityLayerTypeBase
 	AbilityLayerTypeSpectator
 	AbilityLayerTypeCommands
+)
+
+const (
+	AbilityBaseFlySpeed  = 0.05
+	AbilityBaseWalkSpeed = 0.1
 )
 
 // AbilityLayer represents the abilities of a specific layer, such as the base layer or the spectator layer.
