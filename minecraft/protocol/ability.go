@@ -1,7 +1,7 @@
 package protocol
 
 const (
-	AbilityBuild = iota
+	AbilityBuild = 1 << iota
 	AbilityMine
 	AbilityDoorsAndSwitches
 	AbilityOpenContainers
