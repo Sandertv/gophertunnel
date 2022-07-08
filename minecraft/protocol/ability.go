@@ -19,7 +19,6 @@ const (
 	AbilityMuted
 	AbilityWorldBuilder
 	AbilityNoClip
-	AbilityAbilityCount
 )
 
 const (
