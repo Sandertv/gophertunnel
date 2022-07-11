@@ -251,7 +251,13 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		if err != nil {
 			return err
 		}
-		value := reflect.New(reflect.ArrayOf(int(length), int32Type)).Elem()
+
+		var value reflect.Value
+		if val.Kind() == reflect.Array {
+			value = reflect.New(reflect.ArrayOf(int(length), int32Type)).Elem()
+		} else {
+			value = reflect.MakeSlice(reflect.SliceOf(int32Type), int(length), int(length))
+		}
 		for i := int32(0); i < length; i++ {
 			v, err := d.Encoding.Int32(d.r)
 			if err != nil {
@@ -259,7 +265,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			}
 			value.Index(int(i)).SetInt(int64(v))
 		}
-		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int32 {
+		if (val.Kind() != reflect.Array && val.Kind() != reflect.Slice) || val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int32 {
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
 				// Empty interface.
 				val.Set(value)
@@ -267,7 +273,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			}
 			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
 		}
-		if val.Cap() != int(length) {
+		if val.Kind() == reflect.Array && val.Cap() != int(length) {
 			return InvalidArraySizeError{Off: d.r.off, Op: "Int32Array", GoLength: val.Cap(), NBTLength: int(length)}
 		}
 		val.Set(value)
@@ -277,7 +283,13 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 		if err != nil {
 			return err
 		}
-		value := reflect.New(reflect.ArrayOf(int(length), int64Type)).Elem()
+
+		var value reflect.Value
+		if val.Kind() == reflect.Array {
+			value = reflect.New(reflect.ArrayOf(int(length), int64Type)).Elem()
+		} else {
+			value = reflect.MakeSlice(reflect.SliceOf(int64Type), int(length), int(length))
+		}
 		for i := int32(0); i < length; i++ {
 			v, err := d.Encoding.Int64(d.r)
 			if err != nil {
@@ -285,7 +297,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			}
 			value.Index(int(i)).SetInt(v)
 		}
-		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int64 {
+		if (val.Kind() != reflect.Array && val.Kind() != reflect.Slice) || val.Type().Elem().Kind() != reflect.Int64 {
 			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
 				// Empty interface.
 				val.Set(value)
@@ -293,7 +305,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			}
 			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
 		}
-		if val.Cap() != int(length) {
+		if val.Kind() == reflect.Array && val.Cap() != int(length) {
 			return InvalidArraySizeError{Off: d.r.off, Op: "Int64Array", GoLength: val.Cap(), NBTLength: int(length)}
 		}
 		val.Set(value)
