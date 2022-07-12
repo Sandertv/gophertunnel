@@ -187,4 +187,8 @@ const (
 	IDRequestAbility
 	IDRequestPermissions
 	IDToastRequest
+	IDUpdateAbilities
+	IDUpdateAdventureSettings
+	IDDeathInfo
+	IDEditorNetwork
 )

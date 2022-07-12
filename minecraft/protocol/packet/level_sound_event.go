@@ -398,38 +398,38 @@ const (
 	SoundEventGoatCall5
 	SoundEventGoatCall6
 	SoundEventGoatCall7
-	SoundEventGoatCall8
-	SoundEventGoatCall9
-	SoundEventGoatHarmony0
-	SoundEventGoatHarmony1
-	SoundEventGoatHarmony2
-	SoundEventGoatHarmony3
-	SoundEventGoatHarmony4
-	SoundEventGoatHarmony5
-	SoundEventGoatHarmony6
-	SoundEventGoatHarmony7
-	SoundEventGoatHarmony8
-	SoundEventGoatHarmony9
-	SoundEventGoatMelody0
-	SoundEventGoatMelody1
-	SoundEventGoatMelody2
-	SoundEventGoatMelody3
-	SoundEventGoatMelody4
-	SoundEventGoatMelody5
-	SoundEventGoatMelody6
-	SoundEventGoatMelody7
-	SoundEventGoatMelody8
-	SoundEventGoatMelody9
-	SoundEventGoatBass0
-	SoundEventGoatBass1
-	SoundEventGoatBass2
-	SoundEventGoatBass3
-	SoundEventGoatBass4
-	SoundEventGoatBass5
-	SoundEventGoatBass6
-	SoundEventGoatBass7
-	SoundEventGoatBass8
-	SoundEventGoatBass9
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
+	_
 	_
 	_
 	_
@@ -439,7 +439,7 @@ const (
 	SoundEventItemTaken
 	SoundEventDisappeared
 	SoundEventReappeared
-	_
+	SoundEventDrinkMilk
 	SoundEventFrogspawnHatched
 	SoundEventLaySpawn
 	SoundEventFrogspawnBreak
@@ -448,6 +448,7 @@ const (
 	SoundeventItemThrown
 	SoundEventRecord5
 	SoundEventConvertToFrog
+	SoundEventRecordPlaying
 	SoundEventUndefined
 )
 
