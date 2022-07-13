@@ -68,7 +68,6 @@ type Conn struct {
 
 	gameData         GameData
 	gameDataReceived atomic.Bool
-	chunkRadius      int
 
 	// privateKey is the private key of this end of the connection. Each connection, regardless of which side
 	// the connection is on, server or client, has a unique private key generated.
@@ -137,18 +136,17 @@ type Conn struct {
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	conn := &Conn{
-		enc:         packet.NewEncoder(netConn),
-		dec:         packet.NewDecoder(netConn),
-		salt:        make([]byte, 16),
-		packets:     make(chan *packetData, 8),
-		additional:  make(chan packet.Packet, 16),
-		close:       make(chan struct{}),
-		spawn:       make(chan struct{}),
-		conn:        netConn,
-		privateKey:  key,
-		log:         log,
-		chunkRadius: 16,
-		hdr:         &packet.Header{},
+		enc:        packet.NewEncoder(netConn),
+		dec:        packet.NewDecoder(netConn),
+		salt:       make([]byte, 16),
+		packets:    make(chan *packetData, 8),
+		additional: make(chan packet.Packet, 16),
+		close:      make(chan struct{}),
+		spawn:      make(chan struct{}),
+		conn:       netConn,
+		privateKey: key,
+		log:        log,
+		hdr:        &packet.Header{},
 	}
 	conn.expectedIDs.Store([]uint32{packet.IDLogin})
 	_, _ = rand.Read(conn.salt)
@@ -505,7 +503,7 @@ func (conn *Conn) ClientCacheEnabled() bool {
 // Listener, this is the radius that the client requested. For connections obtained through a Dialer, this
 // is the radius that the server approved upon.
 func (conn *Conn) ChunkRadius() int {
-	return conn.chunkRadius
+	return int(conn.gameData.ChunkRadius)
 }
 
 // takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
@@ -1119,7 +1117,6 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
-	conn.gameDataReceived.Store(true)
 	conn.gameData = GameData{
 		Difficulty:                   pk.Difficulty,
 		WorldName:                    pk.WorldName,
@@ -1148,10 +1145,8 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		}
 	}
 
-	conn.loggedIn = true
-	conn.waitingForSpawn.Store(true)
+	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
-	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: int32(conn.chunkRadius)})
 	return nil
 }
 
@@ -1162,8 +1157,12 @@ func (conn *Conn) handleRequestChunkRadius(pk *packet.RequestChunkRadius) error 
 		return fmt.Errorf("requested chunk radius must be at least 1, got %v", pk.ChunkRadius)
 	}
 	conn.expect(packet.IDSetLocalPlayerAsInitialised)
-	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: pk.ChunkRadius})
-	conn.chunkRadius = int(pk.ChunkRadius)
+	radius := pk.ChunkRadius
+	if r := conn.gameData.ChunkRadius; r != 0 {
+		radius = r
+	}
+	_ = conn.WritePacket(&packet.ChunkRadiusUpdated{ChunkRadius: radius})
+	conn.gameData.ChunkRadius = pk.ChunkRadius
 
 	// The client crashes when not sending all biomes, due to achievements assuming all biomes are present.
 	//noinspection SpellCheckingInspection
@@ -1190,7 +1189,12 @@ func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error 
 		return fmt.Errorf("new chunk radius must be at least 1, got %v", pk.ChunkRadius)
 	}
 	conn.expect(packet.IDPlayStatus)
-	conn.chunkRadius = int(pk.ChunkRadius)
+
+	conn.gameData.ChunkRadius = pk.ChunkRadius
+	conn.gameDataReceived.Store(true)
+	conn.loggedIn = true
+	conn.waitingForSpawn.Store(true)
+
 	return nil
 }
 

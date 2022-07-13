@@ -73,4 +73,7 @@ type GameData struct {
 	// Experiments is a list of experiments enabled on the server side. These experiments are used to enable
 	// disable experimental features.
 	Experiments []protocol.ExperimentData
+	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
+	// packet.ChunkRadiusUpdated.
+	ChunkRadius int32
 }
