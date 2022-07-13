@@ -106,7 +106,7 @@ type ClientData struct {
 	// GUI scale than usual.
 	GUIScale int `json:"GuiScale"`
 	// IsEditorMode is a value to dictate if the player is in editor mode.
-	IsEditorMode bool `json:"IsEditorMode"`
+	IsEditorMode bool
 	// LanguageCode is the language code of the player. It looks like 'en_UK'. It follows the ISO language
 	// codes, but hyphens ('-') are replaced with underscores. ('_')
 	LanguageCode string
