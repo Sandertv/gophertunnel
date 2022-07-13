@@ -13,6 +13,8 @@ const (
 	PlayStatusLoginFailedVanillaEdu
 	PlayStatusLoginFailedEduVanilla
 	PlayStatusLoginFailedServerFull
+	PlayStatusLoginFailedEditorVanilla
+	PlayStatusLoginFailedVanillaEditor
 )
 
 // PlayStatus is sent by the server to update a player on the play status. This includes failed statuses due

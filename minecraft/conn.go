@@ -942,6 +942,7 @@ func (conn *Conn) startGame() {
 		Yaw:                          data.Yaw,
 		Dimension:                    data.Dimension,
 		WorldSpawn:                   data.WorldSpawn,
+		EditorWorld:                  data.EditorWorld,
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
 		Blocks:                       data.CustomBlocks,
@@ -1129,6 +1130,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Yaw:                          pk.Yaw,
 		Dimension:                    pk.Dimension,
 		WorldSpawn:                   pk.WorldSpawn,
+		EditorWorld:                  pk.EditorWorld,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
 		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
@@ -1247,6 +1249,12 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	case packet.PlayStatusLoginFailedServerFull:
 		_ = conn.Close()
 		return fmt.Errorf("server full")
+	case packet.PlayStatusLoginFailedEditorVanilla:
+		_ = conn.Close()
+		return fmt.Errorf("cannot join a vanilla game on editor")
+	case packet.PlayStatusLoginFailedVanillaEditor:
+		_ = conn.Close()
+		return fmt.Errorf("cannot join an editor game on vanilla")
 	default:
 		return fmt.Errorf("unknown play status in PlayStatus packet %v", pk.Status)
 	}

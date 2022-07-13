@@ -210,6 +210,10 @@ func init() {
 		IDRequestAbility:                    func() Packet { return &RequestAbility{} },
 		IDRequestPermissions:                func() Packet { return &RequestPermissions{} },
 		IDToastRequest:                      func() Packet { return &ToastRequest{} },
+		IDUpdateAbilities:                   func() Packet { return &UpdateAbilities{} },
+		IDUpdateAdventureSettings:           func() Packet { return &UpdateAdventureSettings{} },
+		IDDeathInfo:                         func() Packet { return &DeathInfo{} },
+		IDEditorNetwork:                     func() Packet { return &EditorNetwork{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

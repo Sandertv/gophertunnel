@@ -559,22 +559,23 @@ func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
 // FilterStrings field in the respective stack request is non-empty and contains the name of the item created
 // using the anvil or cartography table.
 type CraftRecipeOptionalStackRequestAction struct {
-	// RequestID is a unique ID for the request. This ID is used by the server to send a response for this
-	// specific request in the ItemStackResponse packet.
-	RequestID int32
+	// RecipeNetworkID is the network ID of the multi-recipe that is about to be crafted. This network ID matches
+	// one of the multi-recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
+	// of 1.16.
+	RecipeNetworkID uint32
 	// FilterStringIndex is the index of a filter string sent in a ItemStackRequest.
 	FilterStringIndex int32
 }
 
 // Marshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Marshal(w *Writer) {
-	w.Varint32(&c.RequestID)
+	w.Varuint32(&c.RecipeNetworkID)
 	w.Int32(&c.FilterStringIndex)
 }
 
 // Unmarshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
-	r.Varint32(&c.RequestID)
+	r.Varuint32(&c.RecipeNetworkID)
 	r.Int32(&c.FilterStringIndex)
 }
 
