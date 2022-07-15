@@ -658,14 +658,16 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
 	}
 
+	found := false
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
 			conn.proto = pro
 			conn.pool = pro.Packets()
+			found = true
 			break
 		}
 	}
-	if conn.proto == nil {
+	if !found {
 		status := packet.PlayStatusLoginFailedClient
 		if pk.ClientProtocol > protocol.CurrentProtocol {
 			// The server is outdated in this case, so we have to change the status we send.
