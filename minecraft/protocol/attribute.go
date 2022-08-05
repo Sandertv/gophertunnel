@@ -42,8 +42,8 @@ type AttributeModifier struct {
 	Name string
 	// Amount is the amount of difference between the current value of the attribute and the new value.
 	Amount float32
-	// Operation is the operation that is performed on the attribute. It can be addition, subtraction,
-	// multiplication or division.
+	// Operation is the operation that is performed on the attribute. It can be addition, multiply base, multiply total
+	// or cap.
 	Operation int32
 	// Operand ...
 	// TODO
