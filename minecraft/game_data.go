@@ -14,6 +14,9 @@ type GameData struct {
 	// If WorldName is left empty, the name of the Listener will be used to show above the player list
 	// in-game.
 	WorldName string
+	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
+	// here.
+	WorldSeed uint64
 	// Difficulty is the difficulty of the world that the player spawns in. A difficulty of 0, peaceful, means
 	// the player will automatically regenerate health and hunger.
 	Difficulty int32
@@ -79,4 +82,7 @@ type GameData struct {
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32
+	// ClientSideGeneration is true if the client should use the features registered in the FeatureRegistry packet to
+	// generate terrain client-side to save on bandwidth.
+	ClientSideGeneration bool
 }

@@ -68,6 +68,8 @@ type ClientBoundMapItemData struct {
 	// Pixels is a list of pixel colours for the new texture of the map. It is indexed as Pixels[y][x], with
 	// the length of the outer slice having to be exactly Height long and the inner slices exactly Width long.
 	Pixels [][]color.RGBA
+	// Origin is the center position of the map being updated.
+	Origin protocol.BlockPos
 }
 
 // ID ...
@@ -81,6 +83,7 @@ func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.UpdateFlags)
 	w.Uint8(&pk.Dimension)
 	w.Bool(&pk.LockedMap)
+	w.BlockPos(&pk.Origin)
 
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
 		l := uint32(len(pk.MapsIncludedIn))
@@ -138,6 +141,7 @@ func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&pk.UpdateFlags)
 	r.Uint8(&pk.Dimension)
 	r.Bool(&pk.LockedMap)
+	r.BlockPos(&pk.Origin)
 
 	var count uint32
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {

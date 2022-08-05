@@ -942,6 +942,7 @@ func (conn *Conn) startGame() {
 		PlayerPosition:               data.PlayerPosition,
 		Pitch:                        data.Pitch,
 		Yaw:                          data.Yaw,
+		WorldSeed:                    data.WorldSeed,
 		Dimension:                    data.Dimension,
 		WorldSpawn:                   data.WorldSpawn,
 		EditorWorld:                  data.EditorWorld,
@@ -961,6 +962,7 @@ func (conn *Conn) startGame() {
 		WorldGameMode:                data.WorldGameMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		Experiments:                  data.Experiments,
+		ClientSideGeneration:         data.ClientSideGeneration,
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
 	})

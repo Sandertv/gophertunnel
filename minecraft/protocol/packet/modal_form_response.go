@@ -4,6 +4,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	ModalFormCancelReasonUserClosed = iota
+	ModalFormCancelReasonUserBusy
+)
+
 // ModalFormResponse is sent by the client in response to a ModalFormRequest, after the player has submitted
 // the form sent. It contains the options/properties selected by the player, or a JSON encoded 'null' if
 // the form was closed by clicking the X at the top right corner of the form.
@@ -16,6 +21,8 @@ type ModalFormResponse struct {
 	// false, for a menu form, the response is an integer specifying the index of the button clicked, and for
 	// a custom form, the response is an array containing a value for each element.
 	ResponseData []byte
+	// CancelReason represents the reason why the form was cancelled. It is one of the constants above.
+	CancelReason uint8
 }
 
 // ID ...
@@ -27,10 +34,12 @@ func (*ModalFormResponse) ID() uint32 {
 func (pk *ModalFormResponse) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.FormID)
 	w.ByteSlice(&pk.ResponseData)
+	w.Uint8(&pk.CancelReason)
 }
 
 // Unmarshal ...
 func (pk *ModalFormResponse) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&pk.FormID)
 	r.ByteSlice(&pk.ResponseData)
+	r.Uint8(&pk.CancelReason)
 }
