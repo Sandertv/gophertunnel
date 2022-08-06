@@ -91,7 +91,6 @@ type GameData struct {
 	ClientSideGeneration bool
 	// ChatRestrictionLevel specifies the level of restriction on in-game chat. It is one of the constants above.
 	ChatRestrictionLevel uint8
-	// DisablePlayerInteractions ...
-	// TODO
+	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
 	DisablePlayerInteractions bool
 }
