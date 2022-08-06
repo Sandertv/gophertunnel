@@ -946,6 +946,8 @@ func (conn *Conn) startGame() {
 		Dimension:                    data.Dimension,
 		WorldSpawn:                   data.WorldSpawn,
 		EditorWorld:                  data.EditorWorld,
+		PersonaDisabled:              data.PersonaDisabled,
+		CustomSkinsDisabled:          data.CustomSkinsDisabled,
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
 		Blocks:                       data.CustomBlocks,
@@ -963,6 +965,8 @@ func (conn *Conn) startGame() {
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		Experiments:                  data.Experiments,
 		ClientSideGeneration:         data.ClientSideGeneration,
+		ChatRestrictionLevel:         data.ChatRestrictionLevel,
+		DisablePlayerInteractions:    data.DisablePlayerInteractions,
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
 	})
@@ -1135,6 +1139,8 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Dimension:                    pk.Dimension,
 		WorldSpawn:                   pk.WorldSpawn,
 		EditorWorld:                  pk.EditorWorld,
+		PersonaDisabled:              pk.PersonaDisabled,
+		CustomSkinsDisabled:          pk.CustomSkinsDisabled,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
 		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
@@ -1143,6 +1149,8 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		PlayerMovementSettings:       pk.PlayerMovementSettings,
 		WorldGameMode:                pk.WorldGameMode,
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
+		ChatRestrictionLevel:         pk.ChatRestrictionLevel,
+		DisablePlayerInteractions:    pk.DisablePlayerInteractions,
 		Experiments:                  pk.Experiments,
 	}
 	for _, item := range pk.Items {
