@@ -27,8 +27,8 @@ func (pk *MapInfoRequest) Marshal(w *protocol.Writer) {
 	clientPixelsLen := uint32(len(pk.ClientPixels))
 	w.Uint32(&clientPixelsLen)
 	for index, pixel := range pk.ClientPixels {
+		w.RGBA(&pixel)
 		w.Uint16(&index)
-		w.VarRGBA(&pixel)
 	}
 }
 
@@ -41,11 +41,11 @@ func (pk *MapInfoRequest) Unmarshal(r *protocol.Reader) {
 
 	pk.ClientPixels = make(map[uint16]color.RGBA, clientPixelsLen)
 	for i := uint32(0); i < clientPixelsLen; i++ {
+		var pixel color.RGBA
+		r.RGBA(&pixel)
+
 		var index uint16
 		r.Uint16(&index)
-
-		var pixel color.RGBA
-		r.VarRGBA(&pixel)
 
 		pk.ClientPixels[index] = pixel
 	}
