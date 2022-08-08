@@ -20,7 +20,7 @@ type NetworkChunkPublisherUpdate struct {
 	// chunks, so the chunk radius needs to be multiplied by 16. (Or shifted to the left by 4.)
 	Radius uint32
 	// SavedChunks ...
-	// TODO
+	// TODO: Figure out what this field is used for.
 	SavedChunks []protocol.ChunkPos
 }
 

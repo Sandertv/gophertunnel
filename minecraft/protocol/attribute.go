@@ -46,10 +46,10 @@ type AttributeModifier struct {
 	// or cap.
 	Operation int32
 	// Operand ...
-	// TODO
+	// TODO: Figure out what this field is used for.
 	Operand int32
 	// Serializable ...
-	// TODO
+	// TODO: Figure out what this field is used for.
 	Serializable bool
 }
 
