@@ -16,11 +16,14 @@ type ModalFormResponse struct {
 	// FormID is the form ID of the form the client has responded to. It is the same as the ID sent in the
 	// ModalFormRequest, and may be used to identify which form was submitted.
 	FormID uint32
-	// ResponseData is a JSON encoded value representing the response of the player. If the form was
-	// cancelled, a JSON encoded 'null' is in the response. For a modal form, the response is either true or
-	// false, for a menu form, the response is an integer specifying the index of the button clicked, and for
-	// a custom form, the response is an array containing a value for each element.
+	// HasResponseData is true if the client provided response data.
+	HasResponseData bool
+	// ResponseData is a JSON encoded value representing the response of the player. For a modal form, the response is
+	// either true or false, for a menu form, the response is an integer specifying the index of the button clicked, and
+	// for a custom form, the response is an array containing a value for each element.
 	ResponseData []byte
+	// HasCancelReason is true if the client provided a reason for the form being cancelled.
+	HasCancelReason bool
 	// CancelReason represents the reason why the form was cancelled. It is one of the constants above.
 	CancelReason uint8
 }
@@ -33,13 +36,25 @@ func (*ModalFormResponse) ID() uint32 {
 // Marshal ...
 func (pk *ModalFormResponse) Marshal(w *protocol.Writer) {
 	w.Varuint32(&pk.FormID)
-	w.ByteSlice(&pk.ResponseData)
-	w.Uint8(&pk.CancelReason)
+	w.Bool(&pk.HasResponseData)
+	if pk.HasResponseData {
+		w.ByteSlice(&pk.ResponseData)
+	}
+	w.Bool(&pk.HasCancelReason)
+	if pk.HasCancelReason {
+		w.Uint8(&pk.CancelReason)
+	}
 }
 
 // Unmarshal ...
 func (pk *ModalFormResponse) Unmarshal(r *protocol.Reader) {
 	r.Varuint32(&pk.FormID)
-	r.ByteSlice(&pk.ResponseData)
-	r.Uint8(&pk.CancelReason)
+	r.Bool(&pk.HasResponseData)
+	if pk.HasResponseData {
+		r.ByteSlice(&pk.ResponseData)
+	}
+	r.Bool(&pk.HasCancelReason)
+	if pk.HasCancelReason {
+		r.Uint8(&pk.CancelReason)
+	}
 }
