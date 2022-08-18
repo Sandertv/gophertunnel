@@ -93,6 +93,9 @@ type Conn struct {
 	bufferedSend [][]byte
 	hdr          *packet.Header
 
+	// readyToLogin is a bool indicating if the connection is ready to login. This is used to ensure that the client
+	// has received the relevant network settings before the login sequence starts.
+	readyToLogin bool
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
@@ -620,6 +623,8 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 		return conn.handleSetLocalPlayerAsInitialised(pk)
 
 	// Internal packets destined for the client.
+	case *packet.NetworkSettings:
+		return conn.handleNetworkSettings(pk)
 	case *packet.ServerToClientHandshake:
 		return conn.handleServerToClientHandshake(pk)
 	case *packet.PlayStatus:
@@ -672,6 +677,14 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	_ = conn.Flush()
 	conn.enc.EnableCompression(packet.SnappyCompression{})
 	conn.dec.EnableCompression(packet.SnappyCompression{})
+	return nil
+}
+
+// handleNetworkSettings handles an incoming NetworkSettings packet, enabling compression for future packets.
+func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
+	conn.enc.EnableCompression(pk.CompressionAlgorithm)
+	conn.dec.EnableCompression(pk.CompressionAlgorithm)
+	conn.readyToLogin = true
 	return nil
 }
 
