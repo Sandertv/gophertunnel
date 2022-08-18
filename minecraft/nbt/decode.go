@@ -116,9 +116,9 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 		}
 		switch {
 		case k == reflect.Uint8:
-			val.SetBool(value == 1)
-		case k == reflect.Bool:
 			val.SetUint(uint64(value))
+		case k == reflect.Bool:
+			val.SetBool(value == 1)
 		case isAny(val):
 			val.Set(reflect.ValueOf(value))
 		default:
