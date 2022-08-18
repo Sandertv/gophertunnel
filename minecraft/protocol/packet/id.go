@@ -191,4 +191,5 @@ const (
 	IDUpdateAdventureSettings
 	IDDeathInfo
 	IDEditorNetwork
+	IDFeatureRegistry
 )

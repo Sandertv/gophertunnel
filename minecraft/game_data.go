@@ -14,6 +14,9 @@ type GameData struct {
 	// If WorldName is left empty, the name of the Listener will be used to show above the player list
 	// in-game.
 	WorldName string
+	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
+	// here.
+	WorldSeed uint64
 	// Difficulty is the difficulty of the world that the player spawns in. A difficulty of 0, peaceful, means
 	// the player will automatically regenerate health and hunger.
 	Difficulty int32
@@ -29,6 +32,10 @@ type GameData struct {
 	// This field may be set to 5 to make the client fall back to the game mode set in the WorldGameMode
 	// field.
 	PlayerGameMode int32
+	// PersonaDisabled is true if persona skins are disabled for the current game session.
+	PersonaDisabled bool
+	// CustomSkinsDisabled is true if custom skins are disabled for the current game session.
+	CustomSkinsDisabled bool
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
@@ -79,4 +86,11 @@ type GameData struct {
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32
+	// ClientSideGeneration is true if the client should use the features registered in the FeatureRegistry packet to
+	// generate terrain client-side to save on bandwidth.
+	ClientSideGeneration bool
+	// ChatRestrictionLevel specifies the level of restriction on in-game chat. It is one of the constants above.
+	ChatRestrictionLevel uint8
+	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
+	DisablePlayerInteractions bool
 }

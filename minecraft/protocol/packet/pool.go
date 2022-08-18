@@ -214,6 +214,7 @@ func init() {
 		IDUpdateAdventureSettings:           func() Packet { return &UpdateAdventureSettings{} },
 		IDDeathInfo:                         func() Packet { return &DeathInfo{} },
 		IDEditorNetwork:                     func() Packet { return &EditorNetwork{} },
+		IDFeatureRegistry:                   func() Packet { return &FeatureRegistry{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

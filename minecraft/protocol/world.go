@@ -28,3 +28,17 @@ func DimensionDef(r IO, x *DimensionDefinition) {
 	r.Varint32(&x.Range[1])
 	r.Varint32(&x.Generator)
 }
+
+// GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.
+type GenerationFeature struct {
+	// Name is the name of the feature.
+	Name string
+	// JSON is the encoded JSON data instructing the client on how to generate the feature.
+	JSON []byte
+}
+
+// GenFeature reads/writes a GenerationFeature x using IO r.
+func GenFeature(r IO, x *GenerationFeature) {
+	r.String(&x.Name)
+	r.ByteSlice(&x.JSON)
+}

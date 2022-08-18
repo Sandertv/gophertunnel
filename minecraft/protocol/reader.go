@@ -154,6 +154,18 @@ func (r *Reader) ByteFloat(x *float32) {
 	*x = float32(v) * (360.0 / 256.0)
 }
 
+// RGBA reads a color.RGBA x from a uint32.
+func (r *Reader) RGBA(x *color.RGBA) {
+	var v uint32
+	r.Uint32(&v)
+	*x = color.RGBA{
+		R: byte(v),
+		G: byte(v >> 8),
+		B: byte(v >> 16),
+		A: byte(v >> 24),
+	}
+}
+
 // VarRGBA reads a color.RGBA x from a varuint32.
 func (r *Reader) VarRGBA(x *color.RGBA) {
 	var v uint32

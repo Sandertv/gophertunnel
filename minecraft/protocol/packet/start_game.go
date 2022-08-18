@@ -12,6 +12,12 @@ const (
 	SpawnBiomeTypeUserDefined
 )
 
+const (
+	ChatRestrictionLevelNone     = 0
+	ChatRestrictionLevelDropped  = 1
+	ChatRestrictionLevelDisabled = 2
+)
+
 // StartGame is sent by the server to send information about the world the player will be spawned in. It
 // contains information about the position the player spawns in, and information about the world in general
 // such as its game rules.
@@ -152,6 +158,10 @@ type StartGame struct {
 	// OnlySpawnV1Villagers is a hack that Mojang put in place to preserve backwards compatibility with old
 	// villagers. The bool is never actually read though, so it has no functionality.
 	OnlySpawnV1Villagers bool
+	// PersonaDisabled is true if persona skins are disabled for the current game session.
+	PersonaDisabled bool
+	// CustomSkinsDisabled is true if custom skins are disabled for the current game session.
+	CustomSkinsDisabled bool
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
@@ -205,9 +215,16 @@ type StartGame struct {
 	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
 	// This can simply be left empty, and the client will avoid trying to verify it.
 	ServerBlockStateChecksum uint64
+	// ClientSideGeneration is true if the client should use the features registered in the FeatureRegistry packet to
+	// generate terrain client-side to save on bandwidth.
+	ClientSideGeneration bool
 	// WorldTemplateID is a UUID that identifies the template that was used to generate the world. Servers that do not
 	// use a world based off of a template can set this to an empty UUID.
 	WorldTemplateID uuid.UUID
+	// ChatRestrictionLevel specifies the level of restriction on in-game chat. It is one of the constants above.
+	ChatRestrictionLevel uint8
+	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
+	DisablePlayerInteractions bool
 }
 
 // ID ...
@@ -264,6 +281,8 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.FromWorldTemplate)
 	w.Bool(&pk.WorldTemplateSettingsLocked)
 	w.Bool(&pk.OnlySpawnV1Villagers)
+	w.Bool(&pk.PersonaDisabled)
+	w.Bool(&pk.CustomSkinsDisabled)
 	w.String(&pk.BaseGameVersion)
 	w.Int32(&pk.LimitedWorldWidth)
 	w.Int32(&pk.LimitedWorldDepth)
@@ -275,6 +294,9 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 		// is set to true.
 		w.Bool(&pk.ForceExperimentalGameplay)
 	}
+	w.Uint8(&pk.ChatRestrictionLevel)
+	w.Bool(&pk.DisablePlayerInteractions)
+
 	w.String(&pk.LevelID)
 	w.String(&pk.WorldName)
 	w.String(&pk.TemplateContentIdentity)
@@ -300,6 +322,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.NBT(&pk.PropertyData, nbt.NetworkLittleEndian)
 	w.Uint64(&pk.ServerBlockStateChecksum)
 	w.UUID(&pk.WorldTemplateID)
+	w.Bool(&pk.ClientSideGeneration)
 }
 
 // Unmarshal ...
@@ -353,6 +376,8 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.FromWorldTemplate)
 	r.Bool(&pk.WorldTemplateSettingsLocked)
 	r.Bool(&pk.OnlySpawnV1Villagers)
+	r.Bool(&pk.PersonaDisabled)
+	r.Bool(&pk.CustomSkinsDisabled)
 	r.String(&pk.BaseGameVersion)
 	r.Int32(&pk.LimitedWorldWidth)
 	r.Int32(&pk.LimitedWorldDepth)
@@ -364,6 +389,9 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 		// is set to true.
 		r.Bool(&pk.ForceExperimentalGameplay)
 	}
+	r.Uint8(&pk.ChatRestrictionLevel)
+	r.Bool(&pk.DisablePlayerInteractions)
+
 	r.String(&pk.LevelID)
 	r.String(&pk.WorldName)
 	r.String(&pk.TemplateContentIdentity)
@@ -389,4 +417,5 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.NBT(&pk.PropertyData, nbt.NetworkLittleEndian)
 	r.Uint64(&pk.ServerBlockStateChecksum)
 	r.UUID(&pk.WorldTemplateID)
+	r.Bool(&pk.ClientSideGeneration)
 }

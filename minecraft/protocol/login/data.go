@@ -182,6 +182,8 @@ type ClientData struct {
 	ThirdPartyNameOnly bool
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
+	// TrustedSkin is a boolean indicating if the skin the client is using is trusted.
+	TrustedSkin bool
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
