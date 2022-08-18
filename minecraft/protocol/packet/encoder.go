@@ -19,12 +19,6 @@ type Encoder struct {
 	encrypt     *encrypt
 }
 
-// writeResetter is an interface composed of an io.Writer and a Reset(io.Writer) method.
-type writeResetter interface {
-	io.Writer
-	Reset(w io.Writer)
-}
-
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
 func NewEncoder(w io.Writer) *Encoder {
