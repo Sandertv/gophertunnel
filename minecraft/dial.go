@@ -190,8 +190,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	c := make(chan struct{})
 	go listenConn(conn, d.ErrorLog, c)
 
-	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
-	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
+	conn.expect(packet.IDNetworkSettings)
+	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
 		return nil, err
 	}
 	_ = conn.Flush()
@@ -201,7 +201,12 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	case <-ctx.Done():
 		return nil, conn.wrap(ctx.Err(), "dial")
 	case <-c:
-		// We've connected successfully. We return the connection and no error.
+		// We've connected successfully. We send our connection request, return the connection and no error.
+		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
+		if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
+			return nil, err
+		}
+		_ = conn.Flush()
 		return conn, nil
 	}
 }

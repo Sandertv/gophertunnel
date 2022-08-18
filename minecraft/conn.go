@@ -148,7 +148,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		log:        log,
 		hdr:        &packet.Header{},
 	}
-	conn.expectedIDs.Store([]uint32{packet.IDLogin})
+	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 	_, _ = rand.Read(conn.salt)
 
 	go func() {
@@ -602,6 +602,8 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	}()
 	switch pk := pk.(type) {
 	// Internal packets destined for the server.
+	case *packet.RequestNetworkSettings:
+		return conn.handleRequestNetworkSettings(pk)
 	case *packet.Login:
 		return conn.handleLogin(pk)
 	case *packet.ClientToServerHandshake:
@@ -638,26 +640,9 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 	return nil
 }
 
-// handleLogin handles an incoming login packet. It verifies an decodes the login request found in the packet
-// and returns an error if it couldn't be done successfully.
-func (conn *Conn) handleLogin(pk *packet.Login) error {
-	// The next expected packet is a response from the client to the handshake.
-	conn.expect(packet.IDClientToServerHandshake)
-	var (
-		err        error
-		authResult login.AuthResult
-	)
-	conn.identityData, conn.clientData, authResult, err = login.Parse(pk.ConnectionRequest)
-	if err != nil {
-		return fmt.Errorf("parse login request: %w", err)
-	}
-
-	// Make sure the player is logged in with XBOX Live when necessary.
-	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
-		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
-		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
-	}
-
+// handleRequestNetworkSettings handles an incoming RequestNetworkSettings packet. It returns an error if the protocol
+// version is not supported, otherwise sending back a NetworkSettings packet.
+func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings) error {
 	found := false
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
@@ -676,6 +661,39 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
 	}
+
+	conn.expect(packet.IDLogin)
+	if err := conn.WritePacket(&packet.NetworkSettings{
+		CompressionThreshold: 512,
+		CompressionAlgorithm: protocol.SnappyCompression{},
+	}); err != nil {
+		return fmt.Errorf("error sending network settings: %v", err)
+	}
+	_ = conn.Flush()
+	conn.enc.EnableCompression(protocol.SnappyCompression{})
+	conn.dec.EnableCompression(protocol.SnappyCompression{})
+	return nil
+}
+
+// handleLogin handles an incoming login packet. It verifies and decodes the login request found in the packet
+// and returns an error if it couldn't be done successfully.
+func (conn *Conn) handleLogin(pk *packet.Login) error {
+	// The next expected packet is a response from the client to the handshake.
+	conn.expect(packet.IDClientToServerHandshake)
+	var (
+		err        error
+		authResult login.AuthResult
+	)
+	conn.identityData, conn.clientData, authResult, err = login.Parse(pk.ConnectionRequest)
+	if err != nil {
+		return fmt.Errorf("parse login request: %w", err)
+	}
+
+	// Make sure the player is logged in with XBOX Live when necessary.
+	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
+		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
+		return fmt.Errorf("connection %v was not authenticated to XBOX Live", conn.RemoteAddr())
+	}
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)
 	}
@@ -686,9 +704,6 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 func (conn *Conn) handleClientToServerHandshake() error {
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
-	if err := conn.WritePacket(&packet.NetworkSettings{CompressionThreshold: 512}); err != nil {
-		return fmt.Errorf("error sending network settings: %v", err)
-	}
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("error sending play status login success: %v", err)
 	}

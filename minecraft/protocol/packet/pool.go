@@ -215,6 +215,10 @@ func init() {
 		IDDeathInfo:                         func() Packet { return &DeathInfo{} },
 		IDEditorNetwork:                     func() Packet { return &EditorNetwork{} },
 		IDFeatureRegistry:                   func() Packet { return &FeatureRegistry{} },
+		IDServerStats:                       func() Packet { return &ServerStats{} },
+		IDRequestNetworkSettings:            func() Packet { return &RequestNetworkSettings{} },
+		IDGameTestRequest:                   func() Packet { return &GameTestRequest{} },
+		// TODO: Game test results
 	}
 	for id, pk := range packets {
 		Register(id, pk)

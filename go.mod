@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/go-gl/mathgl v1.0.0
+	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.3.0
 	github.com/klauspost/compress v1.15.1
 	github.com/muhammadmuzzammil1998/jsonc v1.0.0

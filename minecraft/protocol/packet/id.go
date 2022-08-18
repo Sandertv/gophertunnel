@@ -192,4 +192,8 @@ const (
 	IDDeathInfo
 	IDEditorNetwork
 	IDFeatureRegistry
+	IDServerStats
+	IDRequestNetworkSettings
+	IDGameTestRequest
+	IDGameTestResults
 )
