@@ -4,6 +4,20 @@ import (
 	"fmt"
 )
 
+const (
+	FilterCauseServerChatPublic = iota
+	FilterCauseServerChatWhisper
+	FilterCauseSignText
+	FilterCauseAnvilText
+	FilterCauseBookAndQuillText
+	FilterCauseCommandBlockText
+	FilterCauseBlockActorDataText
+	FilterCauseJoinEventText
+	FilterCauseLeaveEventText
+	FilterCauseSlashCommandChat
+	FilterCauseCartographyText
+)
+
 // ItemStackRequest represents a single request present in an ItemStackRequest packet sent by the client to
 // change an item in an inventory.
 // Item stack requests are either approved or rejected by the server using the ItemStackResponse packet.
@@ -17,6 +31,8 @@ type ItemStackRequest struct {
 	// FilterStrings is a list of filter strings involved in the request. This is typically filled with one string
 	// when an anvil or cartography is used.
 	FilterStrings []string
+	// FilterCause represents the cause of any potential filtering. This is one of the constants above.
+	FilterCause int32
 }
 
 // WriteStackRequest writes an ItemStackRequest x to Writer w.
@@ -69,11 +85,13 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 		w.Uint8(&id)
 		action.Marshal(w)
 	}
+
 	l = uint32(len(x.FilterStrings))
 	w.Varuint32(&l)
 	for _, n := range x.FilterStrings {
 		w.String(&n)
 	}
+	w.Int32(&x.FilterCause)
 }
 
 // StackRequest reads an ItemStackRequest x from Reader r.
@@ -145,6 +163,7 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 	for i := uint32(0); i < count; i++ {
 		r.String(&x.FilterStrings[i])
 	}
+	r.Int32(&x.FilterCause)
 }
 
 const (
