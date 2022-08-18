@@ -1157,6 +1157,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.gameData = GameData{
 		Difficulty:                   pk.Difficulty,
 		WorldName:                    pk.WorldName,
+		WorldSeed:                    pk.WorldSeed,
 		EntityUniqueID:               pk.EntityUniqueID,
 		EntityRuntimeID:              pk.EntityRuntimeID,
 		PlayerGameMode:               pk.PlayerGameMode,
@@ -1179,6 +1180,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
 		ChatRestrictionLevel:         pk.ChatRestrictionLevel,
 		DisablePlayerInteractions:    pk.DisablePlayerInteractions,
+		ClientSideGeneration:         pk.ClientSideGeneration,
 		Experiments:                  pk.Experiments,
 	}
 	for _, item := range pk.Items {
