@@ -6,7 +6,6 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"github.com/sandertv/gophertunnel/internal"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
 
@@ -15,7 +14,7 @@ import (
 type Encoder struct {
 	w io.Writer
 
-	compression protocol.Compression
+	compression Compression
 	encrypt     *encrypt
 }
 
@@ -37,7 +36,7 @@ func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
 }
 
 // EnableCompression enables compression for the Encoder.
-func (encoder *Encoder) EnableCompression(compression protocol.Compression) {
+func (encoder *Encoder) EnableCompression(compression Compression) {
 	encoder.compression = compression
 }
 

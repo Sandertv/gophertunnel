@@ -12,7 +12,7 @@ type NetworkSettings struct {
 	// When set to 0, all packets will be left uncompressed.
 	CompressionThreshold uint16
 	// CompressionAlgorithm is the algorithm that is used to compress packets.
-	CompressionAlgorithm protocol.Compression
+	CompressionAlgorithm Compression
 }
 
 // ID ...
@@ -34,5 +34,5 @@ func (pk *NetworkSettings) Unmarshal(r *protocol.Reader) {
 	var id uint16
 	r.Uint16(&id)
 
-	pk.CompressionAlgorithm, _ = protocol.CompressionByID(id)
+	pk.CompressionAlgorithm, _ = CompressionByID(id)
 }

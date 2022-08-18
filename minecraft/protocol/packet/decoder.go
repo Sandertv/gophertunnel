@@ -21,7 +21,7 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
-	compression protocol.Compression
+	compression Compression
 	encrypt     *encrypt
 
 	checkPacketLimit bool
@@ -56,7 +56,7 @@ func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 }
 
 // EnableCompression enables compression for the Decoder.
-func (decoder *Decoder) EnableCompression(compression protocol.Compression) {
+func (decoder *Decoder) EnableCompression(compression Compression) {
 	decoder.compression = compression
 }
 
