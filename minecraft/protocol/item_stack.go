@@ -69,11 +69,7 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 		w.Uint8(&id)
 		action.Marshal(w)
 	}
-	l = uint32(len(x.FilterStrings))
-	w.Varuint32(&l)
-	for _, n := range x.FilterStrings {
-		w.String(&n)
-	}
+	FuncSlice(w, &x.FilterStrings, w.String)
 }
 
 // StackRequest reads an ItemStackRequest x from Reader r.
@@ -134,17 +130,10 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 			r.UnknownEnumOption(id, "stack request action type")
 			return
 		}
-		action.Unmarshal(r)
+		action.Marshal(r)
 		x.Actions[i] = action
 	}
-
-	r.Varuint32(&count)
-	r.LimitUint32(count, 64)
-
-	x.FilterStrings = make([]string, count)
-	for i := uint32(0); i < count; i++ {
-		r.String(&x.FilterStrings[i])
-	}
+	FuncSlice(r, &x.FilterStrings, r.String)
 }
 
 const (
@@ -168,6 +157,16 @@ type ItemStackResponse struct {
 	ContainerInfo []StackResponseContainerInfo
 }
 
+// Marshal encodes/decodes an ItemStackResponse.
+func (x ItemStackResponse) Marshal(r IO) any {
+	r.Uint8(&x.Status)
+	r.Varint32(&x.RequestID)
+	if x.Status == ItemStackResponseStatusOK {
+		Slice(r, &x.ContainerInfo)
+	}
+	return x
+}
+
 // StackResponseContainerInfo holds information on what slots in a container have what item stack in them.
 type StackResponseContainerInfo struct {
 	// ContainerID is the container ID of the container that the slots that follow are in. For the main
@@ -176,6 +175,13 @@ type StackResponseContainerInfo struct {
 	ContainerID byte
 	// SlotInfo holds information on what item stack should be present in specific slots in the container.
 	SlotInfo []StackResponseSlotInfo
+}
+
+// Marshal encodes/decodes a StackResponseContainerInfo.
+func (x StackResponseContainerInfo) Marshal(r IO) any {
+	r.Uint8(&x.ContainerID)
+	Slice(r, &x.SlotInfo)
+	return x
 }
 
 // StackResponseSlotInfo holds information on what item stack should be present in a specific slot.
@@ -195,60 +201,8 @@ type StackResponseSlotInfo struct {
 	DurabilityCorrection int32
 }
 
-// WriteStackResponse writes an ItemStackResponse x to Writer w.
-func WriteStackResponse(w *Writer, x *ItemStackResponse) {
-	w.Uint8(&x.Status)
-	w.Varint32(&x.RequestID)
-	if x.Status != ItemStackResponseStatusOK {
-		return
-	}
-	l := uint32(len(x.ContainerInfo))
-	w.Varuint32(&l)
-	for _, info := range x.ContainerInfo {
-		WriteStackContainerInfo(w, &info)
-	}
-}
-
-// StackResponse reads an ItemStackResponse x from Reader r.
-func StackResponse(r *Reader, x *ItemStackResponse) {
-	var l uint32
-	r.Uint8(&x.Status)
-	r.Varint32(&x.RequestID)
-	if x.Status != ItemStackResponseStatusOK {
-		return
-	}
-	r.Varuint32(&l)
-
-	x.ContainerInfo = make([]StackResponseContainerInfo, l)
-	for i := uint32(0); i < l; i++ {
-		StackContainerInfo(r, &x.ContainerInfo[i])
-	}
-}
-
-// WriteStackContainerInfo writes a StackResponseContainerInfo x to Writer w.
-func WriteStackContainerInfo(w *Writer, x *StackResponseContainerInfo) {
-	w.Uint8(&x.ContainerID)
-	l := uint32(len(x.SlotInfo))
-	w.Varuint32(&l)
-	for _, info := range x.SlotInfo {
-		StackSlotInfo(w, &info)
-	}
-}
-
-// StackContainerInfo reads a StackResponseContainerInfo x from Reader r.
-func StackContainerInfo(r *Reader, x *StackResponseContainerInfo) {
-	var l uint32
-	r.Uint8(&x.ContainerID)
-	r.Varuint32(&l)
-
-	x.SlotInfo = make([]StackResponseSlotInfo, l)
-	for i := uint32(0); i < l; i++ {
-		StackSlotInfo(r, &x.SlotInfo[i])
-	}
-}
-
-// StackSlotInfo reads/writes a StackResponseSlotInfo x using IO r.
-func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
+// Marshal encodes/decodes a StackResponseSlotInfo.
+func (x StackResponseSlotInfo) Marshal(r IO) any {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
@@ -258,17 +212,15 @@ func StackSlotInfo(r IO, x *StackResponseSlotInfo) {
 	}
 	r.String(&x.CustomName)
 	r.Varint32(&x.DurabilityCorrection)
+	return x
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
 // The action is one of the concrete types below, each of which are indicative of a different action by the
 // client, such as moving an item around the inventory or placing a block.
 type StackRequestAction interface {
-	// Marshal encodes the stack request action its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised stack request action object from Reader r into the
-	// InventoryTransactionData instance.
-	Unmarshal(r *Reader)
+	// Marshal encodes/decodes a StackRequestAction.
+	Marshal(r IO)
 }
 
 const (
@@ -305,14 +257,7 @@ type transferStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *transferStackRequestAction) Marshal(w *Writer) {
-	w.Uint8(&a.Count)
-	StackReqSlotInfo(w, &a.Source)
-	StackReqSlotInfo(w, &a.Destination)
-}
-
-// Unmarshal ...
-func (a *transferStackRequestAction) Unmarshal(r *Reader) {
+func (a *transferStackRequestAction) Marshal(r IO) {
 	r.Uint8(&a.Count)
 	StackReqSlotInfo(r, &a.Source)
 	StackReqSlotInfo(r, &a.Destination)
@@ -340,13 +285,7 @@ type SwapStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *SwapStackRequestAction) Marshal(w *Writer) {
-	StackReqSlotInfo(w, &a.Source)
-	StackReqSlotInfo(w, &a.Destination)
-}
-
-// Unmarshal ...
-func (a *SwapStackRequestAction) Unmarshal(r *Reader) {
+func (a *SwapStackRequestAction) Marshal(r IO) {
 	StackReqSlotInfo(r, &a.Source)
 	StackReqSlotInfo(r, &a.Destination)
 }
@@ -366,14 +305,7 @@ type DropStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *DropStackRequestAction) Marshal(w *Writer) {
-	w.Uint8(&a.Count)
-	StackReqSlotInfo(w, &a.Source)
-	w.Bool(&a.Randomly)
-}
-
-// Unmarshal ...
-func (a *DropStackRequestAction) Unmarshal(r *Reader) {
+func (a *DropStackRequestAction) Marshal(r IO) {
 	r.Uint8(&a.Count)
 	StackReqSlotInfo(r, &a.Source)
 	r.Bool(&a.Randomly)
@@ -390,13 +322,7 @@ type DestroyStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *DestroyStackRequestAction) Marshal(w *Writer) {
-	w.Uint8(&a.Count)
-	StackReqSlotInfo(w, &a.Source)
-}
-
-// Unmarshal ...
-func (a *DestroyStackRequestAction) Unmarshal(r *Reader) {
+func (a *DestroyStackRequestAction) Marshal(r IO) {
 	r.Uint8(&a.Count)
 	StackReqSlotInfo(r, &a.Source)
 }
@@ -420,12 +346,7 @@ type CreateStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CreateStackRequestAction) Marshal(w *Writer) {
-	w.Uint8(&a.ResultsSlot)
-}
-
-// Unmarshal ...
-func (a *CreateStackRequestAction) Unmarshal(r *Reader) {
+func (a *CreateStackRequestAction) Marshal(r IO) {
 	r.Uint8(&a.ResultsSlot)
 }
 
@@ -443,10 +364,7 @@ type TakeOutContainerStackRequestAction struct {
 type LabTableCombineStackRequestAction struct{}
 
 // Marshal ...
-func (a *LabTableCombineStackRequestAction) Marshal(*Writer) {}
-
-// Unmarshal ...
-func (a *LabTableCombineStackRequestAction) Unmarshal(*Reader) {}
+func (a *LabTableCombineStackRequestAction) Marshal(IO) {}
 
 // BeaconPaymentStackRequestAction is sent by the client when it submits an item to enable effects from a
 // beacon. These items will have been moved into the beacon item slot in advance.
@@ -456,13 +374,7 @@ type BeaconPaymentStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *BeaconPaymentStackRequestAction) Marshal(w *Writer) {
-	w.Varint32(&a.PrimaryEffect)
-	w.Varint32(&a.SecondaryEffect)
-}
-
-// Unmarshal ...
-func (a *BeaconPaymentStackRequestAction) Unmarshal(r *Reader) {
+func (a *BeaconPaymentStackRequestAction) Marshal(r IO) {
 	r.Varint32(&a.PrimaryEffect)
 	r.Varint32(&a.SecondaryEffect)
 }
@@ -480,14 +392,7 @@ type MineBlockStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *MineBlockStackRequestAction) Marshal(w *Writer) {
-	w.Varint32(&a.HotbarSlot)
-	w.Varint32(&a.PredictedDurability)
-	w.Varint32(&a.StackNetworkID)
-}
-
-// Unmarshal ...
-func (a *MineBlockStackRequestAction) Unmarshal(r *Reader) {
+func (a *MineBlockStackRequestAction) Marshal(r IO) {
 	r.Varint32(&a.HotbarSlot)
 	r.Varint32(&a.PredictedDurability)
 	r.Varint32(&a.StackNetworkID)
@@ -505,12 +410,7 @@ type CraftRecipeStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftRecipeStackRequestAction) Marshal(w *Writer) {
-	w.Varuint32(&a.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (a *CraftRecipeStackRequestAction) Unmarshal(r *Reader) {
+func (a *CraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
 }
 
@@ -526,13 +426,7 @@ type AutoCraftRecipeStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *AutoCraftRecipeStackRequestAction) Marshal(w *Writer) {
-	w.Varuint32(&a.RecipeNetworkID)
-	w.Uint8(&a.TimesCrafted)
-}
-
-// Unmarshal ...
-func (a *AutoCraftRecipeStackRequestAction) Unmarshal(r *Reader) {
+func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
 	r.Uint8(&a.TimesCrafted)
 }
@@ -546,12 +440,7 @@ type CraftCreativeStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftCreativeStackRequestAction) Marshal(w *Writer) {
-	w.Varuint32(&a.CreativeItemNetworkID)
-}
-
-// Unmarshal ...
-func (a *CraftCreativeStackRequestAction) Unmarshal(r *Reader) {
+func (a *CraftCreativeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.CreativeItemNetworkID)
 }
 
@@ -568,13 +457,7 @@ type CraftRecipeOptionalStackRequestAction struct {
 }
 
 // Marshal ...
-func (c *CraftRecipeOptionalStackRequestAction) Marshal(w *Writer) {
-	w.Varuint32(&c.RecipeNetworkID)
-	w.Int32(&c.FilterStringIndex)
-}
-
-// Unmarshal ...
-func (c *CraftRecipeOptionalStackRequestAction) Unmarshal(r *Reader) {
+func (c *CraftRecipeOptionalStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
 	r.Int32(&c.FilterStringIndex)
 }
@@ -591,13 +474,7 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 }
 
 // Marshal ...
-func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(w *Writer) {
-	w.Varuint32(&c.RecipeNetworkID)
-	w.Varint32(&c.Cost)
-}
-
-// Unmarshal ...
-func (c *CraftGrindstoneRecipeStackRequestAction) Unmarshal(r *Reader) {
+func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
 	r.Varint32(&c.Cost)
 }
@@ -610,12 +487,7 @@ type CraftLoomRecipeStackRequestAction struct {
 }
 
 // Marshal ...
-func (c *CraftLoomRecipeStackRequestAction) Marshal(w *Writer) {
-	w.String(&c.Pattern)
-}
-
-// Unmarshal ...
-func (c *CraftLoomRecipeStackRequestAction) Unmarshal(r *Reader) {
+func (c *CraftLoomRecipeStackRequestAction) Marshal(r IO) {
 	r.String(&c.Pattern)
 }
 
@@ -624,10 +496,7 @@ func (c *CraftLoomRecipeStackRequestAction) Unmarshal(r *Reader) {
 type CraftNonImplementedStackRequestAction struct{}
 
 // Marshal ...
-func (*CraftNonImplementedStackRequestAction) Marshal(*Writer) {}
-
-// Unmarshal ...
-func (*CraftNonImplementedStackRequestAction) Unmarshal(*Reader) {}
+func (*CraftNonImplementedStackRequestAction) Marshal(IO) {}
 
 // CraftResultsDeprecatedStackRequestAction is an additional, deprecated packet sent by the client after
 // crafting. It holds the final results and the amount of times the recipe was crafted. It shouldn't be used.
@@ -639,25 +508,8 @@ type CraftResultsDeprecatedStackRequestAction struct {
 }
 
 // Marshal ...
-func (a *CraftResultsDeprecatedStackRequestAction) Marshal(w *Writer) {
-	l := uint32(len(a.ResultItems))
-	w.Varuint32(&l)
-	for _, i := range a.ResultItems {
-		w.Item(&i)
-	}
-	w.Uint8(&a.TimesCrafted)
-}
-
-// Unmarshal ...
-func (a *CraftResultsDeprecatedStackRequestAction) Unmarshal(r *Reader) {
-	var l uint32
-	r.Varuint32(&l)
-	r.LimitUint32(l, mediumLimit*2)
-
-	a.ResultItems = make([]ItemStack, l)
-	for i := uint32(0); i < l; i++ {
-		r.Item(&a.ResultItems[i])
-	}
+func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
+	FuncSlice(r, &a.ResultItems, r.Item)
 	r.Uint8(&a.TimesCrafted)
 }
 

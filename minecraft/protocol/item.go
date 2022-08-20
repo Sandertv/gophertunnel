@@ -57,14 +57,15 @@ type RecipeIngredientItem struct {
 	Count int32
 }
 
-// RecipeIngredient reads/writes a RecipeIngredientItem x using IO r.
-func RecipeIngredient(r IO, x *RecipeIngredientItem) {
+// Marshal encodes/decodes a RecipeIngredientItem.
+func (x RecipeIngredientItem) Marshal(r IO) any {
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
-		return
+		return x
 	}
 	r.Varint32(&x.MetadataValue)
 	r.Varint32(&x.Count)
+	return x
 }
 
 // ItemEntry is an item sent in the StartGame item table. It holds a name and a legacy ID, which is used to
@@ -77,6 +78,14 @@ type ItemEntry struct {
 	RuntimeID int16
 	// ComponentBased specifies if the item was created using components, meaning the item is a custom item.
 	ComponentBased bool
+}
+
+// Marshal encodes/decodes an ItemEntry.
+func (x ItemEntry) Marshal(r IO) any {
+	r.String(&x.Name)
+	r.Int16(&x.RuntimeID)
+	r.Bool(&x.ComponentBased)
+	return x
 }
 
 // Item reads/writes an ItemEntry x using IO r.
@@ -95,10 +104,11 @@ type ItemComponentEntry struct {
 	Data map[string]any
 }
 
-// ItemComponents reads/writes an ItemComponentEntry x using IO r.
-func ItemComponents(r IO, x *ItemComponentEntry) {
+// Marshal encodes/decodes an ItemComponentEntry.
+func (x ItemComponentEntry) Marshal(r IO) any {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
+	return x
 }
 
 // MaterialReducerOutput is an output from a material reducer.

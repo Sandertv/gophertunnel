@@ -32,7 +32,7 @@ func (*CraftingData) ID() uint32 {
 
 // Marshal ...
 func (pk *CraftingData) Marshal(w *protocol.Writer) {
-	l, potRecipesLen, containerRecipesLen, materialReducersLen := uint32(len(pk.Recipes)), uint32(len(pk.PotionRecipes)), uint32(len(pk.PotionContainerChangeRecipes)), uint32(len(pk.MaterialReducers))
+	l, materialReducersLen := uint32(len(pk.Recipes)), uint32(len(pk.MaterialReducers))
 	w.Varuint32(&l)
 	for _, recipe := range pk.Recipes {
 		var c int32
@@ -59,19 +59,12 @@ func (pk *CraftingData) Marshal(w *protocol.Writer) {
 		w.Varint32(&c)
 		recipe.Marshal(w)
 	}
-	w.Varuint32(&potRecipesLen)
-	for _, mix := range pk.PotionRecipes {
-		protocol.PotRecipe(w, &mix)
-	}
-	w.Varuint32(&containerRecipesLen)
-	for _, mix := range pk.PotionContainerChangeRecipes {
-		protocol.PotContainerChangeRecipe(w, &mix)
-	}
+	protocol.Slice(w, &pk.PotionRecipes)
+	protocol.Slice(w, &pk.PotionContainerChangeRecipes)
 	w.Varuint32(&materialReducersLen)
 	for _, mat := range pk.MaterialReducers {
 		w.MaterialReducer(&mat)
 	}
-
 	w.Bool(&pk.ClearRecipes)
 }
 
@@ -109,20 +102,13 @@ func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 		recipe.Unmarshal(r)
 		pk.Recipes[i] = recipe
 	}
+	protocol.Slice(r, &pk.PotionRecipes)
+	protocol.Slice(r, &pk.PotionContainerChangeRecipes)
+
 	r.Varuint32(&length)
-	pk.PotionRecipes = make([]protocol.PotionRecipe, length)
-	for i := uint32(0); i < length; i++ {
-		protocol.PotRecipe(r, &pk.PotionRecipes[i])
-	}
-	r.Varuint32(&length)
-	pk.PotionContainerChangeRecipes = make([]protocol.PotionContainerChangeRecipe, length)
-	for i := uint32(0); i < length; i++ {
-		protocol.PotContainerChangeRecipe(r, &pk.PotionContainerChangeRecipes[i])
-	}
-	r.Varuint32(&length)
+	pk.MaterialReducers = make([]protocol.MaterialReducer, length)
 	for i := uint32(0); i < length; i++ {
 		r.MaterialReducer(&pk.MaterialReducers[i])
 	}
-
 	r.Bool(&pk.ClearRecipes)
 }

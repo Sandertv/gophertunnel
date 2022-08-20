@@ -38,7 +38,7 @@ type AddActor struct {
 	BodyYaw float32
 	// Attributes is a slice of attributes that the entity has. It includes attributes such as its health,
 	// movement speed, etc.
-	Attributes []protocol.Attribute
+	Attributes []protocol.AttributeValue
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
@@ -65,9 +65,9 @@ func (pk *AddActor) Marshal(w *protocol.Writer) {
 	w.Float32(&pk.Yaw)
 	w.Float32(&pk.HeadYaw)
 	w.Float32(&pk.BodyYaw)
-	protocol.WriteInitialAttributes(w, &pk.Attributes)
+	protocol.Slice(w, &pk.Attributes)
 	w.EntityMetadata(&pk.EntityMetadata)
-	protocol.WriteEntityLinks(w, &pk.EntityLinks)
+	protocol.Slice(w, &pk.EntityLinks)
 }
 
 // Unmarshal ...
@@ -81,7 +81,7 @@ func (pk *AddActor) Unmarshal(r *protocol.Reader) {
 	r.Float32(&pk.Yaw)
 	r.Float32(&pk.HeadYaw)
 	r.Float32(&pk.BodyYaw)
-	protocol.InitialAttributes(r, &pk.Attributes)
+	protocol.Slice(r, &pk.Attributes)
 	r.EntityMetadata(&pk.EntityMetadata)
-	protocol.EntityLinks(r, &pk.EntityLinks)
+	protocol.Slice(r, &pk.EntityLinks)
 }

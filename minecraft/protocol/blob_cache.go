@@ -11,8 +11,9 @@ type CacheBlob struct {
 	Payload []byte
 }
 
-// Blob reads/writes a CacheBlob x using IO r.
-func Blob(r IO, x *CacheBlob) {
+// Marshal encodes/decodes a CacheBlob.
+func (x CacheBlob) Marshal(r IO) any {
 	r.Uint64(&x.Hash)
 	r.ByteSlice(&x.Payload)
+	return x
 }

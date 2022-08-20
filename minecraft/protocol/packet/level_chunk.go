@@ -60,11 +60,7 @@ func (pk *LevelChunk) Marshal(w *protocol.Writer) {
 
 	w.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
-		l := uint32(len(pk.BlobHashes))
-		w.Varuint32(&l)
-		for _, hash := range pk.BlobHashes {
-			w.Uint64(&hash)
-		}
+		protocol.FuncSlice(w, &pk.BlobHashes, w.Uint64)
 	}
 	w.ByteSlice(&pk.RawPayload)
 }
@@ -88,12 +84,7 @@ func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
 
 	r.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
-		var count uint32
-		r.Varuint32(&count)
-		pk.BlobHashes = make([]uint64, count)
-		for i := uint32(0); i < count; i++ {
-			r.Uint64(&pk.BlobHashes[i])
-		}
+		protocol.FuncSlice(r, &pk.BlobHashes, r.Uint64)
 	}
 	r.ByteSlice(&pk.RawPayload)
 }

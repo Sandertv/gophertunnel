@@ -20,11 +20,12 @@ type PotionContainerChangeRecipe struct {
 	OutputItemID int32
 }
 
-// PotContainerChangeRecipe reads/writes a PotionContainerChangeRecipe x using IO r.
-func PotContainerChangeRecipe(r IO, x *PotionContainerChangeRecipe) {
+// Marshal encodes/decodes a PotionContainerChangeRecipe.
+func (x PotionContainerChangeRecipe) Marshal(r IO) any {
 	r.Varint32(&x.InputItemID)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.OutputItemID)
+	return x
 }
 
 // PotionRecipe represents a potion mixing recipe which may be used in a brewing stand.
@@ -47,14 +48,15 @@ type PotionRecipe struct {
 	OutputPotionMetadata int32
 }
 
-// PotRecipe reads/writes a PotionRecipe x using IO r.
-func PotRecipe(r IO, x *PotionRecipe) {
+// Marshal encodes/decodes a PotionRecipe.
+func (x PotionRecipe) Marshal(r IO) any {
 	r.Varint32(&x.InputPotionID)
 	r.Varint32(&x.InputPotionMetadata)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.ReagentItemMetadata)
 	r.Varint32(&x.OutputPotionID)
 	r.Varint32(&x.OutputPotionMetadata)
+	return x
 }
 
 const (
@@ -296,14 +298,10 @@ func marshalShaped(w *Writer, recipe *ShapedRecipe) {
 		// a user error.
 		panic(fmt.Sprintf("shaped recipe must have exactly %vx%v input items, but got %v", recipe.Width, recipe.Height, len(recipe.Input)))
 	}
-	for _, input := range recipe.Input {
-		RecipeIngredient(w, &input)
+	for i := 0; i < itemCount; i++ {
+		Single(w, &recipe.Input[i])
 	}
-	l := uint32(len(recipe.Output))
-	w.Varuint32(&l)
-	for _, output := range recipe.Output {
-		w.Item(&output)
-	}
+	FuncSlice(w, &recipe.Output, w.Item)
 	w.UUID(&recipe.UUID)
 	w.String(&recipe.Block)
 	w.Varint32(&recipe.Priority)
@@ -321,16 +319,9 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 	itemCount := int(recipe.Width * recipe.Height)
 	recipe.Input = make([]RecipeIngredientItem, itemCount)
 	for i := 0; i < itemCount; i++ {
-		RecipeIngredient(r, &recipe.Input[i])
+		Single(r, &recipe.Input[i])
 	}
-	var outputCount uint32
-	r.Varuint32(&outputCount)
-	r.LimitUint32(outputCount, lowerLimit)
-
-	recipe.Output = make([]ItemStack, outputCount)
-	for i := uint32(0); i < outputCount; i++ {
-		r.Item(&recipe.Output[i])
-	}
+	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
@@ -339,16 +330,9 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 
 // marshalShapeless ...
 func marshalShapeless(w *Writer, recipe *ShapelessRecipe) {
-	inputLen, outputLen := uint32(len(recipe.Input)), uint32(len(recipe.Output))
 	w.String(&recipe.RecipeID)
-	w.Varuint32(&inputLen)
-	for _, input := range recipe.Input {
-		RecipeIngredient(w, &input)
-	}
-	w.Varuint32(&outputLen)
-	for _, output := range recipe.Output {
-		w.Item(&output)
-	}
+	Slice(w, &recipe.Input)
+	FuncSlice(w, &recipe.Output, w.Item)
 	w.UUID(&recipe.UUID)
 	w.String(&recipe.Block)
 	w.Varint32(&recipe.Priority)
@@ -357,20 +341,9 @@ func marshalShapeless(w *Writer, recipe *ShapelessRecipe) {
 
 // unmarshalShapeless ...
 func unmarshalShapeless(r *Reader, recipe *ShapelessRecipe) {
-	var count uint32
 	r.String(&recipe.RecipeID)
-	r.Varuint32(&count)
-	r.LimitUint32(count, lowerLimit)
-	recipe.Input = make([]RecipeIngredientItem, count)
-	for i := uint32(0); i < count; i++ {
-		RecipeIngredient(r, &recipe.Input[i])
-	}
-	r.Varuint32(&count)
-	r.LimitUint32(count, lowerLimit)
-	recipe.Output = make([]ItemStack, count)
-	for i := uint32(0); i < count; i++ {
-		r.Item(&recipe.Output[i])
-	}
+	Slice(r, &recipe.Input)
+	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)

@@ -32,11 +32,7 @@ func (pk *UpdateAbilities) Marshal(w *protocol.Writer) {
 	w.Int64(&pk.EntityUniqueID)
 	w.Uint8(&pk.PlayerPermissions)
 	w.Uint8(&pk.CommandPermissions)
-	layersLen := uint8(len(pk.Layers))
-	w.Uint8(&layersLen)
-	for _, layer := range pk.Layers {
-		protocol.SerializedLayer(w, &layer)
-	}
+	protocol.SliceUint8Length(w, &pk.Layers)
 }
 
 // Unmarshal ...
@@ -44,10 +40,5 @@ func (pk *UpdateAbilities) Unmarshal(r *protocol.Reader) {
 	r.Int64(&pk.EntityUniqueID)
 	r.Uint8(&pk.PlayerPermissions)
 	r.Uint8(&pk.CommandPermissions)
-	var layersLen uint8
-	r.Uint8(&layersLen)
-	pk.Layers = make([]protocol.AbilityLayer, layersLen)
-	for i := uint8(0); i < layersLen; i++ {
-		protocol.SerializedLayer(r, &pk.Layers[i])
-	}
+	protocol.SliceUint8Length(r, &pk.Layers)
 }

@@ -19,20 +19,10 @@ func (pk *FeatureRegistry) ID() uint32 {
 
 // Marshal ...
 func (pk *FeatureRegistry) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.Features))
-	w.Varuint32(&l)
-	for _, feature := range pk.Features {
-		protocol.GenFeature(w, &feature)
-	}
+	protocol.Slice(w, &pk.Features)
 }
 
 // Unmarshal ...
 func (pk *FeatureRegistry) Unmarshal(r *protocol.Reader) {
-	var count uint32
-	r.Varuint32(&count)
-
-	pk.Features = make([]protocol.GenerationFeature, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.GenFeature(r, &pk.Features[i])
-	}
+	protocol.Slice(r, &pk.Features)
 }

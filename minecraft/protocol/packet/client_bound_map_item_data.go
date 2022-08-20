@@ -86,26 +86,14 @@ func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
 	w.BlockPos(&pk.Origin)
 
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
-		l := uint32(len(pk.MapsIncludedIn))
-		w.Varuint32(&l)
-		for _, mapID := range pk.MapsIncludedIn {
-			w.Varint64(&mapID)
-		}
+		protocol.FuncSlice(w, &pk.MapsIncludedIn, w.Varint64)
 	}
 	if pk.UpdateFlags&(MapUpdateFlagInitialisation|MapUpdateFlagDecoration|MapUpdateFlagTexture) != 0 {
 		w.Uint8(&pk.Scale)
 	}
 	if pk.UpdateFlags&MapUpdateFlagDecoration != 0 {
-		l := uint32(len(pk.TrackedObjects))
-		w.Varuint32(&l)
-		for _, obj := range pk.TrackedObjects {
-			protocol.MapTrackedObj(w, &obj)
-		}
-		l = uint32(len(pk.TrackedObjects))
-		w.Varuint32(&l)
-		for _, decoration := range pk.Decorations {
-			protocol.MapDeco(w, &decoration)
-		}
+		protocol.Slice(w, &pk.TrackedObjects)
+		protocol.Slice(w, &pk.Decorations)
 	}
 	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
 		// Some basic validation for the values passed into the packet.
@@ -145,26 +133,14 @@ func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
 
 	var count uint32
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
-		r.Varuint32(&count)
-		pk.MapsIncludedIn = make([]int64, count)
-		for i := uint32(0); i < count; i++ {
-			r.Varint64(&pk.MapsIncludedIn[i])
-		}
+		protocol.FuncSlice(r, &pk.MapsIncludedIn, r.Varint64)
 	}
 	if pk.UpdateFlags&(MapUpdateFlagInitialisation|MapUpdateFlagDecoration|MapUpdateFlagTexture) != 0 {
 		r.Uint8(&pk.Scale)
 	}
 	if pk.UpdateFlags&MapUpdateFlagDecoration != 0 {
-		r.Varuint32(&count)
-		pk.TrackedObjects = make([]protocol.MapTrackedObject, count)
-		for i := uint32(0); i < count; i++ {
-			protocol.MapTrackedObj(r, &pk.TrackedObjects[i])
-		}
-		r.Varuint32(&count)
-		pk.Decorations = make([]protocol.MapDecoration, count)
-		for i := uint32(0); i < count; i++ {
-			protocol.MapDeco(r, &pk.Decorations[i])
-		}
+		protocol.Slice(r, &pk.TrackedObjects)
+		protocol.Slice(r, &pk.Decorations)
 	}
 	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
 		r.Varint32(&pk.Width)
