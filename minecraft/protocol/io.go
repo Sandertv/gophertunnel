@@ -160,16 +160,29 @@ type Optional[T any] struct {
 	val T
 }
 
-// MarshalOptional reads/writes an Optional[T].
-func MarshalOptional[T any](r IO, x *Optional[T], f func(*T)) any {
+// Option creates an Optional[T] with the value passed.
+func Option[T any](val T) Optional[T] {
+	return Optional[T]{set: true, val: val}
+}
+
+// Value returns the value set in the Optional. If no value was set, false is returned.
+func (o Optional[T]) Value() (T, bool) {
+	return o.val, o.set
+}
+
+// OptionalFunc reads/writes an Optional[T].
+func OptionalFunc[T any](r IO, x *Optional[T], f func(*T)) any {
 	r.Bool(&x.set)
-	if x.set && f != nil {
+	if x.set {
 		f(&x.val)
 	}
 	return x
 }
 
-// Option creates an Optional[T] with the value passed.
-func Option[T any](val T) Optional[T] {
-	return Optional[T]{set: true, val: val}
+// OptionalMarshaler reads/writes an Optional[T Marshaler].
+func OptionalMarshaler[T Marshaler](r IO, x *Optional[T]) {
+	r.Bool(&x.set)
+	if x.set {
+		x.val = x.val.Marshal(r).(T)
+	}
 }

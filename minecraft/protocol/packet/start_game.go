@@ -174,7 +174,7 @@ type StartGame struct {
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
 	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
 	// should always be set to false.
-	ForceExperimentalGameplay bool
+	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -284,15 +284,9 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.LimitedWorldDepth)
 	w.Bool(&pk.NewNether)
 	protocol.EducationResourceURI(w, &pk.EducationSharedResourceURI)
-	w.Bool(&pk.ForceExperimentalGameplay)
-	if pk.ForceExperimentalGameplay {
-		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
-		// is set to true.
-		w.Bool(&pk.ForceExperimentalGameplay)
-	}
+	protocol.OptionalFunc(w, &pk.ForceExperimentalGameplay, w.Bool)
 	w.Uint8(&pk.ChatRestrictionLevel)
 	w.Bool(&pk.DisablePlayerInteractions)
-
 	w.String(&pk.LevelID)
 	w.String(&pk.WorldName)
 	w.String(&pk.TemplateContentIdentity)
@@ -363,15 +357,9 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.LimitedWorldDepth)
 	r.Bool(&pk.NewNether)
 	protocol.EducationResourceURI(r, &pk.EducationSharedResourceURI)
-	r.Bool(&pk.ForceExperimentalGameplay)
-	if pk.ForceExperimentalGameplay {
-		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
-		// is set to true.
-		r.Bool(&pk.ForceExperimentalGameplay)
-	}
+	protocol.OptionalFunc(r, &pk.ForceExperimentalGameplay, r.Bool)
 	r.Uint8(&pk.ChatRestrictionLevel)
 	r.Bool(&pk.DisablePlayerInteractions)
-
 	r.String(&pk.LevelID)
 	r.String(&pk.WorldName)
 	r.String(&pk.TemplateContentIdentity)

@@ -25,7 +25,7 @@ type SpawnParticleEffect struct {
 	ParticleName string
 	// MoLangVariables is an encoded JSON map of MoLang variables that may be applicable to the particle spawn. This can
 	// just be left empty in most cases.
-	MoLangVariables []byte
+	MoLangVariables protocol.Optional[[]byte]
 }
 
 // ID ...
@@ -39,12 +39,7 @@ func (pk *SpawnParticleEffect) Marshal(w *protocol.Writer) {
 	w.Varint64(&pk.EntityUniqueID)
 	w.Vec3(&pk.Position)
 	w.String(&pk.ParticleName)
-
-	exists := len(pk.MoLangVariables) > 0
-	w.Bool(&exists)
-	if exists {
-		w.ByteSlice(&pk.MoLangVariables)
-	}
+	protocol.OptionalFunc(w, &pk.MoLangVariables, w.ByteSlice)
 }
 
 // Unmarshal ...
@@ -53,10 +48,5 @@ func (pk *SpawnParticleEffect) Unmarshal(r *protocol.Reader) {
 	r.Varint64(&pk.EntityUniqueID)
 	r.Vec3(&pk.Position)
 	r.String(&pk.ParticleName)
-
-	exists := len(pk.MoLangVariables) > 0
-	r.Bool(&exists)
-	if exists {
-		r.ByteSlice(&pk.MoLangVariables)
-	}
+	protocol.OptionalFunc(r, &pk.MoLangVariables, r.ByteSlice)
 }

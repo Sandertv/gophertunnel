@@ -45,15 +45,12 @@ func (pk *EducationSettings) Marshal(w *protocol.Writer) {
 	w.String(&pk.PostProcessFilter)
 	w.String(&pk.ScreenshotBorderPath)
 
-	protocol.MarshalOptional(w, &pk.CanModifyBlocks, w.Bool)
-	protocol.MarshalOptional(w, &pk.OverrideURI, w.String)
+	protocol.OptionalFunc(w, &pk.CanModifyBlocks, w.Bool)
+	protocol.OptionalFunc(w, &pk.OverrideURI, w.String)
 
 	w.Bool(&pk.HasQuiz)
 
-	protocol.MarshalOptional(w, &pk.ExternalLinkSettings, func(settings *protocol.EducationExternalLinkSettings) {
-		w.String(&settings.URL)
-		w.String(&settings.DisplayName)
-	})
+	protocol.OptionalMarshaler(w, &pk.ExternalLinkSettings)
 }
 
 // Unmarshal ...
@@ -65,13 +62,10 @@ func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.PostProcessFilter)
 	r.String(&pk.ScreenshotBorderPath)
 
-	protocol.MarshalOptional(r, &pk.CanModifyBlocks, r.Bool)
-	protocol.MarshalOptional(r, &pk.OverrideURI, r.String)
+	protocol.OptionalFunc(r, &pk.CanModifyBlocks, r.Bool)
+	protocol.OptionalFunc(r, &pk.OverrideURI, r.String)
 
 	r.Bool(&pk.HasQuiz)
 
-	protocol.MarshalOptional(r, &pk.ExternalLinkSettings, func(settings *protocol.EducationExternalLinkSettings) {
-		r.String(&settings.URL)
-		r.String(&settings.DisplayName)
-	})
+	protocol.OptionalMarshaler(r, &pk.ExternalLinkSettings)
 }
