@@ -97,15 +97,10 @@ type Realm struct {
 func (r *Realm) Address(ctx context.Context) (address string, err error) {
 	ticker := time.NewTicker(time.Second * 3)
 	defer ticker.Stop()
-	firstRequest := true
 	for range ticker.C {
 		body, status, err := r.client.request(ctx, fmt.Sprintf("/worlds/%d/join", r.ID))
 		if err != nil {
 			if status == 503 && ctx.Err() == nil {
-				if firstRequest {
-					fmt.Println("Waiting for Realm to start")
-				}
-				firstRequest = false
 				continue
 			}
 			return "", err
