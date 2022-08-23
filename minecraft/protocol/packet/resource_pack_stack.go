@@ -37,45 +37,19 @@ func (*ResourcePackStack) ID() uint32 {
 // Marshal ...
 func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.TexturePackRequired)
-	behaviourLen, textureLen := uint32(len(pk.BehaviourPacks)), uint32(len(pk.TexturePacks))
-	w.Varuint32(&behaviourLen)
-	for _, pack := range pk.BehaviourPacks {
-		protocol.StackPack(w, &pack)
-	}
-	w.Varuint32(&textureLen)
-	for _, pack := range pk.TexturePacks {
-		protocol.StackPack(w, &pack)
-	}
+	protocol.Slice(w, &pk.BehaviourPacks)
+	protocol.Slice(w, &pk.TexturePacks)
 	w.String(&pk.BaseGameVersion)
-	l := uint32(len(pk.Experiments))
-	w.Uint32(&l)
-	for _, experiment := range pk.Experiments {
-		protocol.Experiment(w, &experiment)
-	}
+	protocol.SliceUint32Length(w, &pk.Experiments)
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
-	var length uint32
 	r.Bool(&pk.TexturePackRequired)
-	r.Varuint32(&length)
-
-	pk.BehaviourPacks = make([]protocol.StackResourcePack, length)
-	for i := uint32(0); i < length; i++ {
-		protocol.StackPack(r, &pk.BehaviourPacks[i])
-	}
-	r.Varuint32(&length)
-	pk.TexturePacks = make([]protocol.StackResourcePack, length)
-	for i := uint32(0); i < length; i++ {
-		protocol.StackPack(r, &pk.TexturePacks[i])
-	}
+	protocol.Slice(r, &pk.BehaviourPacks)
+	protocol.Slice(r, &pk.TexturePacks)
 	r.String(&pk.BaseGameVersion)
-	var l uint32
-	r.Uint32(&l)
-	pk.Experiments = make([]protocol.ExperimentData, l)
-	for i := uint32(0); i < l; i++ {
-		protocol.Experiment(r, &pk.Experiments[i])
-	}
+	protocol.SliceUint32Length(r, &pk.Experiments)
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 }

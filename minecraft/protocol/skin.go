@@ -71,66 +71,15 @@ type Skin struct {
 	Trusted bool
 }
 
-// WriteSerialisedSkin writes a Skin x to Writer w. WriteSerialisedSkin panics if the fields of the skin
-// have invalid values, usually indicating that the dimensions of the skin images are incorrect.
-func WriteSerialisedSkin(w *Writer, x *Skin) {
-	if err := x.validate(); err != nil {
-		panic(err)
-	}
-	w.String(&x.SkinID)
-	w.String(&x.PlayFabID)
-	w.ByteSlice(&x.SkinResourcePatch)
-	w.Uint32(&x.SkinImageWidth)
-	w.Uint32(&x.SkinImageHeight)
-	w.ByteSlice(&x.SkinData)
-	l := uint32(len(x.Animations))
-	w.Uint32(&l)
-	for _, anim := range x.Animations {
-		Animation(w, &anim)
-	}
-	w.Uint32(&x.CapeImageWidth)
-	w.Uint32(&x.CapeImageHeight)
-	w.ByteSlice(&x.CapeData)
-	w.ByteSlice(&x.SkinGeometry)
-	w.ByteSlice(&x.GeometryDataEngineVersion)
-	w.ByteSlice(&x.AnimationData)
-	w.String(&x.CapeID)
-	w.String(&x.FullID)
-	w.String(&x.ArmSize)
-	w.String(&x.SkinColour)
-	l = uint32(len(x.PersonaPieces))
-	w.Uint32(&l)
-	for _, piece := range x.PersonaPieces {
-		SkinPiece(w, &piece)
-	}
-	l = uint32(len(x.PieceTintColours))
-	w.Uint32(&l)
-	for _, tint := range x.PieceTintColours {
-		WriteSkinPieceTint(w, &tint)
-	}
-
-	w.Bool(&x.PremiumSkin)
-	w.Bool(&x.PersonaSkin)
-	w.Bool(&x.PersonaCapeOnClassicSkin)
-	w.Bool(&x.PrimaryUser)
-}
-
-// SerialisedSkin reads a Skin x from Reader r.
-func SerialisedSkin(r *Reader, x *Skin) {
-	var animationCount, count uint32
-
+// Marshal encodes/decodes a Skin.
+func (x Skin) Marshal(r IO) any {
 	r.String(&x.SkinID)
 	r.String(&x.PlayFabID)
 	r.ByteSlice(&x.SkinResourcePatch)
 	r.Uint32(&x.SkinImageWidth)
 	r.Uint32(&x.SkinImageHeight)
 	r.ByteSlice(&x.SkinData)
-	r.Uint32(&animationCount)
-
-	x.Animations = make([]SkinAnimation, animationCount)
-	for i := uint32(0); i < animationCount; i++ {
-		Animation(r, &x.Animations[i])
-	}
+	SliceUint32Length(r, &x.Animations)
 	r.Uint32(&x.CapeImageWidth)
 	r.Uint32(&x.CapeImageHeight)
 	r.ByteSlice(&x.CapeData)
@@ -141,37 +90,28 @@ func SerialisedSkin(r *Reader, x *Skin) {
 	r.String(&x.FullID)
 	r.String(&x.ArmSize)
 	r.String(&x.SkinColour)
-
-	r.Uint32(&count)
-	x.PersonaPieces = make([]PersonaPiece, count)
-	for i := uint32(0); i < count; i++ {
-		SkinPiece(r, &x.PersonaPieces[i])
-	}
-	r.Uint32(&count)
-	x.PieceTintColours = make([]PersonaPieceTintColour, count)
-	for i := uint32(0); i < count; i++ {
-		SkinPieceTint(r, &x.PieceTintColours[i])
-	}
+	SliceUint32Length(r, &x.PersonaPieces)
+	SliceUint32Length(r, &x.PieceTintColours)
 	if err := x.validate(); err != nil {
 		r.InvalidValue(fmt.Sprintf("Skin %v", x.SkinID), "serialised skin", err.Error())
 	}
-
 	r.Bool(&x.PremiumSkin)
 	r.Bool(&x.PersonaSkin)
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
+	return x
 }
 
 // validate checks the skin and makes sure every one of its values are correct. It checks the image dimensions
 // and makes sure they match the image size of the skin, cape and the skin's animations.
-func (skin Skin) validate() error {
-	if skin.SkinImageHeight*skin.SkinImageWidth*4 != uint32(len(skin.SkinData)) {
-		return fmt.Errorf("expected size of skin is %vx%v (%v bytes total), but got %v bytes", skin.SkinImageWidth, skin.SkinImageHeight, skin.SkinImageHeight*skin.SkinImageWidth*4, len(skin.SkinData))
+func (x Skin) validate() error {
+	if x.SkinImageHeight*x.SkinImageWidth*4 != uint32(len(x.SkinData)) {
+		return fmt.Errorf("expected size of skin is %vx%v (%v bytes total), but got %v bytes", x.SkinImageWidth, x.SkinImageHeight, x.SkinImageHeight*x.SkinImageWidth*4, len(x.SkinData))
 	}
-	if skin.CapeImageHeight*skin.CapeImageWidth*4 != uint32(len(skin.CapeData)) {
-		return fmt.Errorf("expected size of cape is %vx%v (%v bytes total), but got %v bytes", skin.CapeImageWidth, skin.CapeImageHeight, skin.CapeImageHeight*skin.CapeImageWidth*4, len(skin.CapeData))
+	if x.CapeImageHeight*x.CapeImageWidth*4 != uint32(len(x.CapeData)) {
+		return fmt.Errorf("expected size of cape is %vx%v (%v bytes total), but got %v bytes", x.CapeImageWidth, x.CapeImageHeight, x.CapeImageHeight*x.CapeImageWidth*4, len(x.CapeData))
 	}
-	for i, animation := range skin.Animations {
+	for i, animation := range x.Animations {
 		if animation.ImageHeight*animation.ImageWidth*4 != uint32(len(animation.ImageData)) {
 			return fmt.Errorf("expected size of animation %v is %vx%v (%v bytes total), but got %v bytes", i, animation.ImageWidth, animation.ImageHeight, animation.ImageHeight*animation.ImageWidth*4, len(animation.ImageData))
 		}
@@ -211,14 +151,15 @@ type SkinAnimation struct {
 	ExpressionType uint32
 }
 
-// Animation reads/writes a SkinAnimation x using IO r.
-func Animation(r IO, x *SkinAnimation) {
+// Marshal encodes/decodes a SkinAnimation.
+func (x SkinAnimation) Marshal(r IO) any {
 	r.Uint32(&x.ImageWidth)
 	r.Uint32(&x.ImageHeight)
 	r.ByteSlice(&x.ImageData)
 	r.Uint32(&x.AnimationType)
 	r.Float32(&x.FrameCount)
 	r.Uint32(&x.ExpressionType)
+	return x
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
@@ -247,13 +188,14 @@ type PersonaPiece struct {
 	ProductID string
 }
 
-// SkinPiece reads/writes a PersonaPiece x using IO r.
-func SkinPiece(r IO, x *PersonaPiece) {
+// Marshal encodes/decodes a PersonaPiece.
+func (x PersonaPiece) Marshal(r IO) any {
 	r.String(&x.PieceID)
 	r.String(&x.PieceType)
 	r.String(&x.PackID)
 	r.Bool(&x.Default)
 	r.String(&x.ProductID)
+	return x
 }
 
 // PersonaPieceTintColour describes the tint colours of a specific piece of a persona skin.
@@ -275,24 +217,9 @@ type PersonaPieceTintColour struct {
 	Colours []string
 }
 
-// WriteSkinPieceTint writes a PersonaPieceTintColour x to Writer w.
-func WriteSkinPieceTint(w *Writer, x *PersonaPieceTintColour) {
-	w.String(&x.PieceType)
-	l := uint32(len(x.Colours))
-	w.Uint32(&l)
-	for _, c := range x.Colours {
-		w.String(&c)
-	}
-}
-
-// SkinPieceTint reads a PersonaPieceTintColour x from Reader r.
-func SkinPieceTint(r *Reader, x *PersonaPieceTintColour) {
-	var c uint32
+// Marshal encodes/decodes a PersonaPieceTintColour.
+func (x PersonaPieceTintColour) Marshal(r IO) any {
 	r.String(&x.PieceType)
-
-	r.Uint32(&c)
-	x.Colours = make([]string, c)
-	for i := uint32(0); i < c; i++ {
-		r.String(&x.Colours[i])
-	}
+	FuncSliceUint32Length(r, &x.Colours, r.String)
+	return x
 }

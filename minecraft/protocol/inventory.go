@@ -40,8 +40,8 @@ type InventoryAction struct {
 	NewItem ItemInstance
 }
 
-// InvAction reads/writes an InventoryAction x using IO r.
-func InvAction(r IO, x *InventoryAction) {
+// Marshal encodes/decodes an InventoryAction.
+func (x InventoryAction) Marshal(r IO) any {
 	r.Varuint32(&x.SourceType)
 	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
@@ -52,6 +52,7 @@ func InvAction(r IO, x *InventoryAction) {
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)
 	r.ItemInstance(&x.NewItem)
+	return x
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
@@ -253,8 +254,9 @@ type LegacySetItemSlot struct {
 	Slots       []byte
 }
 
-// SetItemSlot reads/writes a LegacySetItemSlot x using IO r.
-func SetItemSlot(r IO, x *LegacySetItemSlot) {
+// Marshal encodes/decodes a LegacySetItemSlot.
+func (x LegacySetItemSlot) Marshal(r IO) any {
 	r.Uint8(&x.ContainerID)
 	r.ByteSlice(&x.Slots)
+	return x
 }

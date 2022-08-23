@@ -50,11 +50,12 @@ type AbilityLayer struct {
 	WalkSpeed float32
 }
 
-// SerializedLayer reads/writes a AbilityLayer x using IO r.
-func SerializedLayer(r IO, x *AbilityLayer) {
+// Marshal encodes/decodes an AbilityLayer.
+func (x AbilityLayer) Marshal(r IO) any {
 	r.Uint16(&x.Type)
 	r.Uint32(&x.Abilities)
 	r.Uint32(&x.Values)
 	r.Float32(&x.FlySpeed)
 	r.Float32(&x.WalkSpeed)
+	return x
 }

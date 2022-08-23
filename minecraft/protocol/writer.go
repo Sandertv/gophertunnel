@@ -145,19 +145,9 @@ func (w *Writer) UUID(x *uuid.UUID) {
 func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varint32(&x.LegacyRequestID)
 	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
-		l := uint32(len(x.LegacySetItemSlots))
-		w.Varuint32(&l)
-
-		for _, slot := range x.LegacySetItemSlots {
-			SetItemSlot(w, &slot)
-		}
+		Slice(w, &x.LegacySetItemSlots)
 	}
-	l := uint32(len(x.Actions))
-	w.Varuint32(&l)
-
-	for _, a := range x.Actions {
-		InvAction(w, &a)
-	}
+	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)

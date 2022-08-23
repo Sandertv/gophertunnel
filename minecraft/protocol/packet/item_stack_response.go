@@ -22,19 +22,10 @@ func (*ItemStackResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ItemStackResponse) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.Responses))
-	w.Varuint32(&l)
-	for _, resp := range pk.Responses {
-		protocol.WriteStackResponse(w, &resp)
-	}
+	protocol.Slice(w, &pk.Responses)
 }
 
 // Unmarshal ...
 func (pk *ItemStackResponse) Unmarshal(r *protocol.Reader) {
-	var count uint32
-	r.Varuint32(&count)
-	pk.Responses = make([]protocol.ItemStackResponse, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.StackResponse(r, &pk.Responses[i])
-	}
+	protocol.Slice(r, &pk.Responses)
 }

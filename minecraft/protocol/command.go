@@ -171,28 +171,12 @@ type CommandOutputMessage struct {
 	Parameters []string
 }
 
-// CommandMessage reads a CommandOutputMessage x from Reader r.
-func CommandMessage(r *Reader, x *CommandOutputMessage) {
-	var count uint32
+// Marshal encodes/decodes a CommandOutputMessage.
+func (x CommandOutputMessage) Marshal(r IO) any {
 	r.Bool(&x.Success)
 	r.String(&x.Message)
-	r.Varuint32(&count)
-	x.Parameters = make([]string, count)
-	for i := uint32(0); i < count; i++ {
-		r.String(&x.Parameters[i])
-	}
-}
-
-// WriteCommandMessage writes a CommandOutputMessage x to Writer w.
-func WriteCommandMessage(w *Writer, x *CommandOutputMessage) {
-	l := uint32(len(x.Parameters))
-
-	w.Bool(&x.Success)
-	w.String(&x.Message)
-	w.Varuint32(&l)
-	for _, param := range x.Parameters {
-		w.String(&param)
-	}
+	FuncSlice(r, &x.Parameters, r.String)
+	return x
 }
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.

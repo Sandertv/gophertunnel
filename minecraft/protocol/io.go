@@ -49,3 +49,88 @@ type IO interface {
 	UnknownEnumOption(value any, enum string)
 	InvalidValue(value any, forField, reason string)
 }
+
+type Marshaler interface {
+	Marshal(r IO) any
+}
+
+func Slice[T Marshaler, S ~*[]T](r IO, x S) {
+	count := uint32(len(*x))
+	r.Varuint32(&count)
+	slice(r, count, x)
+}
+
+func SliceUint8Length[T Marshaler, S ~*[]T](r IO, x S) {
+	count := uint8(len(*x))
+	r.Uint8(&count)
+	slice(r, uint32(count), x)
+}
+
+func SliceUint16Length[T Marshaler, S ~*[]T](r IO, x S) {
+	count := uint16(len(*x))
+	r.Uint16(&count)
+	slice(r, uint32(count), x)
+}
+
+func SliceUint32Length[T Marshaler, S ~*[]T](r IO, x S) {
+	count := uint32(len(*x))
+	r.Uint32(&count)
+	slice(r, count, x)
+}
+
+func FuncSliceUint16Length[T any, S ~*[]T](r IO, x S, f func(*T)) {
+	count := uint16(len(*x))
+	r.Uint16(&count)
+
+	_, reader := r.(*Reader)
+	if reader {
+		*x = make([]T, count)
+	}
+
+	for i := uint16(0); i < count; i++ {
+		f(&(*x)[i])
+	}
+}
+
+func FuncSliceUint32Length[T any, S ~*[]T](r IO, x S, f func(*T)) {
+	count := uint32(len(*x))
+	r.Uint32(&count)
+
+	_, reader := r.(*Reader)
+	if reader {
+		*x = make([]T, count)
+	}
+
+	for i := uint32(0); i < count; i++ {
+		f(&(*x)[i])
+	}
+}
+
+func FuncSlice[T any, S ~*[]T](r IO, x S, f func(*T)) {
+	count := uint32(len(*x))
+	r.Varuint32(&count)
+
+	_, reader := r.(*Reader)
+	if reader {
+		*x = make([]T, count)
+	}
+
+	for i := uint32(0); i < count; i++ {
+		f(&(*x)[i])
+	}
+}
+
+func slice[T Marshaler, S ~*[]T](r IO, count uint32, x S) {
+	_, reader := r.(*Reader)
+	if reader {
+		*x = make([]T, count)
+	}
+
+	for i := uint32(0); i < count; i++ {
+		(*x)[i] = (*x)[i].Marshal(r).(T)
+	}
+}
+
+func Single[T Marshaler, S ~*T](r IO, x S) {
+	*x = (*x).Marshal(r).(T)
+}

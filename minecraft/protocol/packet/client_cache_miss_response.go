@@ -20,19 +20,10 @@ func (pk *ClientCacheMissResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ClientCacheMissResponse) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.Blobs))
-	w.Varuint32(&l)
-	for _, blob := range pk.Blobs {
-		protocol.Blob(w, &blob)
-	}
+	protocol.Slice(w, &pk.Blobs)
 }
 
 // Unmarshal ...
 func (pk *ClientCacheMissResponse) Unmarshal(r *protocol.Reader) {
-	var count uint32
-	r.Varuint32(&count)
-	pk.Blobs = make([]protocol.CacheBlob, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.Blob(r, &pk.Blobs[i])
-	}
+	protocol.Slice(r, &pk.Blobs)
 }

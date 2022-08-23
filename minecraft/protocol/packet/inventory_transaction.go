@@ -49,11 +49,7 @@ func (*InventoryTransaction) ID() uint32 {
 func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
-		l := uint32(len(pk.LegacySetItemSlots))
-		w.Varuint32(&l)
-		for _, slot := range pk.LegacySetItemSlots {
-			protocol.SetItemSlot(w, &slot)
-		}
+		protocol.Slice(w, &pk.LegacySetItemSlots)
 	}
 	var id uint32
 	switch pk.TransactionData.(type) {
@@ -69,11 +65,7 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 		id = InventoryTransactionTypeReleaseItem
 	}
 	w.Varuint32(&id)
-	l := uint32(len(pk.Actions))
-	w.Varuint32(&l)
-	for _, action := range pk.Actions {
-		protocol.InvAction(w, &action)
-	}
+	protocol.Slice(w, &pk.Actions)
 	if pk.TransactionData != nil {
 		pk.TransactionData.Marshal(w)
 	}
@@ -81,26 +73,13 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
-	var length, transactionType uint32
+	var transactionType uint32
 	r.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
-		r.Varuint32(&length)
-
-		pk.LegacySetItemSlots = make([]protocol.LegacySetItemSlot, length)
-		for i := uint32(0); i < length; i++ {
-			protocol.SetItemSlot(r, &pk.LegacySetItemSlots[i])
-		}
+		protocol.Slice(r, &pk.LegacySetItemSlots)
 	}
 	r.Varuint32(&transactionType)
-	r.Varuint32(&length)
-	r.LimitUint32(length, 512)
-
-	pk.Actions = make([]protocol.InventoryAction, length)
-	for i := uint32(0); i < length; i++ {
-		// Each InventoryTransaction packet has a list of actions at the start, with a transaction data object
-		// after that, depending on the transaction type.
-		protocol.InvAction(r, &pk.Actions[i])
-	}
+	protocol.Slice(r, &pk.Actions)
 	switch transactionType {
 	case InventoryTransactionTypeNormal:
 		pk.TransactionData = &protocol.NormalTransactionData{}

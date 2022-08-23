@@ -42,11 +42,7 @@ func (pk *AnimateEntity) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.StopConditionVersion)
 	w.String(&pk.Controller)
 	w.Float32(&pk.BlendOutTime)
-	l := uint32(len(pk.EntityRuntimeIDs))
-	w.Varuint32(&l)
-	for i := range pk.EntityRuntimeIDs {
-		w.Varuint64(&pk.EntityRuntimeIDs[i])
-	}
+	protocol.FuncSlice(w, &pk.EntityRuntimeIDs, w.Varuint64)
 }
 
 // Unmarshal ...
@@ -56,10 +52,5 @@ func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.StopCondition)
 	r.Int32(&pk.StopConditionVersion)
 	r.String(&pk.Controller)
-	var count uint32
-	r.Varuint32(&count)
-	pk.EntityRuntimeIDs = make([]uint64, count)
-	for i := uint32(0); i < count; i++ {
-		r.Varuint64(&pk.EntityRuntimeIDs[i])
-	}
+	protocol.FuncSlice(r, &pk.EntityRuntimeIDs, r.Varuint64)
 }

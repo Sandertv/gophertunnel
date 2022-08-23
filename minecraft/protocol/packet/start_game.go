@@ -264,11 +264,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.CommandsEnabled)
 	w.Bool(&pk.TexturePackRequired)
 	protocol.WriteGameRules(w, &pk.GameRules)
-	l := uint32(len(pk.Experiments))
-	w.Uint32(&l)
-	for _, experiment := range pk.Experiments {
-		protocol.Experiment(w, &experiment)
-	}
+	protocol.SliceUint32Length(w, &pk.Experiments)
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
@@ -304,18 +300,8 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	protocol.PlayerMoveSettings(w, &pk.PlayerMovementSettings)
 	w.Int64(&pk.Time)
 	w.Varint32(&pk.EnchantmentSeed)
-
-	l = uint32(len(pk.Blocks))
-	w.Varuint32(&l)
-	for i := range pk.Blocks {
-		protocol.Block(w, &pk.Blocks[i])
-	}
-
-	l = uint32(len(pk.Items))
-	w.Varuint32(&l)
-	for i := range pk.Items {
-		protocol.Item(w, &pk.Items[i])
-	}
+	protocol.Slice(w, &pk.Blocks)
+	protocol.Slice(w, &pk.Items)
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
 	w.String(&pk.GameVersion)
@@ -327,7 +313,6 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(r *protocol.Reader) {
-	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.PlayerGameMode)
@@ -358,12 +343,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.CommandsEnabled)
 	r.Bool(&pk.TexturePackRequired)
 	protocol.GameRules(r, &pk.GameRules)
-	var l uint32
-	r.Uint32(&l)
-	pk.Experiments = make([]protocol.ExperimentData, l)
-	for i := uint32(0); i < l; i++ {
-		protocol.Experiment(r, &pk.Experiments[i])
-	}
+	protocol.SliceUint32Length(r, &pk.Experiments)
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
@@ -399,18 +379,8 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	protocol.PlayerMoveSettings(r, &pk.PlayerMovementSettings)
 	r.Int64(&pk.Time)
 	r.Varint32(&pk.EnchantmentSeed)
-
-	r.Varuint32(&blockCount)
-	pk.Blocks = make([]protocol.BlockEntry, blockCount)
-	for i := uint32(0); i < blockCount; i++ {
-		protocol.Block(r, &pk.Blocks[i])
-	}
-
-	r.Varuint32(&itemCount)
-	pk.Items = make([]protocol.ItemEntry, itemCount)
-	for i := uint32(0); i < itemCount; i++ {
-		protocol.Item(r, &pk.Items[i])
-	}
+	protocol.Slice(r, &pk.Blocks)
+	protocol.Slice(r, &pk.Items)
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
 	r.String(&pk.GameVersion)

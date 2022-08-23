@@ -20,10 +20,10 @@ func (*SetActorLink) ID() uint32 {
 
 // Marshal ...
 func (pk *SetActorLink) Marshal(w *protocol.Writer) {
-	protocol.EntityLinkAction(w, &pk.EntityLink)
+	protocol.Single(w, &pk.EntityLink)
 }
 
 // Unmarshal ...
 func (pk *SetActorLink) Unmarshal(r *protocol.Reader) {
-	protocol.EntityLinkAction(r, &pk.EntityLink)
+	protocol.Single(r, &pk.EntityLink)
 }

@@ -9,8 +9,9 @@ type ExperimentData struct {
 	Enabled bool
 }
 
-// Experiment reads an ExperimentData x from IO r.
-func Experiment(r IO, x *ExperimentData) {
+// Marshal encodes/decodes an ExperimentData.
+func (x ExperimentData) Marshal(r IO) any {
 	r.String(&x.Name)
 	r.Bool(&x.Enabled)
+	return x
 }

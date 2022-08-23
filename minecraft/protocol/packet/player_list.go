@@ -36,7 +36,7 @@ func (pk *PlayerList) Marshal(w *protocol.Writer) {
 	for _, entry := range pk.Entries {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			protocol.WritePlayerAddEntry(w, &entry)
+			protocol.Single(w, &entry)
 		case PlayerListActionRemove:
 			w.UUID(&entry.UUID)
 		default:
@@ -60,7 +60,7 @@ func (pk *PlayerList) Unmarshal(r *protocol.Reader) {
 	for i := uint32(0); i < count; i++ {
 		switch pk.ActionType {
 		case PlayerListActionAdd:
-			protocol.PlayerAddEntry(r, &pk.Entries[i])
+			protocol.Single(r, &pk.Entries[i])
 		case PlayerListActionRemove:
 			r.UUID(&pk.Entries[i].UUID)
 		default:

@@ -27,7 +27,7 @@ const (
 // requesting system introduced in v1.18.10.
 type SubChunkEntry struct {
 	// Offset contains the offset between the sub-chunk position and the center position.
-	Offset [3]int8
+	Offset SubChunkOffset
 	// Result is always one of the constants defined in the SubChunkResult constants.
 	Result byte
 	// RawPayload contains the serialized sub-chunk data.
@@ -38,4 +38,15 @@ type SubChunkEntry struct {
 	HeightMapData []int8
 	// BlobHash is the hash of the blob.
 	BlobHash uint64
+}
+
+// SubChunkOffset represents an offset from the base position of another sub chunk.
+type SubChunkOffset [3]int8
+
+// Marshal encodes/decodes a SubChunkOffset.
+func (x SubChunkOffset) Marshal(r IO) any {
+	r.Int8(&x[0])
+	r.Int8(&x[1])
+	r.Int8(&x[2])
+	return x
 }
