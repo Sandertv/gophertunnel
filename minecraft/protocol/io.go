@@ -146,10 +146,6 @@ func Single[T Marshaler, S ~*T](r IO, x S) {
 	*x = (*x).Marshal(r).(T)
 }
 
-type Opt interface {
-	Marshaler | ~int
-}
-
 // Optional is an optional type in the protocol. If not set, only a false bool is written. If set, a true bool is
 // written and the Marshaler.
 type Optional[T any] struct {
