@@ -18,7 +18,7 @@ type Client struct {
 	xblToken *auth.XBLToken
 }
 
-// NewClient returns a new RealmsApi instance with the supplied token source for authentication.
+// NewClient returns a new Client instance with the supplied token source for authentication.
 func NewClient(src oauth2.TokenSource) *Client {
 	return &Client{
 		tokenSrc: src,
@@ -39,8 +39,8 @@ type Player struct {
 type Realm struct {
 	// ID is the unique id for this realm.
 	ID int `json:"id"`
-	// RemoteSubscriptionId is The subscription ID of the realm.
-	RemoteSubscriptionId string `json:"remoteSubscriptionId"`
+	// RemoteSubscriptionID is The subscription ID of the realm.
+	RemoteSubscriptionID string `json:"remoteSubscriptionID"`
 	// Owner is always an empty string.
 	Owner string `json:"owner"`
 	// OwnerUUID is the XboxUserID (XUID) of the owner.
@@ -118,9 +118,9 @@ func (r *Realm) Address(ctx context.Context) (address string, err error) {
 	panic("unreachable")
 }
 
-// PlayerList gets all the players currently on this realm,
+// OnlinePlayers gets all the players currently on this realm,
 // Returns a 403 error if the current user is not the owner of the Realm.
-func (r *Realm) PlayerList(ctx context.Context) (players []Player, err error) {
+func (r *Realm) OnlinePlayers(ctx context.Context) (players []Player, err error) {
 	body, _, err := r.client.request(ctx, fmt.Sprintf("/worlds/%d", r.ID))
 	if err != nil {
 		return nil, err
