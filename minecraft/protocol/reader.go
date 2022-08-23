@@ -189,6 +189,7 @@ func (r *Reader) Bytes(p *[]byte) {
 
 // NBT reads a compound tag into a map from the underlying buffer.
 func (r *Reader) NBT(m *map[string]any, encoding nbt.Encoding) {
+	*m = make(map[string]any)
 	if err := nbt.NewDecoderWithEncoding(r.r, encoding).Decode(m); err != nil {
 		r.panic(err)
 	}

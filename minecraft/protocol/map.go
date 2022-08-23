@@ -66,3 +66,16 @@ func (x MapDecoration) Marshal(r IO) any {
 	r.VarRGBA(&x.Colour)
 	return x
 }
+
+// PixelRequest is the request for the colour of a pixel in a MapInfoRequest packet.
+type PixelRequest struct {
+	Colour color.RGBA
+	Index  uint16
+}
+
+// Marshal encodes/decodes a PixelRequest.
+func (x PixelRequest) Marshal(r IO) any {
+	r.RGBA(&x.Colour)
+	r.Uint16(&x.Index)
+	return x
+}
