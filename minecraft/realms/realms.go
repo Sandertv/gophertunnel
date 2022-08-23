@@ -125,6 +125,7 @@ func (r *Realm) GetAddress(ctx context.Context, wait bool) (address string, err 
 }
 
 // GetPlayers gets all the players currently on this realm
+// Returns a 403 error if the current user is not the owner of the Realm.
 func (r *Realm) GetPlayers(ctx context.Context) (players []RealmPlayer, err error) {
 	body, _, err := r._realmsApi.getRequest(ctx, fmt.Sprintf("/worlds/%d", r.Id))
 	if err != nil {
