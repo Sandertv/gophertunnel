@@ -145,7 +145,7 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		protocol.Slice(w, &pk.BlockActions)
+		protocol.SliceVarint32Length(w, &pk.BlockActions)
 	}
 }
 
@@ -175,6 +175,6 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		protocol.Slice(r, &pk.BlockActions)
+		protocol.SliceVarint32Length(r, &pk.BlockActions)
 	}
 }
