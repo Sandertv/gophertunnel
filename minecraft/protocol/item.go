@@ -88,13 +88,6 @@ func (x ItemEntry) Marshal(r IO) any {
 	return x
 }
 
-// Item reads/writes an ItemEntry x using IO r.
-func Item(r IO, x *ItemEntry) {
-	r.String(&x.Name)
-	r.Int16(&x.RuntimeID)
-	r.Bool(&x.ComponentBased)
-}
-
 // ItemComponentEntry is sent in the ItemComponent item table. It holds a name and all of the components and
 // properties associated to the item.
 type ItemComponentEntry struct {
@@ -117,6 +110,13 @@ type MaterialReducerOutput struct {
 	NetworkID int32
 	// Count is the quantity of the output.
 	Count int32
+}
+
+// Marshal encodes/decodes a MaterialReducerOutput.
+func (x MaterialReducerOutput) Marshal(r IO) any {
+	r.Varint32(&x.NetworkID)
+	r.Varint32(&x.Count)
+	return x
 }
 
 // MaterialReducer is a craft in a material reducer block in education edition.

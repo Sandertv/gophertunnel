@@ -6,11 +6,11 @@ import (
 
 // GameRule contains game rule data.
 type GameRule struct {
-	// Name ...
+	// Name is the name of the game rule.
 	Name string
-	// CanBeModifiedByPlayer ...
+	// CanBeModifiedByPlayer specifies if the game rule can be modified by the player through the in-game UI.
 	CanBeModifiedByPlayer bool
-	// Value ...
+	// Value is the new value of the game rule. This is either a bool, uint32 or float32.
 	Value any
 }
 

@@ -1,15 +1,10 @@
 package protocol
 
-import "strings"
-
 // EventData represents an object that holds data specific to an event.
 // The data it holds depends on the type.
 type EventData interface {
-	// Marshal encodes the event data to its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised event data object from Reader r into the
-	// EventData instance.
-	Unmarshal(r *Reader)
+	// Marshal encodes/decodes a serialised event data object.
+	Marshal(r IO)
 }
 
 // AchievementAwardedEventData is the event data sent for achievements.
@@ -19,12 +14,7 @@ type AchievementAwardedEventData struct {
 }
 
 // Marshal ...
-func (a *AchievementAwardedEventData) Marshal(w *Writer) {
-	w.Varint32(&a.AchievementID)
-}
-
-// Unmarshal ...
-func (a *AchievementAwardedEventData) Unmarshal(r *Reader) {
+func (a *AchievementAwardedEventData) Marshal(r IO) {
 	r.Varint32(&a.AchievementID)
 }
 
@@ -41,15 +31,7 @@ type EntityInteractEventData struct {
 }
 
 // Marshal ...
-func (e *EntityInteractEventData) Marshal(w *Writer) {
-	w.Varint32(&e.InteractionType)
-	w.Varint32(&e.InteractionEntityType)
-	w.Varint32(&e.EntityVariant)
-	w.Uint8(&e.EntityColour)
-}
-
-// Unmarshal ...
-func (e *EntityInteractEventData) Unmarshal(r *Reader) {
+func (e *EntityInteractEventData) Marshal(r IO) {
 	r.Varint32(&e.InteractionType)
 	r.Varint32(&e.InteractionEntityType)
 	r.Varint32(&e.EntityVariant)
@@ -63,12 +45,7 @@ type PortalBuiltEventData struct {
 }
 
 // Marshal ...
-func (p *PortalBuiltEventData) Marshal(w *Writer) {
-	w.Varint32(&p.DimensionID)
-}
-
-// Unmarshal ...
-func (p *PortalBuiltEventData) Unmarshal(r *Reader) {
+func (p *PortalBuiltEventData) Marshal(r IO) {
 	r.Varint32(&p.DimensionID)
 }
 
@@ -81,13 +58,7 @@ type PortalUsedEventData struct {
 }
 
 // Marshal ...
-func (p *PortalUsedEventData) Marshal(w *Writer) {
-	w.Varint32(&p.FromDimensionID)
-	w.Varint32(&p.ToDimensionID)
-}
-
-// Unmarshal ...
-func (p *PortalUsedEventData) Unmarshal(r *Reader) {
+func (p *PortalUsedEventData) Marshal(r IO) {
 	r.Varint32(&p.FromDimensionID)
 	r.Varint32(&p.ToDimensionID)
 }
@@ -109,17 +80,7 @@ type MobKilledEventData struct {
 }
 
 // Marshal ...
-func (m *MobKilledEventData) Marshal(w *Writer) {
-	w.Varint64(&m.KillerEntityUniqueID)
-	w.Varint64(&m.VictimEntityUniqueID)
-	w.Varint32(&m.KillerEntityType)
-	w.Varint32(&m.EntityDamageCause)
-	w.Varint32(&m.VillagerTradeTier)
-	w.String(&m.VillagerDisplayName)
-}
-
-// Unmarshal ...
-func (m *MobKilledEventData) Unmarshal(r *Reader) {
+func (m *MobKilledEventData) Marshal(r IO) {
 	r.Varint64(&m.KillerEntityUniqueID)
 	r.Varint64(&m.VictimEntityUniqueID)
 	r.Varint32(&m.KillerEntityType)
@@ -139,14 +100,7 @@ type CauldronUsedEventData struct {
 }
 
 // Marshal ...
-func (c *CauldronUsedEventData) Marshal(w *Writer) {
-	w.Varint32(&c.PotionID)
-	w.Varint32(&c.Colour)
-	w.Varint32(&c.FillLevel)
-}
-
-// Unmarshal ...
-func (c *CauldronUsedEventData) Unmarshal(r *Reader) {
+func (c *CauldronUsedEventData) Marshal(r IO) {
 	r.Varint32(&c.PotionID)
 	r.Varint32(&c.Colour)
 	r.Varint32(&c.FillLevel)
@@ -161,13 +115,7 @@ type PlayerDiedEventData struct {
 }
 
 // Marshal ...
-func (p *PlayerDiedEventData) Marshal(w *Writer) {
-	w.Varint32(&p.AttackerEntityID)
-	w.Varint32(&p.EntityDamageCause)
-}
-
-// Unmarshal ...
-func (p *PlayerDiedEventData) Unmarshal(r *Reader) {
+func (p *PlayerDiedEventData) Marshal(r IO) {
 	r.Varint32(&p.AttackerEntityID)
 	r.Varint32(&p.EntityDamageCause)
 }
@@ -183,14 +131,7 @@ type BossKilledEventData struct {
 }
 
 // Marshal ...
-func (b *BossKilledEventData) Marshal(w *Writer) {
-	w.Varint64(&b.BossEntityUniqueID)
-	w.Varint32(&b.PlayerPartySize)
-	w.Varint32(&b.InteractionEntityType)
-}
-
-// Unmarshal ...
-func (b *BossKilledEventData) Unmarshal(r *Reader) {
+func (b *BossKilledEventData) Marshal(r IO) {
 	r.Varint64(&b.BossEntityUniqueID)
 	r.Varint32(&b.PlayerPartySize)
 	r.Varint32(&b.InteractionEntityType)
@@ -211,16 +152,7 @@ type AgentCommandEventData struct {
 }
 
 // Marshal ...
-func (a *AgentCommandEventData) Marshal(w *Writer) {
-	w.Varint32(&a.AgentResult)
-	w.Varint32(&a.DataValue)
-	w.String(&a.Command)
-	w.String(&a.DataKey)
-	w.String(&a.Output)
-}
-
-// Unmarshal ...
-func (a *AgentCommandEventData) Unmarshal(r *Reader) {
+func (a *AgentCommandEventData) Marshal(r IO) {
 	r.Varint32(&a.AgentResult)
 	r.Varint32(&a.DataValue)
 	r.String(&a.Command)
@@ -243,16 +175,7 @@ type PatternRemovedEventData struct {
 }
 
 // Marshal ...
-func (p *PatternRemovedEventData) Marshal(w *Writer) {
-	w.Varint32(&p.ItemID)
-	w.Varint32(&p.AuxValue)
-	w.Varint32(&p.PatternsSize)
-	w.Varint32(&p.PatternIndex)
-	w.Varint32(&p.PatternColour)
-}
-
-// Unmarshal ...
-func (p *PatternRemovedEventData) Unmarshal(r *Reader) {
+func (p *PatternRemovedEventData) Marshal(r IO) {
 	r.Varint32(&p.ItemID)
 	r.Varint32(&p.AuxValue)
 	r.Varint32(&p.PatternsSize)
@@ -266,32 +189,18 @@ type SlashCommandExecutedEventData struct {
 	CommandName string
 	// SuccessCount ...
 	SuccessCount int32
-	// OutputMessages ...
-	OutputMessages []string
+	// MessageCount indicates the amount of OutputMessages present.
+	MessageCount int32
+	// OutputMessages is a list of messages joint with ;.
+	OutputMessages string
 }
 
 // Marshal ...
-func (s *SlashCommandExecutedEventData) Marshal(w *Writer) {
-	outputMessagesSize := int32(len(s.OutputMessages))
-	outputMessagesJoined := strings.Join(s.OutputMessages, ";")
-
-	w.Varint32(&s.SuccessCount)
-	w.Varint32(&outputMessagesSize)
-	w.String(&s.CommandName)
-	w.String(&outputMessagesJoined)
-}
-
-// Unmarshal ...
-func (s *SlashCommandExecutedEventData) Unmarshal(r *Reader) {
-	var outputMessagesSize int32
-	var outputMessagesJoined string
-
+func (s *SlashCommandExecutedEventData) Marshal(r IO) {
 	r.Varint32(&s.SuccessCount)
-	r.Varint32(&outputMessagesSize)
+	r.Varint32(&s.MessageCount)
 	r.String(&s.CommandName)
-	r.String(&outputMessagesJoined)
-
-	s.OutputMessages = strings.Split(outputMessagesJoined, ";")
+	r.String(&s.OutputMessages)
 }
 
 // FishBucketedEventData is the event data sent when a fish is bucketed.
@@ -307,15 +216,7 @@ type FishBucketedEventData struct {
 }
 
 // Marshal ...
-func (f *FishBucketedEventData) Marshal(w *Writer) {
-	w.Varint32(&f.Pattern)
-	w.Varint32(&f.Preset)
-	w.Varint32(&f.BucketedEntityType)
-	w.Bool(&f.Release)
-}
-
-// Unmarshal ...
-func (f *FishBucketedEventData) Unmarshal(r *Reader) {
+func (f *FishBucketedEventData) Marshal(r IO) {
 	r.Varint32(&f.Pattern)
 	r.Varint32(&f.Preset)
 	r.Varint32(&f.BucketedEntityType)
@@ -333,14 +234,7 @@ type MobBornEventData struct {
 }
 
 // Marshal ...
-func (m *MobBornEventData) Marshal(w *Writer) {
-	w.Varint32(&m.EntityType)
-	w.Varint32(&m.Variant)
-	w.Uint8(&m.Colour)
-}
-
-// Unmarshal ...
-func (m *MobBornEventData) Unmarshal(r *Reader) {
+func (m *MobBornEventData) Marshal(r IO) {
 	r.Varint32(&m.EntityType)
 	r.Varint32(&m.Variant)
 	r.Uint8(&m.Colour)
@@ -361,16 +255,7 @@ type PetDiedEventData struct {
 }
 
 // Marshal ...
-func (p *PetDiedEventData) Marshal(w *Writer) {
-	w.Bool(&p.KilledByOwner)
-	w.Varint64(&p.KillerEntityUniqueID)
-	w.Varint64(&p.PetEntityUniqueID)
-	w.Varint32(&p.EntityDamageCause)
-	w.Varint32(&p.PetEntityType)
-}
-
-// Unmarshal ...
-func (p *PetDiedEventData) Unmarshal(r *Reader) {
+func (p *PetDiedEventData) Marshal(r IO) {
 	r.Bool(&p.KilledByOwner)
 	r.Varint64(&p.KillerEntityUniqueID)
 	r.Varint64(&p.PetEntityUniqueID)
@@ -387,13 +272,7 @@ type CauldronInteractEventData struct {
 }
 
 // Marshal ...
-func (c *CauldronInteractEventData) Marshal(w *Writer) {
-	w.Varint32(&c.BlockInteractionType)
-	w.Varint32(&c.ItemID)
-}
-
-// Unmarshal ...
-func (c *CauldronInteractEventData) Unmarshal(r *Reader) {
+func (c *CauldronInteractEventData) Marshal(r IO) {
 	r.Varint32(&c.BlockInteractionType)
 	r.Varint32(&c.ItemID)
 }
@@ -407,13 +286,7 @@ type ComposterInteractEventData struct {
 }
 
 // Marshal ...
-func (c *ComposterInteractEventData) Marshal(w *Writer) {
-	w.Varint32(&c.BlockInteractionType)
-	w.Varint32(&c.ItemID)
-}
-
-// Unmarshal ...
-func (c *ComposterInteractEventData) Unmarshal(r *Reader) {
+func (c *ComposterInteractEventData) Marshal(r IO) {
 	r.Varint32(&c.BlockInteractionType)
 	r.Varint32(&c.ItemID)
 }
@@ -425,12 +298,7 @@ type BellUsedEventData struct {
 }
 
 // Marshal ...
-func (b *BellUsedEventData) Marshal(w *Writer) {
-	w.Varint32(&b.ItemID)
-}
-
-// Unmarshal ...
-func (b *BellUsedEventData) Unmarshal(r *Reader) {
+func (b *BellUsedEventData) Marshal(r IO) {
 	r.Varint32(&b.ItemID)
 }
 
@@ -441,12 +309,7 @@ type EntityDefinitionTriggerEventData struct {
 }
 
 // Marshal ...
-func (e *EntityDefinitionTriggerEventData) Marshal(w *Writer) {
-	w.String(&e.EventName)
-}
-
-// Unmarshal ...
-func (e *EntityDefinitionTriggerEventData) Unmarshal(r *Reader) {
+func (e *EntityDefinitionTriggerEventData) Marshal(r IO) {
 	r.String(&e.EventName)
 }
 
@@ -461,14 +324,7 @@ type RaidUpdateEventData struct {
 }
 
 // Marshal ...
-func (ra *RaidUpdateEventData) Marshal(w *Writer) {
-	w.Varint32(&ra.CurrentRaidWave)
-	w.Varint32(&ra.TotalRaidWaves)
-	w.Bool(&ra.WonRaid)
-}
-
-// Unmarshal ...
-func (ra *RaidUpdateEventData) Unmarshal(r *Reader) {
+func (ra *RaidUpdateEventData) Marshal(r IO) {
 	r.Varint32(&ra.CurrentRaidWave)
 	r.Varint32(&ra.TotalRaidWaves)
 	r.Bool(&ra.WonRaid)
@@ -491,17 +347,7 @@ type MovementAnomalyEventData struct {
 }
 
 // Marshal ...
-func (m *MovementAnomalyEventData) Marshal(w *Writer) {
-	w.Uint8(&m.EventType)
-	w.Float32(&m.CheatingScore)
-	w.Float32(&m.AveragePositionDelta)
-	w.Float32(&m.TotalPositionDelta)
-	w.Float32(&m.MinPositionDelta)
-	w.Float32(&m.MaxPositionDelta)
-}
-
-// Unmarshal ...
-func (m *MovementAnomalyEventData) Unmarshal(r *Reader) {
+func (m *MovementAnomalyEventData) Marshal(r IO) {
 	r.Uint8(&m.EventType)
 	r.Float32(&m.CheatingScore)
 	r.Float32(&m.AveragePositionDelta)
@@ -525,16 +371,7 @@ type MovementCorrectedEventData struct {
 }
 
 // Marshal ...
-func (m *MovementCorrectedEventData) Marshal(w *Writer) {
-	w.Float32(&m.PositionDelta)
-	w.Float32(&m.CheatingScore)
-	w.Float32(&m.ScoreThreshold)
-	w.Float32(&m.DistanceThreshold)
-	w.Varint32(&m.DurationThreshold)
-}
-
-// Unmarshal ...
-func (m *MovementCorrectedEventData) Unmarshal(r *Reader) {
+func (m *MovementCorrectedEventData) Marshal(r IO) {
 	r.Float32(&m.PositionDelta)
 	r.Float32(&m.CheatingScore)
 	r.Float32(&m.ScoreThreshold)
@@ -546,7 +383,4 @@ func (m *MovementCorrectedEventData) Unmarshal(r *Reader) {
 type ExtractHoneyEventData struct{}
 
 // Marshal ...
-func (*ExtractHoneyEventData) Marshal(*Writer) {}
-
-// Unmarshal ...
-func (*ExtractHoneyEventData) Unmarshal(*Reader) {}
+func (*ExtractHoneyEventData) Marshal(IO) {}

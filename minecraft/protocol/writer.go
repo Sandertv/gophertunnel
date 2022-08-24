@@ -246,17 +246,9 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		bufWriter.Int16(&length)
 	}
 
-	placeOnLen := int32(len(x.CanBePlacedOn))
-	canBreak := int32(len(x.CanBreak))
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
-	bufWriter.Int32(&placeOnLen)
-	for _, block := range x.CanBePlacedOn {
-		bufWriter.StringUTF(&block)
-	}
-	bufWriter.Int32(&canBreak)
-	for _, block := range x.CanBreak {
-		bufWriter.StringUTF(&block)
-	}
 	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
 		bufWriter.Int64(&blockingTick)
@@ -294,17 +286,9 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int16(&length)
 	}
 
-	placeOnLen := int32(len(x.CanBePlacedOn))
-	canBreak := int32(len(x.CanBreak))
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
-	bufWriter.Int32(&placeOnLen)
-	for _, block := range x.CanBePlacedOn {
-		bufWriter.StringUTF(&block)
-	}
-	bufWriter.Int32(&canBreak)
-	for _, block := range x.CanBreak {
-		bufWriter.StringUTF(&block)
-	}
 	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
 		bufWriter.Int64(&blockingTick)
@@ -317,15 +301,8 @@ func (w *Writer) Item(x *ItemStack) {
 // MaterialReducer writes a material reducer to the writer.
 func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
-	itemCountsLen := uint32(len(m.Outputs))
-
 	w.Varint32(&mix)
-	w.Varuint32(&itemCountsLen)
-
-	for _, out := range m.Outputs {
-		w.Varint32(&out.NetworkID)
-		w.Varint32(&out.Count)
-	}
+	Slice(w, &m.Outputs)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

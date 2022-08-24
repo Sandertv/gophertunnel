@@ -120,5 +120,5 @@ func (pk *Event) Unmarshal(r *protocol.Reader) {
 		pk.EventData = &protocol.ExtractHoneyEventData{}
 	}
 
-	pk.EventData.Unmarshal(r)
+	pk.EventData.Marshal(r)
 }

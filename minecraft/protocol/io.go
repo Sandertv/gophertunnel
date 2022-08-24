@@ -136,6 +136,13 @@ func FuncSlice[T any, S ~*[]T](r IO, x S, f func(*T)) {
 	}
 }
 
+// FuncSliceIO reads/writes a slice of T using a function f with a varuint32 length prefix.
+func FuncSliceIO[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
+	FuncSlice(r, x, func(v *T) {
+		f(r, v)
+	})
+}
+
 // slice reads/writes the elements of a slice of type T.
 func slice[T Marshaler, S ~*[]T](r IO, count uint32, x S) {
 	_, reader := r.(*Reader)

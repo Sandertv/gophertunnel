@@ -58,11 +58,8 @@ func (x InventoryAction) Marshal(r IO) any {
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
 // The data it holds depends on the type.
 type InventoryTransactionData interface {
-	// Marshal encodes the inventory transaction data to its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised inventory transaction data object from Reader r into the
-	// InventoryTransactionData instance.
-	Unmarshal(r *Reader)
+	// Marshal encodes/decodes a serialised inventory transaction data object.
+	Marshal(r IO)
 }
 
 // NormalTransactionData represents an inventory transaction data object for normal transactions, such as
@@ -175,19 +172,7 @@ type ReleaseItemTransactionData struct {
 }
 
 // Marshal ...
-func (data *UseItemTransactionData) Marshal(w *Writer) {
-	w.Varuint32(&data.ActionType)
-	w.UBlockPos(&data.BlockPosition)
-	w.Varint32(&data.BlockFace)
-	w.Varint32(&data.HotBarSlot)
-	w.ItemInstance(&data.HeldItem)
-	w.Vec3(&data.Position)
-	w.Vec3(&data.ClickedPosition)
-	w.Varuint32(&data.BlockRuntimeID)
-}
-
-// Unmarshal ...
-func (data *UseItemTransactionData) Unmarshal(r *Reader) {
+func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Varuint32(&data.ActionType)
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
@@ -199,17 +184,7 @@ func (data *UseItemTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (data *UseItemOnEntityTransactionData) Marshal(w *Writer) {
-	w.Varuint64(&data.TargetEntityRuntimeID)
-	w.Varuint32(&data.ActionType)
-	w.Varint32(&data.HotBarSlot)
-	w.ItemInstance(&data.HeldItem)
-	w.Vec3(&data.Position)
-	w.Vec3(&data.ClickedPosition)
-}
-
-// Unmarshal ...
-func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
+func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
@@ -219,15 +194,7 @@ func (data *UseItemOnEntityTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (data *ReleaseItemTransactionData) Marshal(w *Writer) {
-	w.Varuint32(&data.ActionType)
-	w.Varint32(&data.HotBarSlot)
-	w.ItemInstance(&data.HeldItem)
-	w.Vec3(&data.HeadPosition)
-}
-
-// Unmarshal ...
-func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
+func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)
@@ -235,16 +202,10 @@ func (data *ReleaseItemTransactionData) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (*NormalTransactionData) Marshal(*Writer) {}
-
-// Unmarshal ...
-func (*NormalTransactionData) Unmarshal(*Reader) {}
+func (*NormalTransactionData) Marshal(IO) {}
 
 // Marshal ...
-func (*MismatchTransactionData) Marshal(*Writer) {}
-
-// Unmarshal ...
-func (*MismatchTransactionData) Unmarshal(*Reader) {}
+func (*MismatchTransactionData) Marshal(IO) {}
 
 // LegacySetItemSlot represents a slot that was changed during an InventoryTransaction. These slots have to
 // have their values set accordingly for actions such as when dropping an item out of the hotbar, where the

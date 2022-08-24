@@ -189,7 +189,7 @@ func (recipe *ShapelessRecipe) Marshal(w *Writer) {
 
 // Unmarshal ...
 func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
-	unmarshalShapeless(r, recipe)
+	marshalShapeless(r, recipe)
 }
 
 // Marshal ...
@@ -201,7 +201,7 @@ func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
 // Unmarshal ...
 func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
 	shapeless := ShapelessRecipe{}
-	unmarshalShapeless(r, &shapeless)
+	marshalShapeless(r, &shapeless)
 	*recipe = ShulkerBoxRecipe(shapeless)
 }
 
@@ -214,7 +214,7 @@ func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
 // Unmarshal ...
 func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
 	shapeless := ShapelessRecipe{}
-	unmarshalShapeless(r, &shapeless)
+	marshalShapeless(r, &shapeless)
 	*recipe = ShapelessChemistryRecipe(shapeless)
 }
 
@@ -329,18 +329,7 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 }
 
 // marshalShapeless ...
-func marshalShapeless(w *Writer, recipe *ShapelessRecipe) {
-	w.String(&recipe.RecipeID)
-	Slice(w, &recipe.Input)
-	FuncSlice(w, &recipe.Output, w.Item)
-	w.UUID(&recipe.UUID)
-	w.String(&recipe.Block)
-	w.Varint32(&recipe.Priority)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// unmarshalShapeless ...
-func unmarshalShapeless(r *Reader, recipe *ShapelessRecipe) {
+func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
 	Slice(r, &recipe.Input)
 	FuncSlice(r, &recipe.Output, r.Item)

@@ -73,11 +73,11 @@ func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
-	var transactionType uint32
 	r.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
 		protocol.Slice(r, &pk.LegacySetItemSlots)
 	}
+	var transactionType uint32
 	r.Varuint32(&transactionType)
 	protocol.Slice(r, &pk.Actions)
 	switch transactionType {
@@ -94,5 +94,5 @@ func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
 	default:
 		r.UnknownEnumOption(transactionType, "inventory transaction type")
 	}
-	pk.TransactionData.Unmarshal(r)
+	pk.TransactionData.Marshal(r)
 }
