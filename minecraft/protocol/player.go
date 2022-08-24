@@ -87,6 +87,11 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.Bool(&x.Host)
 }
 
+// PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.
+func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
+	r.UUID(&x.UUID)
+}
+
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
 // the client will provide input to the server.
 type PlayerMovementSettings struct {
