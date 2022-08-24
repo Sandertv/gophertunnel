@@ -37,17 +37,17 @@ func (pk *PlayerArmourDamage) Marshal(w *protocol.Writer) {
 	if pk.Bitset&0b0010 != 0 {
 		w.Varint32(&pk.ChestplateDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.ChestplateDamage = 0
 	}
 	if pk.Bitset&0b0100 != 0 {
 		w.Varint32(&pk.LeggingsDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.LeggingsDamage = 0
 	}
 	if pk.Bitset&0b1000 != 0 {
 		w.Varint32(&pk.BootsDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.BootsDamage = 0
 	}
 }
 
@@ -62,16 +62,16 @@ func (pk *PlayerArmourDamage) Unmarshal(r *protocol.Reader) {
 	if pk.Bitset&0b0010 != 0 {
 		r.Varint32(&pk.ChestplateDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.ChestplateDamage = 0
 	}
 	if pk.Bitset&0b0100 != 0 {
 		r.Varint32(&pk.LeggingsDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.LeggingsDamage = 0
 	}
 	if pk.Bitset&0b1000 != 0 {
 		r.Varint32(&pk.BootsDamage)
 	} else {
-		pk.HelmetDamage = 0
+		pk.BootsDamage = 0
 	}
 }
