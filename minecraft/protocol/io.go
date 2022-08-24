@@ -120,6 +120,13 @@ func FuncIOSlice[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
 	})
 }
 
+// FuncIOSliceUint32Length reads/writes a slice of T using a function with a uint32 length prefix.
+func FuncIOSliceUint32Length[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
+	count := uint32(len(*x))
+	r.Uint32(&count)
+	FuncIOSliceOfLen(r, count, x, f)
+}
+
 // SliceOfLen reads/writes the elements of a slice of type T with length l.
 func SliceOfLen[T any, S ~*[]T, A PtrMarshaler[T]](r IO, l uint32, x S) {
 	_, reader := r.(*Reader)
