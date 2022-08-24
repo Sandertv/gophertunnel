@@ -23,12 +23,11 @@ type EnchantmentOption struct {
 }
 
 // Marshal encodes/decodes an EnchantmentOption.
-func (x EnchantmentOption) Marshal(r IO) any {
+func (x *EnchantmentOption) Marshal(r IO) {
 	r.Varuint32(&x.Cost)
 	Single(r, &x.Enchantments)
 	r.String(&x.Name)
 	r.Varuint32(&x.RecipeNetworkID)
-	return x
 }
 
 // ItemEnchantments holds information on the enchantments that are applied to an item when a specific button
@@ -51,12 +50,11 @@ type ItemEnchantments struct {
 }
 
 // Marshal encodes/decodes an ItemEnchantments.
-func (x ItemEnchantments) Marshal(r IO) any {
+func (x *ItemEnchantments) Marshal(r IO) {
 	r.Int32(&x.Slot)
 	for i := 0; i < 3; i++ {
 		Slice(r, &x.Enchantments[i])
 	}
-	return x
 }
 
 // EnchantmentInstance represents a single enchantment instance with the type of the enchantment and its
@@ -67,8 +65,7 @@ type EnchantmentInstance struct {
 }
 
 // Marshal encodes/decodes an EnchantmentInstance.
-func (x EnchantmentInstance) Marshal(r IO) any {
+func (x *EnchantmentInstance) Marshal(r IO) {
 	r.Uint8(&x.Type)
 	r.Uint8(&x.Level)
-	return x
 }

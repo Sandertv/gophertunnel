@@ -20,11 +20,10 @@ type PotionContainerChangeRecipe struct {
 }
 
 // Marshal encodes/decodes a PotionContainerChangeRecipe.
-func (x PotionContainerChangeRecipe) Marshal(r IO) any {
+func (x *PotionContainerChangeRecipe) Marshal(r IO) {
 	r.Varint32(&x.InputItemID)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.OutputItemID)
-	return x
 }
 
 // PotionRecipe represents a potion mixing recipe which may be used in a brewing stand.
@@ -48,14 +47,13 @@ type PotionRecipe struct {
 }
 
 // Marshal encodes/decodes a PotionRecipe.
-func (x PotionRecipe) Marshal(r IO) any {
+func (x *PotionRecipe) Marshal(r IO) {
 	r.Varint32(&x.InputPotionID)
 	r.Varint32(&x.InputPotionMetadata)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.ReagentItemMetadata)
 	r.Varint32(&x.OutputPotionID)
 	r.Varint32(&x.OutputPotionMetadata)
-	return x
 }
 
 const (

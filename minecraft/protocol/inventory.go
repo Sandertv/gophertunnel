@@ -41,7 +41,7 @@ type InventoryAction struct {
 }
 
 // Marshal encodes/decodes an InventoryAction.
-func (x InventoryAction) Marshal(r IO) any {
+func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
 	switch x.SourceType {
 	case InventoryActionSourceContainer, InventoryActionSourceTODO:
@@ -52,7 +52,6 @@ func (x InventoryAction) Marshal(r IO) any {
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)
 	r.ItemInstance(&x.NewItem)
-	return x
 }
 
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
@@ -216,8 +215,7 @@ type LegacySetItemSlot struct {
 }
 
 // Marshal encodes/decodes a LegacySetItemSlot.
-func (x LegacySetItemSlot) Marshal(r IO) any {
+func (x *LegacySetItemSlot) Marshal(r IO) {
 	r.Uint8(&x.ContainerID)
 	r.ByteSlice(&x.Slots)
-	return x
 }

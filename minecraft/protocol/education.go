@@ -24,8 +24,7 @@ type EducationExternalLinkSettings struct {
 }
 
 // Marshal encodes/decodes an EducationExternalLinkSettings.
-func (x EducationExternalLinkSettings) Marshal(r IO) any {
+func (x *EducationExternalLinkSettings) Marshal(r IO) {
 	r.String(&x.URL)
 	r.String(&x.DisplayName)
-	return x
 }

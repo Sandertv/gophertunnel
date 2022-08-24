@@ -172,11 +172,10 @@ type CommandOutputMessage struct {
 }
 
 // Marshal encodes/decodes a CommandOutputMessage.
-func (x CommandOutputMessage) Marshal(r IO) any {
+func (x *CommandOutputMessage) Marshal(r IO) {
 	r.Bool(&x.Success)
 	r.String(&x.Message)
 	FuncSlice(r, &x.Parameters, r.String)
-	return x
 }
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.

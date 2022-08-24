@@ -23,7 +23,7 @@ type MapTrackedObject struct {
 }
 
 // Marshal encodes/decodes a MapTrackedObject.
-func (x MapTrackedObject) Marshal(r IO) any {
+func (x *MapTrackedObject) Marshal(r IO) {
 	r.Int32(&x.Type)
 	switch x.Type {
 	case MapObjectTypeEntity:
@@ -33,7 +33,6 @@ func (x MapTrackedObject) Marshal(r IO) any {
 	default:
 		r.UnknownEnumOption(x.Type, "map tracked object type")
 	}
-	return x
 }
 
 // MapDecoration is a fixed decoration on a map: Its position or other properties do not change automatically
@@ -57,14 +56,13 @@ type MapDecoration struct {
 }
 
 // Marshal encodes/decodes a MapDecoration.
-func (x MapDecoration) Marshal(r IO) any {
+func (x *MapDecoration) Marshal(r IO) {
 	r.Uint8(&x.Type)
 	r.Uint8(&x.Rotation)
 	r.Uint8(&x.X)
 	r.Uint8(&x.Y)
 	r.String(&x.Label)
 	r.VarRGBA(&x.Colour)
-	return x
 }
 
 // PixelRequest is the request for the colour of a pixel in a MapInfoRequest packet.
@@ -74,8 +72,7 @@ type PixelRequest struct {
 }
 
 // Marshal encodes/decodes a PixelRequest.
-func (x PixelRequest) Marshal(r IO) any {
+func (x *PixelRequest) Marshal(r IO) {
 	r.RGBA(&x.Colour)
 	r.Uint16(&x.Index)
-	return x
 }

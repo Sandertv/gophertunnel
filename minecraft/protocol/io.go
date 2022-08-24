@@ -53,42 +53,42 @@ type IO interface {
 
 // Marshaler is a type that can be written to or read from an IO.
 type Marshaler interface {
-	Marshal(r IO) any
+	Marshal(r IO)
 }
 
 // Slice reads/writes a slice of T with a varuint32 prefix.
-func Slice[T Marshaler, S ~*[]T](r IO, x S) {
+func Slice[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint32(len(*x))
 	r.Varuint32(&count)
-	SliceOfLen(r, count, x)
+	SliceOfLen[T, S, A](r, count, x)
 }
 
 // SliceUint8Length reads/writes a slice of T with a uint8 prefix.
-func SliceUint8Length[T Marshaler, S ~*[]T](r IO, x S) {
+func SliceUint8Length[T any, S *[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint8(len(*x))
 	r.Uint8(&count)
-	SliceOfLen(r, uint32(count), x)
+	SliceOfLen[T, S, A](r, uint32(count), x)
 }
 
 // SliceUint16Length reads/writes a slice of T with a uint16 prefix.
-func SliceUint16Length[T Marshaler, S ~*[]T](r IO, x S) {
+func SliceUint16Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint16(len(*x))
 	r.Uint16(&count)
-	SliceOfLen(r, uint32(count), x)
+	SliceOfLen[T, S, A](r, uint32(count), x)
 }
 
 // SliceUint32Length reads/writes a slice of T with a uint32 prefix.
-func SliceUint32Length[T Marshaler, S ~*[]T](r IO, x S) {
+func SliceUint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint32(len(*x))
 	r.Uint32(&count)
-	SliceOfLen(r, count, x)
+	SliceOfLen[T, S, A](r, count, x)
 }
 
 // SliceVarint32Length reads/writes a slice of T with a varint32 prefix.
-func SliceVarint32Length[T Marshaler, S ~*[]T](r IO, x S) {
+func SliceVarint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := int32(len(*x))
 	r.Varint32(&count)
-	SliceOfLen(r, uint32(count), x)
+	SliceOfLen[T, S, A](r, uint32(count), x)
 }
 
 // FuncSliceUint16Length reads/writes a slice of T using function f with a uint16 length prefix.
@@ -120,14 +120,14 @@ func FuncIOSlice[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
 }
 
 // SliceOfLen reads/writes the elements of a slice of type T with length l.
-func SliceOfLen[T Marshaler, S ~*[]T](r IO, l uint32, x S) {
+func SliceOfLen[T any, S ~*[]T, A PtrMarshaler[T]](r IO, l uint32, x S) {
 	_, reader := r.(*Reader)
 	if reader {
 		*x = make([]T, l)
 	}
 
 	for i := uint32(0); i < l; i++ {
-		(*x)[i] = (*x)[i].Marshal(r).(T)
+		A(&(*x)[i]).Marshal(r)
 	}
 }
 
@@ -150,9 +150,15 @@ func FuncIOSliceOfLen[T any, S ~*[]T](r IO, l uint32, x S, f func(IO, *T)) {
 	})
 }
 
+// PtrMarshaler represents a type that implements Marshaler for its pointer.
+type PtrMarshaler[T any] interface {
+	Marshaler
+	*T
+}
+
 // Single reads/writes a single Marshaler x.
-func Single[T Marshaler, S *T](r IO, x S) {
-	*x = (*x).Marshal(r).(T)
+func Single[T any, S PtrMarshaler[T]](r IO, x S) {
+	x.Marshal(r)
 }
 
 // Optional is an optional type in the protocol. If not set, only a false bool is written. If set, a true bool is
@@ -181,10 +187,10 @@ func OptionalFunc[T any](r IO, x *Optional[T], f func(*T)) any {
 	return x
 }
 
-// OptionalMarshaler reads/writes an Optional[T Marshaler].
-func OptionalMarshaler[T Marshaler](r IO, x *Optional[T]) {
+// OptionalMarshaler reads/writes an Optional assuming *T implements Marshaler.
+func OptionalMarshaler[T any, A PtrMarshaler[T]](r IO, x *Optional[T]) {
 	r.Bool(&x.set)
 	if x.set {
-		x.val = x.val.Marshal(r).(T)
+		A(&x.val).Marshal(r)
 	}
 }

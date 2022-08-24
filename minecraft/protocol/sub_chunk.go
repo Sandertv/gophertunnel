@@ -44,9 +44,8 @@ type SubChunkEntry struct {
 type SubChunkOffset [3]int8
 
 // Marshal encodes/decodes a SubChunkOffset.
-func (x SubChunkOffset) Marshal(r IO) any {
+func (x *SubChunkOffset) Marshal(r IO) {
 	r.Int8(&x[0])
 	r.Int8(&x[1])
 	r.Int8(&x[2])
-	return x
 }
