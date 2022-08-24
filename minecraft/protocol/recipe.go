@@ -289,7 +289,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
-	FuncIOSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, Single[RecipeIngredientItem])
+	FuncIOSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, Single[RecipeIngredientItem, *RecipeIngredientItem])
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
