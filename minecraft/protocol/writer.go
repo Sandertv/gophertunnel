@@ -158,6 +158,29 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varuint32(&x.BlockRuntimeID)
 }
 
+// GameRule writes a GameRule x to the Writer.
+func (w *Writer) GameRule(x *GameRule) {
+	w.String(&x.Name)
+	w.Bool(&x.CanBeModifiedByPlayer)
+
+	switch v := x.Value.(type) {
+	case bool:
+		id := uint32(1)
+		w.Varuint32(&id)
+		w.Bool(&v)
+	case uint32:
+		id := uint32(2)
+		w.Varuint32(&id)
+		w.Varuint32(&v)
+	case float32:
+		id := uint32(3)
+		w.Varuint32(&id)
+		w.Float32(&v)
+	default:
+		w.UnknownEnumOption(fmt.Sprintf("%T", v), "game rule type")
+	}
+}
+
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
 func (w *Writer) EntityMetadata(x *map[uint32]any) {
 	l := uint32(len(*x))

@@ -236,6 +236,31 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varuint32(&x.BlockRuntimeID)
 }
 
+// GameRule reads a GameRule x from the Reader.
+func (r *Reader) GameRule(x *GameRule) {
+	r.String(&x.Name)
+	r.Bool(&x.CanBeModifiedByPlayer)
+	var t uint32
+	r.Varuint32(&t)
+
+	switch t {
+	case 1:
+		var v bool
+		r.Bool(&v)
+		x.Value = v
+	case 2:
+		var v uint32
+		r.Varuint32(&v)
+		x.Value = v
+	case 3:
+		var v float32
+		r.Float32(&v)
+		x.Value = v
+	default:
+		r.UnknownEnumOption(t, "game rule type")
+	}
+}
+
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
 func (r *Reader) EntityMetadata(x *map[uint32]any) {
 	*x = map[uint32]any{}

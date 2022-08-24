@@ -46,6 +46,7 @@ type IO interface {
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
 	MaterialReducer(x *MaterialReducer)
+	GameRule(x *GameRule)
 
 	UnknownEnumOption(value any, enum string)
 	InvalidValue(value any, forField, reason string)
