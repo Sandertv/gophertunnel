@@ -151,7 +151,7 @@ func FuncIOSliceOfLen[T any, S ~*[]T](r IO, l uint32, x S, f func(IO, *T)) {
 }
 
 // Single reads/writes a single Marshaler x.
-func Single[T Marshaler, S ~*T](r IO, x S) {
+func Single[T Marshaler, S *T](r IO, x S) {
 	*x = (*x).Marshal(r).(T)
 }
 
