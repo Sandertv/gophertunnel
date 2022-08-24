@@ -45,6 +45,17 @@ type ScoreboardIdentityEntry struct {
 	EntityUniqueID int64
 }
 
+// Marshal encodes/decodes a ScoreboardIdentityEntry.
+func (x *ScoreboardIdentityEntry) Marshal(r IO) {
+	r.Varint64(&x.EntryID)
+	r.Varint64(&x.EntityUniqueID)
+}
+
+// ScoreboardIdentityClearEntry encodes/decodes a ScoreboardIdentityEntry for clearing the entry.
+func ScoreboardIdentityClearEntry(r IO, x *ScoreboardIdentityEntry) {
+	r.Varint64(&x.EntryID)
+}
+
 // ScoreRemoveEntry encodes/decodes a ScoreboardEntry x as an entry for removal.
 func ScoreRemoveEntry(r IO, x *ScoreboardEntry) {
 	r.Varint64(&x.EntryID)
