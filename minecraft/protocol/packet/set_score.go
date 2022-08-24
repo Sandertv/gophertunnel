@@ -32,9 +32,9 @@ func (pk *SetScore) Marshal(w *protocol.Writer) {
 	w.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case ScoreboardActionRemove:
-		protocol.FuncSliceIO(w, &pk.Entries, protocol.ScoreRemoveEntry)
+		protocol.FuncIOSlice(w, &pk.Entries, protocol.ScoreRemoveEntry)
 	case ScoreboardActionModify:
-		protocol.FuncSliceIO(w, &pk.Entries, protocol.ScoreModifyEntry)
+		protocol.FuncIOSlice(w, &pk.Entries, protocol.ScoreModifyEntry)
 	default:
 		w.UnknownEnumOption(pk.ActionType, "set score action type")
 	}
@@ -45,9 +45,9 @@ func (pk *SetScore) Unmarshal(r *protocol.Reader) {
 	r.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case ScoreboardActionRemove:
-		protocol.FuncSliceIO(r, &pk.Entries, protocol.ScoreRemoveEntry)
+		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreRemoveEntry)
 	case ScoreboardActionModify:
-		protocol.FuncSliceIO(r, &pk.Entries, protocol.ScoreModifyEntry)
+		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreModifyEntry)
 	default:
 		r.UnknownEnumOption(pk.ActionType, "set score action type")
 	}

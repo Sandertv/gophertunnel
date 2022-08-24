@@ -25,28 +25,15 @@ func (pk *ClientCacheBlobStatus) Marshal(w *protocol.Writer) {
 	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
 	w.Varuint32(&missLen)
 	w.Varuint32(&hitLen)
-	for _, hash := range pk.MissHashes {
-		w.Uint64(&hash)
-	}
-	for _, hash := range pk.HitHashes {
-		w.Uint64(&hash)
-	}
+	protocol.FuncSliceOfLen(w, missLen, &pk.MissHashes, w.Uint64)
+	protocol.FuncSliceOfLen(w, hitLen, &pk.HitHashes, w.Uint64)
 }
 
 // Unmarshal ...
 func (pk *ClientCacheBlobStatus) Unmarshal(r *protocol.Reader) {
-	var hitCount, missCount uint32
-	r.Varuint32(&missCount)
-	r.Varuint32(&hitCount)
-
-	r.LimitUint32(missCount+hitCount, 4096)
-
-	pk.MissHashes = make([]uint64, missCount)
-	pk.HitHashes = make([]uint64, hitCount)
-	for i := uint32(0); i < missCount; i++ {
-		r.Uint64(&pk.MissHashes[i])
-	}
-	for i := uint32(0); i < hitCount; i++ {
-		r.Uint64(&pk.HitHashes[i])
-	}
+	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
+	r.Varuint32(&missLen)
+	r.Varuint32(&hitLen)
+	protocol.FuncSliceOfLen(r, missLen, &pk.MissHashes, r.Uint64)
+	protocol.FuncSliceOfLen(r, hitLen, &pk.HitHashes, r.Uint64)
 }
