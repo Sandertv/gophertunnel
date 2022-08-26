@@ -152,7 +152,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 	_, _ = rand.Read(conn.salt)
 
 	go func() {
-		ticker := time.NewTicker(time.Second / 20)
+		ticker := time.NewTicker(time.Second / 50)
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {
