@@ -119,15 +119,7 @@ type PlayerDiedEventData struct {
 }
 
 // Marshal ...
-func (p *PlayerDiedEventData) Marshal(w *Writer) {
-	w.Varint32(&p.AttackerEntityID)
-	w.Varint32(&p.AttackerVariant)
-	w.Varint32(&p.EntityDamageCause)
-	w.Bool(&p.InRaid)
-}
-
-// Unmarshal ...
-func (p *PlayerDiedEventData) Unmarshal(r *Reader) {
+func (p *PlayerDiedEventData) Marshal(r IO) {
 	r.Varint32(&p.AttackerEntityID)
 	r.Varint32(&p.AttackerVariant)
 	r.Varint32(&p.EntityDamageCause)
