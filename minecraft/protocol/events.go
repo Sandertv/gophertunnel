@@ -110,14 +110,20 @@ func (c *CauldronUsedEventData) Marshal(r IO) {
 type PlayerDiedEventData struct {
 	// AttackerEntityID ...
 	AttackerEntityID int32
+	// AttackerVariant ...
+	AttackerVariant int32
 	// EntityDamageCause ...
 	EntityDamageCause int32
+	// InRaid ...
+	InRaid bool
 }
 
 // Marshal ...
 func (p *PlayerDiedEventData) Marshal(r IO) {
 	r.Varint32(&p.AttackerEntityID)
+	r.Varint32(&p.AttackerVariant)
 	r.Varint32(&p.EntityDamageCause)
+	r.Bool(&p.InRaid)
 }
 
 // BossKilledEventData is the event data sent when a boss dies.
