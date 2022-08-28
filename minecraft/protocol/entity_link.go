@@ -30,11 +30,10 @@ type EntityLink struct {
 }
 
 // Marshal encodes/decodes a single entity link.
-func (x EntityLink) Marshal(r IO) any {
+func (x *EntityLink) Marshal(r IO) {
 	r.Varint64(&x.RiddenEntityUniqueID)
 	r.Varint64(&x.RiderEntityUniqueID)
 	r.Uint8(&x.Type)
 	r.Bool(&x.Immediate)
 	r.Bool(&x.RiderInitiated)
-	return x
 }

@@ -158,6 +158,29 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varuint32(&x.BlockRuntimeID)
 }
 
+// GameRule writes a GameRule x to the Writer.
+func (w *Writer) GameRule(x *GameRule) {
+	w.String(&x.Name)
+	w.Bool(&x.CanBeModifiedByPlayer)
+
+	switch v := x.Value.(type) {
+	case bool:
+		id := uint32(1)
+		w.Varuint32(&id)
+		w.Bool(&v)
+	case uint32:
+		id := uint32(2)
+		w.Varuint32(&id)
+		w.Varuint32(&v)
+	case float32:
+		id := uint32(3)
+		w.Varuint32(&id)
+		w.Float32(&v)
+	default:
+		w.UnknownEnumOption(fmt.Sprintf("%T", v), "game rule type")
+	}
+}
+
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
 func (w *Writer) EntityMetadata(x *map[uint32]any) {
 	l := uint32(len(*x))
@@ -246,17 +269,9 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		bufWriter.Int16(&length)
 	}
 
-	placeOnLen := int32(len(x.CanBePlacedOn))
-	canBreak := int32(len(x.CanBreak))
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
-	bufWriter.Int32(&placeOnLen)
-	for _, block := range x.CanBePlacedOn {
-		bufWriter.StringUTF(&block)
-	}
-	bufWriter.Int32(&canBreak)
-	for _, block := range x.CanBreak {
-		bufWriter.StringUTF(&block)
-	}
 	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
 		bufWriter.Int64(&blockingTick)
@@ -294,17 +309,9 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int16(&length)
 	}
 
-	placeOnLen := int32(len(x.CanBePlacedOn))
-	canBreak := int32(len(x.CanBreak))
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
-	bufWriter.Int32(&placeOnLen)
-	for _, block := range x.CanBePlacedOn {
-		bufWriter.StringUTF(&block)
-	}
-	bufWriter.Int32(&canBreak)
-	for _, block := range x.CanBreak {
-		bufWriter.StringUTF(&block)
-	}
 	if x.NetworkID == bufWriter.shieldID {
 		var blockingTick int64
 		bufWriter.Int64(&blockingTick)
@@ -317,15 +324,8 @@ func (w *Writer) Item(x *ItemStack) {
 // MaterialReducer writes a material reducer to the writer.
 func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
-	itemCountsLen := uint32(len(m.Outputs))
-
 	w.Varint32(&mix)
-	w.Varuint32(&itemCountsLen)
-
-	for _, out := range m.Outputs {
-		w.Varint32(&out.NetworkID)
-		w.Varint32(&out.Count)
-	}
+	Slice(w, &m.Outputs)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

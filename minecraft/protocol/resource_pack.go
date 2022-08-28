@@ -26,7 +26,7 @@ type BehaviourPackInfo struct {
 }
 
 // Marshal encodes/decodes a BehaviourPackInfo.
-func (x BehaviourPackInfo) Marshal(r IO) any {
+func (x *BehaviourPackInfo) Marshal(r IO) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.Uint64(&x.Size)
@@ -34,7 +34,6 @@ func (x BehaviourPackInfo) Marshal(r IO) any {
 	r.String(&x.SubPackName)
 	r.String(&x.ContentIdentity)
 	r.Bool(&x.HasScripts)
-	return x
 }
 
 // TexturePackInfo represents a texture pack's info sent over network. It holds information about the
@@ -66,7 +65,7 @@ type TexturePackInfo struct {
 }
 
 // Marshal encodes/decodes a TexturePackInfo.
-func (x TexturePackInfo) Marshal(r IO) any {
+func (x *TexturePackInfo) Marshal(r IO) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.Uint64(&x.Size)
@@ -75,7 +74,6 @@ func (x TexturePackInfo) Marshal(r IO) any {
 	r.String(&x.ContentIdentity)
 	r.Bool(&x.HasScripts)
 	r.Bool(&x.RTXEnabled)
-	return x
 }
 
 // StackResourcePack represents a resource pack sent on the stack of the client. When sent, the client will
@@ -93,9 +91,8 @@ type StackResourcePack struct {
 }
 
 // Marshal encodes/decodes a StackResourcePack.
-func (x StackResourcePack) Marshal(r IO) any {
+func (x *StackResourcePack) Marshal(r IO) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.String(&x.SubPackName)
-	return x
 }

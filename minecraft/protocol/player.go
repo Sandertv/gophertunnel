@@ -75,7 +75,7 @@ type PlayerListEntry struct {
 }
 
 // Marshal encodes/decodes a PlayerListEntry.
-func (x PlayerListEntry) Marshal(r IO) any {
+func (x *PlayerListEntry) Marshal(r IO) {
 	r.UUID(&x.UUID)
 	r.Varint64(&x.EntityUniqueID)
 	r.String(&x.Username)
@@ -85,7 +85,11 @@ func (x PlayerListEntry) Marshal(r IO) any {
 	Single(r, &x.Skin)
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
-	return x
+}
+
+// PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.
+func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
+	r.UUID(&x.UUID)
 }
 
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
@@ -125,12 +129,11 @@ type PlayerBlockAction struct {
 }
 
 // Marshal encodes/decodes a PlayerBlockAction.
-func (x PlayerBlockAction) Marshal(r IO) any {
+func (x *PlayerBlockAction) Marshal(r IO) {
 	r.Varint32(&x.Action)
 	switch x.Action {
 	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
 		r.BlockPos(&x.BlockPos)
 		r.Varint32(&x.Face)
 	}
-	return x
 }

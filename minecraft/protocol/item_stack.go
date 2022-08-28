@@ -158,13 +158,12 @@ type ItemStackResponse struct {
 }
 
 // Marshal encodes/decodes an ItemStackResponse.
-func (x ItemStackResponse) Marshal(r IO) any {
+func (x *ItemStackResponse) Marshal(r IO) {
 	r.Uint8(&x.Status)
 	r.Varint32(&x.RequestID)
 	if x.Status == ItemStackResponseStatusOK {
 		Slice(r, &x.ContainerInfo)
 	}
-	return x
 }
 
 // StackResponseContainerInfo holds information on what slots in a container have what item stack in them.
@@ -178,10 +177,9 @@ type StackResponseContainerInfo struct {
 }
 
 // Marshal encodes/decodes a StackResponseContainerInfo.
-func (x StackResponseContainerInfo) Marshal(r IO) any {
+func (x *StackResponseContainerInfo) Marshal(r IO) {
 	r.Uint8(&x.ContainerID)
 	Slice(r, &x.SlotInfo)
-	return x
 }
 
 // StackResponseSlotInfo holds information on what item stack should be present in a specific slot.
@@ -202,7 +200,7 @@ type StackResponseSlotInfo struct {
 }
 
 // Marshal encodes/decodes a StackResponseSlotInfo.
-func (x StackResponseSlotInfo) Marshal(r IO) any {
+func (x *StackResponseSlotInfo) Marshal(r IO) {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
@@ -212,7 +210,6 @@ func (x StackResponseSlotInfo) Marshal(r IO) any {
 	}
 	r.String(&x.CustomName)
 	r.Varint32(&x.DurabilityCorrection)
-	return x
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.

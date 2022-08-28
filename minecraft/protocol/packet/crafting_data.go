@@ -32,7 +32,7 @@ func (*CraftingData) ID() uint32 {
 
 // Marshal ...
 func (pk *CraftingData) Marshal(w *protocol.Writer) {
-	l, materialReducersLen := uint32(len(pk.Recipes)), uint32(len(pk.MaterialReducers))
+	l := uint32(len(pk.Recipes))
 	w.Varuint32(&l)
 	for _, recipe := range pk.Recipes {
 		var c int32
@@ -61,10 +61,7 @@ func (pk *CraftingData) Marshal(w *protocol.Writer) {
 	}
 	protocol.Slice(w, &pk.PotionRecipes)
 	protocol.Slice(w, &pk.PotionContainerChangeRecipes)
-	w.Varuint32(&materialReducersLen)
-	for _, mat := range pk.MaterialReducers {
-		w.MaterialReducer(&mat)
-	}
+	protocol.FuncSlice(w, &pk.MaterialReducers, w.MaterialReducer)
 	w.Bool(&pk.ClearRecipes)
 }
 
@@ -97,18 +94,13 @@ func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 			recipe = &protocol.ShapedChemistryRecipe{}
 		default:
 			r.UnknownEnumOption(recipeType, "crafting data recipe type")
+			return
 		}
-		//goland:noinspection GoNilness
 		recipe.Unmarshal(r)
 		pk.Recipes[i] = recipe
 	}
 	protocol.Slice(r, &pk.PotionRecipes)
 	protocol.Slice(r, &pk.PotionContainerChangeRecipes)
-
-	r.Varuint32(&length)
-	pk.MaterialReducers = make([]protocol.MaterialReducer, length)
-	for i := uint32(0); i < length; i++ {
-		r.MaterialReducer(&pk.MaterialReducers[i])
-	}
+	protocol.FuncSlice(r, &pk.MaterialReducers, r.MaterialReducer)
 	r.Bool(&pk.ClearRecipes)
 }

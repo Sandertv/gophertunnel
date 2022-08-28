@@ -28,12 +28,11 @@ type AttributeValue struct {
 }
 
 // Marshal encodes/decodes an AttributeValue.
-func (x AttributeValue) Marshal(r IO) any {
+func (x *AttributeValue) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Float32(&x.Min)
 	r.Float32(&x.Value)
 	r.Float32(&x.Max)
-	return x
 }
 
 // Attribute is an entity attribute, that holds specific data such as the health of the entity. Each attribute
@@ -48,14 +47,13 @@ type Attribute struct {
 }
 
 // Marshal encodes/decodes an Attribute.
-func (x Attribute) Marshal(r IO) any {
+func (x *Attribute) Marshal(r IO) {
 	r.Float32(&x.Min)
 	r.Float32(&x.Max)
 	r.Float32(&x.Value)
 	r.Float32(&x.Default)
 	r.String(&x.Name)
 	Slice(r, &x.Modifiers)
-	return x
 }
 
 // AttributeModifier temporarily buffs/debuffs a given attribute until the modifier is used. In vanilla, these are
@@ -79,12 +77,11 @@ type AttributeModifier struct {
 }
 
 // Marshal encodes/decodes an AttributeModifier.
-func (x AttributeModifier) Marshal(r IO) any {
+func (x *AttributeModifier) Marshal(r IO) {
 	r.String(&x.ID)
 	r.String(&x.Name)
 	r.Float32(&x.Amount)
 	r.Int32(&x.Operation)
 	r.Int32(&x.Operand)
 	r.Bool(&x.Serializable)
-	return x
 }

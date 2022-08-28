@@ -236,6 +236,31 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varuint32(&x.BlockRuntimeID)
 }
 
+// GameRule reads a GameRule x from the Reader.
+func (r *Reader) GameRule(x *GameRule) {
+	r.String(&x.Name)
+	r.Bool(&x.CanBeModifiedByPlayer)
+	var t uint32
+	r.Varuint32(&t)
+
+	switch t {
+	case 1:
+		var v bool
+		r.Bool(&v)
+		x.Value = v
+	case 2:
+		var v uint32
+		r.Varuint32(&v)
+		x.Value = v
+	case 3:
+		var v float32
+		r.Float32(&v)
+		x.Value = v
+	default:
+		r.UnknownEnumOption(t, "game rule type")
+	}
+}
+
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
 func (r *Reader) EntityMetadata(x *map[uint32]any) {
 	*x = map[uint32]any{}
@@ -338,22 +363,8 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 	}
 
-	var count int32
-	bufReader.Int32(&count)
-	bufReader.LimitInt32(count, 0, higherLimit)
-
-	x.CanBePlacedOn = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufReader.StringUTF(&x.CanBePlacedOn[i])
-	}
-
-	bufReader.Int32(&count)
-	bufReader.LimitInt32(count, 0, higherLimit)
-
-	x.CanBreak = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufReader.StringUTF(&x.CanBreak[i])
-	}
+	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
 		var blockingTick int64
@@ -400,22 +411,8 @@ func (r *Reader) Item(x *ItemStack) {
 		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
 	}
 
-	var count int32
-	bufReader.Int32(&count)
-	bufReader.LimitInt32(count, 0, higherLimit)
-
-	x.CanBePlacedOn = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufReader.StringUTF(&x.CanBePlacedOn[i])
-	}
-
-	bufReader.Int32(&count)
-	bufReader.LimitInt32(count, 0, higherLimit)
-
-	x.CanBreak = make([]string, count)
-	for i := int32(0); i < count; i++ {
-		bufReader.StringUTF(&x.CanBreak[i])
-	}
+	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
 		var blockingTick int64
@@ -426,21 +423,9 @@ func (r *Reader) Item(x *ItemStack) {
 // MaterialReducer writes a material reducer to the writer.
 func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	var mix int32
-	var itemCountsLen uint32
-
 	r.Varint32(&mix)
-	r.Varuint32(&itemCountsLen)
-
 	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
-
-	for i := uint32(0); i < itemCountsLen; i++ {
-		var out MaterialReducerOutput
-
-		r.Varint32(&out.NetworkID)
-		r.Varint32(&out.Count)
-
-		m.Outputs = append(m.Outputs, out)
-	}
+	Slice(r, &m.Outputs)
 }
 
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.

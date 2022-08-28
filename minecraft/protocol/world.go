@@ -22,12 +22,11 @@ type DimensionDefinition struct {
 }
 
 // Marshal encodes/decodes a DimensionDefinition.
-func (x DimensionDefinition) Marshal(r IO) any {
+func (x *DimensionDefinition) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Varint32(&x.Range[0])
 	r.Varint32(&x.Range[1])
 	r.Varint32(&x.Generator)
-	return x
 }
 
 // GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.
@@ -39,8 +38,7 @@ type GenerationFeature struct {
 }
 
 // Marshal encodes/decodes a GenerationFeature.
-func (x GenerationFeature) Marshal(r IO) any {
+func (x *GenerationFeature) Marshal(r IO) {
 	r.String(&x.Name)
 	r.ByteSlice(&x.JSON)
-	return x
 }

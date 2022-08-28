@@ -31,12 +31,10 @@ func (*SetScore) ID() uint32 {
 func (pk *SetScore) Marshal(w *protocol.Writer) {
 	w.Uint8(&pk.ActionType)
 	switch pk.ActionType {
-	case ScoreboardActionRemove, ScoreboardActionModify:
-		l := uint32(len(pk.Entries))
-		w.Varuint32(&l)
-		for _, entry := range pk.Entries {
-			protocol.ScoreEntry(w, &entry, pk.ActionType == ScoreboardActionModify)
-		}
+	case ScoreboardActionRemove:
+		protocol.FuncIOSlice(w, &pk.Entries, protocol.ScoreRemoveEntry)
+	case ScoreboardActionModify:
+		protocol.FuncIOSlice(w, &pk.Entries, protocol.ScoreModifyEntry)
 	default:
 		w.UnknownEnumOption(pk.ActionType, "set score action type")
 	}
@@ -44,15 +42,13 @@ func (pk *SetScore) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *SetScore) Unmarshal(r *protocol.Reader) {
-	var count uint32
 	r.Uint8(&pk.ActionType)
-	r.Varuint32(&count)
-
-	if pk.ActionType != ScoreboardActionRemove && pk.ActionType != ScoreboardActionModify {
+	switch pk.ActionType {
+	case ScoreboardActionRemove:
+		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreRemoveEntry)
+	case ScoreboardActionModify:
+		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreModifyEntry)
+	default:
 		r.UnknownEnumOption(pk.ActionType, "set score action type")
-	}
-	pk.Entries = make([]protocol.ScoreboardEntry, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.ScoreEntry(r, &pk.Entries[i], pk.ActionType == ScoreboardActionModify)
 	}
 }

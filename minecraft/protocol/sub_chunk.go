@@ -40,13 +40,37 @@ type SubChunkEntry struct {
 	BlobHash uint64
 }
 
+// Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
+func (x *SubChunkEntry) Marshal(r IO) {
+	Single(r, &x.Offset)
+	r.Uint8(&x.Result)
+	if x.Result != SubChunkResultSuccessAllAir {
+		r.ByteSlice(&x.RawPayload)
+	}
+	r.Uint8(&x.HeightMapType)
+	if x.HeightMapType == HeightMapDataHasData {
+		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
+	}
+	r.Uint64(&x.BlobHash)
+}
+
+// SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
+func SubChunkEntryNoCache(r IO, x *SubChunkEntry) {
+	Single(r, &x.Offset)
+	r.Uint8(&x.Result)
+	r.ByteSlice(&x.RawPayload)
+	r.Uint8(&x.HeightMapType)
+	if x.HeightMapType == HeightMapDataHasData {
+		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
+	}
+}
+
 // SubChunkOffset represents an offset from the base position of another sub chunk.
 type SubChunkOffset [3]int8
 
 // Marshal encodes/decodes a SubChunkOffset.
-func (x SubChunkOffset) Marshal(r IO) any {
+func (x *SubChunkOffset) Marshal(r IO) {
 	r.Int8(&x[0])
 	r.Int8(&x[1])
 	r.Int8(&x[2])
-	return x
 }

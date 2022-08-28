@@ -10,8 +10,7 @@ type ExperimentData struct {
 }
 
 // Marshal encodes/decodes an ExperimentData.
-func (x ExperimentData) Marshal(r IO) any {
+func (x *ExperimentData) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Bool(&x.Enabled)
-	return x
 }

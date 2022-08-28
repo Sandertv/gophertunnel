@@ -3,7 +3,6 @@ package packet
 import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"image/color"
-	"math"
 )
 
 const (
@@ -29,6 +28,8 @@ type ClientBoundMapItemData struct {
 	// LockedMap specifies if the map that was updated was a locked map, which may be done using a cartography
 	// table.
 	LockedMap bool
+	// Origin is the center position of the map being updated.
+	Origin protocol.BlockPos
 	// Scale is the scale of the map as it is shown in-game. It is written when any of the MapUpdateFlags are
 	// set to the UpdateFlags field.
 	Scale byte
@@ -65,11 +66,8 @@ type ClientBoundMapItemData struct {
 	// YOffset is the Y offset in pixels at which the updated texture area starts. From this Y, the updated
 	// texture will extend exactly Height pixels up.
 	YOffset int32
-	// Pixels is a list of pixel colours for the new texture of the map. It is indexed as Pixels[y][x], with
-	// the length of the outer slice having to be exactly Height long and the inner slices exactly Width long.
-	Pixels [][]color.RGBA
-	// Origin is the center position of the map being updated.
-	Origin protocol.BlockPos
+	// Pixels is a list of pixel colours for the new texture of the map. It is indexed as Pixels[y*height + x].
+	Pixels []color.RGBA
 }
 
 // ID ...
@@ -96,30 +94,11 @@ func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
 		protocol.Slice(w, &pk.Decorations)
 	}
 	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
-		// Some basic validation for the values passed into the packet.
-		if pk.Width <= 0 || pk.Height <= 0 {
-			panic("invalid map texture update: width and height must be at least 1")
-		}
-
 		w.Varint32(&pk.Width)
 		w.Varint32(&pk.Height)
 		w.Varint32(&pk.XOffset)
 		w.Varint32(&pk.YOffset)
-
-		l := uint32(pk.Width * pk.Height)
-		w.Varuint32(&l)
-
-		if len(pk.Pixels) != int(pk.Height) {
-			panic("invalid map texture update: length of outer pixels array must be equal to height")
-		}
-		for y := int32(0); y < pk.Height; y++ {
-			if len(pk.Pixels[y]) != int(pk.Width) {
-				panic("invalid map texture update: length of inner pixels array must be equal to width")
-			}
-			for x := int32(0); x < pk.Width; x++ {
-				w.VarRGBA(&pk.Pixels[y][x])
-			}
-		}
+		protocol.FuncSlice(w, &pk.Pixels, w.VarRGBA)
 	}
 }
 
@@ -131,7 +110,6 @@ func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.LockedMap)
 	r.BlockPos(&pk.Origin)
 
-	var count uint32
 	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
 		protocol.FuncSlice(r, &pk.MapsIncludedIn, r.Varint64)
 	}
@@ -147,18 +125,6 @@ func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
 		r.Varint32(&pk.Height)
 		r.Varint32(&pk.XOffset)
 		r.Varint32(&pk.YOffset)
-		r.Varuint32(&count)
-
-		r.LimitInt32(pk.Width, 0, math.MaxInt16)
-		r.LimitInt32(pk.Height, 0, math.MaxInt16)
-		r.LimitInt32(pk.Width*pk.Height, int32(count), int32(count))
-
-		pk.Pixels = make([][]color.RGBA, pk.Height)
-		for y := int32(0); y < pk.Height; y++ {
-			pk.Pixels[y] = make([]color.RGBA, pk.Width)
-			for x := int32(0); x < pk.Width; x++ {
-				r.VarRGBA(&pk.Pixels[y][x])
-			}
-		}
+		protocol.FuncSlice(r, &pk.Pixels, r.VarRGBA)
 	}
 }

@@ -10,7 +10,7 @@ import (
 type PlaySound struct {
 	// SoundName is the name of the sound to play.
 	SoundName string
-	// Position is the position at which the sound was played. Some of the sounds do not depend on a position,
+	// Position is the position at which the sound was played. Some sounds do not depend on a position,
 	// which will then ignore it, but most of them will play with the direction based on the position compared
 	// to the player's position.
 	Position mgl32.Vec3

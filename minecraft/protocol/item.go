@@ -58,14 +58,13 @@ type RecipeIngredientItem struct {
 }
 
 // Marshal encodes/decodes a RecipeIngredientItem.
-func (x RecipeIngredientItem) Marshal(r IO) any {
+func (x *RecipeIngredientItem) Marshal(r IO) {
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
-		return x
+		return
 	}
 	r.Varint32(&x.MetadataValue)
 	r.Varint32(&x.Count)
-	return x
 }
 
 // ItemEntry is an item sent in the StartGame item table. It holds a name and a legacy ID, which is used to
@@ -81,15 +80,7 @@ type ItemEntry struct {
 }
 
 // Marshal encodes/decodes an ItemEntry.
-func (x ItemEntry) Marshal(r IO) any {
-	r.String(&x.Name)
-	r.Int16(&x.RuntimeID)
-	r.Bool(&x.ComponentBased)
-	return x
-}
-
-// Item reads/writes an ItemEntry x using IO r.
-func Item(r IO, x *ItemEntry) {
+func (x *ItemEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Int16(&x.RuntimeID)
 	r.Bool(&x.ComponentBased)
@@ -105,10 +96,9 @@ type ItemComponentEntry struct {
 }
 
 // Marshal encodes/decodes an ItemComponentEntry.
-func (x ItemComponentEntry) Marshal(r IO) any {
+func (x *ItemComponentEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
-	return x
 }
 
 // MaterialReducerOutput is an output from a material reducer.
@@ -117,6 +107,12 @@ type MaterialReducerOutput struct {
 	NetworkID int32
 	// Count is the quantity of the output.
 	Count int32
+}
+
+// Marshal encodes/decodes a MaterialReducerOutput.
+func (x *MaterialReducerOutput) Marshal(r IO) {
+	r.Varint32(&x.NetworkID)
+	r.Varint32(&x.Count)
 }
 
 // MaterialReducer is a craft in a material reducer block in education edition.

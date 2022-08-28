@@ -10,8 +10,7 @@ type CreativeItem struct {
 }
 
 // Marshal encodes/decodes a CreativeItem.
-func (x CreativeItem) Marshal(r IO) any {
+func (x *CreativeItem) Marshal(r IO) {
 	r.Varuint32(&x.CreativeItemNetworkID)
 	r.Item(&x.Item)
-	return x
 }
