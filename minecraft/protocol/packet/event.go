@@ -118,6 +118,8 @@ func (pk *Event) Unmarshal(r *protocol.Reader) {
 		pk.EventData = &protocol.MovementCorrectedEventData{}
 	case EventTypeExtractHoney:
 		pk.EventData = &protocol.ExtractHoneyEventData{}
+	case EventTypePlayerWaxedOrUnwaxedCopper:
+		pk.EventData = &protocol.WaxedOrUnwaxedCopperEventData{}
 	}
 
 	pk.EventData.Marshal(r)

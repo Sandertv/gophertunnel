@@ -76,9 +76,9 @@ const (
 	LevelEventParticlesVibrationSignal     = 2027
 	LevelEventParticlesDripstoneDrip       = 2028
 	LevelEventParticlesFizzEffect          = 2029
-	LevelEventWaxOn                        = 2030
-	LevelEventWaxOff                       = 2031
-	LevelEventScrape                       = 2032
+	LevelEventParticlesWaxOn               = 2030
+	LevelEventParticlesWaxOff              = 2031
+	LevelEventParticlesScrape              = 2032
 	LevelEventParticlesElectricSpark       = 2033
 	LevelEventParticleTurtleEgg            = 2034
 	LevelEventParticleSculkShriek          = 2035
