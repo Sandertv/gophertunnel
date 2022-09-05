@@ -390,3 +390,30 @@ type ExtractHoneyEventData struct{}
 
 // Marshal ...
 func (*ExtractHoneyEventData) Marshal(IO) {}
+
+const (
+	WaxNotOxidised   = uint16(0xa609)
+	WaxExposed       = uint16(0xa809)
+	WaxWeathered     = uint16(0xaa09)
+	WaxOxidised      = uint16(0xac09)
+	UnWaxNotOxidised = uint16(0xae09)
+	UnWaxExposed     = uint16(0xb009)
+	UnWaxWeathered   = uint16(0xb209)
+	UnWaxOxidised    = uint16(0xfa0a)
+)
+
+// WaxedOrUnwaxedCopperEventData is an event sent by the server when a copper block is waxed or unwaxed.
+type WaxedOrUnwaxedCopperEventData struct {
+	Type uint16
+}
+
+// Marshal ...
+func (w *WaxedOrUnwaxedCopperEventData) Marshal(r IO) {
+	r.Uint16(&w.Type)
+}
+
+// SneakCloseToSculkSensorEventData is an event sent by the server when a player sneaks close to an sculk block.
+type SneakCloseToSculkSensorEventData struct{}
+
+// Marshal ...
+func (u *SneakCloseToSculkSensorEventData) Marshal(r IO) {}
