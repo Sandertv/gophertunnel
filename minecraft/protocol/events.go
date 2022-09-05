@@ -411,3 +411,15 @@ type WaxedOrUnwaxedCopperEventData struct {
 func (w *WaxedOrUnwaxedCopperEventData) Marshal(r IO) {
 	r.Uint16(&w.Type)
 }
+
+// SneakCloseToSculkSensorEventData is an event sent by the server when a player sneaks close to an sculk block.
+type SneakCloseToSculkSensorEventData struct{}
+
+// Marshal ...
+func (u *SneakCloseToSculkSensorEventData) Marshal(r IO) {}
+
+// UnknownEventData is an unimplemented event
+type UnknownEventData struct{}
+
+// Marshal ...
+func (u *UnknownEventData) Marshal(r IO) {}
