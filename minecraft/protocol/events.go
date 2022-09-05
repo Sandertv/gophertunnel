@@ -417,9 +417,3 @@ type SneakCloseToSculkSensorEventData struct{}
 
 // Marshal ...
 func (u *SneakCloseToSculkSensorEventData) Marshal(r IO) {}
-
-// UnknownEventData is an unimplemented event
-type UnknownEventData struct{}
-
-// Marshal ...
-func (u *UnknownEventData) Marshal(r IO) {}

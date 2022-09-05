@@ -122,8 +122,6 @@ func (pk *Event) Unmarshal(r *protocol.Reader) {
 		pk.EventData = &protocol.WaxedOrUnwaxedCopperEventData{}
 	case EventTypeSneakCloseToSculkSensor:
 		pk.EventData = &protocol.SneakCloseToSculkSensorEventData{}
-	default:
-		pk.EventData = &protocol.UnknownEventData{}
 	}
 
 	pk.EventData.Marshal(r)
