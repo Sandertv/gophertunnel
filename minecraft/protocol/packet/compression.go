@@ -110,7 +110,10 @@ func (SnappyCompression) Decompress(compressed []byte) ([]byte, error) {
 	// perfect size right away and only needs to allocate once. No need to pool
 	// byte slices here either.
 	decompressed, err := snappy.Decode(nil, compressed)
-	return decompressed, err
+	if err != nil {
+		return nil, fmt.Errorf("decompress snappy: %w", err)
+	}
+	return decompressed, nil
 }
 
 // init registers all valid compressions with the protocol.
