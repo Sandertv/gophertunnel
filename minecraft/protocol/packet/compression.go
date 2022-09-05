@@ -2,9 +2,12 @@ package packet
 
 import (
 	"bytes"
+	"fmt"
 	"github.com/golang/snappy"
 	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/internal"
 	"io"
+	"sync"
 )
 
 // Compression represents a compression algorithm that can compress and decompress data.
@@ -24,6 +27,20 @@ type (
 	SnappyCompression struct{}
 )
 
+// flateDecompressPool is a sync.Pool for io.ReadCloser flate readers. These are
+// pooled for connections.
+var (
+	flateDecompressPool = sync.Pool{
+		New: func() any { return flate.NewReader(bytes.NewReader(nil)) },
+	}
+	flateCompressPool = sync.Pool{
+		New: func() any {
+			w, _ := flate.NewWriter(io.Discard, 6)
+			return w
+		},
+	}
+)
+
 // EncodeCompression ...
 func (FlateCompression) EncodeCompression() uint16 {
 	return 0
@@ -31,34 +48,46 @@ func (FlateCompression) EncodeCompression() uint16 {
 
 // Compress ...
 func (FlateCompression) Compress(decompressed []byte) ([]byte, error) {
-	buf := bytes.NewBuffer(nil)
-	w, err := flate.NewWriter(buf, 6)
+	compressed := internal.BufferPool.Get().(*bytes.Buffer)
+	w := flateCompressPool.Get().(*flate.Writer)
+
+	defer func() {
+		// Reset the buffer, so we can return it to the buffer pool safely.
+		compressed.Reset()
+		internal.BufferPool.Put(compressed)
+		flateCompressPool.Put(w)
+	}()
+
+	w.Reset(compressed)
+
+	_, err := w.Write(decompressed)
 	if err != nil {
-		return nil, err
-	}
-	_, err = w.Write(decompressed)
-	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("compress flate: %w", err)
 	}
 	err = w.Close()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("close flate writer: %w", err)
 	}
-	return buf.Bytes(), nil
+	return compressed.Bytes(), nil
 }
 
 // Decompress ...
 func (FlateCompression) Decompress(compressed []byte) ([]byte, error) {
-	r := flate.NewReader(bytes.NewBuffer(compressed))
-	decompressed, err := io.ReadAll(r)
-	if err != nil {
-		return nil, err
+	buf := bytes.NewReader(compressed)
+	c := flateDecompressPool.Get().(io.ReadCloser)
+	defer flateDecompressPool.Put(c)
+
+	if err := c.(flate.Resetter).Reset(buf, nil); err != nil {
+		return nil, fmt.Errorf("reset flate: %w", err)
 	}
-	err = r.Close()
-	if err != nil {
-		return nil, err
+	_ = c.Close()
+
+	// Guess an uncompressed size of 2*len(compressed).
+	decompressed := bytes.NewBuffer(make([]byte, 0, len(compressed)*2))
+	if _, err := io.Copy(decompressed, c); err != nil {
+		return nil, fmt.Errorf("decompress flate: %v", err)
 	}
-	return decompressed, nil
+	return decompressed.Bytes(), nil
 }
 
 // EncodeCompression ...
@@ -68,11 +97,18 @@ func (SnappyCompression) EncodeCompression() uint16 {
 
 // Compress ...
 func (SnappyCompression) Compress(decompressed []byte) ([]byte, error) {
+	// Because Snappy allocates a slice only once, it is less important to have
+	// a dst slice pre-allocated. With FlateCompression this is more important,
+	// because flate does a lot of smaller allocations which causes a
+	// considerable slowdown.
 	return snappy.Encode(nil, decompressed), nil
 }
 
 // Decompress ...
 func (SnappyCompression) Decompress(compressed []byte) ([]byte, error) {
+	// Snappy writes a decoded data length prefix, so it can allocate the
+	// perfect size right away and only needs to allocate once. No need to pool
+	// byte slices here either.
 	decompressed, err := snappy.Decode(nil, compressed)
 	return decompressed, err
 }
