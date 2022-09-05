@@ -64,11 +64,7 @@ func (pk *Text) Marshal(w *protocol.Writer) {
 		w.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		w.String(&pk.Message)
-		l := uint32(len(pk.Parameters))
-		w.Varuint32(&l)
-		for _, x := range pk.Parameters {
-			w.String(&x)
-		}
+		protocol.FuncSlice(w, &pk.Parameters, w.String)
 	}
 	w.String(&pk.XUID)
 	w.String(&pk.PlatformChatID)
@@ -85,14 +81,8 @@ func (pk *Text) Unmarshal(r *protocol.Reader) {
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
 		r.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
-		var length uint32
-
 		r.String(&pk.Message)
-		r.Varuint32(&length)
-		pk.Parameters = make([]string, length)
-		for i := uint32(0); i < length; i++ {
-			r.String(&pk.Parameters[i])
-		}
+		protocol.FuncSlice(r, &pk.Parameters, r.String)
 	}
 	r.String(&pk.XUID)
 	r.String(&pk.PlatformChatID)

@@ -15,6 +15,8 @@ type Encoding interface {
 	Float32(r *offsetReader) (float32, error)
 	Float64(r *offsetReader) (float64, error)
 	String(r *offsetReader) (string, error)
+	Int32Slice(r *offsetReader) ([]int32, error)
+	Int64Slice(r *offsetReader) ([]int64, error)
 
 	WriteInt16(w *offsetWriter, x int16) error
 	WriteInt32(w *offsetWriter, x int32) error
@@ -24,22 +26,25 @@ type Encoding interface {
 	WriteString(w *offsetWriter, x string) error
 }
 
-// NetworkLittleEndian is the variable sized integer implementation of NBT. It is otherwise the same as the
-// normal little endian NBT. The NetworkLittleEndian format limits the total bytes of NBT that may be read. If
-// the limit is hit, the reading operation will fail immediately.
-var NetworkLittleEndian networkLittleEndian
+var (
+	// NetworkLittleEndian is the variable sized integer implementation of NBT. It is otherwise the same as the
+	// normal little endian NBT. The NetworkLittleEndian format limits the total bytes of NBT that may be read. If
+	// the limit is hit, the reading operation will fail immediately. NetworkLittleEndian is generally used for NBT
+	// sent over network in the Bedrock Edition protocol.
+	NetworkLittleEndian networkLittleEndian
 
-// LittleEndian is the fixed size little endian implementation of NBT. It is the format typically used for
-// writing Minecraft (Bedrock Edition) world saves.
-var LittleEndian littleEndian
+	// LittleEndian is the fixed size little endian implementation of NBT. It is the format typically used for
+	// writing Minecraft (Bedrock Edition) world saves.
+	LittleEndian littleEndian
 
-// BigEndian is the fixed size big endian implementation of NBT. It is the original implementation, and is
-// used only on Minecraft Java Edition.
-var BigEndian bigEndian
+	// BigEndian is the fixed size big endian implementation of NBT. It is the original implementation, and is
+	// used only on Minecraft Java Edition.
+	BigEndian bigEndian
 
-var _ = BigEndian
-var _ = LittleEndian
-var _ = NetworkLittleEndian
+	_ Encoding = NetworkLittleEndian
+	_ Encoding = LittleEndian
+	_ Encoding = BigEndian
+)
 
 type networkLittleEndian struct{ littleEndian }
 
@@ -157,268 +162,41 @@ func (e networkLittleEndian) String(r *offsetReader) (string, error) {
 	if length > math.MaxInt16 {
 		return "", InvalidStringError{Off: r.off, Err: errors.New("string length exceeds maximum length prefix")}
 	}
-	data, err := consumeN(int(length), r)
-	if err != nil {
+	data := make([]byte, length)
+	if _, err := r.Read(data); err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	return string(data), nil
+	return *(*string)(unsafe.Pointer(&data)), nil
 }
 
-type littleEndian struct{}
-
-// WriteInt16 ...
-func (littleEndian) WriteInt16(w *offsetWriter, x int16) error {
-	if _, err := w.Write([]byte{byte(x), byte(x >> 8)}); err != nil {
-		return FailedWriteError{Op: "WriteInt16", Off: w.off}
-	}
-	return nil
-}
-
-// WriteInt32 ...
-func (littleEndian) WriteInt32(w *offsetWriter, x int32) error {
-	if _, err := w.Write([]byte{byte(x), byte(x >> 8), byte(x >> 16), byte(x >> 24)}); err != nil {
-		return FailedWriteError{Op: "WriteInt32", Off: w.off}
-	}
-	return nil
-}
-
-// WriteInt64 ...
-func (littleEndian) WriteInt64(w *offsetWriter, x int64) error {
-	if _, err := w.Write([]byte{byte(x), byte(x >> 8), byte(x >> 16), byte(x >> 24),
-		byte(x >> 32), byte(x >> 40), byte(x >> 48), byte(x >> 56)}); err != nil {
-		return FailedWriteError{Op: "WriteInt64", Off: w.off}
-	}
-	return nil
-}
-
-// WriteFloat32 ...
-func (littleEndian) WriteFloat32(w *offsetWriter, x float32) error {
-	bits := math.Float32bits(x)
-	if _, err := w.Write([]byte{byte(bits), byte(bits >> 8), byte(bits >> 16), byte(bits >> 24)}); err != nil {
-		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
-	}
-	return nil
-}
-
-// WriteFloat64 ...
-func (littleEndian) WriteFloat64(w *offsetWriter, x float64) error {
-	bits := math.Float64bits(x)
-	if _, err := w.Write([]byte{byte(bits), byte(bits >> 8), byte(bits >> 16), byte(bits >> 24),
-		byte(bits >> 32), byte(bits >> 40), byte(bits >> 48), byte(bits >> 56)}); err != nil {
-		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
-	}
-	return nil
-}
-
-// WriteString ...
-func (littleEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxInt16 {
-		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
-	}
-	length := int16(len(x))
-	if _, err := w.Write([]byte{byte(length), byte(length >> 8)}); err != nil {
-		return FailedWriteError{Op: "WriteString", Off: w.off}
-	}
-	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	if _, err := w.Write(*(*[]byte)(unsafe.Pointer(&x))); err != nil {
-		return FailedWriteError{Op: "WriteString", Off: w.off}
-	}
-	return nil
-}
-
-// Int16 ...
-func (littleEndian) Int16(r *offsetReader) (int16, error) {
-	b, err := consumeN(2, r)
+// Int32Slice ...
+func (e networkLittleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
+	n, err := e.Int32(r)
 	if err != nil {
-		return 0, BufferOverrunError{Op: "Int16"}
+		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
-	return int16(uint16(b[0]) | uint16(b[1])<<8), nil
+	m := make([]int32, n)
+	for i := int32(0); i < n; i++ {
+		m[i], err = e.Int32(r)
+		if err != nil {
+			return nil, BufferOverrunError{Op: "Int32Slice"}
+		}
+	}
+	return m, nil
 }
 
-// Int32 ...
-func (littleEndian) Int32(r *offsetReader) (int32, error) {
-	b, err := consumeN(4, r)
+// Int64Slice ...
+func (e networkLittleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
+	n, err := e.Int32(r)
 	if err != nil {
-		return 0, BufferOverrunError{Op: "Int32"}
+		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
-	return int32(uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24), nil
-}
-
-// Int64 ...
-func (littleEndian) Int64(r *offsetReader) (int64, error) {
-	b, err := consumeN(8, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float64"}
+	m := make([]int64, n)
+	for i := int32(0); i < n; i++ {
+		m[i], err = e.Int64(r)
+		if err != nil {
+			return nil, BufferOverrunError{Op: "Int64Slice"}
+		}
 	}
-	return int64(uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
-		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56), nil
-}
-
-// Float32 ...
-func (littleEndian) Float32(r *offsetReader) (float32, error) {
-	b, err := consumeN(4, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float32"}
-	}
-	return math.Float32frombits(uint32(b[0]) | uint32(b[1])<<8 | uint32(b[2])<<16 | uint32(b[3])<<24), nil
-}
-
-// Float64 ...
-func (littleEndian) Float64(r *offsetReader) (float64, error) {
-	b, err := consumeN(8, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float64"}
-	}
-	return math.Float64frombits(uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24 |
-		uint64(b[4])<<32 | uint64(b[5])<<40 | uint64(b[6])<<48 | uint64(b[7])<<56), nil
-}
-
-// String ...
-func (littleEndian) String(r *offsetReader) (string, error) {
-	b, err := consumeN(2, r)
-	if err != nil {
-		return "", BufferOverrunError{Op: "String"}
-	}
-	stringLength := int(uint16(b[0]) | uint16(b[1])<<8)
-	data, err := consumeN(stringLength, r)
-	if err != nil {
-		return "", BufferOverrunError{Op: "String"}
-	}
-	return string(data), nil
-}
-
-type bigEndian struct{}
-
-// WriteInt16 ...
-func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
-	if _, err := w.Write([]byte{byte(x >> 8), byte(x)}); err != nil {
-		return FailedWriteError{Op: "WriteInt16", Off: w.off}
-	}
-	return nil
-}
-
-// WriteInt32 ...
-func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
-	if _, err := w.Write([]byte{byte(x >> 24), byte(x >> 16), byte(x >> 8), byte(x)}); err != nil {
-		return FailedWriteError{Op: "WriteInt32", Off: w.off}
-	}
-	return nil
-}
-
-// WriteInt64 ...
-func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
-	if _, err := w.Write([]byte{byte(x >> 56), byte(x >> 48), byte(x >> 40), byte(x >> 32),
-		byte(x >> 24), byte(x >> 16), byte(x >> 8), byte(x)}); err != nil {
-		return FailedWriteError{Op: "WriteInt64", Off: w.off}
-	}
-	return nil
-}
-
-// WriteFloat32 ...
-func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
-	bits := math.Float32bits(x)
-	if _, err := w.Write([]byte{byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits)}); err != nil {
-		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
-	}
-	return nil
-}
-
-// WriteFloat64 ...
-func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
-	bits := math.Float64bits(x)
-	if _, err := w.Write([]byte{byte(bits >> 56), byte(bits >> 48), byte(bits >> 40), byte(bits >> 32),
-		byte(bits >> 24), byte(bits >> 16), byte(bits >> 8), byte(bits)}); err != nil {
-		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
-	}
-	return nil
-}
-
-// WriteString ...
-func (bigEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxInt16 {
-		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
-	}
-	length := int16(len(x))
-	if _, err := w.Write([]byte{byte(length >> 8), byte(length)}); err != nil {
-		return FailedWriteError{Op: "WriteInt16", Off: w.off}
-	}
-	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	if _, err := w.Write(*(*[]byte)(unsafe.Pointer(&x))); err != nil {
-		return FailedWriteError{Op: "WriteString", Off: w.off}
-	}
-	return nil
-}
-
-// Int16 ...
-func (bigEndian) Int16(r *offsetReader) (int16, error) {
-	b, err := consumeN(2, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Int16"}
-	}
-	return int16(uint16(b[0])<<8 | uint16(b[1])), nil
-}
-
-// Int32 ...
-func (bigEndian) Int32(r *offsetReader) (int32, error) {
-	b, err := consumeN(4, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Int32"}
-	}
-	return int32(uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])), nil
-}
-
-// Int64 ...
-func (bigEndian) Int64(r *offsetReader) (int64, error) {
-	b, err := consumeN(8, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float64"}
-	}
-	return int64(uint64(b[0])<<56 | uint64(b[1])<<48 | uint64(b[2])<<40 | uint64(b[3])<<32 |
-		uint64(b[4])<<24 | uint64(b[5])<<16 | uint64(b[6])<<8 | uint64(b[7])), nil
-}
-
-// Float32 ...
-func (bigEndian) Float32(r *offsetReader) (float32, error) {
-	b, err := consumeN(4, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float32"}
-	}
-	return math.Float32frombits(uint32(b[0])<<24 | uint32(b[1])<<16 | uint32(b[2])<<8 | uint32(b[3])), nil
-}
-
-// Float64 ...
-func (bigEndian) Float64(r *offsetReader) (float64, error) {
-	b, err := consumeN(8, r)
-	if err != nil {
-		return 0, BufferOverrunError{Op: "Float64"}
-	}
-	return math.Float64frombits(uint64(b[0])<<56 | uint64(b[1])<<48 | uint64(b[2])<<40 | uint64(b[3])<<32 |
-		uint64(b[4])<<24 | uint64(b[5])<<16 | uint64(b[6])<<8 | uint64(b[7])), nil
-}
-
-// String ...
-func (bigEndian) String(r *offsetReader) (string, error) {
-	b, err := consumeN(2, r)
-	if err != nil {
-		return "", BufferOverrunError{Op: "String"}
-	}
-	stringLength := int(uint16(b[0])<<8 | uint16(b[1]))
-	data, err := consumeN(stringLength, r)
-	if err != nil {
-		return "", BufferOverrunError{Op: "String"}
-	}
-	return string(data), nil
-}
-
-// consumeN consumes n bytes from the offset reader and returns them. It returns an error if the reader does
-// not have that many bytes available.
-func consumeN(n int, r *offsetReader) ([]byte, error) {
-	if n < 0 {
-		return nil, InvalidArraySizeError{Off: r.off, Op: "Consume", NBTLength: n}
-	}
-	data := r.Next(n)
-	if len(data) != n {
-		return nil, BufferOverrunError{Op: "Consume"}
-	}
-	return data, nil
+	return m, nil
 }

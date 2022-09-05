@@ -45,22 +45,34 @@ type ScoreboardIdentityEntry struct {
 	EntityUniqueID int64
 }
 
-// ScoreEntry reads/writes a ScoreboardEntry x using IO r. It reads the display information if modify is true,
-// as expected when the SetScore packet is sent to modify entries.
-func ScoreEntry(r IO, x *ScoreboardEntry, modify bool) {
+// Marshal encodes/decodes a ScoreboardIdentityEntry.
+func (x *ScoreboardIdentityEntry) Marshal(r IO) {
+	r.Varint64(&x.EntryID)
+	r.Varint64(&x.EntityUniqueID)
+}
+
+// ScoreboardIdentityClearEntry encodes/decodes a ScoreboardIdentityEntry for clearing the entry.
+func ScoreboardIdentityClearEntry(r IO, x *ScoreboardIdentityEntry) {
+	r.Varint64(&x.EntryID)
+}
+
+// ScoreRemoveEntry encodes/decodes a ScoreboardEntry x as an entry for removal.
+func ScoreRemoveEntry(r IO, x *ScoreboardEntry) {
 	r.Varint64(&x.EntryID)
 	r.String(&x.ObjectiveName)
 	r.Int32(&x.Score)
+}
 
-	if modify {
-		r.Uint8(&x.IdentityType)
-		switch x.IdentityType {
-		case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-			r.Varint64(&x.EntityUniqueID)
-		case ScoreboardIdentityFakePlayer:
-			r.String(&x.DisplayName)
-		default:
-			r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
-		}
+// ScoreModifyEntry encodes/decodes a ScoreboardEntry x as an entry for modification.
+func ScoreModifyEntry(r IO, x *ScoreboardEntry) {
+	ScoreRemoveEntry(r, x)
+	r.Uint8(&x.IdentityType)
+	switch x.IdentityType {
+	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
+		r.Varint64(&x.EntityUniqueID)
+	case ScoreboardIdentityFakePlayer:
+		r.String(&x.DisplayName)
+	default:
+		r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
 	}
 }

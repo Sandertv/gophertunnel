@@ -19,20 +19,10 @@ func (*DimensionData) ID() uint32 {
 
 // Marshal ...
 func (pk *DimensionData) Marshal(w *protocol.Writer) {
-	definitionsLen := uint32(len(pk.Definitions))
-	w.Varuint32(&definitionsLen)
-	for _, definition := range pk.Definitions {
-		protocol.DimensionDef(w, &definition)
-	}
+	protocol.Slice(w, &pk.Definitions)
 }
 
 // Unmarshal ...
 func (pk *DimensionData) Unmarshal(r *protocol.Reader) {
-	var definitionsLen uint32
-	r.Varuint32(&definitionsLen)
-
-	pk.Definitions = make([]protocol.DimensionDefinition, definitionsLen)
-	for i := uint32(0); i < definitionsLen; i++ {
-		protocol.DimensionDef(r, &pk.Definitions[i])
-	}
+	protocol.Slice(r, &pk.Definitions)
 }

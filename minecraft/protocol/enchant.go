@@ -22,18 +22,10 @@ type EnchantmentOption struct {
 	RecipeNetworkID uint32
 }
 
-// WriteEnchantOption writes an EnchantmentOption x to Writer w.
-func WriteEnchantOption(w *Writer, x *EnchantmentOption) {
-	w.Varuint32(&x.Cost)
-	WriteItemEnchants(w, &x.Enchantments)
-	w.String(&x.Name)
-	w.Varuint32(&x.RecipeNetworkID)
-}
-
-// EnchantOption reads an EnchantmentOption x from Reader r.
-func EnchantOption(r *Reader, x *EnchantmentOption) {
+// Marshal encodes/decodes an EnchantmentOption.
+func (x *EnchantmentOption) Marshal(r IO) {
 	r.Varuint32(&x.Cost)
-	ItemEnchants(r, &x.Enchantments)
+	Single(r, &x.Enchantments)
 	r.String(&x.Name)
 	r.Varuint32(&x.RecipeNetworkID)
 }
@@ -57,28 +49,11 @@ type ItemEnchantments struct {
 	Enchantments [3][]EnchantmentInstance
 }
 
-// WriteItemEnchants writes an ItemEnchantments x to Writer w..
-func WriteItemEnchants(w *Writer, x *ItemEnchantments) {
-	w.Int32(&x.Slot)
-	for _, enchantments := range x.Enchantments {
-		l := uint32(len(enchantments))
-		w.Varuint32(&l)
-		for _, enchantment := range enchantments {
-			Enchant(w, &enchantment)
-		}
-	}
-}
-
-// ItemEnchants reads an ItemEnchantments x from Reader r.
-func ItemEnchants(r *Reader, x *ItemEnchantments) {
-	var l uint32
+// Marshal encodes/decodes an ItemEnchantments.
+func (x *ItemEnchantments) Marshal(r IO) {
 	r.Int32(&x.Slot)
 	for i := 0; i < 3; i++ {
-		r.Varuint32(&l)
-		x.Enchantments[i] = make([]EnchantmentInstance, l)
-		for j := uint32(0); j < l; j++ {
-			Enchant(r, &x.Enchantments[i][j])
-		}
+		Slice(r, &x.Enchantments[i])
 	}
 }
 
@@ -89,8 +64,8 @@ type EnchantmentInstance struct {
 	Level byte
 }
 
-// Enchant reads/writes an EnchantmentInstance x using IO r.
-func Enchant(r IO, x *EnchantmentInstance) {
+// Marshal encodes/decodes an EnchantmentInstance.
+func (x *EnchantmentInstance) Marshal(r IO) {
 	r.Uint8(&x.Type)
 	r.Uint8(&x.Level)
 }

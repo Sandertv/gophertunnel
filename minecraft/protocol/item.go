@@ -57,8 +57,8 @@ type RecipeIngredientItem struct {
 	Count int32
 }
 
-// RecipeIngredient reads/writes a RecipeIngredientItem x using IO r.
-func RecipeIngredient(r IO, x *RecipeIngredientItem) {
+// Marshal encodes/decodes a RecipeIngredientItem.
+func (x *RecipeIngredientItem) Marshal(r IO) {
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		return
@@ -79,8 +79,8 @@ type ItemEntry struct {
 	ComponentBased bool
 }
 
-// Item reads/writes an ItemEntry x using IO r.
-func Item(r IO, x *ItemEntry) {
+// Marshal encodes/decodes an ItemEntry.
+func (x *ItemEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Int16(&x.RuntimeID)
 	r.Bool(&x.ComponentBased)
@@ -95,8 +95,8 @@ type ItemComponentEntry struct {
 	Data map[string]any
 }
 
-// ItemComponents reads/writes an ItemComponentEntry x using IO r.
-func ItemComponents(r IO, x *ItemComponentEntry) {
+// Marshal encodes/decodes an ItemComponentEntry.
+func (x *ItemComponentEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
@@ -107,6 +107,12 @@ type MaterialReducerOutput struct {
 	NetworkID int32
 	// Count is the quantity of the output.
 	Count int32
+}
+
+// Marshal encodes/decodes a MaterialReducerOutput.
+func (x *MaterialReducerOutput) Marshal(r IO) {
+	r.Varint32(&x.NetworkID)
+	r.Varint32(&x.Count)
 }
 
 // MaterialReducer is a craft in a material reducer block in education edition.

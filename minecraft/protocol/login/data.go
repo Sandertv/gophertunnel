@@ -266,8 +266,8 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
 func (data ClientData) Validate() error {
-	if data.DeviceOS <= 0 || data.DeviceOS > 13 {
-		return fmt.Errorf("DeviceOS must carry a value between 1 and 13, but got %v", data.DeviceOS)
+	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
+		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
 	if _, err := uuid.Parse(data.DeviceID); err != nil {
 		return fmt.Errorf("DeviceID must be parseable as a valid UUID, but got %v", data.DeviceID)

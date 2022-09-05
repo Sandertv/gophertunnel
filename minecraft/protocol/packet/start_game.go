@@ -174,7 +174,7 @@ type StartGame struct {
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
 	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
 	// should always be set to false.
-	ForceExperimentalGameplay bool
+	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -263,12 +263,8 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Varint32(&pk.PlatformBroadcastMode)
 	w.Bool(&pk.CommandsEnabled)
 	w.Bool(&pk.TexturePackRequired)
-	protocol.WriteGameRules(w, &pk.GameRules)
-	l := uint32(len(pk.Experiments))
-	w.Uint32(&l)
-	for _, experiment := range pk.Experiments {
-		protocol.Experiment(w, &experiment)
-	}
+	protocol.FuncSlice(w, &pk.GameRules, w.GameRule)
+	protocol.SliceUint32Length(w, &pk.Experiments)
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
@@ -288,15 +284,9 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Int32(&pk.LimitedWorldDepth)
 	w.Bool(&pk.NewNether)
 	protocol.EducationResourceURI(w, &pk.EducationSharedResourceURI)
-	w.Bool(&pk.ForceExperimentalGameplay)
-	if pk.ForceExperimentalGameplay {
-		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
-		// is set to true.
-		w.Bool(&pk.ForceExperimentalGameplay)
-	}
+	protocol.OptionalFunc(w, &pk.ForceExperimentalGameplay, w.Bool)
 	w.Uint8(&pk.ChatRestrictionLevel)
 	w.Bool(&pk.DisablePlayerInteractions)
-
 	w.String(&pk.LevelID)
 	w.String(&pk.WorldName)
 	w.String(&pk.TemplateContentIdentity)
@@ -304,18 +294,8 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	protocol.PlayerMoveSettings(w, &pk.PlayerMovementSettings)
 	w.Int64(&pk.Time)
 	w.Varint32(&pk.EnchantmentSeed)
-
-	l = uint32(len(pk.Blocks))
-	w.Varuint32(&l)
-	for i := range pk.Blocks {
-		protocol.Block(w, &pk.Blocks[i])
-	}
-
-	l = uint32(len(pk.Items))
-	w.Varuint32(&l)
-	for i := range pk.Items {
-		protocol.Item(w, &pk.Items[i])
-	}
+	protocol.Slice(w, &pk.Blocks)
+	protocol.Slice(w, &pk.Items)
 	w.String(&pk.MultiPlayerCorrelationID)
 	w.Bool(&pk.ServerAuthoritativeInventory)
 	w.String(&pk.GameVersion)
@@ -327,7 +307,6 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *StartGame) Unmarshal(r *protocol.Reader) {
-	var blockCount, itemCount uint32
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.PlayerGameMode)
@@ -357,13 +336,8 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Varint32(&pk.PlatformBroadcastMode)
 	r.Bool(&pk.CommandsEnabled)
 	r.Bool(&pk.TexturePackRequired)
-	protocol.GameRules(r, &pk.GameRules)
-	var l uint32
-	r.Uint32(&l)
-	pk.Experiments = make([]protocol.ExperimentData, l)
-	for i := uint32(0); i < l; i++ {
-		protocol.Experiment(r, &pk.Experiments[i])
-	}
+	protocol.FuncSlice(r, &pk.GameRules, r.GameRule)
+	protocol.SliceUint32Length(r, &pk.Experiments)
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
@@ -383,15 +357,9 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Int32(&pk.LimitedWorldDepth)
 	r.Bool(&pk.NewNether)
 	protocol.EducationResourceURI(r, &pk.EducationSharedResourceURI)
-	r.Bool(&pk.ForceExperimentalGameplay)
-	if pk.ForceExperimentalGameplay {
-		// This might look wrong, but is in fact correct: Mojang is writing this bool if the same bool above
-		// is set to true.
-		r.Bool(&pk.ForceExperimentalGameplay)
-	}
+	protocol.OptionalFunc(r, &pk.ForceExperimentalGameplay, r.Bool)
 	r.Uint8(&pk.ChatRestrictionLevel)
 	r.Bool(&pk.DisablePlayerInteractions)
-
 	r.String(&pk.LevelID)
 	r.String(&pk.WorldName)
 	r.String(&pk.TemplateContentIdentity)
@@ -399,18 +367,8 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	protocol.PlayerMoveSettings(r, &pk.PlayerMovementSettings)
 	r.Int64(&pk.Time)
 	r.Varint32(&pk.EnchantmentSeed)
-
-	r.Varuint32(&blockCount)
-	pk.Blocks = make([]protocol.BlockEntry, blockCount)
-	for i := uint32(0); i < blockCount; i++ {
-		protocol.Block(r, &pk.Blocks[i])
-	}
-
-	r.Varuint32(&itemCount)
-	pk.Items = make([]protocol.ItemEntry, itemCount)
-	for i := uint32(0); i < itemCount; i++ {
-		protocol.Item(r, &pk.Items[i])
-	}
+	protocol.Slice(r, &pk.Blocks)
+	protocol.Slice(r, &pk.Items)
 	r.String(&pk.MultiPlayerCorrelationID)
 	r.Bool(&pk.ServerAuthoritativeInventory)
 	r.String(&pk.GameVersion)

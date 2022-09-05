@@ -29,19 +29,9 @@ func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
 	enums, enumIndices := pk.enums()
 	dynamicEnums, dynamicEnumIndices := pk.dynamicEnums()
 
-	// Start by writing all enum values to the buffer.
-	valuesLen := uint32(len(values))
-	w.Varuint32(&valuesLen)
-	for _, value := range values {
-		w.String(&value)
-	}
-
-	// Then all suffixes.
-	suffixesLen := uint32(len(suffixes))
-	w.Varuint32(&suffixesLen)
-	for _, suffix := range suffixes {
-		w.String(&suffix)
-	}
+	// Start by writing all enum values and suffixes to the buffer.
+	protocol.FuncSlice(w, &values, w.String)
+	protocol.FuncSlice(w, &suffixes, w.String)
 
 	// After that all actual enums, which point to enum values rather than directly writing strings.
 	enumsLen := uint32(len(enums))
@@ -87,19 +77,10 @@ func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
 func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
 	var count uint32
 
-	// First we read all the enum values.
-	r.Varuint32(&count)
-	enumValues := make([]string, count)
-	for i := uint32(0); i < count; i++ {
-		r.String(&enumValues[i])
-	}
-
-	// Then we read all suffixes.
-	r.Varuint32(&count)
-	suffixes := make([]string, count)
-	for i := uint32(0); i < count; i++ {
-		r.String(&suffixes[i])
-	}
+	// First we read all the enum values and suffixes.
+	var enumValues, suffixes []string
+	protocol.FuncSlice(r, &enumValues, r.String)
+	protocol.FuncSlice(r, &suffixes, r.String)
 
 	// After that we create all enums, which are composed of pointers to the enum values above.
 	r.Varuint32(&count)

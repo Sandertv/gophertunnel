@@ -1,7 +1,6 @@
 package protocol
 
 import (
-	"fmt"
 	"github.com/google/uuid"
 )
 
@@ -20,8 +19,8 @@ type PotionContainerChangeRecipe struct {
 	OutputItemID int32
 }
 
-// PotContainerChangeRecipe reads/writes a PotionContainerChangeRecipe x using IO r.
-func PotContainerChangeRecipe(r IO, x *PotionContainerChangeRecipe) {
+// Marshal encodes/decodes a PotionContainerChangeRecipe.
+func (x *PotionContainerChangeRecipe) Marshal(r IO) {
 	r.Varint32(&x.InputItemID)
 	r.Varint32(&x.ReagentItemID)
 	r.Varint32(&x.OutputItemID)
@@ -47,8 +46,8 @@ type PotionRecipe struct {
 	OutputPotionMetadata int32
 }
 
-// PotRecipe reads/writes a PotionRecipe x using IO r.
-func PotRecipe(r IO, x *PotionRecipe) {
+// Marshal encodes/decodes a PotionRecipe.
+func (x *PotionRecipe) Marshal(r IO) {
 	r.Varint32(&x.InputPotionID)
 	r.Varint32(&x.InputPotionMetadata)
 	r.Varint32(&x.ReagentItemID)
@@ -112,11 +111,15 @@ type ShapelessRecipe struct {
 
 // ShulkerBoxRecipe is a shapeless recipe made specifically for shulker box crafting, so that they don't lose
 // their user data when dyeing a shulker box.
-type ShulkerBoxRecipe ShapelessRecipe
+type ShulkerBoxRecipe struct {
+	ShapelessRecipe
+}
 
 // ShapelessChemistryRecipe is a recipe specifically made for chemistry related features, which exist only in
 // the Education Edition. They function the same as shapeless recipes do.
-type ShapelessChemistryRecipe ShapelessRecipe
+type ShapelessChemistryRecipe struct {
+	ShapelessRecipe
+}
 
 // ShapedRecipe is a recipe that has a specific shape that must be used to craft the output of the recipe.
 // Trying to craft the item in any other shape will not work. The ShapedRecipe is of the same structure as the
@@ -150,7 +153,9 @@ type ShapedRecipe struct {
 
 // ShapedChemistryRecipe is a recipe specifically made for chemistry related features, which exist only in the
 // Education Edition. It functions the same as a normal ShapedRecipe.
-type ShapedChemistryRecipe ShapedRecipe
+type ShapedChemistryRecipe struct {
+	ShapedRecipe
+}
 
 // FurnaceRecipe is a recipe that is specifically used for all kinds of furnaces. These recipes don't just
 // apply to furnaces, but also blast furnaces and smokers.
@@ -167,7 +172,9 @@ type FurnaceRecipe struct {
 
 // FurnaceDataRecipe is a recipe specifically used for furnace-type crafting stations. It is equal to
 // FurnaceRecipe, except it has an input item with a specific metadata value, instead of any metadata value.
-type FurnaceDataRecipe FurnaceRecipe
+type FurnaceDataRecipe struct {
+	FurnaceRecipe
+}
 
 // MultiRecipe serves as an 'enable' switch for multi-shape recipes.
 type MultiRecipe struct {
@@ -187,33 +194,27 @@ func (recipe *ShapelessRecipe) Marshal(w *Writer) {
 
 // Unmarshal ...
 func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
-	unmarshalShapeless(r, recipe)
+	marshalShapeless(r, recipe)
 }
 
 // Marshal ...
 func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
-	r := ShapelessRecipe(*recipe)
-	marshalShapeless(w, &r)
+	marshalShapeless(w, &recipe.ShapelessRecipe)
 }
 
 // Unmarshal ...
 func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
-	shapeless := ShapelessRecipe{}
-	unmarshalShapeless(r, &shapeless)
-	*recipe = ShulkerBoxRecipe(shapeless)
+	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
 func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
-	r := ShapelessRecipe(*recipe)
-	marshalShapeless(w, &r)
+	marshalShapeless(w, &recipe.ShapelessRecipe)
 }
 
 // Unmarshal ...
 func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
-	shapeless := ShapelessRecipe{}
-	unmarshalShapeless(r, &shapeless)
-	*recipe = ShapelessChemistryRecipe(shapeless)
+	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
@@ -223,20 +224,17 @@ func (recipe *ShapedRecipe) Marshal(w *Writer) {
 
 // Unmarshal ...
 func (recipe *ShapedRecipe) Unmarshal(r *Reader) {
-	unmarshalShaped(r, recipe)
+	marshalShaped(r, recipe)
 }
 
 // Marshal ...
 func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
-	r := ShapedRecipe(*recipe)
-	marshalShaped(w, &r)
+	marshalShaped(w, &recipe.ShapedRecipe)
 }
 
 // Unmarshal ...
 func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
-	shaped := ShapedRecipe{}
-	unmarshalShaped(r, &shaped)
-	*recipe = ShapedChemistryRecipe(shaped)
+	marshalShaped(r, &recipe.ShapedRecipe)
 }
 
 // Marshal ...
@@ -267,10 +265,9 @@ func (recipe *FurnaceDataRecipe) Unmarshal(r *Reader) {
 	var dataValue int32
 	r.Varint32(&recipe.InputType.NetworkID)
 	r.Varint32(&dataValue)
+	recipe.InputType.MetadataValue = uint32(dataValue)
 	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
-
-	recipe.InputType.MetadataValue = uint32(dataValue)
 }
 
 // Marshal ...
@@ -286,51 +283,12 @@ func (recipe *MultiRecipe) Unmarshal(r *Reader) {
 }
 
 // marshalShaped ...
-func marshalShaped(w *Writer, recipe *ShapedRecipe) {
-	w.String(&recipe.RecipeID)
-	w.Varint32(&recipe.Width)
-	w.Varint32(&recipe.Height)
-	itemCount := int(recipe.Width * recipe.Height)
-	if len(recipe.Input) != itemCount {
-		// We got an input count that was not as as big as the full size of the recipe, so we panic as this is
-		// a user error.
-		panic(fmt.Sprintf("shaped recipe must have exactly %vx%v input items, but got %v", recipe.Width, recipe.Height, len(recipe.Input)))
-	}
-	for _, input := range recipe.Input {
-		RecipeIngredient(w, &input)
-	}
-	l := uint32(len(recipe.Output))
-	w.Varuint32(&l)
-	for _, output := range recipe.Output {
-		w.Item(&output)
-	}
-	w.UUID(&recipe.UUID)
-	w.String(&recipe.Block)
-	w.Varint32(&recipe.Priority)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// unmarshalShaped ...
-func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
+func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
-	r.LimitInt32(recipe.Width, 0, lowerLimit)
-	r.LimitInt32(recipe.Height, 0, lowerLimit)
-
-	itemCount := int(recipe.Width * recipe.Height)
-	recipe.Input = make([]RecipeIngredientItem, itemCount)
-	for i := 0; i < itemCount; i++ {
-		RecipeIngredient(r, &recipe.Input[i])
-	}
-	var outputCount uint32
-	r.Varuint32(&outputCount)
-	r.LimitUint32(outputCount, lowerLimit)
-
-	recipe.Output = make([]ItemStack, outputCount)
-	for i := uint32(0); i < outputCount; i++ {
-		r.Item(&recipe.Output[i])
-	}
+	FuncIOSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, Single[RecipeIngredientItem])
+	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
@@ -338,39 +296,10 @@ func unmarshalShaped(r *Reader, recipe *ShapedRecipe) {
 }
 
 // marshalShapeless ...
-func marshalShapeless(w *Writer, recipe *ShapelessRecipe) {
-	inputLen, outputLen := uint32(len(recipe.Input)), uint32(len(recipe.Output))
-	w.String(&recipe.RecipeID)
-	w.Varuint32(&inputLen)
-	for _, input := range recipe.Input {
-		RecipeIngredient(w, &input)
-	}
-	w.Varuint32(&outputLen)
-	for _, output := range recipe.Output {
-		w.Item(&output)
-	}
-	w.UUID(&recipe.UUID)
-	w.String(&recipe.Block)
-	w.Varint32(&recipe.Priority)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// unmarshalShapeless ...
-func unmarshalShapeless(r *Reader, recipe *ShapelessRecipe) {
-	var count uint32
+func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
-	r.Varuint32(&count)
-	r.LimitUint32(count, lowerLimit)
-	recipe.Input = make([]RecipeIngredientItem, count)
-	for i := uint32(0); i < count; i++ {
-		RecipeIngredient(r, &recipe.Input[i])
-	}
-	r.Varuint32(&count)
-	r.LimitUint32(count, lowerLimit)
-	recipe.Output = make([]ItemStack, count)
-	for i := uint32(0); i < count; i++ {
-		r.Item(&recipe.Output[i])
-	}
+	Slice(r, &recipe.Input)
+	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)

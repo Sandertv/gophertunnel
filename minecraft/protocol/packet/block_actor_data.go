@@ -30,7 +30,6 @@ func (pk *BlockActorData) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *BlockActorData) Unmarshal(r *protocol.Reader) {
-	pk.NBTData = make(map[string]any)
 	r.UBlockPos(&pk.Position)
 	r.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
 }

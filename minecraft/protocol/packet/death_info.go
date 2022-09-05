@@ -21,20 +21,11 @@ func (*DeathInfo) ID() uint32 {
 // Marshal ...
 func (pk *DeathInfo) Marshal(w *protocol.Writer) {
 	w.String(&pk.Cause)
-	messageLen := uint32(len(pk.Messages))
-	w.Varuint32(&messageLen)
-	for _, message := range pk.Messages {
-		w.String(&message)
-	}
+	protocol.FuncSlice(w, &pk.Messages, w.String)
 }
 
 // Unmarshal ...
 func (pk *DeathInfo) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.Cause)
-	var messageLen uint32
-	r.Varuint32(&messageLen)
-	pk.Messages = make([]string, messageLen)
-	for i := uint32(0); i < messageLen; i++ {
-		r.String(&pk.Messages[i])
-	}
+	protocol.FuncSlice(r, &pk.Messages, r.String)
 }

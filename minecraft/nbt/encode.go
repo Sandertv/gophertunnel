@@ -213,7 +213,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 		if listType == math.MaxUint8 {
 			return IncompatibleTypeError{Type: val.Type(), ValueName: tagName}
 		}
-		if err := e.w.WriteByte(listType); err != nil {
+		if err := e.w.WriteByte(byte(listType)); err != nil {
 			return FailedWriteError{Off: e.w.off, Op: "WriteSlice", Err: err}
 		}
 		if err := e.Encoding.WriteInt32(e.w, int32(val.Len())); err != nil {
@@ -233,7 +233,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 			return err
 		}
 		e.depth--
-		return e.w.WriteByte(tagEnd)
+		return e.w.WriteByte(byte(tagEnd))
 
 	case reflect.Map:
 		e.depth++
@@ -247,7 +247,7 @@ func (e *Encoder) encode(val reflect.Value, tagName string) error {
 			}
 		}
 		e.depth--
-		return e.w.WriteByte(tagEnd)
+		return e.w.WriteByte(byte(tagEnd))
 	}
 	return nil
 }
@@ -291,11 +291,11 @@ func (e *Encoder) writeStructValues(val reflect.Value) error {
 }
 
 // writeTag writes a single tag to the io.Writer held by the Encoder. The tag type and the name are written.
-func (e *Encoder) writeTag(tagType byte, tagName string) error {
+func (e *Encoder) writeTag(t tagType, tagName string) error {
 	if e.depth >= maximumNestingDepth {
 		return MaximumDepthReachedError{}
 	}
-	if err := e.w.WriteByte(tagType); err != nil {
+	if err := e.w.WriteByte(byte(t)); err != nil {
 		return err
 	}
 	return e.Encoding.WriteString(e.w, tagName)

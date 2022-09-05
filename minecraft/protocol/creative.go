@@ -9,8 +9,8 @@ type CreativeItem struct {
 	Item ItemStack
 }
 
-// CreativeEntry reads/writes a CreativeItem x using IO r.
-func CreativeEntry(r IO, x *CreativeItem) {
+// Marshal encodes/decodes a CreativeItem.
+func (x *CreativeItem) Marshal(r IO) {
 	r.Varuint32(&x.CreativeItemNetworkID)
 	r.Item(&x.Item)
 }

@@ -21,14 +21,14 @@ type EducationSettings struct {
 	PostProcessFilter string
 	// ScreenshotBorderPath ...
 	ScreenshotBorderPath string
-	// AgentCapabilities ...
-	AgentCapabilities *bool
+	// CanModifyBlocks ...
+	CanModifyBlocks protocol.Optional[bool]
 	// OverrideURI ...
-	OverrideURI string
+	OverrideURI protocol.Optional[string]
 	// HasQuiz specifies if the world has a quiz connected to it.
 	HasQuiz bool
 	// ExternalLinkSettings ...
-	ExternalLinkSettings *protocol.EducationExternalLinkSettings
+	ExternalLinkSettings protocol.Optional[protocol.EducationExternalLinkSettings]
 }
 
 // ID ...
@@ -38,10 +38,6 @@ func (*EducationSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *EducationSettings) Marshal(w *protocol.Writer) {
-	hasOverrideURI := pk.OverrideURI != ""
-	hasAgentCapabilities := pk.AgentCapabilities != nil
-	hasExternalLinkSettings := pk.ExternalLinkSettings != nil
-
 	w.String(&pk.CodeBuilderDefaultURI)
 	w.String(&pk.CodeBuilderTitle)
 	w.Bool(&pk.CanResizeCodeBuilder)
@@ -49,29 +45,16 @@ func (pk *EducationSettings) Marshal(w *protocol.Writer) {
 	w.String(&pk.PostProcessFilter)
 	w.String(&pk.ScreenshotBorderPath)
 
-	w.Bool(&hasAgentCapabilities)
-	if hasAgentCapabilities {
-		w.Bool(pk.AgentCapabilities)
-	}
-
-	w.Bool(&hasOverrideURI)
-	if hasOverrideURI {
-		w.String(&pk.OverrideURI)
-	}
+	protocol.OptionalFunc(w, &pk.CanModifyBlocks, w.Bool)
+	protocol.OptionalFunc(w, &pk.OverrideURI, w.String)
 
 	w.Bool(&pk.HasQuiz)
 
-	w.Bool(&hasExternalLinkSettings)
-	if hasExternalLinkSettings {
-		w.Bool(&hasExternalLinkSettings)
-		w.String(&pk.ExternalLinkSettings.URL)
-		w.String(&pk.ExternalLinkSettings.DisplayName)
-	}
+	protocol.OptionalMarshaler(w, &pk.ExternalLinkSettings)
 }
 
 // Unmarshal ...
 func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
-	var hasOverrideURI bool
 	r.String(&pk.CodeBuilderDefaultURI)
 	r.String(&pk.CodeBuilderTitle)
 	r.Bool(&pk.CanResizeCodeBuilder)
@@ -79,22 +62,10 @@ func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.PostProcessFilter)
 	r.String(&pk.ScreenshotBorderPath)
 
-	var hasAgentCapabilities bool
-	r.Bool(&hasAgentCapabilities)
-	if hasAgentCapabilities {
-		r.Bool(pk.AgentCapabilities)
-	}
+	protocol.OptionalFunc(r, &pk.CanModifyBlocks, r.Bool)
+	protocol.OptionalFunc(r, &pk.OverrideURI, r.String)
 
-	r.Bool(&hasOverrideURI)
-	if hasOverrideURI {
-		r.String(&pk.OverrideURI)
-	}
 	r.Bool(&pk.HasQuiz)
 
-	var hasExternalLinkSettings bool
-	r.Bool(&hasExternalLinkSettings)
-	if hasExternalLinkSettings {
-		r.String(&pk.ExternalLinkSettings.URL)
-		r.String(&pk.ExternalLinkSettings.DisplayName)
-	}
+	protocol.OptionalMarshaler(r, &pk.ExternalLinkSettings)
 }

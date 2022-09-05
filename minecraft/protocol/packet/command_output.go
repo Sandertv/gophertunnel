@@ -44,15 +44,10 @@ func (*CommandOutput) ID() uint32 {
 
 // Marshal ...
 func (pk *CommandOutput) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.OutputMessages))
-
 	protocol.CommandOriginData(w, &pk.CommandOrigin)
 	w.Uint8(&pk.OutputType)
 	w.Varuint32(&pk.SuccessCount)
-	w.Varuint32(&l)
-	for _, message := range pk.OutputMessages {
-		protocol.WriteCommandMessage(w, &message)
-	}
+	protocol.Slice(w, &pk.OutputMessages)
 	if pk.OutputType == CommandOutputTypeDataSet {
 		w.String(&pk.DataSet)
 	}
@@ -60,15 +55,10 @@ func (pk *CommandOutput) Marshal(w *protocol.Writer) {
 
 // Unmarshal ...
 func (pk *CommandOutput) Unmarshal(r *protocol.Reader) {
-	var count uint32
 	protocol.CommandOriginData(r, &pk.CommandOrigin)
 	r.Uint8(&pk.OutputType)
 	r.Varuint32(&pk.SuccessCount)
-	r.Varuint32(&count)
-	pk.OutputMessages = make([]protocol.CommandOutputMessage, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.CommandMessage(r, &pk.OutputMessages[i])
-	}
+	protocol.Slice(r, &pk.OutputMessages)
 	if pk.OutputType == CommandOutputTypeDataSet {
 		r.String(&pk.DataSet)
 	}
