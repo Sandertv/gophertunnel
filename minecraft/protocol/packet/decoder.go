@@ -2,11 +2,7 @@ package packet
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
-	"github.com/klauspost/compress/flate"
-	"github.com/sandertv/gophertunnel/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 )
@@ -23,7 +19,8 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
-	encrypt *encrypt
+	compression Compression
+	encryption  Encryption
 
 	checkPacketLimit bool
 }
@@ -49,11 +46,13 @@ func NewDecoder(reader io.Reader) *Decoder {
 
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
-func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	first12 := append([]byte(nil), keyBytes[:12]...)
-	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
-	decoder.encrypt = newEncrypt(keyBytes[:], stream)
+func (decoder *Decoder) EnableEncryption(encryption Encryption) {
+	decoder.encryption = encryption
+}
+
+// EnableCompression enables compression for the Decoder.
+func (decoder *Decoder) EnableCompression(compression Compression) {
+	decoder.compression = compression
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -91,18 +90,23 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		return nil, fmt.Errorf("error reading packet: invalid packet header %x: expected %x", data[0], header)
 	}
 	data = data[1:]
-	if decoder.encrypt != nil {
-		decoder.encrypt.decrypt(data)
-		if err := decoder.encrypt.verify(data); err != nil {
+	if decoder.encryption != nil {
+		decoder.encryption.Decrypt(data)
+		if err := decoder.encryption.Verify(data); err != nil {
 			// The packet did not have a correct checksum.
 			return nil, fmt.Errorf("error verifying packet: %v", err)
 		}
+		data = data[:len(data)-8]
 	}
 
-	b, err := decoder.decompress(data)
-	if err != nil {
-		return nil, err
+	if decoder.compression != nil {
+		data, err = decoder.compression.Decompress(data)
+		if err != nil {
+			return nil, fmt.Errorf("error decompressing packet: %v", err)
+		}
 	}
+
+	b := bytes.NewBuffer(data)
 	for b.Len() != 0 {
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
@@ -114,22 +118,4 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		return nil, fmt.Errorf("number of packets %v in compressed batch exceeds %v", len(packets), maximumInBatch)
 	}
 	return packets, nil
-}
-
-// decompress decompresses the data passed and returns it as a byte slice.
-func (decoder *Decoder) decompress(data []byte) (*bytes.Buffer, error) {
-	buf := bytes.NewBuffer(data)
-	c := internal.DecompressPool.Get().(io.ReadCloser)
-	defer internal.DecompressPool.Put(c)
-
-	if err := c.(flate.Resetter).Reset(buf, nil); err != nil {
-		return nil, fmt.Errorf("error resetting flate decompressor: %w", err)
-	}
-	_ = c.Close()
-
-	raw := bytes.NewBuffer(make([]byte, 0, len(data)*2))
-	if _, err := io.Copy(raw, c); err != nil {
-		return nil, fmt.Errorf("error reading decompressed data: %v", err)
-	}
-	return raw, nil
 }

@@ -17,6 +17,12 @@ type Protocol interface {
 	// Packets returns a packet.Pool with all packets registered for this Protocol. It is used to lookup packets by a
 	// packet ID.
 	Packets() packet.Pool
+
+	// Compression returns a new compression instance used by this Protocol.
+	Compression() packet.Compression
+	// Encryption returns a new encryption instance used by this Protocol.
+	Encryption(key [32]byte) packet.Encryption
+
 	// ConvertToLatest converts a packet.Packet obtained from the other end of a Conn to a slice of packet.Packets from
 	// the latest protocol. Any packet.Packet implementation in the packet.Pool obtained through a call to Packets that
 	// is not identical to the most recent version of that packet.Packet must be converted to the most recent version of
@@ -34,10 +40,12 @@ type Protocol interface {
 // convert any packets, as they are already of the right type.
 type proto struct{}
 
-func (proto) ID() int32                                                   { return protocol.CurrentProtocol }
-func (p proto) Ver() string                                               { return protocol.CurrentVersion }
-func (p proto) Packets() packet.Pool                                      { return packet.NewPool() }
-func (p proto) ConvertToLatest(pk packet.Packet, _ *Conn) []packet.Packet { return []packet.Packet{pk} }
-func (p proto) ConvertFromLatest(pk packet.Packet, _ *Conn) []packet.Packet {
-	return []packet.Packet{pk}
-}
+func (proto) ID() int32            { return protocol.CurrentProtocol }
+func (proto) Ver() string          { return protocol.CurrentVersion }
+func (proto) Packets() packet.Pool { return packet.NewPool() }
+
+func (proto) Compression() packet.Compression           { return packet.FlateCompression{} }
+func (proto) Encryption(key [32]byte) packet.Encryption { return packet.NewCTREncryption(key[:]) }
+
+func (proto) ConvertToLatest(pk packet.Packet, _ *Conn) []packet.Packet   { return []packet.Packet{pk} }
+func (proto) ConvertFromLatest(pk packet.Packet, _ *Conn) []packet.Packet { return []packet.Packet{pk} }
