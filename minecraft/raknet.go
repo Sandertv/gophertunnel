@@ -2,7 +2,7 @@ package minecraft
 
 import (
 	"context"
-	"github.com/sandertv/go-raknet"
+	"github.com/tedacmc/tedac-raknet"
 	"net"
 )
 

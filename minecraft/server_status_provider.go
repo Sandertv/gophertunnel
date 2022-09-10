@@ -1,7 +1,7 @@
 package minecraft
 
 import (
-	"github.com/sandertv/go-raknet"
+	"github.com/tedacmc/tedac-raknet"
 	"net"
 	"strconv"
 	"sync"
