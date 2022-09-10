@@ -68,7 +68,7 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 		return iData, cData, res, fmt.Errorf("parse token 0: %w", err)
 	}
 
-	// The first token holds the client's public key in the x5u (it's self signed).
+	// The first token holds the client's public key in the x5u (it's self-signed).
 	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
 	if err := parseAsKey(raw, key); err != nil {
