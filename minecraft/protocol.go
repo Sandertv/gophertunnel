@@ -18,8 +18,6 @@ type Protocol interface {
 	// packet ID.
 	Packets() packet.Pool
 
-	// Compression returns a new compression instance used by this Protocol.
-	Compression() packet.Compression
 	// Encryption returns a new encryption instance used by this Protocol.
 	Encryption(key [32]byte) packet.Encryption
 
@@ -44,7 +42,6 @@ func (proto) ID() int32            { return protocol.CurrentProtocol }
 func (proto) Ver() string          { return protocol.CurrentVersion }
 func (proto) Packets() packet.Pool { return packet.NewPool() }
 
-func (proto) Compression() packet.Compression           { return packet.FlateCompression{} }
 func (proto) Encryption(key [32]byte) packet.Encryption { return packet.NewCTREncryption(key[:]) }
 
 func (proto) ConvertToLatest(pk packet.Packet, _ *Conn) []packet.Packet   { return []packet.Packet{pk} }
