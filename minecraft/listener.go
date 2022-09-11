@@ -108,7 +108,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 
 	// Actually start listening.
-	go listener.listen()
+	go listener.listen(n)
 	return listener, nil
 }
 
@@ -168,7 +168,7 @@ func (listener *Listener) updatePongData() {
 
 // listen starts listening for incoming connections and packets. When a player is fully connected, it submits
 // it to the accepted connections channel so that a call to Accept can pick it up.
-func (listener *Listener) listen() {
+func (listener *Listener) listen(n Network) {
 	listener.updatePongData()
 	go func() {
 		ticker := time.NewTicker(time.Second * 4)
@@ -194,13 +194,13 @@ func (listener *Listener) listen() {
 			// close too.
 			return
 		}
-		listener.createConn(netConn)
+		listener.createConn(n, netConn)
 	}
 }
 
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
-func (listener *Listener) createConn(netConn net.Conn) {
+func (listener *Listener) createConn(n Network, netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	// Temporarily set the protocol to the latest: We don't know the actual protocol until we read the Login packet.
@@ -215,8 +215,8 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 
 	// Enable compression based on the protocol.
-	conn.enc.EnableCompression(conn.proto.Compression())
-	conn.dec.EnableCompression(conn.proto.Compression())
+	conn.enc.EnableCompression(n.Compression(netConn))
+	conn.dec.EnableCompression(n.Compression(netConn))
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
