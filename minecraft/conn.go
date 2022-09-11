@@ -455,6 +455,11 @@ func (conn *Conn) RemoteAddr() net.Addr {
 	return conn.conn.RemoteAddr()
 }
 
+// Protocol returns the protocol used by the connection.
+func (conn *Conn) Protocol() Protocol {
+	return conn.proto
+}
+
 // SetDeadline sets the read and write deadline of the connection. It is equivalent to calling SetReadDeadline
 // and SetWriteDeadline at the same time.
 func (conn *Conn) SetDeadline(t time.Time) error {
