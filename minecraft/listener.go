@@ -214,10 +214,6 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 
-	// Enable compression based on the protocol.
-	conn.enc.EnableCompression(conn.proto.Compression())
-	conn.dec.EnableCompression(conn.proto.Compression())
-
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})

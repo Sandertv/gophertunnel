@@ -676,6 +676,11 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
 	}
+
+	// Enable compression based on the protocol.
+	conn.enc.EnableCompression(conn.proto.Compression())
+	conn.dec.EnableCompression(conn.proto.Compression())
+
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("error enabling encryption: %v", err)
 	}
