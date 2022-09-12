@@ -24,9 +24,10 @@ const (
 
 // InvalidItemDescriptor represents an invalid item descriptor. This is usually sent by the vanilla server for empty
 // slots or ingredients.
-type InvalidItemDescriptor struct {
-	ItemDescriptor
-}
+type InvalidItemDescriptor struct{}
+
+// Marshal ...
+func (*InvalidItemDescriptor) Marshal(IO) {}
 
 // DefaultItemDescriptor represents an item descriptor for regular items. This is used for the significant majority of
 // items.
