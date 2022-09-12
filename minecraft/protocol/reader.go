@@ -315,7 +315,32 @@ func (r *Reader) EntityMetadata(x *map[uint32]any) {
 	}
 }
 
-// ItemInstance reads an ItemInstance x to the underlying buffer.
+// ItemDescriptorCount reads an ItemDescriptorCount i from the underlying buffer.
+func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
+	var id uint8
+	r.Uint8(&id)
+
+	switch id {
+	case ItemDescriptorInvalid:
+		i.Descriptor = &InvalidItemDescriptor{}
+	case ItemDescriptorDefault:
+		i.Descriptor = &DefaultItemDescriptor{}
+	case ItemDescriptorMoLang:
+		i.Descriptor = &MoLangItemDescriptor{}
+	case ItemDescriptorItemTag:
+		i.Descriptor = &ItemTagItemDescriptor{}
+	case ItemDescriptorDeferred:
+		i.Descriptor = &DeferredItemDescriptor{}
+	default:
+		r.UnknownEnumOption(id, "item descriptor type")
+		return
+	}
+
+	i.Descriptor.Marshal(r)
+	r.Varint32(&i.Count)
+}
+
+// ItemInstance reads an ItemInstance i from the underlying buffer.
 func (r *Reader) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
 	x.NBTData = make(map[string]any)

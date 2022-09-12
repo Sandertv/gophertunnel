@@ -45,6 +45,7 @@ type IO interface {
 	EntityMetadata(x *map[uint32]any)
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
+	ItemDescriptorCount(i *ItemDescriptorCount)
 	MaterialReducer(x *MaterialReducer)
 	GameRule(x *GameRule)
 

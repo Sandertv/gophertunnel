@@ -232,10 +232,9 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
 // The action is one of the concrete types below, each of which are indicative of a different action by the
-// client, such as moving an item around the inventory or placing a block.
+// client, such as moving an item around the inventory or placing a block. It is an alias of Marshaler.
 type StackRequestAction interface {
-	// Marshal encodes/decodes a StackRequestAction.
-	Marshal(r IO)
+	Marshaler
 }
 
 const (

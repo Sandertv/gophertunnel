@@ -233,7 +233,31 @@ func (w *Writer) EntityMetadata(x *map[uint32]any) {
 	}
 }
 
-// ItemInstance writes an ItemInstance x to the underlying buffer.
+// ItemDescriptorCount writes an ItemDescriptorCount i to the underlying buffer.
+func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
+	var id byte
+	switch i.Descriptor.(type) {
+	case *InvalidItemDescriptor:
+		id = ItemDescriptorInvalid
+	case *DefaultItemDescriptor:
+		id = ItemDescriptorDefault
+	case *MoLangItemDescriptor:
+		id = ItemDescriptorMoLang
+	case *ItemTagItemDescriptor:
+		id = ItemDescriptorItemTag
+	case *DeferredItemDescriptor:
+		id = ItemDescriptorDeferred
+	default:
+		w.UnknownEnumOption(fmt.Sprintf("%T", i.Descriptor), "item descriptor type")
+		return
+	}
+	w.Uint8(&id)
+
+	i.Descriptor.Marshal(w)
+	w.Varint32(&i.Count)
+}
+
+// ItemInstance writes an ItemInstance i to the underlying buffer.
 func (w *Writer) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
 	w.Varint32(&x.NetworkID)
