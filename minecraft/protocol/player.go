@@ -96,18 +96,18 @@ func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
 // the client will provide input to the server.
 type PlayerMovementSettings struct {
 	// MovementType specifies the way the server handles player movement. Available options are
-	// packet.AuthoritativeMovementModeClient, packet.AuthoritativeMovementModeServer and
-	// packet.AuthoritativeMovementModeServerWithRewind, where the server authoritative types result
+	// protocol.PlayerMovementModeClient, protocol.PlayerMovementModeServer and
+	// protocol.PlayerMovementModeServerWithRewind, where the server authoritative types result
 	// in the client sending PlayerAuthInput packets instead of MovePlayer packets and the rewind mode
 	// requires sending the tick of movement and several actions.
 	MovementType int32
 	// RewindHistorySize is the amount of history to keep at maximum if MovementType is
-	// packet.AuthoritativeMovementModeServerWithRewind.
+	// protocol.PlayerMovementModeServerWithRewind.
 	RewindHistorySize int32
 	// ServerAuthoritativeBlockBreaking specifies if block breaking should be sent through
 	// packet.PlayerAuthInput or not. This field is somewhat redundant as it is always enabled if
 	// MovementType is packet.AuthoritativeMovementModeServer or
-	// packet.AuthoritativeMovementModeServerWithRewind
+	// protocol.PlayerMovementModeServerWithRewind
 	ServerAuthoritativeBlockBreaking bool
 }
 
