@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	tagEnd byte = iota
+	tagEnd tagType = iota
 	tagByte
 	tagInt16
 	tagInt32
@@ -21,9 +21,12 @@ const (
 	tagInt64Array
 )
 
-// tagName returns the name of a tag. The function panics if the tag does not exist.
-func tagName(tag byte) string {
-	switch tag {
+// tagType represents the type of NBT tag.
+type tagType byte
+
+// String converts a tagType to its string representation. This looks like `TAG_` + `<tag type>`, such as `TAG_Byte`.
+func (t tagType) String() string {
+	switch t {
 	case tagEnd:
 		return "TAG_End"
 	case tagByte:
@@ -55,9 +58,9 @@ func tagName(tag byte) string {
 	}
 }
 
-// tagExists checks if a tag exists.
-func tagExists(tag byte) bool {
-	switch tag {
+// IsValid checks if the tagType is valid/known.
+func (t tagType) IsValid() bool {
+	switch t {
 	case tagEnd, tagByte, tagInt16, tagInt32, tagInt64, tagFloat32, tagFloat64, tagByteArray, tagString,
 		tagSlice, tagStruct, tagInt32Array, tagInt64Array:
 		return true
@@ -68,7 +71,7 @@ func tagExists(tag byte) bool {
 
 // tagFromType matches a reflect.Type with a tag type that can hold its value. If none is found, math.MaxUint8
 // is returned.
-func tagFromType(p reflect.Type) byte {
+func tagFromType(p reflect.Type) tagType {
 	switch p.Kind() {
 	case reflect.Uint8, reflect.Bool:
 		return tagByte

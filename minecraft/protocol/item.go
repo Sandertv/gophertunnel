@@ -45,28 +45,6 @@ type ItemType struct {
 	MetadataValue uint32
 }
 
-// RecipeIngredientItem represents an item that may be used as a recipe ingredient.
-type RecipeIngredientItem struct {
-	// NetworkID is the numerical network ID of the item. This is sometimes a positive ID, and sometimes a
-	// negative ID, depending on what item it concerns.
-	NetworkID int32
-	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
-	// other items it is simply an identifier of a variant of the item.
-	MetadataValue int32
-	// Count is the count of items that the recipe ingredient is required to have.
-	Count int32
-}
-
-// RecipeIngredient reads/writes a RecipeIngredientItem x using IO r.
-func RecipeIngredient(r IO, x *RecipeIngredientItem) {
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		return
-	}
-	r.Varint32(&x.MetadataValue)
-	r.Varint32(&x.Count)
-}
-
 // ItemEntry is an item sent in the StartGame item table. It holds a name and a legacy ID, which is used to
 // point back to that name.
 type ItemEntry struct {
@@ -79,8 +57,8 @@ type ItemEntry struct {
 	ComponentBased bool
 }
 
-// Item reads/writes an ItemEntry x using IO r.
-func Item(r IO, x *ItemEntry) {
+// Marshal encodes/decodes an ItemEntry.
+func (x *ItemEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Int16(&x.RuntimeID)
 	r.Bool(&x.ComponentBased)
@@ -95,8 +73,8 @@ type ItemComponentEntry struct {
 	Data map[string]any
 }
 
-// ItemComponents reads/writes an ItemComponentEntry x using IO r.
-func ItemComponents(r IO, x *ItemComponentEntry) {
+// Marshal encodes/decodes an ItemComponentEntry.
+func (x *ItemComponentEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
@@ -107,6 +85,12 @@ type MaterialReducerOutput struct {
 	NetworkID int32
 	// Count is the quantity of the output.
 	Count int32
+}
+
+// Marshal encodes/decodes a MaterialReducerOutput.
+func (x *MaterialReducerOutput) Marshal(r IO) {
+	r.Varint32(&x.NetworkID)
+	r.Varint32(&x.Count)
 }
 
 // MaterialReducer is a craft in a material reducer block in education edition.

@@ -102,243 +102,253 @@ var fieldMapPool = sync.Pool{
 
 // unmarshalTag decodes a tag from the decoder's input stream into the reflect.Value passed, assuming the tag
 // has the type and name passed.
-func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) error {
-	switch tagType {
+func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) error {
+	k := val.Kind()
+	switch t {
 	default:
-		return UnknownTagError{Off: d.r.off, TagType: tagType, Op: "Match"}
+		return UnknownTagError{Off: d.r.off, TagType: t, Op: "Match"}
 	case tagEnd:
 		return UnexpectedTagError{Off: d.r.off, TagType: tagEnd}
-
 	case tagByte:
 		value, err := d.r.ReadByte()
 		if err != nil {
 			return BufferOverrunError{Op: "Byte"}
 		}
-		if val.Kind() != reflect.Uint8 {
-			if val.Kind() == reflect.Bool {
-				if value != 0 {
-					val.SetBool(true)
-				}
-				return nil
-			}
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Uint8:
+			val.SetUint(uint64(value))
+		case k == reflect.Bool:
+			val.SetBool(value == 1)
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetUint(uint64(value))
-
 	case tagInt16:
 		value, err := d.Encoding.Int16(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.Int16 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Int16:
+			val.SetInt(int64(value))
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetInt(int64(value))
-
 	case tagInt32:
 		value, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.Int32 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Int32:
+			val.SetInt(int64(value))
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetInt(int64(value))
-
 	case tagInt64:
 		value, err := d.Encoding.Int64(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.Int64 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Int64:
+			val.SetInt(value)
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetInt(value)
-
 	case tagFloat32:
 		value, err := d.Encoding.Float32(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.Float32 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Float32:
+			val.SetFloat(float64(value))
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetFloat(float64(value))
-
 	case tagFloat64:
 		value, err := d.Encoding.Float64(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.Float64 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.Float64:
+			val.SetFloat(value)
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetFloat(value)
-
 	case tagString:
 		value, err := d.Encoding.String(d.r)
 		if err != nil {
 			return err
 		}
-		if val.Kind() != reflect.String {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(reflect.ValueOf(value))
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		switch {
+		case k == reflect.String:
+			val.SetString(value)
+		case isAny(val):
+			val.Set(reflect.ValueOf(value))
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
-		val.SetString(value)
-
 	case tagByteArray:
 		length, err := d.Encoding.Int32(d.r)
 		if err != nil {
 			return err
 		}
-		data, err := consumeN(int(length), d.r)
-		if err != nil {
+		b := make([]byte, length)
+		if _, err := d.r.Read(b); err != nil {
 			return BufferOverrunError{Op: "ByteArray"}
 		}
 		value := reflect.New(reflect.ArrayOf(int(length), byteType)).Elem()
-		for i := int32(0); i < length; i++ {
-			value.Index(int(i)).SetUint(uint64(data[i]))
-		}
-		if val.Kind() != reflect.Array {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(value)
-				return nil
+		reflect.Copy(value, reflect.ValueOf(b))
+
+		switch {
+		case k == reflect.Array && val.Type().Elem().Kind() == reflect.Uint8:
+			if val.Cap() != int(length) {
+				return InvalidArraySizeError{Off: d.r.off, Op: "ByteArray", GoLength: val.Cap(), NBTLength: int(length)}
 			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
-		}
-		if val.Cap() != int(length) {
-			return InvalidArraySizeError{Off: d.r.off, Op: "ByteArray", GoLength: val.Cap(), NBTLength: int(length)}
+		case isAny(val):
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
 		val.Set(value)
-
 	case tagInt32Array:
-		length, err := d.Encoding.Int32(d.r)
+		s, err := d.Encoding.Int32Slice(d.r)
 		if err != nil {
 			return err
 		}
-		value := reflect.New(reflect.ArrayOf(int(length), int32Type)).Elem()
-		for i := int32(0); i < length; i++ {
-			v, err := d.Encoding.Int32(d.r)
-			if err != nil {
-				return err
+
+		value := reflect.New(reflect.ArrayOf(len(s), int32Type)).Elem()
+		reflect.Copy(value, reflect.ValueOf(s))
+
+		switch {
+		case k == reflect.Array && val.Type().Elem().Kind() == reflect.Int32:
+			if val.Cap() != len(s) {
+				return InvalidArraySizeError{Off: d.r.off, Op: "Int32Array", GoLength: val.Cap(), NBTLength: len(s)}
 			}
-			value.Index(int(i)).SetInt(int64(v))
-		}
-		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int32 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(value)
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
-		}
-		if val.Cap() != int(length) {
-			return InvalidArraySizeError{Off: d.r.off, Op: "Int32Array", GoLength: val.Cap(), NBTLength: int(length)}
+		case isAny(val):
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
 		val.Set(value)
 
 	case tagInt64Array:
-		length, err := d.Encoding.Int32(d.r)
+		s, err := d.Encoding.Int64Slice(d.r)
 		if err != nil {
 			return err
 		}
-		value := reflect.New(reflect.ArrayOf(int(length), int64Type)).Elem()
-		for i := int32(0); i < length; i++ {
-			v, err := d.Encoding.Int64(d.r)
-			if err != nil {
-				return err
+
+		value := reflect.New(reflect.ArrayOf(len(s), int64Type)).Elem()
+		reflect.Copy(value, reflect.ValueOf(s))
+
+		switch {
+		case k == reflect.Array && val.Type().Elem().Kind() == reflect.Int64:
+			if val.Cap() != len(s) {
+				return InvalidArraySizeError{Off: d.r.off, Op: "Int64Array", GoLength: val.Cap(), NBTLength: len(s)}
 			}
-			value.Index(int(i)).SetInt(v)
-		}
-		if val.Kind() != reflect.Array || val.Type().Elem().Kind() != reflect.Int64 {
-			if val.Kind() == reflect.Interface && val.NumMethod() == 0 {
-				// Empty interface.
-				val.Set(value)
-				return nil
-			}
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
-		}
-		if val.Cap() != int(length) {
-			return InvalidArraySizeError{Off: d.r.off, Op: "Int64Array", GoLength: val.Cap(), NBTLength: int(length)}
+		case isAny(val):
+		default:
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
 		val.Set(value)
 
 	case tagSlice:
 		d.depth++
-		listType, err := d.r.ReadByte()
+		listTypeByte, err := d.r.ReadByte()
 		if err != nil {
-			return BufferOverrunError{Op: "List"}
+			return BufferOverrunError{Op: "Slice"}
 		}
-		if !tagExists(listType) {
+		listType := tagType(listTypeByte)
+		if !listType.IsValid() {
 			return UnknownTagError{Off: d.r.off, TagType: listType, Op: "Slice"}
 		}
-		length, err := d.Encoding.Int32(d.r)
-		if err != nil {
-			return err
-		}
-		valType := val.Type()
-		if val.Kind() != reflect.Slice && val.Kind() != reflect.Interface {
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+		sliceType := val.Type()
+		if val.Kind() != reflect.Slice && !isAny(val) {
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		}
 		if val.Kind() == reflect.Interface {
-			valType = reflect.SliceOf(valType)
+			sliceType = reflect.SliceOf(sliceType)
 		}
-		v := reflect.MakeSlice(valType, int(length), int(length))
-		if length != 0 {
+		switch listType {
+		case tagByte:
+			length, err := d.Encoding.Int32(d.r)
+			if err != nil {
+				return BufferOverrunError{Op: "ByteSlice"}
+			}
+			if length == 0 {
+				// Empty lists are allowed to have the TAG_Byte type.
+				val.Set(reflect.MakeSlice(sliceType, int(length), int(length)))
+				break
+			}
+			b := make([]byte, length)
+			if _, err := d.r.Read(b); err != nil {
+				return BufferOverrunError{Op: "ByteSlice"}
+			}
+			switch {
+			case k == reflect.Slice && val.Type().Elem().Kind() == reflect.Uint8, isAny(val):
+				val.Set(reflect.ValueOf(b))
+			default:
+				return InvalidTypeError{Off: d.r.off, FieldType: val.Type().Elem(), Field: tagName, TagType: listType}
+			}
+		case tagInt32:
+			b, err := d.Encoding.Int32Slice(d.r)
+			if err != nil {
+				return BufferOverrunError{Op: "Int32Slice"}
+			}
+			switch {
+			case k == reflect.Slice && val.Type().Elem().Kind() == reflect.Int32, isAny(val):
+				val.Set(reflect.ValueOf(b))
+			default:
+				return InvalidTypeError{Off: d.r.off, FieldType: val.Type().Elem(), Field: tagName, TagType: listType}
+			}
+		case tagInt64:
+			b, err := d.Encoding.Int64Slice(d.r)
+			if err != nil {
+				return BufferOverrunError{Op: "Int64Slice"}
+			}
+			switch {
+			case k == reflect.Slice && val.Type().Elem().Kind() == reflect.Int64, isAny(val):
+				val.Set(reflect.ValueOf(b))
+			default:
+				return InvalidTypeError{Off: d.r.off, FieldType: val.Type().Elem(), Field: tagName, TagType: listType}
+			}
+		default:
+			length, err := d.Encoding.Int32(d.r)
+			if err != nil {
+				return err
+			}
+			v := reflect.MakeSlice(sliceType, int(length), int(length))
 			for i := 0; i < int(length); i++ {
 				if err := d.unmarshalTag(v.Index(i), listType, ""); err != nil {
 					// An error occurred during the decoding of one of the elements of the TAG_List, meaning it
 					// either had an invalid type or the NBT was invalid.
 					if _, ok := err.(InvalidTypeError); ok {
-						return InvalidTypeError{Off: d.r.off, FieldType: valType.Elem(), Field: fmt.Sprintf("%v[%v]", tagName, i), TagType: listType}
+						return InvalidTypeError{Off: d.r.off, FieldType: sliceType.Elem(), Field: fmt.Sprintf("%v[%v]", tagName, i), TagType: listType}
 					}
 					return err
 				}
 			}
+			val.Set(v)
+			d.depth--
 		}
-		val.Set(v)
-		d.depth--
 
 	case tagStruct:
 		d.depth++
 		switch val.Kind() {
 		default:
-			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+			return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 		case reflect.Struct:
 			// We first fetch a fields map from the sync.Pool. These maps already have a base size obtained
 			// from when they were used, meaning we don't have to re-allocate each element.
@@ -353,7 +363,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 					// We reached the end of the fields.
 					break
 				}
-				if !tagExists(nestedTagType) {
+				if !nestedTagType.IsValid() {
 					return UnknownTagError{Off: d.r.off, Op: "Struct", TagType: nestedTagType}
 				}
 				field, ok := fields[nestedTagName]
@@ -375,7 +385,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 			fieldMapPool.Put(fields)
 		case reflect.Interface, reflect.Map:
 			if vk := val.Kind(); vk == reflect.Interface && val.NumMethod() != 0 {
-				return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: tagType}
+				return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
 			}
 			valType := val.Type()
 			if val.Kind() == reflect.Map {
@@ -387,7 +397,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, tagType byte, tagName string) 
 				if err != nil {
 					return err
 				}
-				if !tagExists(nestedTagType) {
+				if !nestedTagType.IsValid() {
 					return UnknownTagError{Off: d.r.off, Op: "Map", TagType: nestedTagType}
 				}
 				if nestedTagType == tagEnd {
@@ -437,20 +447,25 @@ func (d *Decoder) populateFields(val reflect.Value, m map[string]reflect.Value) 
 }
 
 // tag reads a tag from the decoder, and its name if the tag type is not a TAG_End.
-func (d *Decoder) tag() (tagType byte, tagName string, err error) {
+func (d *Decoder) tag() (t tagType, tagName string, err error) {
 	if d.depth >= maximumNestingDepth {
 		return 0, "", MaximumDepthReachedError{}
 	}
 	if d.r.off >= maximumNetworkOffset && d.Encoding == NetworkLittleEndian {
 		return 0, "", MaximumBytesReadError{}
 	}
-	tagType, err = d.r.ReadByte()
+	tagTypeByte, err := d.r.ReadByte()
 	if err != nil {
 		return 0, "", BufferOverrunError{Op: "ReadTag"}
 	}
-	if tagType != tagEnd {
+	if t = tagType(tagTypeByte); t != tagEnd {
 		// Only read a tag name if the tag's type is not TAG_End.
 		tagName, err = d.Encoding.String(d.r)
 	}
-	return
+	return t, tagName, err
+}
+
+// isAny checks if a reflect.Value has the type `any` or `interface{}`.
+func isAny(v reflect.Value) bool {
+	return v.Kind() == reflect.Interface && v.NumMethod() == 0
 }

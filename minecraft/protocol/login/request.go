@@ -124,9 +124,10 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
 		return iData, cData, res, fmt.Errorf("parse client data: %w", err)
 	}
-	if strings.Count(cData.ServerAddress, ":") > 1 {
-		// IPv6: We can't net.ResolveUDPAddr this directly, because Mojang does not put [] around the IP. We'll have to
-		// do this manually:
+	if strings.Count(cData.ServerAddress, ":") > 1 && cData.ServerAddress[0] != '[' {
+		// IPv6: We can't net.ResolveUDPAddr this directly, because Mojang does
+		// not always put [] around the IP if it isn't added by the player in
+		// the External Server adding screen. We'll have to do this manually:
 		ind := strings.LastIndex(cData.ServerAddress, ":")
 		cData.ServerAddress = "[" + cData.ServerAddress[:ind] + "]" + cData.ServerAddress[ind:]
 	}

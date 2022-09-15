@@ -74,30 +74,22 @@ type PlayerListEntry struct {
 	Host bool
 }
 
-// WritePlayerAddEntry writes a PlayerListEntry x to Writer w in a way that adds the player to the list.
-func WritePlayerAddEntry(w *Writer, x *PlayerListEntry) {
-	w.UUID(&x.UUID)
-	w.Varint64(&x.EntityUniqueID)
-	w.String(&x.Username)
-	w.String(&x.XUID)
-	w.String(&x.PlatformChatID)
-	w.Int32(&x.BuildPlatform)
-	WriteSerialisedSkin(w, &x.Skin)
-	w.Bool(&x.Teacher)
-	w.Bool(&x.Host)
-}
-
-// PlayerAddEntry reads a PlayerListEntry x from Reader r in a way that adds a player to the list.
-func PlayerAddEntry(r *Reader, x *PlayerListEntry) {
+// Marshal encodes/decodes a PlayerListEntry.
+func (x *PlayerListEntry) Marshal(r IO) {
 	r.UUID(&x.UUID)
 	r.Varint64(&x.EntityUniqueID)
 	r.String(&x.Username)
 	r.String(&x.XUID)
 	r.String(&x.PlatformChatID)
 	r.Int32(&x.BuildPlatform)
-	SerialisedSkin(r, &x.Skin)
+	Single(r, &x.Skin)
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
+}
+
+// PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.
+func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
+	r.UUID(&x.UUID)
 }
 
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
@@ -136,8 +128,8 @@ type PlayerBlockAction struct {
 	Face int32
 }
 
-// BlockAction reads/writes a PlayerBlockAction x to/from IO r.
-func BlockAction(r IO, x *PlayerBlockAction) {
+// Marshal encodes/decodes a PlayerBlockAction.
+func (x *PlayerBlockAction) Marshal(r IO) {
 	r.Varint32(&x.Action)
 	switch x.Action {
 	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:

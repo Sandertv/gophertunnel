@@ -47,17 +47,8 @@ type AddPlayer struct {
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
 	EntityMetadata map[uint32]any
-	// EntityUniqueID is a unique identifier of the player. It appears it is not required to fill this field
-	// out with a correct value. Simply writing 0 seems to work.
-	EntityUniqueID int64
-	// PlayerPermissions is the permission level of the player as it shows up in the player list built up using
-	// the PlayerList packet.
-	PlayerPermissions byte
-	// CommandPermissions is a set of permissions that specify what commands a player is allowed to execute.
-	CommandPermissions byte
-	// Layers contains all ability layers and their potential values. This should at least have one entry, being the
-	// base layer.
-	Layers []protocol.AbilityLayer
+	// AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
+	AbilityData protocol.AbilityData
 	// EntityLinks is a list of entity links that are currently active on the player. These links alter the
 	// way the player shows up when first spawned in terms of it shown as riding an entity. Setting these
 	// links is important for new viewers to see the player is riding another entity.
@@ -89,15 +80,8 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.ItemInstance(&pk.HeldItem)
 	w.Varint32(&pk.GameType)
 	w.EntityMetadata(&pk.EntityMetadata)
-	w.Int64(&pk.EntityUniqueID)
-	w.Uint8(&pk.PlayerPermissions)
-	w.Uint8(&pk.CommandPermissions)
-	layersLen := uint8(len(pk.Layers))
-	w.Uint8(&layersLen)
-	for _, layer := range pk.Layers {
-		protocol.SerializedLayer(w, &layer)
-	}
-	protocol.WriteEntityLinks(w, &pk.EntityLinks)
+	protocol.Single(w, &pk.AbilityData)
+	protocol.Slice(w, &pk.EntityLinks)
 	w.String(&pk.DeviceID)
 	w.Int32(&pk.BuildPlatform)
 }
@@ -116,16 +100,8 @@ func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.ItemInstance(&pk.HeldItem)
 	r.Varint32(&pk.GameType)
 	r.EntityMetadata(&pk.EntityMetadata)
-	r.Int64(&pk.EntityUniqueID)
-	r.Uint8(&pk.PlayerPermissions)
-	r.Uint8(&pk.CommandPermissions)
-	var layersLen uint8
-	r.Uint8(&layersLen)
-	pk.Layers = make([]protocol.AbilityLayer, layersLen)
-	for i := uint8(0); i < layersLen; i++ {
-		protocol.SerializedLayer(r, &pk.Layers[i])
-	}
-	protocol.EntityLinks(r, &pk.EntityLinks)
+	protocol.Single(r, &pk.AbilityData)
+	protocol.Slice(r, &pk.EntityLinks)
 	r.String(&pk.DeviceID)
 	r.Int32(&pk.BuildPlatform)
 }

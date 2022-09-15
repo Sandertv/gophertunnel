@@ -10,40 +10,40 @@ import (
 type InvalidTypeError struct {
 	Off       int64
 	Field     string
-	TagType   byte
+	TagType   tagType
 	FieldType reflect.Type
 }
 
 // Error ...
 func (err InvalidTypeError) Error() string {
-	return fmt.Sprintf("nbt: invalid type for tag '%v' at offset %v: cannot unmarshalTag %v into %v", err.Field, err.Off, tagName(err.TagType), err.FieldType)
+	return fmt.Sprintf("nbt: invalid type for tag '%v' at offset %v: cannot unmarshal %v into %v", err.Field, err.Off, err.TagType, err.FieldType)
 }
 
-// UnknownTagError is returned when the type of a tag read is not known, meaning it is not found in the tag.go
+// UnknownTagError is returned when the type of tag read is not known, meaning it is not found in the tag.go
 // file.
 type UnknownTagError struct {
 	Off     int64
 	Op      string
-	TagType byte
+	TagType tagType
 }
 
 // Error ...
 func (err UnknownTagError) Error() string {
-	return fmt.Sprintf("nbt: unknown tag '%v' at offset %v during op '%v'", err.TagType, err.Off, err.Op)
+	return fmt.Sprintf("nbt: unknown tag '%v' at offset %v during op '%v'", byte(err.TagType), err.Off, err.Op)
 }
 
 // UnexpectedTagError is returned when a tag type encountered was not expected, and thus valid in its context.
 type UnexpectedTagError struct {
 	Off     int64
-	TagType byte
+	TagType tagType
 }
 
 // Error ...
 func (err UnexpectedTagError) Error() string {
-	return fmt.Sprintf("nbt: unexpected tag %v at offset %v: tag is not valid in its context", tagName(err.TagType), err.Off)
+	return fmt.Sprintf("nbt: unexpected tag %v at offset %v: tag is not valid in its context", err.TagType, err.Off)
 }
 
-// NonPointerTypeError is returned when the type of a value passed in Decoder.Decode or Unmarshal is not a
+// NonPointerTypeError is returned when the type of value passed in Decoder.Decode or Unmarshal is not a
 // pointer.
 type NonPointerTypeError struct {
 	ActualType reflect.Type
@@ -84,12 +84,12 @@ func (err InvalidArraySizeError) Error() string {
 type UnexpectedNamedTagError struct {
 	Off     int64
 	TagName string
-	TagType byte
+	TagType tagType
 }
 
 // Error ...
 func (err UnexpectedNamedTagError) Error() string {
-	return fmt.Sprintf("nbt: unexpected named tag '%v' with type %v at offset %v: not present in struct to be decoded into", err.TagName, tagName(err.TagType), err.Off)
+	return fmt.Sprintf("nbt: unexpected named tag '%v' with type %v at offset %v: not present in struct to be decoded into", err.TagName, err.TagType, err.Off)
 }
 
 // FailedWriteError is returned if a Write operation failed on an offsetWriter, meaning some of the data could

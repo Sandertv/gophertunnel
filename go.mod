@@ -25,3 +25,5 @@ require (
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 )
+
+replace github.com/sandertv/go-raknet => github.com/justtaldevelops/go-raknet v0.0.0-20220912200218-80153477b5b0

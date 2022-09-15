@@ -381,13 +381,15 @@ func addressWithPongPort(pong []byte, address string) string {
 	if len(frag) > 10 {
 		portStr := frag[10]
 		port, err := strconv.Atoi(portStr)
-		if err != nil {
+		// Vanilla (realms, in particular) will sometimes send port 19132 when you ping a port that isn't 19132 already,
+		// but we should ignore that.
+		if err != nil || port == 19132 {
 			return address
 		}
 		// Remove the port from the address.
 		addressParts := strings.Split(address, ":")
 		address = strings.Join(strings.Split(address, ":")[:len(addressParts)-1], ":")
-		return address + ":" + strconv.Itoa(port)
+		return address + ":" + portStr
 	}
 	return address
 }

@@ -29,32 +29,11 @@ type EntityLink struct {
 	RiderInitiated bool
 }
 
-// EntityLinkAction reads/writes a single entity link (action) using IO r.
-func EntityLinkAction(r IO, x *EntityLink) {
+// Marshal encodes/decodes a single entity link.
+func (x *EntityLink) Marshal(r IO) {
 	r.Varint64(&x.RiddenEntityUniqueID)
 	r.Varint64(&x.RiderEntityUniqueID)
 	r.Uint8(&x.Type)
 	r.Bool(&x.Immediate)
 	r.Bool(&x.RiderInitiated)
-}
-
-// EntityLinks reads a list of entity links from Reader r that are currently active.
-func EntityLinks(r *Reader, x *[]EntityLink) {
-	var count uint32
-	r.Varuint32(&count)
-	r.LimitUint32(count, lowerLimit)
-
-	*x = make([]EntityLink, count)
-	for i := uint32(0); i < count; i++ {
-		EntityLinkAction(r, &(*x)[i])
-	}
-}
-
-// WriteEntityLinks writes a list of entity links currently active to Writer w.
-func WriteEntityLinks(w *Writer, x *[]EntityLink) {
-	l := uint32(len(*x))
-	w.Varuint32(&l)
-	for _, link := range *x {
-		EntityLinkAction(w, &link)
-	}
 }

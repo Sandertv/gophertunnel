@@ -22,10 +22,10 @@ func (*GameRulesChanged) ID() uint32 {
 
 // Marshal ...
 func (pk *GameRulesChanged) Marshal(w *protocol.Writer) {
-	protocol.WriteGameRules(w, &pk.GameRules)
+	protocol.FuncSlice(w, &pk.GameRules, w.GameRule)
 }
 
 // Unmarshal ...
 func (pk *GameRulesChanged) Unmarshal(r *protocol.Reader) {
-	protocol.GameRules(r, &pk.GameRules)
+	protocol.FuncSlice(r, &pk.GameRules, r.GameRule)
 }

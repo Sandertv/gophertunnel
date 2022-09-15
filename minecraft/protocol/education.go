@@ -22,3 +22,9 @@ type EducationExternalLinkSettings struct {
 	// DisplayName is the display name in game.
 	DisplayName string
 }
+
+// Marshal encodes/decodes an EducationExternalLinkSettings.
+func (x *EducationExternalLinkSettings) Marshal(r IO) {
+	r.String(&x.URL)
+	r.String(&x.DisplayName)
+}

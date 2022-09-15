@@ -29,7 +29,7 @@ func (*PlayerSkin) ID() uint32 {
 // Marshal ...
 func (pk *PlayerSkin) Marshal(w *protocol.Writer) {
 	w.UUID(&pk.UUID)
-	protocol.WriteSerialisedSkin(w, &pk.Skin)
+	protocol.Single(w, &pk.Skin)
 	w.String(&pk.NewSkinName)
 	w.String(&pk.OldSkinName)
 	w.Bool(&pk.Skin.Trusted)
@@ -38,7 +38,7 @@ func (pk *PlayerSkin) Marshal(w *protocol.Writer) {
 // Unmarshal ...
 func (pk *PlayerSkin) Unmarshal(r *protocol.Reader) {
 	r.UUID(&pk.UUID)
-	protocol.SerialisedSkin(r, &pk.Skin)
+	protocol.Single(r, &pk.Skin)
 	r.String(&pk.NewSkinName)
 	r.String(&pk.OldSkinName)
 	r.Bool(&pk.Skin.Trusted)

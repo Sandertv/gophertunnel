@@ -25,6 +25,17 @@ type BehaviourPackInfo struct {
 	HasScripts bool
 }
 
+// Marshal encodes/decodes a BehaviourPackInfo.
+func (x *BehaviourPackInfo) Marshal(r IO) {
+	r.String(&x.UUID)
+	r.String(&x.Version)
+	r.Uint64(&x.Size)
+	r.String(&x.ContentKey)
+	r.String(&x.SubPackName)
+	r.String(&x.ContentIdentity)
+	r.Bool(&x.HasScripts)
+}
+
 // TexturePackInfo represents a texture pack's info sent over network. It holds information about the
 // texture pack such as its name, description and version.
 type TexturePackInfo struct {
@@ -53,6 +64,18 @@ type TexturePackInfo struct {
 	RTXEnabled bool
 }
 
+// Marshal encodes/decodes a TexturePackInfo.
+func (x *TexturePackInfo) Marshal(r IO) {
+	r.String(&x.UUID)
+	r.String(&x.Version)
+	r.Uint64(&x.Size)
+	r.String(&x.ContentKey)
+	r.String(&x.SubPackName)
+	r.String(&x.ContentIdentity)
+	r.Bool(&x.HasScripts)
+	r.Bool(&x.RTXEnabled)
+}
+
 // StackResourcePack represents a resource pack sent on the stack of the client. When sent, the client will
 // apply them in the order of the stack sent.
 type StackResourcePack struct {
@@ -67,31 +90,8 @@ type StackResourcePack struct {
 	SubPackName string
 }
 
-// BehaviourPackInformation reads/writes a BehaviourPackInfo x using IO r.
-func BehaviourPackInformation(r IO, x *BehaviourPackInfo) {
-	r.String(&x.UUID)
-	r.String(&x.Version)
-	r.Uint64(&x.Size)
-	r.String(&x.ContentKey)
-	r.String(&x.SubPackName)
-	r.String(&x.ContentIdentity)
-	r.Bool(&x.HasScripts)
-}
-
-// TexturePackInformation reads/writes a TexturePackInfo x using IO r.
-func TexturePackInformation(r IO, x *TexturePackInfo) {
-	r.String(&x.UUID)
-	r.String(&x.Version)
-	r.Uint64(&x.Size)
-	r.String(&x.ContentKey)
-	r.String(&x.SubPackName)
-	r.String(&x.ContentIdentity)
-	r.Bool(&x.HasScripts)
-	r.Bool(&x.RTXEnabled)
-}
-
-// StackPack reads/writes a StackResourcePack x using IO r.
-func StackPack(r IO, x *StackResourcePack) {
+// Marshal encodes/decodes a StackResourcePack.
+func (x *StackResourcePack) Marshal(r IO) {
 	r.String(&x.UUID)
 	r.String(&x.Version)
 	r.String(&x.SubPackName)

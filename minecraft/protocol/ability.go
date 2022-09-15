@@ -34,6 +34,29 @@ const (
 	AbilityBaseWalkSpeed = 0.1
 )
 
+// AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
+type AbilityData struct {
+	// EntityUniqueID is a unique identifier of the player. It appears it is not required to fill this field
+	// out with a correct value. Simply writing 0 seems to work.
+	EntityUniqueID int64
+	// PlayerPermissions is the permission level of the player as it shows up in the player list built up using
+	// the PlayerList packet.
+	PlayerPermissions byte
+	// CommandPermissions is a set of permissions that specify what commands a player is allowed to execute.
+	CommandPermissions byte
+	// Layers contains all ability layers and their potential values. This should at least have one entry, being the
+	// base layer.
+	Layers []AbilityLayer
+}
+
+// Marshal encodes/decodes an AbilityData.
+func (x *AbilityData) Marshal(r IO) {
+	r.Int64(&x.EntityUniqueID)
+	r.Uint8(&x.PlayerPermissions)
+	r.Uint8(&x.CommandPermissions)
+	SliceUint8Length(r, &x.Layers)
+}
+
 // AbilityLayer represents the abilities of a specific layer, such as the base layer or the spectator layer.
 type AbilityLayer struct {
 	// Type represents the type of the layer. This is one of the AbilityLayerType constants defined above.
@@ -50,8 +73,8 @@ type AbilityLayer struct {
 	WalkSpeed float32
 }
 
-// SerializedLayer reads/writes a AbilityLayer x using IO r.
-func SerializedLayer(r IO, x *AbilityLayer) {
+// Marshal encodes/decodes an AbilityLayer.
+func (x *AbilityLayer) Marshal(r IO) {
 	r.Uint16(&x.Type)
 	r.Uint32(&x.Abilities)
 	r.Uint32(&x.Values)

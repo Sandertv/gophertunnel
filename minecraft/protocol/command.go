@@ -42,21 +42,25 @@ const (
 	CommandArgSuffixed = 0x1000000
 	CommandArgSoftEnum = 0x4000000
 
-	CommandArgTypeInt            = 1
-	CommandArgTypeFloat          = 3
-	CommandArgTypeValue          = 4
-	CommandArgTypeWildcardInt    = 5
-	CommandArgTypeOperator       = 6
-	CommandArgTypeTarget         = 8
-	CommandArgTypeWildcardTarget = 10
-	CommandArgTypeFilepath       = 17
-	CommandArgTypeString         = 39
-	CommandArgTypeBlockPosition  = 47
-	CommandArgTypePosition       = 48
-	CommandArgTypeMessage        = 51
-	CommandArgTypeRawText        = 53
-	CommandArgTypeJSON           = 57
-	CommandArgTypeCommand        = 70
+	CommandArgTypeInt             = 1
+	CommandArgTypeFloat           = 3
+	CommandArgTypeValue           = 4
+	CommandArgTypeWildcardInt     = 5
+	CommandArgTypeOperator        = 6
+	CommandArgTypeCompareOperator = 7
+	CommandArgTypeTarget          = 8
+	CommandArgTypeWildcardTarget  = 10
+	CommandArgTypeFilepath        = 17
+	CommandArgTypeIntegerRange    = 23
+	CommandArgTypeEquipmentSlots  = 38
+	CommandArgTypeString          = 39
+	CommandArgTypeBlockPosition   = 47
+	CommandArgTypePosition        = 48
+	CommandArgTypeMessage         = 51
+	CommandArgTypeRawText         = 53
+	CommandArgTypeJSON            = 57
+	CommandArgTypeBlockStates     = 67
+	CommandArgTypeCommand         = 70
 )
 const (
 	// ParamOptionCollapseEnum specifies if the enum (only if the Type is actually an enum type. If not,
@@ -171,28 +175,11 @@ type CommandOutputMessage struct {
 	Parameters []string
 }
 
-// CommandMessage reads a CommandOutputMessage x from Reader r.
-func CommandMessage(r *Reader, x *CommandOutputMessage) {
-	var count uint32
+// Marshal encodes/decodes a CommandOutputMessage.
+func (x *CommandOutputMessage) Marshal(r IO) {
 	r.Bool(&x.Success)
 	r.String(&x.Message)
-	r.Varuint32(&count)
-	x.Parameters = make([]string, count)
-	for i := uint32(0); i < count; i++ {
-		r.String(&x.Parameters[i])
-	}
-}
-
-// WriteCommandMessage writes a CommandOutputMessage x to Writer w.
-func WriteCommandMessage(w *Writer, x *CommandOutputMessage) {
-	l := uint32(len(x.Parameters))
-
-	w.Bool(&x.Success)
-	w.String(&x.Message)
-	w.Varuint32(&l)
-	for _, param := range x.Parameters {
-		w.String(&param)
-	}
+	FuncSlice(r, &x.Parameters, r.String)
 }
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.
