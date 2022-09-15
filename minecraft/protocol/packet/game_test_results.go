@@ -4,8 +4,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// GameTestResults ...
-// TODO: Document this.
+// GameTestResults is a packet sent in response to the GameTestRequest packet, with a boolean indicating whether the
+// test was successful or not, and an error string if the test failed.
 type GameTestResults struct {
 	// Name represents the name of the test.
 	Name string
