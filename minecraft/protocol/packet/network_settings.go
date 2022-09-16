@@ -13,6 +13,16 @@ type NetworkSettings struct {
 	CompressionThreshold uint16
 	// CompressionAlgorithm is the algorithm that is used to compress packets.
 	CompressionAlgorithm Compression
+
+	// ClientThrottle regulates client throttling players, when out of the threshold. Players outside threshold will not
+	// be ticked, improving performance on low-end devices.
+	ClientThrottle bool
+	// ClientThrottleThreshold is the threshold for client throttling. If the number of players exceeds this value, the
+	// client will throttle players.
+	ClientThrottleThreshold uint8
+	// ClientThrottleScalar is the scalar for client throttling. The scalar is the amount of players that are ticked
+	// when throttling is enabled.
+	ClientThrottleScalar float32
 }
 
 // ID ...
@@ -25,6 +35,10 @@ func (pk *NetworkSettings) Marshal(w *protocol.Writer) {
 	id := pk.CompressionAlgorithm.EncodeCompression()
 	w.Uint16(&pk.CompressionThreshold)
 	w.Uint16(&id)
+
+	w.Bool(&pk.ClientThrottle)
+	w.Uint8(&pk.ClientThrottleThreshold)
+	w.Float32(&pk.ClientThrottleScalar)
 }
 
 // Unmarshal ...
@@ -35,4 +49,8 @@ func (pk *NetworkSettings) Unmarshal(r *protocol.Reader) {
 	r.Uint16(&id)
 
 	pk.CompressionAlgorithm, _ = CompressionByID(id)
+
+	r.Bool(&pk.ClientThrottle)
+	r.Uint8(&pk.ClientThrottleThreshold)
+	r.Float32(&pk.ClientThrottleScalar)
 }
