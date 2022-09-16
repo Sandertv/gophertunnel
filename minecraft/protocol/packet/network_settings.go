@@ -14,8 +14,8 @@ type NetworkSettings struct {
 	// CompressionAlgorithm is the algorithm that is used to compress packets.
 	CompressionAlgorithm Compression
 
-	// ClientThrottle regulates client throttling players, when out of the threshold. Players outside threshold will not
-	// be ticked, improving performance on low-end devices.
+	// ClientThrottle regulates whether the client should throttle players when exceeding of the threshold. Players
+	// outside threshold will not be ticked, improving performance on low-end devices.
 	ClientThrottle bool
 	// ClientThrottleThreshold is the threshold for client throttling. If the number of players exceeds this value, the
 	// client will throttle players.
