@@ -11,7 +11,6 @@ const (
 )
 
 // GameTestRequest ...
-// TODO: Document this.
 type GameTestRequest struct {
 	// Name represents the name of the test.
 	Name string
