@@ -50,7 +50,7 @@ type StructureBlockUpdate struct {
 	// ShouldTrigger specifies if the structure block should be triggered immediately after this packet
 	// reaches the server.
 	ShouldTrigger bool
-	// Waterlogged specifies if the structure block is waterlogged at the time of the packet being sent.
+	// Waterlogged specifies if non-air blocks replace water or combine with water.
 	Waterlogged bool
 }
 
