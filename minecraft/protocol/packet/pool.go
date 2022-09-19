@@ -2,7 +2,7 @@ package packet
 
 // Register registers a function that returns a packet for a specific ID. Packets with this ID coming in from
 // connections will resolve to the packet returned by the function passed.
-//noinspection GoUnusedExportedFunction
+// noinspection GoUnusedExportedFunction
 func Register(id uint32, pk func() Packet) {
 	registeredPackets[id] = pk
 }
@@ -218,7 +218,7 @@ func init() {
 		IDServerStats:                       func() Packet { return &ServerStats{} },
 		IDRequestNetworkSettings:            func() Packet { return &RequestNetworkSettings{} },
 		IDGameTestRequest:                   func() Packet { return &GameTestRequest{} },
-		// TODO: Game test results
+		IDGameTestResults:                   func() Packet { return &GameTestResults{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

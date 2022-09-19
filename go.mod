@@ -9,7 +9,7 @@ require (
 	github.com/klauspost/compress v1.15.1
 	github.com/muhammadmuzzammil1998/jsonc v1.0.0
 	github.com/pelletier/go-toml v1.9.4
-	github.com/sandertv/go-raknet v1.11.1
+	github.com/sandertv/go-raknet v1.12.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2
 	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
@@ -25,5 +25,3 @@ require (
 	google.golang.org/appengine v1.6.6 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
 )
-
-replace github.com/sandertv/go-raknet => github.com/justtaldevelops/go-raknet v0.0.0-20220912200218-80153477b5b0

@@ -8,8 +8,8 @@ import (
 // information specific to the player.
 type Login struct {
 	// ClientProtocol is the protocol version of the player. The player is disconnected if the protocol is incompatible
-	// with the protocol of the server. It is unclear why this is still sent in the login packet, as the ClientProtocol
-	// is already sent in the RequestNetworkSettings packet.
+	// with the protocol of the server. It has been superseded by the protocol version sent in the
+	// RequestNetworkSettings packet, so this should no longer be used by the server.
 	ClientProtocol int32
 	// ConnectionRequest is a string containing information about the player and JWTs that may be used to
 	// verify if the player is connected to XBOX Live. The connection request also contains the necessary
