@@ -7,19 +7,8 @@ import (
 // UpdateAbilities is a packet sent from the server to the client to update the abilities of the player. It, along with
 // the UpdateAdventureSettings packet, are replacements of the AdventureSettings packet since v1.19.10.
 type UpdateAbilities struct {
-	// EntityUniqueID is the unique ID of the player. The unique ID is a value that remains consistent across
-	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
-	// this field.
-	EntityUniqueID int64
-	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
-	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions uint8
-	// CommandPermissions is a permission level that specifies the kind of commands that the player is
-	// allowed to use. It is one of the CommandPermissionLevel constants in the AdventureSettings packet.
-	CommandPermissions uint8
-	// Layers contains all ability layers and their potential values. This should at least have one entry, being the
-	// base layer.
-	Layers []protocol.AbilityLayer
+	// AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
+	AbilityData protocol.AbilityData
 }
 
 // ID ...
@@ -29,16 +18,10 @@ func (*UpdateAbilities) ID() uint32 {
 
 // Marshal ...
 func (pk *UpdateAbilities) Marshal(w *protocol.Writer) {
-	w.Int64(&pk.EntityUniqueID)
-	w.Uint8(&pk.PlayerPermissions)
-	w.Uint8(&pk.CommandPermissions)
-	protocol.SliceUint8Length(w, &pk.Layers)
+	protocol.Single(w, &pk.AbilityData)
 }
 
 // Unmarshal ...
 func (pk *UpdateAbilities) Unmarshal(r *protocol.Reader) {
-	r.Int64(&pk.EntityUniqueID)
-	r.Uint8(&pk.PlayerPermissions)
-	r.Uint8(&pk.CommandPermissions)
-	protocol.SliceUint8Length(r, &pk.Layers)
+	protocol.Single(r, &pk.AbilityData)
 }

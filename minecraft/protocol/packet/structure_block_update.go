@@ -50,6 +50,8 @@ type StructureBlockUpdate struct {
 	// ShouldTrigger specifies if the structure block should be triggered immediately after this packet
 	// reaches the server.
 	ShouldTrigger bool
+	// Waterlogged specifies if non-air blocks replace water or combine with water.
+	Waterlogged bool
 }
 
 // ID ...
@@ -68,6 +70,7 @@ func (pk *StructureBlockUpdate) Marshal(w *protocol.Writer) {
 	protocol.StructSettings(w, &pk.Settings)
 	w.Varint32(&pk.RedstoneSaveMode)
 	w.Bool(&pk.ShouldTrigger)
+	w.Bool(&pk.Waterlogged)
 }
 
 // Unmarshal ...
@@ -81,4 +84,5 @@ func (pk *StructureBlockUpdate) Unmarshal(r *protocol.Reader) {
 	protocol.StructSettings(r, &pk.Settings)
 	r.Varint32(&pk.RedstoneSaveMode)
 	r.Bool(&pk.ShouldTrigger)
+	r.Bool(&pk.Waterlogged)
 }

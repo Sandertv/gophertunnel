@@ -14,8 +14,7 @@ const (
 )
 
 const (
-	SubChunkResultUndefined = iota
-	SubChunkResultSuccess
+	SubChunkResultSuccess = iota + 1
 	SubChunkResultChunkNotFound
 	SubChunkResultInvalidDimension
 	SubChunkResultPlayerNotFound

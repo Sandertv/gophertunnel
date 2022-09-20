@@ -4,6 +4,20 @@ import (
 	"fmt"
 )
 
+const (
+	FilterCauseServerChatPublic = iota
+	FilterCauseServerChatWhisper
+	FilterCauseSignText
+	FilterCauseAnvilText
+	FilterCauseBookAndQuillText
+	FilterCauseCommandBlockText
+	FilterCauseBlockActorDataText
+	FilterCauseJoinEventText
+	FilterCauseLeaveEventText
+	FilterCauseSlashCommandChat
+	FilterCauseCartographyText
+)
+
 // ItemStackRequest represents a single request present in an ItemStackRequest packet sent by the client to
 // change an item in an inventory.
 // Item stack requests are either approved or rejected by the server using the ItemStackResponse packet.
@@ -17,6 +31,8 @@ type ItemStackRequest struct {
 	// FilterStrings is a list of filter strings involved in the request. This is typically filled with one string
 	// when an anvil or cartography is used.
 	FilterStrings []string
+	// FilterCause represents the cause of any potential filtering. This is one of the constants above.
+	FilterCause int32
 }
 
 // WriteStackRequest writes an ItemStackRequest x to Writer w.
@@ -70,6 +86,7 @@ func WriteStackRequest(w *Writer, x *ItemStackRequest) {
 		action.Marshal(w)
 	}
 	FuncSlice(w, &x.FilterStrings, w.String)
+	w.Int32(&x.FilterCause)
 }
 
 // StackRequest reads an ItemStackRequest x from Reader r.
@@ -134,6 +151,7 @@ func StackRequest(r *Reader, x *ItemStackRequest) {
 		x.Actions[i] = action
 	}
 	FuncSlice(r, &x.FilterStrings, r.String)
+	r.Int32(&x.FilterCause)
 }
 
 const (
@@ -214,10 +232,9 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
 // The action is one of the concrete types below, each of which are indicative of a different action by the
-// client, such as moving an item around the inventory or placing a block.
+// client, such as moving an item around the inventory or placing a block. It is an alias of Marshaler.
 type StackRequestAction interface {
-	// Marshal encodes/decodes a StackRequestAction.
-	Marshal(r IO)
+	Marshaler
 }
 
 const (

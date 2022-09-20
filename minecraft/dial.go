@@ -187,28 +187,44 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		// we are not aware of the identity data ourselves yet.
 		conn.identityData = identityData
 	}
-	c := make(chan struct{})
-	go listenConn(conn, d.ErrorLog, c)
 
-	conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
-	if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
+	l, c := make(chan struct{}), make(chan struct{})
+	go listenConn(conn, d.ErrorLog, l, c)
+
+	conn.expect(packet.IDNetworkSettings)
+	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
 		return nil, err
 	}
 	_ = conn.Flush()
+
 	select {
 	case <-conn.close:
 		return nil, conn.closeErr("dial")
 	case <-ctx.Done():
 		return nil, conn.wrap(ctx.Err(), "dial")
-	case <-c:
-		// We've connected successfully. We return the connection and no error.
-		return conn, nil
+	case <-l:
+		// We've received our network settings, so we can now send our login request.
+		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
+		if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
+			return nil, err
+		}
+		_ = conn.Flush()
+
+		select {
+		case <-conn.close:
+			return nil, conn.closeErr("dial")
+		case <-ctx.Done():
+			return nil, conn.wrap(ctx.Err(), "dial")
+		case <-c:
+			// We've connected successfully. We return the connection and no error.
+			return conn, nil
+		}
 	}
 }
 
 // listenConn listens on the connection until it is closed on another goroutine. The channel passed will
 // receive a value once the connection is logged in.
-func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
+func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 	defer func() {
 		_ = conn.Close()
 	}()
@@ -223,14 +239,19 @@ func listenConn(conn *Conn, logger *log.Logger, c chan struct{}) {
 			return
 		}
 		for _, data := range packets {
-			loggedInBefore := conn.loggedIn
+			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
 				logger.Printf("error: %v", err)
 				return
 			}
+			if !readyToLoginBefore && conn.readyToLogin {
+				// This is the signal that the connection is ready to login, so we put a value in the channel so that
+				// it may be detected.
+				l <- struct{}{}
+			}
 			if !loggedInBefore && conn.loggedIn {
-				// This is the signal that the connection was considered logged in, so we put a value in the
-				// channel so that it may be detected.
+				// This is the signal that the connection was considered logged in, so we put a value in the channel so
+				// that it may be detected.
 				c <- struct{}{}
 			}
 		}
