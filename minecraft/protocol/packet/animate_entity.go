@@ -52,5 +52,6 @@ func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.StopCondition)
 	r.Int32(&pk.StopConditionVersion)
 	r.String(&pk.Controller)
+	r.Float32(&pk.BlendOutTime)
 	protocol.FuncSlice(r, &pk.EntityRuntimeIDs, r.Varuint64)
 }
