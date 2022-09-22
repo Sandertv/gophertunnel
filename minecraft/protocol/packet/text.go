@@ -16,6 +16,7 @@ const (
 	TextTypeAnnouncement
 	TextTypeObjectWhisper
 	TextTypeObject
+	TextTypeObjectAnnouncement
 )
 
 // Text is sent by the client to the server to send chat messages, and by the server to the client to forward
@@ -60,7 +61,7 @@ func (pk *Text) Marshal(w *protocol.Writer) {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
 		w.String(&pk.SourceName)
 		w.String(&pk.Message)
-	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
+	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper, TextTypeObjectAnnouncement:
 		w.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		w.String(&pk.Message)
@@ -78,7 +79,7 @@ func (pk *Text) Unmarshal(r *protocol.Reader) {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
 		r.String(&pk.SourceName)
 		r.String(&pk.Message)
-	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper:
+	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper, TextTypeObjectAnnouncement:
 		r.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		r.String(&pk.Message)

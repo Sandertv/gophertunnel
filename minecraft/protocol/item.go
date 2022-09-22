@@ -45,28 +45,6 @@ type ItemType struct {
 	MetadataValue uint32
 }
 
-// RecipeIngredientItem represents an item that may be used as a recipe ingredient.
-type RecipeIngredientItem struct {
-	// NetworkID is the numerical network ID of the item. This is sometimes a positive ID, and sometimes a
-	// negative ID, depending on what item it concerns.
-	NetworkID int32
-	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
-	// other items it is simply an identifier of a variant of the item.
-	MetadataValue int32
-	// Count is the count of items that the recipe ingredient is required to have.
-	Count int32
-}
-
-// Marshal encodes/decodes a RecipeIngredientItem.
-func (x *RecipeIngredientItem) Marshal(r IO) {
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		return
-	}
-	r.Varint32(&x.MetadataValue)
-	r.Varint32(&x.Count)
-}
-
 // ItemEntry is an item sent in the StartGame item table. It holds a name and a legacy ID, which is used to
 // point back to that name.
 type ItemEntry struct {

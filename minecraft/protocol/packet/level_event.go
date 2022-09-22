@@ -7,7 +7,6 @@ import (
 
 //noinspection SpellCheckingInspection
 const (
-	LevelEventUndefined                    = 0
 	LevelEventSoundClick                   = 1000
 	LevelEventSoundClickFail               = 1001
 	LevelEventSoundLaunch                  = 1002

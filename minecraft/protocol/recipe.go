@@ -84,7 +84,7 @@ type ShapelessRecipe struct {
 	RecipeID string
 	// Input is a list of items that serve as the input of the shapeless recipe. These items are the items
 	// required to craft the output.
-	Input []RecipeIngredientItem
+	Input []ItemDescriptorCount
 	// Output is a list of items that are created as a result of crafting the recipe.
 	Output []ItemStack
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
@@ -134,7 +134,7 @@ type ShapedRecipe struct {
 	Height int32
 	// Input is a list of items that serve as the input of the shapeless recipe. These items are the items
 	// required to craft the output. The amount of input items must be exactly equal to Width * Height.
-	Input []RecipeIngredientItem
+	Input []ItemDescriptorCount
 	// Output is a list of items that are created as a result of crafting the recipe.
 	Output []ItemStack
 	// UUID is a UUID identifying the recipe. This can actually be set to an empty UUID if the CraftingEvent
@@ -287,7 +287,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
-	FuncIOSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, Single[RecipeIngredientItem])
+	FuncSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, r.ItemDescriptorCount)
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
@@ -298,7 +298,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 // marshalShapeless ...
 func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
-	Slice(r, &recipe.Input)
+	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)

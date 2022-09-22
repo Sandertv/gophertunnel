@@ -42,21 +42,25 @@ const (
 	CommandArgSuffixed = 0x1000000
 	CommandArgSoftEnum = 0x4000000
 
-	CommandArgTypeInt            = 1
-	CommandArgTypeFloat          = 3
-	CommandArgTypeValue          = 4
-	CommandArgTypeWildcardInt    = 5
-	CommandArgTypeOperator       = 6
-	CommandArgTypeTarget         = 8
-	CommandArgTypeWildcardTarget = 10
-	CommandArgTypeFilepath       = 17
-	CommandArgTypeString         = 39
-	CommandArgTypeBlockPosition  = 47
-	CommandArgTypePosition       = 48
-	CommandArgTypeMessage        = 51
-	CommandArgTypeRawText        = 53
-	CommandArgTypeJSON           = 57
-	CommandArgTypeCommand        = 70
+	CommandArgTypeInt             = 1
+	CommandArgTypeFloat           = 3
+	CommandArgTypeValue           = 4
+	CommandArgTypeWildcardInt     = 5
+	CommandArgTypeOperator        = 6
+	CommandArgTypeCompareOperator = 7
+	CommandArgTypeTarget          = 8
+	CommandArgTypeWildcardTarget  = 10
+	CommandArgTypeFilepath        = 17
+	CommandArgTypeIntegerRange    = 23
+	CommandArgTypeEquipmentSlots  = 38
+	CommandArgTypeString          = 39
+	CommandArgTypeBlockPosition   = 47
+	CommandArgTypePosition        = 48
+	CommandArgTypeMessage         = 51
+	CommandArgTypeRawText         = 53
+	CommandArgTypeJSON            = 57
+	CommandArgTypeBlockStates     = 67
+	CommandArgTypeCommand         = 70
 )
 const (
 	// ParamOptionCollapseEnum specifies if the enum (only if the Type is actually an enum type. If not,
