@@ -45,7 +45,7 @@ type StartGame struct {
 	Yaw float32
 	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
 	// here.
-	WorldSeed uint64
+	WorldSeed int64
 	// SpawnBiomeType specifies if the biome that the player spawns in is user defined (through behaviour
 	// packs) or builtin. See the constants above.
 	SpawnBiomeType int16
@@ -240,7 +240,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Vec3(&pk.PlayerPosition)
 	w.Float32(&pk.Pitch)
 	w.Float32(&pk.Yaw)
-	w.Uint64(&pk.WorldSeed)
+	w.Int64(&pk.WorldSeed)
 	w.Int16(&pk.SpawnBiomeType)
 	w.String(&pk.UserDefinedBiomeName)
 	w.Varint32(&pk.Dimension)
@@ -313,7 +313,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.PlayerPosition)
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
-	r.Uint64(&pk.WorldSeed)
+	r.Int64(&pk.WorldSeed)
 	r.Int16(&pk.SpawnBiomeType)
 	r.String(&pk.UserDefinedBiomeName)
 	r.Varint32(&pk.Dimension)
