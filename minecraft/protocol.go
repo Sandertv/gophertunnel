@@ -42,8 +42,6 @@ func (p proto) ConvertFromLatest(pk packet.Packet, _ *Conn) []packet.Packet {
 	return []packet.Packet{pk}
 }
 
-// DefaultProtocol return the default Protocol implementation, It returns the current protocol, version and packet pool and does not
-// convert any packets, as they are already of the right type.
-func DefaultProtocol() Protocol {
-	return proto{}
-}
+// DefaultProtocol is the Protocol implementation using as default, In default it is current protocol, version and packet
+// pool and does not convert any packets, as they are already of the right type.
+var DefaultProtocol Protocol = proto{}

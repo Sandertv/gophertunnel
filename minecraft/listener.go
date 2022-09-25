@@ -204,7 +204,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	// Temporarily set the protocol to the latest: We don't know the actual protocol until we read the Login packet.
-	conn.proto = DefaultProtocol()
+	conn.proto = DefaultProtocol
 	conn.pool = conn.proto.Packets()
 
 	conn.packetFunc = listener.cfg.PacketFunc
