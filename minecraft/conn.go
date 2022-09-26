@@ -670,13 +670,13 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	conn.expect(packet.IDLogin)
 	if err := conn.WritePacket(&packet.NetworkSettings{
 		CompressionThreshold: 512,
-		CompressionAlgorithm: packet.SnappyCompression{},
+		CompressionAlgorithm: packet.FlateCompression{},
 	}); err != nil {
 		return fmt.Errorf("error sending network settings: %v", err)
 	}
 	_ = conn.Flush()
-	conn.enc.EnableCompression(packet.SnappyCompression{})
-	conn.dec.EnableCompression(packet.SnappyCompression{})
+	conn.enc.EnableCompression(packet.FlateCompression{})
+	conn.dec.EnableCompression(packet.FlateCompression{})
 	return nil
 }
 
