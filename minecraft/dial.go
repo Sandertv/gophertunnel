@@ -54,6 +54,11 @@ type Dialer struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
+	// DownloadResourcePack is called individually for every texture and behaviour pack sent by the connection when
+	// using Dialer.Dial(), and can be used to stop the pack from being downloaded. The function is called with the UUID
+	// and version of the resource pack, and the boolean returned determines if the pack will be downloaded or not.
+	DownloadResourcePack func(packUUID uuid.UUID, version string) bool
+
 	// Protocol is the Protocol version used to communicate with the target server. By default, this field is
 	// set to the current protocol as implemented in the minecraft/protocol package. Note that packets written
 	// to and read from the Conn are always any of those found in the protocol/packet package, as packets
@@ -159,6 +164,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc
+	conn.downloadResourcePack = d.DownloadResourcePack
 	conn.cacheEnabled = d.EnableClientCache
 
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
