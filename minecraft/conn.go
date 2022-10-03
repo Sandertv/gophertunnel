@@ -121,7 +121,7 @@ type Conn struct {
 	packQueue            *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
-	downloadResourcePack func(packUUID uuid.UUID, version string) bool
+	downloadResourcePack func(id uuid.UUID, version string) bool
 
 	cacheEnabled bool
 
