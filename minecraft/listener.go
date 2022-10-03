@@ -41,6 +41,9 @@ type ListenConfig struct {
 	// Protocol is always added to this slice. Clients with a protocol version that is not present in this slice will
 	// be disconnected.
 	AcceptedProtocols []Protocol
+	// Compression is the packet.Compression to use for packets sent over this Conn. If set to nil, the compression
+	// will default to packet.FlateCompression.
+	Compression packet.Compression // TODO: Change this to snappy once Windows crashes are resolved.
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -97,6 +100,9 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	if cfg.StatusProvider == nil {
 		cfg.StatusProvider = NewStatusProvider("Minecraft Server")
+	}
+	if cfg.Compression == nil {
+		cfg.Compression = packet.FlateCompression{}
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{
@@ -201,10 +207,9 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog)
+	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{})
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
-	// Temporarily set the protocol to the latest: We don't know the actual protocol until we read the Login packet.
-	conn.proto = proto{}
+	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets()
 
 	conn.packetFunc = listener.cfg.PacketFunc

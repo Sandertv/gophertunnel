@@ -153,8 +153,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, err
 	}
 
-	conn = newConn(netConn, key, d.ErrorLog)
-	conn.proto = d.Protocol
+	conn = newConn(netConn, key, d.ErrorLog, d.Protocol)
 	conn.pool = conn.proto.Packets()
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
