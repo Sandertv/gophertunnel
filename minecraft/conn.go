@@ -811,8 +811,6 @@ func (conn *Conn) handleClientCacheStatus(pk *packet.ClientCacheStatus) error {
 // handleResourcePacksInfo handles a ResourcePacksInfo packet sent by the server. The client responds by
 // sending the packs it needs downloaded.
 func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
-	conn.packMu.Lock()
-	defer conn.packMu.Unlock()
 	// First create a new resource pack queue with the information in the packet so we can download them
 	// properly later.
 	conn.packQueue = &resourcePackQueue{
