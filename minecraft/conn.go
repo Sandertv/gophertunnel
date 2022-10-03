@@ -138,7 +138,7 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration) *Conn {
 	conn := &Conn{
 		enc:        packet.NewEncoder(netConn),
 		dec:        packet.NewDecoder(netConn),
@@ -156,8 +156,11 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 	_, _ = rand.Read(conn.salt)
 
+	if flushRate <= 0 {
+		return conn
+	}
 	go func() {
-		ticker := time.NewTicker(time.Second / 20)
+		ticker := time.NewTicker(flushRate)
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {

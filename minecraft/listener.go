@@ -44,6 +44,13 @@ type ListenConfig struct {
 	// Compression is the packet.Compression to use for packets sent over this Conn. If set to nil, the compression
 	// will default to packet.FlateCompression.
 	Compression packet.Compression // TODO: Change this to snappy once Windows crashes are resolved.
+	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
+	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
+	// time.Duration, the lower the latency but the less efficient both network and cpu wise.
+	// The default FlushRate (when set to 0) is time.Second/20. If FlushRate is set negative, packets
+	// will not be flushed automatically. In this case, calling `(*Conn).Flush()` is required after any
+	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
+	FlushRate time.Duration
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
@@ -103,6 +110,9 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.FlateCompression{}
+	}
+	if cfg.FlushRate == 0 {
+		cfg.FlushRate = time.Second / 20
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{
@@ -207,7 +217,7 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{})
+	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets()
