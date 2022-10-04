@@ -219,9 +219,6 @@ func (listener *Listener) listen() {
 func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
-
-	// Temporarily set the protocol to the latest: We don't know the actual protocol until we read the Login packet.
-	conn.proto = DefaultProtocol
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets()
 
