@@ -16,7 +16,7 @@ type GameData struct {
 	WorldName string
 	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
 	// here.
-	WorldSeed uint64
+	WorldSeed int64
 	// Difficulty is the difficulty of the world that the player spawns in. A difficulty of 0, peaceful, means
 	// the player will automatically regenerate health and hunger.
 	Difficulty int32
@@ -83,6 +83,9 @@ type GameData struct {
 	// Experiments is a list of experiments enabled on the server side. These experiments are used to enable
 	// disable experimental features.
 	Experiments []protocol.ExperimentData
+	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
+	// 1 being member, 2 being operator and 3 being custom.
+	PlayerPermissions int32
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32

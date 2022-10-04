@@ -60,6 +60,14 @@ type Dialer struct {
 	// are converted from and to this Protocol.
 	Protocol Protocol
 
+	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
+	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
+	// time.Duration, the lower the latency but the less efficient both network and cpu wise.
+	// The default FlushRate (when set to 0) is time.Second/20. If FlushRate is set negative, packets
+	// will not be flushed automatically. In this case, calling `(*Conn).Flush()` is required after any
+	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
+	FlushRate time.Duration
+
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
@@ -136,6 +144,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.Protocol == nil {
 		d.Protocol = DefaultProtocol
 	}
+	if d.FlushRate == 0 {
+		d.FlushRate = time.Second / 20
+	}
 
 	n, ok := networkByID(network)
 	if !ok {
@@ -153,8 +164,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, err
 	}
 
-	conn = newConn(netConn, key, d.ErrorLog)
-	conn.proto = d.Protocol
+	conn = newConn(netConn, key, d.ErrorLog, d.Protocol, d.FlushRate)
 	conn.pool = conn.proto.Packets()
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData

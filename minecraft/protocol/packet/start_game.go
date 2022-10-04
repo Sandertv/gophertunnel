@@ -45,7 +45,7 @@ type StartGame struct {
 	Yaw float32
 	// WorldSeed is the seed used to generate the world. Unlike in PC edition, the seed is a 32bit integer
 	// here.
-	WorldSeed uint64
+	WorldSeed int64
 	// SpawnBiomeType specifies if the biome that the player spawns in is user defined (through behaviour
 	// packs) or builtin. See the constants above.
 	SpawnBiomeType int16
@@ -131,7 +131,7 @@ type StartGame struct {
 	StartWithMapEnabled bool
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions uint8
+	PlayerPermissions int32
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -240,7 +240,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Vec3(&pk.PlayerPosition)
 	w.Float32(&pk.Pitch)
 	w.Float32(&pk.Yaw)
-	w.Uint64(&pk.WorldSeed)
+	w.Int64(&pk.WorldSeed)
 	w.Int16(&pk.SpawnBiomeType)
 	w.String(&pk.UserDefinedBiomeName)
 	w.Varint32(&pk.Dimension)
@@ -268,7 +268,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.ExperimentsPreviouslyToggled)
 	w.Bool(&pk.BonusChestEnabled)
 	w.Bool(&pk.StartWithMapEnabled)
-	w.Uint8(&pk.PlayerPermissions)
+	w.Varint32(&pk.PlayerPermissions)
 	w.Int32(&pk.ServerChunkTickRadius)
 	w.Bool(&pk.HasLockedBehaviourPack)
 	w.Bool(&pk.HasLockedTexturePack)
@@ -313,7 +313,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Vec3(&pk.PlayerPosition)
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
-	r.Uint64(&pk.WorldSeed)
+	r.Int64(&pk.WorldSeed)
 	r.Int16(&pk.SpawnBiomeType)
 	r.String(&pk.UserDefinedBiomeName)
 	r.Varint32(&pk.Dimension)
@@ -341,7 +341,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.ExperimentsPreviouslyToggled)
 	r.Bool(&pk.BonusChestEnabled)
 	r.Bool(&pk.StartWithMapEnabled)
-	r.Uint8(&pk.PlayerPermissions)
+	r.Varint32(&pk.PlayerPermissions)
 	r.Int32(&pk.ServerChunkTickRadius)
 	r.Bool(&pk.HasLockedBehaviourPack)
 	r.Bool(&pk.HasLockedTexturePack)

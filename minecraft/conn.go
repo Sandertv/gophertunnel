@@ -62,6 +62,7 @@ type Conn struct {
 	pool          packet.Pool
 	enc           *packet.Encoder
 	dec           *packet.Decoder
+	compression   packet.Compression
 
 	identityData login.IdentityData
 	clientData   login.ClientData
@@ -137,7 +138,7 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration) *Conn {
 	conn := &Conn{
 		enc:        packet.NewEncoder(netConn),
 		dec:        packet.NewDecoder(netConn),
@@ -150,12 +151,16 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger) *Conn {
 		privateKey: key,
 		log:        log,
 		hdr:        &packet.Header{},
+		proto:      proto,
 	}
 	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 	_, _ = rand.Read(conn.salt)
 
+	if flushRate <= 0 {
+		return conn
+	}
 	go func() {
-		ticker := time.NewTicker(time.Second / 20)
+		ticker := time.NewTicker(flushRate)
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {
@@ -670,13 +675,13 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	conn.expect(packet.IDLogin)
 	if err := conn.WritePacket(&packet.NetworkSettings{
 		CompressionThreshold: 512,
-		CompressionAlgorithm: packet.SnappyCompression{},
+		CompressionAlgorithm: conn.compression,
 	}); err != nil {
 		return fmt.Errorf("error sending network settings: %v", err)
 	}
 	_ = conn.Flush()
-	conn.enc.EnableCompression(packet.SnappyCompression{})
-	conn.dec.EnableCompression(packet.SnappyCompression{})
+	conn.enc.EnableCompression(conn.compression)
+	conn.dec.EnableCompression(conn.compression)
 	return nil
 }
 
@@ -991,6 +996,7 @@ func (conn *Conn) startGame() {
 		PlayerMovementSettings:       data.PlayerMovementSettings,
 		WorldGameMode:                data.WorldGameMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
+		PlayerPermissions:            data.PlayerPermissions,
 		Experiments:                  data.Experiments,
 		ClientSideGeneration:         data.ClientSideGeneration,
 		ChatRestrictionLevel:         data.ChatRestrictionLevel,
@@ -1178,6 +1184,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		PlayerMovementSettings:       pk.PlayerMovementSettings,
 		WorldGameMode:                pk.WorldGameMode,
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
+		PlayerPermissions:            pk.PlayerPermissions,
 		ChatRestrictionLevel:         pk.ChatRestrictionLevel,
 		DisablePlayerInteractions:    pk.DisablePlayerInteractions,
 		ClientSideGeneration:         pk.ClientSideGeneration,
