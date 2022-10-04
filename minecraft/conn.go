@@ -831,6 +831,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 				uuid:    pack.UUID,
 				version: pack.Version,
 			})
+			conn.packQueue.packAmount--
 			continue
 		}
 		// This UUID_Version is a hack Mojang put in place.
@@ -853,6 +854,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 				uuid:    pack.UUID,
 				version: pack.Version,
 			})
+			conn.packQueue.packAmount--
 			continue
 		}
 		// This UUID_Version is a hack Mojang put in place.
