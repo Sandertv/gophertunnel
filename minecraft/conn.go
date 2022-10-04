@@ -120,6 +120,12 @@ type Conn struct {
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
 	packQueue            *resourcePackQueue
+	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
+	// from the server will call this function to see if it should be downloaded or not.
+	downloadResourcePack func(id uuid.UUID, version string) bool
+	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
+	// func returning false for the specific pack.
+	ignoredResourcePacks []exemptedResourcePack
 
 	cacheEnabled bool
 
@@ -825,6 +831,14 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			conn.packQueue.packAmount--
 			continue
 		}
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version) {
+			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
+				uuid:    pack.UUID,
+				version: pack.Version,
+			})
+			conn.packQueue.packAmount--
+			continue
+		}
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, pack.UUID+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[pack.UUID] = downloadingPack{
@@ -837,6 +851,14 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	for _, pack := range pk.BehaviourPacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
 			conn.log.Printf("duplicate behaviour pack entry %v in resource pack info\n", pack.UUID)
+			conn.packQueue.packAmount--
+			continue
+		}
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version) {
+			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
+				uuid:    pack.UUID,
+				version: pack.Version,
+			})
 			conn.packQueue.packAmount--
 			continue
 		}
@@ -905,6 +927,11 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 	conn.packMu.Lock()
 	defer conn.packMu.Unlock()
 
+	for _, ignored := range conn.ignoredResourcePacks {
+		if ignored.uuid == uuid && ignored.version == version {
+			return true
+		}
+	}
 	for _, pack := range conn.resourcePacks {
 		if pack.UUID() == uuid && pack.Version() == version && pack.HasBehaviours() == hasBehaviours {
 			return true
