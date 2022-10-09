@@ -98,7 +98,8 @@ type ClientData struct {
 	DeviceModel string
 	// DeviceOS is a numerical ID indicating the OS of the device.
 	DeviceOS protocol.DeviceOS
-	// DeviceID is a UUID specific to the device. A different user will have the same UUID for this.
+	// DeviceID is usually a UUID specific to the device. A different user will have the same UUID for this.
+	// DeviceID is not guaranteed to always be a UUID. It is a base64 encoded string under some circumstances.
 	DeviceID string `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.
 	GameVersion string
@@ -268,9 +269,6 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 func (data ClientData) Validate() error {
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
-	}
-	if _, err := uuid.Parse(data.DeviceID); err != nil {
-		return fmt.Errorf("DeviceID must be parseable as a valid UUID, but got %v", data.DeviceID)
 	}
 	if !checkVersion(data.GameVersion) {
 		return fmt.Errorf("GameVersion must only contain dots and numbers, but got %v", data.GameVersion)
