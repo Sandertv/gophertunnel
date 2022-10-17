@@ -285,10 +285,6 @@ func (conn *Conn) DoSpawnTimeout(timeout time.Duration) error {
 // DoSpawnContext will start the spawning sequence using the game data found in conn.GameData(), which was
 // sent earlier by the server.
 func (conn *Conn) DoSpawnContext(ctx context.Context) error {
-	if !conn.gameDataReceived.Load() {
-		panic("(*Conn).DoSpawn must only be called on Dialer connections")
-	}
-
 	select {
 	case <-conn.close:
 		return conn.closeErr("do spawn")
@@ -1270,9 +1266,8 @@ func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error 
 
 	conn.gameData.ChunkRadius = pk.ChunkRadius
 	conn.gameDataReceived.Store(true)
-	conn.loggedIn = true
-	conn.waitingForSpawn.Store(true)
 
+	conn.tryFinaliseClientConn()
 	return nil
 }
 
@@ -1308,10 +1303,8 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
-		if conn.waitingForSpawn.CAS(true, false) {
-			close(conn.spawn)
-			_ = conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
-		}
+		conn.waitingForSpawn.Store(true)
+		conn.tryFinaliseClientConn()
 		return nil
 	case packet.PlayStatusLoginFailedInvalidTenant:
 		_ = conn.Close()
@@ -1333,6 +1326,20 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		return fmt.Errorf("cannot join an editor game on vanilla")
 	default:
 		return fmt.Errorf("unknown play status in PlayStatus packet %v", pk.Status)
+	}
+}
+
+// tryFinaliseClientConn attempts to finalise the client connection by sending
+// the SetLocalPlayerAsInitialised packet when if the ChunkRadiusUpdated and
+// PlayStatus packets have been sent.
+func (conn *Conn) tryFinaliseClientConn() {
+	if conn.waitingForSpawn.Load() && conn.gameDataReceived.Load() {
+		conn.waitingForSpawn.Toggle()
+		conn.gameDataReceived.Toggle()
+
+		close(conn.spawn)
+		conn.loggedIn = true
+		_ = conn.WritePacket(&packet.SetLocalPlayerAsInitialised{EntityRuntimeID: conn.gameData.EntityRuntimeID})
 	}
 }
 
