@@ -1027,6 +1027,7 @@ func (conn *Conn) startGame() {
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
 	})
+	_ = conn.Flush()
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
 
