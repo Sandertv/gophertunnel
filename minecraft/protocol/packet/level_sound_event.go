@@ -5,7 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-//noinspection SpellCheckingInspection
+// noinspection SpellCheckingInspection
 const (
 	SoundEventItemUseOn = iota
 	SoundEventHit
@@ -450,6 +450,11 @@ const (
 	SoundEventConvertToFrog
 	SoundEventRecordPlaying
 	SoundEventEnchantingTableUse
+	_
+	_
+	SoundEventBundleDropContents
+	SoundEventBundleInsert
+	SoundEventBundleRemoveOne
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

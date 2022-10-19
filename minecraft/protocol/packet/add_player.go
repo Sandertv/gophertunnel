@@ -47,6 +47,9 @@ type AddPlayer struct {
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
 	EntityMetadata map[uint32]any
+	// EntityProperties is a list of properties that the entity inhibits. These properties define and alter specific
+	// attributes of the entity.
+	EntityProperties protocol.EntityProperties
 	// AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
 	AbilityData protocol.AbilityData
 	// EntityLinks is a list of entity links that are currently active on the player. These links alter the
@@ -80,6 +83,7 @@ func (pk *AddPlayer) Marshal(w *protocol.Writer) {
 	w.ItemInstance(&pk.HeldItem)
 	w.Varint32(&pk.GameType)
 	w.EntityMetadata(&pk.EntityMetadata)
+	protocol.Single(w, &pk.EntityProperties)
 	protocol.Single(w, &pk.AbilityData)
 	protocol.Slice(w, &pk.EntityLinks)
 	w.String(&pk.DeviceID)
@@ -100,6 +104,7 @@ func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
 	r.ItemInstance(&pk.HeldItem)
 	r.Varint32(&pk.GameType)
 	r.EntityMetadata(&pk.EntityMetadata)
+	protocol.Single(r, &pk.EntityProperties)
 	protocol.Single(r, &pk.AbilityData)
 	protocol.Slice(r, &pk.EntityLinks)
 	r.String(&pk.DeviceID)
