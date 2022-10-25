@@ -27,6 +27,7 @@ const (
 	AbilityLayerTypeBase
 	AbilityLayerTypeSpectator
 	AbilityLayerTypeCommands
+	AbilityLayerTypeEditor
 )
 
 const (

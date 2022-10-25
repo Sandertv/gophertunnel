@@ -321,10 +321,9 @@ func (data ClientData) Validate() error {
 	if data.SkinID == "" {
 		return fmt.Errorf("SkinID must not be an empty string")
 	}
-	if data.UIProfile != 0 && data.UIProfile != 1 {
-		return fmt.Errorf("UIProfile must be either 0 or 1, but got %v", data.UIProfile)
+	if data.UIProfile < 0 || data.UIProfile > 2 {
+		return fmt.Errorf("UIProfile must be between 0-2, but got %v", data.UIProfile)
 	}
-
 	return nil
 }
 
