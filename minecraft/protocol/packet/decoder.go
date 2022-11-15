@@ -77,7 +77,6 @@ const (
 // Decode decodes one 'packet' from the io.Reader passed in NewDecoder(), producing a slice of packets that it
 // held and an error if not successful.
 func (decoder *Decoder) Decode() (packets [][]byte, err error) {
-
 	var data []byte
 	if decoder.pr == nil {
 		var n int
