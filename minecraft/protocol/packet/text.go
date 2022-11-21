@@ -27,7 +27,7 @@ type Text struct {
 	TextType byte
 	// NeedsTranslation specifies if any of the messages need to be translated. It seems that where % is found
 	// in translatable text types, these are translated regardless of this bool. Translatable text types
-	// include TextTypeTip, TextTypePopup and TextTypeJukeboxPopup.
+	// include TextTypeTranslation, TextTypeTip, TextTypePopup and TextTypeJukeboxPopup.
 	NeedsTranslation bool
 	// SourceName is the name of the source of the messages. This source is displayed in text types such as
 	// the TextTypeChat and TextTypeWhisper, where typically the username is shown.
@@ -36,7 +36,7 @@ type Text struct {
 	// the packet.
 	Message string
 	// Parameters is a list of parameters that should be filled into the message. These parameters are only
-	// written if the type of the packet is TextTypeTip, TextTypePopup or TextTypeJukeboxPopup.
+	// written if the type of the packet is TextTypeTranslation, TextTypeTip, TextTypePopup or TextTypeJukeboxPopup.
 	Parameters []string
 	// XUID is the XBOX Live user ID of the player that sent the message. It is only set for packets of
 	// TextTypeChat. When sent to a player, the player will only be shown the chat message if a player with
