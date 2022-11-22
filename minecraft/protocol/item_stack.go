@@ -438,12 +438,16 @@ type AutoCraftRecipeStackRequestAction struct {
 	RecipeNetworkID uint32
 	// TimesCrafted is how many times the recipe was crafted.
 	TimesCrafted byte
+	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
+	// It is not exactly clear what this is used for, but it is sent by the vanilla client.
+	Ingredients []ItemDescriptorCount
 }
 
 // Marshal ...
 func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
 	r.Uint8(&a.TimesCrafted)
+	FuncSlice(r, &a.Ingredients, r.ItemDescriptorCount)
 }
 
 // CraftCreativeStackRequestAction is sent by the client when it takes an item out fo the creative inventory.
