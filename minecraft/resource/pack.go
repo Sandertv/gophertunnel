@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
