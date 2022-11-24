@@ -4,6 +4,7 @@ import (
 	"archive/zip"
 	"bytes"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
@@ -59,7 +60,14 @@ func MustCompile(path string) *Pack {
 // zip archive and contain a pack manifest in order for the function to succeed.
 // FromBytes saves the data to a temporary archive.
 func FromBytes(data []byte) (*Pack, error) {
-	tempFile, err := os.CreateTemp("", "resource_pack_archive-*.mcpack")
+	dir, _ := os.UserCacheDir()
+	dir = filepath.Join(dir, "packs")
+	if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
+		if err = os.MkdirAll(dir, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("error creating temp pack dir: %v", err)
+		}
+	}
+	tempFile, err := os.CreateTemp(dir, "resource_pack_archive-*.mcpack")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
 	}
