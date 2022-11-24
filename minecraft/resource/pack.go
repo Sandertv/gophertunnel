@@ -60,6 +60,12 @@ func MustCompile(path string) *Pack {
 // FromBytes saves the data to a temporary archive.
 func FromBytes(data []byte) (*Pack, error) {
 	dir, _ := os.UserCacheDir()
+	dir = filepath.Join(dir, "packs")
+	if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
+		if err = os.MkdirAll(dir, os.ModePerm); err != nil {
+			return nil, fmt.Errorf("error creating temp pack dir: %v", err)
+		}
+	}
 	tempFile, err := os.CreateTemp(dir, "resource_pack_archive-*.mcpack")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
@@ -252,7 +258,7 @@ func createTempArchive(path string) (*os.File, error) {
 	// We've got a directory which we need to load. Provided we need to send compressed zip data to the
 	// client, we compile it to a zip archive in a temporary file.
 	dir, _ := os.UserCacheDir()
-	temp, err := os.CreateTemp(dir, "resource_pack-*.mcpack")
+	temp, err := os.CreateTemp(filepath.Join(dir, "packs"), "resource_pack-*.mcpack")
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip file: %v", err)
 	}
