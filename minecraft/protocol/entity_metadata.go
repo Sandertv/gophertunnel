@@ -295,11 +295,3 @@ func (m EntityMetadata) Flag(key uint32, index uint8) bool {
 		return v.(int64)&(1<<int64(index)) != 0
 	}
 }
-
-// keyFromFlagIndex returns the key that is used to store the flag with the index passed in the entity metadata map.
-func (m EntityMetadata) keyFromFlagIndex(index uint8) uint32 {
-	if index >= 64 {
-		return EntityDataKeyFlagsTwo
-	}
-	return EntityDataKeyFlags
-}
