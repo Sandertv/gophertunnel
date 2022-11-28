@@ -129,10 +129,7 @@ const (
 	EntityDataKeyHeartbeatIntervalTicks
 	EntityDataKeyHeartbeatSoundEvent
 	EntityDataKeyPlayerLastDeathPosition
-)
-
-const (
-	EntityDataKeyPlayerLastDeathDimension = iota - 128
+	EntityDataKeyPlayerLastDeathDimension
 	EntityDataKeyPlayerHasDied
 )
 
