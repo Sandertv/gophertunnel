@@ -201,31 +201,40 @@ func (w *Writer) EntityMetadata(x *map[uint32]any) {
 		w.Varuint32(&key)
 		switch v := value.(type) {
 		case byte:
-			w.Varuint32(&entityDataByte)
+			entityDataTypeByte := EntityDataTypeByte
+			w.Varuint32(&entityDataTypeByte)
 			w.Uint8(&v)
 		case int16:
-			w.Varuint32(&entityDataInt16)
+			entityDataTypeInt16 := EntityDataTypeInt16
+			w.Varuint32(&entityDataTypeInt16)
 			w.Int16(&v)
 		case int32:
-			w.Varuint32(&entityDataInt32)
+			entityDataTypeInt32 := EntityDataTypeInt32
+			w.Varuint32(&entityDataTypeInt32)
 			w.Varint32(&v)
 		case float32:
-			w.Varuint32(&entityDataFloat32)
+			entityDataTypeFloat32 := EntityDataTypeFloat32
+			w.Varuint32(&entityDataTypeFloat32)
 			w.Float32(&v)
 		case string:
-			w.Varuint32(&entityDataString)
+			entityDataTypeString := EntityDataTypeString
+			w.Varuint32(&entityDataTypeString)
 			w.String(&v)
 		case map[string]any:
-			w.Varuint32(&entityDataCompoundTag)
+			entityDataTypeCompoundTag := EntityDataTypeCompoundTag
+			w.Varuint32(&entityDataTypeCompoundTag)
 			w.NBT(&v, nbt.NetworkLittleEndian)
 		case BlockPos:
-			w.Varuint32(&entityDataBlockPos)
+			entityDataTypeBlockPos := EntityDataTypeBlockPos
+			w.Varuint32(&entityDataTypeBlockPos)
 			w.BlockPos(&v)
 		case int64:
-			w.Varuint32(&entityDataInt64)
+			entityDataTypeInt64 := EntityDataTypeInt64
+			w.Varuint32(&entityDataTypeInt64)
 			w.Varint64(&v)
 		case mgl32.Vec3:
-			w.Varuint32(&entityDataVec3)
+			entityDataTypeVec3 := EntityDataTypeVec3
+			w.Varuint32(&entityDataTypeVec3)
 			w.Vec3(&v)
 		default:
 			w.UnknownEnumOption(reflect.TypeOf(value), "entity metadata")
