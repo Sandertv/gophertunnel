@@ -7,14 +7,14 @@ const (
 	ContainerSmithingTableInput
 	ContainerSmithingTableMaterial
 	ContainerSmithingTableResultPreview
-	ContainerArmorContainer
+	ContainerArmor
 	ContainerLevelEntity
 	ContainerBeaconPayment
 	ContainerBrewingStandInput
 	ContainerBrewingStandResult
 	ContainerBrewingStandFuel
 	ContainerCombinedHotBarAndInventory
-	ContainerCraftingInputContainer
+	ContainerCraftingInput
 	ContainerCraftingOutputPreview
 	ContainerRecipeConstruction
 	ContainerRecipeNature
@@ -22,7 +22,7 @@ const (
 	ContainerRecipeSearch
 	ContainerRecipeSearchBar
 	ContainerRecipeEquipment
-	ContainerRecipeBookContainer
+	ContainerRecipeBook
 	ContainerEnchantingInput
 	ContainerEnchantingMaterial
 	ContainerFurnaceFuel
@@ -30,7 +30,7 @@ const (
 	ContainerFurnaceResult
 	ContainerHorseEquip
 	ContainerHotBar
-	ContainerInventoryContainer
+	ContainerInventory
 	ContainerShulkerBox
 	ContainerTradeIngredientOne
 	ContainerTradeIngredientTwo
@@ -46,14 +46,14 @@ const (
 	ContainerLoomDye
 	ContainerLoomMaterial
 	ContainerLoomResultPreview
-	ContainerBlastFurnaceIngredientContainer
+	ContainerBlastFurnaceIngredient
 	ContainerSmokerIngredient
 	ContainerTradeTwoIngredientOne
 	ContainerTradeTwoIngredientTwo
 	ContainerTradeTwoResultPreview
 	ContainerGrindstoneInput
 	ContainerGrindstoneAdditional
-	ContainerGrindstoneResultPreviewContainer
+	ContainerGrindstoneResultPreview
 	ContainerStonecutterInput
 	ContainerStonecutterResultPreview
 	ContainerCartographyInput
