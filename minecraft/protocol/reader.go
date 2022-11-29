@@ -273,39 +273,39 @@ func (r *Reader) EntityMetadata(x *map[uint32]any) {
 		r.Varuint32(&key)
 		r.Varuint32(&dataType)
 		switch dataType {
-		case EntityDataByte:
+		case EntityDataTypeByte:
 			var v byte
 			r.Uint8(&v)
 			(*x)[key] = v
-		case EntityDataInt16:
+		case EntityDataTypeInt16:
 			var v int16
 			r.Int16(&v)
 			(*x)[key] = v
-		case EntityDataInt32:
+		case EntityDataTypeInt32:
 			var v int32
 			r.Varint32(&v)
 			(*x)[key] = v
-		case EntityDataFloat32:
+		case EntityDataTypeFloat32:
 			var v float32
 			r.Float32(&v)
 			(*x)[key] = v
-		case EntityDataString:
+		case EntityDataTypeString:
 			var v string
 			r.String(&v)
 			(*x)[key] = v
-		case EntityDataCompoundTag:
+		case EntityDataTypeCompoundTag:
 			var v map[string]any
 			r.NBT(&v, nbt.NetworkLittleEndian)
 			(*x)[key] = v
-		case EntityDataBlockPos:
+		case EntityDataTypeBlockPos:
 			var v BlockPos
 			r.BlockPos(&v)
 			(*x)[key] = v
-		case EntityDataInt64:
+		case EntityDataTypeInt64:
 			var v int64
 			r.Varint64(&v)
 			(*x)[key] = v
-		case EntityDataVec3:
+		case EntityDataTypeVec3:
 			var v mgl32.Vec3
 			r.Vec3(&v)
 			(*x)[key] = v

@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	UseItemEquipArmor = iota
+	UseItemEquipArmour = iota
 	UseItemEat
 	UseItemAttack
 	UseItemConsume

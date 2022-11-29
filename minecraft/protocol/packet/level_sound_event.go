@@ -450,11 +450,21 @@ const (
 	SoundEventConvertToFrog
 	SoundEventRecordPlaying
 	SoundEventEnchantingTableUse
-	_
-	_
+	SoundEventStepSand
+	SoundEventDashReady
 	SoundEventBundleDropContents
 	SoundEventBundleInsert
 	SoundEventBundleRemoveOne
+	SoundEventPressurePlateClickOff
+	SoundEventPressurePlateClickOn
+	SoundEventButtonClickOff
+	SoundEventButtonClickOn
+	SoundEventDoorOpen
+	SoundEventDoorClose
+	SoundEventTrapdoorOpen
+	SoundEventTrapdoorClose
+	SoundEventFenceGateOpen
+	SoundEventFenceGateClose
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

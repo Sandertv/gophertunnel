@@ -196,4 +196,5 @@ const (
 	IDRequestNetworkSettings
 	IDGameTestRequest
 	IDGameTestResults
+	IDUpdateClientInputLocks
 )
