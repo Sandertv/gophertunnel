@@ -61,6 +61,7 @@ func MustCompile(path string) *Pack {
 // FromBytes saves the data to a temporary archive.
 func FromBytes(data []byte) (*Pack, error) {
 	dir, _ := os.UserConfigDir()
+	fmt.Println("this is using user cache dir")
 	dir = filepath.Join(dir, "packs")
 	if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 		if err = os.MkdirAll(dir, os.ModePerm); err != nil {
