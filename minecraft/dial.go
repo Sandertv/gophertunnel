@@ -180,8 +180,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	// Disable the batch packet limit so that the server can send packets as often as it wants to.
 	conn.dec.DisableBatchPacketLimit()
 
-	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 	defaultIdentityData(&conn.identityData)
+	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
 	if d.TokenSource == nil {
