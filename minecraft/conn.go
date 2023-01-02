@@ -550,9 +550,11 @@ func (conn *Conn) receive(data []byte) error {
 	}
 	if pkData.h.PacketID == packet.IDDisconnect {
 		// We always handle disconnect packets and close the connection if one comes in.
-		if pks, err := pkData.decode(conn); err != nil {
-			conn.disconnectMessage.Store(pks[0].(*packet.Disconnect).Message)
+		pks, err := pkData.decode(conn)
+		if err != nil {
+			return err
 		}
+		conn.disconnectMessage.Store(pks[0].(*packet.Disconnect).Message)
 		_ = conn.Close()
 		return nil
 	}
