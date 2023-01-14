@@ -423,6 +423,11 @@ func (w *Writer) NBTList(x *[]any, encoding nbt.Encoding) {
 	}
 }
 
+// ShieldID returns the shield ID provided to the writer.
+func (w *Writer) ShieldID() int32 {
+	return w.shieldID
+}
+
 // UnknownEnumOption panics with an unknown enum option error.
 func (w *Writer) UnknownEnumOption(value any, enum string) {
 	w.panicf("unknown value '%v' for enum type '%v'", value, enum)

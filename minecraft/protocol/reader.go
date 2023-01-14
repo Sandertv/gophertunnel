@@ -474,6 +474,11 @@ func (r *Reader) LimitInt32(value int32, min, max int32) {
 	}
 }
 
+// ShieldID returns the shield ID provided to the reader.
+func (r *Reader) ShieldID() int32 {
+	return r.shieldID
+}
+
 // UnknownEnumOption panics with an unknown enum option error.
 func (r *Reader) UnknownEnumOption(value any, enum string) {
 	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
