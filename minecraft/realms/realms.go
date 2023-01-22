@@ -184,7 +184,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	return body, resp.StatusCode, nil
 }
 
-// Realm gets a realm by it's invite code.
+// Realm gets a realm by its invite code.
 func (c *Client) Realm(ctx context.Context, code string) (Realm, error) {
 	body, _, err := c.request(ctx, fmt.Sprintf("/worlds/v1/link/%s", code))
 	if err != nil {
