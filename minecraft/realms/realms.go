@@ -184,6 +184,22 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	return body, resp.StatusCode, nil
 }
 
+// Realm gets a realm by it's invite code.
+func (c *Client) Realm(ctx context.Context, code string) (Realm, error) {
+	body, _, err := c.request(ctx, fmt.Sprintf("/worlds/v1/link/%s", code))
+	if err != nil {
+		return Realm{}, err
+	}
+
+	var realm Realm
+	if err := json.Unmarshal(body, &realm); err != nil {
+		return Realm{}, err
+	}
+	realm.client = c
+
+	return realm, nil
+}
+
 // Realms gets a list of all realms the token has access to.
 func (c *Client) Realms(ctx context.Context) ([]Realm, error) {
 	body, _, err := c.request(ctx, "/worlds")
