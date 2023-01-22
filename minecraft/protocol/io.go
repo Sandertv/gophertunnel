@@ -49,6 +49,7 @@ type IO interface {
 	MaterialReducer(x *MaterialReducer)
 	GameRule(x *GameRule)
 
+	ShieldID() int32
 	UnknownEnumOption(value any, enum string)
 	InvalidValue(value any, forField, reason string)
 }
