@@ -17,6 +17,8 @@ type CommandRequest struct {
 	// Internal specifies if the command request internal. Setting it to false seems to work and the usage of
 	// this field is not known.
 	Internal bool
+	// Version is the version of the command that is being executed. This field currently has no purpose or functionality.
+	Version int32
 }
 
 // ID ...
@@ -29,6 +31,7 @@ func (pk *CommandRequest) Marshal(w *protocol.Writer) {
 	w.String(&pk.CommandLine)
 	protocol.CommandOriginData(w, &pk.CommandOrigin)
 	w.Bool(&pk.Internal)
+	w.Varint32(&pk.Version)
 }
 
 // Unmarshal ...
@@ -36,4 +39,5 @@ func (pk *CommandRequest) Unmarshal(r *protocol.Reader) {
 	r.String(&pk.CommandLine)
 	protocol.CommandOriginData(r, &pk.CommandOrigin)
 	r.Bool(&pk.Internal)
+	r.Varint32(&pk.Version)
 }

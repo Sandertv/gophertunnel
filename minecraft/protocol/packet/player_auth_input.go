@@ -43,6 +43,7 @@ const (
 	InputFlagPerformItemInteraction
 	InputFlagPerformBlockActions
 	InputFlagPerformItemStackRequest
+	InputFlagHandledTeleport
 )
 
 const (
