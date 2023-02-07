@@ -203,7 +203,7 @@ type SmithingTransformRecipe struct {
 	// Addition is the item that is being added to the Base item to result in a modified item.
 	Addition ItemDescriptorCount
 	// Result is the resulting item from the two items being added together.
-	Result ItemInstance
+	Result ItemStack
 	// Tag is a serialized compound tag in the network little endian format.
 	Tag string
 }
@@ -308,7 +308,7 @@ func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
 	w.String(&recipe.RecipeID)
 	w.ItemDescriptorCount(&recipe.Base)
 	w.ItemDescriptorCount(&recipe.Addition)
-	w.ItemInstance(&recipe.Result)
+	w.Item(&recipe.Result)
 	w.String(&recipe.Tag)
 	w.Varuint32(&recipe.RecipeNetworkID)
 }
@@ -318,7 +318,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Base)
 	r.ItemDescriptorCount(&recipe.Addition)
-	r.ItemInstance(&recipe.Result)
+	r.Item(&recipe.Result)
 	r.String(&recipe.Tag)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
