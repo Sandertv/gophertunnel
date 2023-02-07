@@ -4,7 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// ClientCheatAbility ...
+// ClientCheatAbility functions the same as UpdateAbilities. It is unclear why these two are separated.
 type ClientCheatAbility struct {
 	// AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
 	AbilityData protocol.AbilityData
