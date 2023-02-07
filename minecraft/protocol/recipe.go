@@ -204,8 +204,9 @@ type SmithingTransformRecipe struct {
 	Addition ItemDescriptorCount
 	// Result is the resulting item from the two items being added together.
 	Result ItemStack
-	// Tag is a serialized compound tag in the network little endian format.
-	Tag string
+	// Block is the block name that is required to create the output of the recipe. The block is not prefixed with
+	// 'minecraft:', so it will look like 'smithing_table' as an example.
+	Block string
 }
 
 // Marshal ...
@@ -309,7 +310,7 @@ func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
 	w.ItemDescriptorCount(&recipe.Base)
 	w.ItemDescriptorCount(&recipe.Addition)
 	w.Item(&recipe.Result)
-	w.String(&recipe.Tag)
+	w.String(&recipe.Block)
 	w.Varuint32(&recipe.RecipeNetworkID)
 }
 
@@ -319,7 +320,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 	r.ItemDescriptorCount(&recipe.Base)
 	r.ItemDescriptorCount(&recipe.Addition)
 	r.Item(&recipe.Result)
-	r.String(&recipe.Tag)
+	r.String(&recipe.Block)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
