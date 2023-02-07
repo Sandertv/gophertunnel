@@ -191,6 +191,10 @@ type MultiRecipe struct {
 // SmithingTransformRecipe is a recipe specifically used for smithing tables. It has two input items and adds them
 // together, resulting in a new item.
 type SmithingTransformRecipe struct {
+	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// network ID. Recommended is to just increment a variable for each unique recipe registered.
+	// This field must never be 0.
+	RecipeNetworkID uint32
 	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
 	// but its functionality is not exactly known.
 	RecipeID string
@@ -306,6 +310,7 @@ func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
 	w.ItemDescriptorCount(&recipe.Addition)
 	w.ItemInstance(&recipe.Result)
 	w.String(&recipe.Tag)
+	w.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // Unmarshal ...
@@ -315,6 +320,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 	r.ItemDescriptorCount(&recipe.Addition)
 	r.ItemInstance(&recipe.Result)
 	r.String(&recipe.Tag)
+	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // marshalShaped ...
