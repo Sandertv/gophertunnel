@@ -220,6 +220,7 @@ func init() {
 		IDGameTestRequest:                   func() Packet { return &GameTestRequest{} },
 		IDGameTestResults:                   func() Packet { return &GameTestResults{} },
 		IDUpdateClientInputLocks:            func() Packet { return &UpdateClientInputLocks{} },
+		IDClientCheatAbility:                func() Packet { return &UpdateClientInputLocks{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

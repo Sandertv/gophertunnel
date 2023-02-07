@@ -53,6 +53,8 @@ func (pk *CraftingData) Marshal(w *protocol.Writer) {
 			c = protocol.RecipeShapelessChemistry
 		case *protocol.ShapedChemistryRecipe:
 			c = protocol.RecipeShapedChemistry
+		case *protocol.SmithingTransformRecipe:
+			c = protocol.RecipeSmithingTransform
 		default:
 			w.UnknownEnumOption(fmt.Sprintf("%T", recipe), "crafting recipe type")
 		}
@@ -92,6 +94,8 @@ func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
 			recipe = &protocol.ShapelessChemistryRecipe{}
 		case protocol.RecipeShapedChemistry:
 			recipe = &protocol.ShapedChemistryRecipe{}
+		case protocol.RecipeSmithingTransform:
+			recipe = &protocol.SmithingTransformRecipe{}
 		default:
 			r.UnknownEnumOption(recipeType, "crafting data recipe type")
 			return
