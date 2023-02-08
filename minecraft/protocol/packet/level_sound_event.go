@@ -465,6 +465,10 @@ const (
 	SoundEventTrapdoorClose
 	SoundEventFenceGateOpen
 	SoundEventFenceGateClose
+	SoundEventInsert
+	SoundEventPickup
+	SoundEventInsertEnchanted
+	SoundEventPickupEnchanted
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

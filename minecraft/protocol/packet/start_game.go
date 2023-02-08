@@ -162,6 +162,8 @@ type StartGame struct {
 	PersonaDisabled bool
 	// CustomSkinsDisabled is true if custom skins are disabled for the current game session.
 	CustomSkinsDisabled bool
+	// EmoteChatMuted specifies if players will be sent a chat message when using certain emotes.
+	EmoteChatMuted bool
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
@@ -279,6 +281,7 @@ func (pk *StartGame) Marshal(w *protocol.Writer) {
 	w.Bool(&pk.OnlySpawnV1Villagers)
 	w.Bool(&pk.PersonaDisabled)
 	w.Bool(&pk.CustomSkinsDisabled)
+	w.Bool(&pk.EmoteChatMuted)
 	w.String(&pk.BaseGameVersion)
 	w.Int32(&pk.LimitedWorldWidth)
 	w.Int32(&pk.LimitedWorldDepth)
@@ -352,6 +355,7 @@ func (pk *StartGame) Unmarshal(r *protocol.Reader) {
 	r.Bool(&pk.OnlySpawnV1Villagers)
 	r.Bool(&pk.PersonaDisabled)
 	r.Bool(&pk.CustomSkinsDisabled)
+	r.Bool(&pk.EmoteChatMuted)
 	r.String(&pk.BaseGameVersion)
 	r.Int32(&pk.LimitedWorldWidth)
 	r.Int32(&pk.LimitedWorldDepth)

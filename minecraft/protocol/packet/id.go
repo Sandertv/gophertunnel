@@ -197,4 +197,5 @@ const (
 	IDGameTestRequest
 	IDGameTestResults
 	IDUpdateClientInputLocks
+	IDClientCheatAbility
 )
