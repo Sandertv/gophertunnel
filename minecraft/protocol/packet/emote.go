@@ -6,6 +6,7 @@ import (
 
 const (
 	EmoteFlagServerSide = 1 << iota
+	EmoteFlagMuteChat
 )
 
 // Emote is sent by both the server and the client. When the client sends an emote, it sends this packet to

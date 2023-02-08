@@ -35,6 +35,7 @@ const (
 	PlayerActionContinueDestroyBlock
 	PlayerActionStartItemUseOn
 	PlayerActionStopItemUseOn
+	PlayerActionHandledTeleport
 )
 
 const (

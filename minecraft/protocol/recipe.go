@@ -65,6 +65,7 @@ const (
 	RecipeShulkerBox
 	RecipeShapelessChemistry
 	RecipeShapedChemistry
+	RecipeSmithingTransform
 )
 
 // Recipe represents a recipe that may be sent in a CraftingData packet to let the client know what recipes
@@ -187,6 +188,27 @@ type MultiRecipe struct {
 	RecipeNetworkID uint32
 }
 
+// SmithingTransformRecipe is a recipe specifically used for smithing tables. It has two input items and adds them
+// together, resulting in a new item.
+type SmithingTransformRecipe struct {
+	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
+	// network ID. Recommended is to just increment a variable for each unique recipe registered.
+	// This field must never be 0.
+	RecipeNetworkID uint32
+	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
+	// but its functionality is not exactly known.
+	RecipeID string
+	// Base is the item that the Addition is being applied to in the smithing table.
+	Base ItemDescriptorCount
+	// Addition is the item that is being added to the Base item to result in a modified item.
+	Addition ItemDescriptorCount
+	// Result is the resulting item from the two items being added together.
+	Result ItemStack
+	// Block is the block name that is required to create the output of the recipe. The block is not prefixed with
+	// 'minecraft:', so it will look like 'smithing_table' as an example.
+	Block string
+}
+
 // Marshal ...
 func (recipe *ShapelessRecipe) Marshal(w *Writer) {
 	marshalShapeless(w, recipe)
@@ -279,6 +301,26 @@ func (recipe *MultiRecipe) Marshal(w *Writer) {
 // Unmarshal ...
 func (recipe *MultiRecipe) Unmarshal(r *Reader) {
 	r.UUID(&recipe.UUID)
+	r.Varuint32(&recipe.RecipeNetworkID)
+}
+
+// Marshal ...
+func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
+	w.String(&recipe.RecipeID)
+	w.ItemDescriptorCount(&recipe.Base)
+	w.ItemDescriptorCount(&recipe.Addition)
+	w.Item(&recipe.Result)
+	w.String(&recipe.Block)
+	w.Varuint32(&recipe.RecipeNetworkID)
+}
+
+// Unmarshal ...
+func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
+	r.String(&recipe.RecipeID)
+	r.ItemDescriptorCount(&recipe.Base)
+	r.ItemDescriptorCount(&recipe.Addition)
+	r.Item(&recipe.Result)
+	r.String(&recipe.Block)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
