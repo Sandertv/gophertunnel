@@ -122,7 +122,7 @@ type Conn struct {
 	packQueue            *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
-	downloadResourcePack func(id uuid.UUID, version string) bool
+	downloadResourcePack func(id uuid.UUID, version string, totalPacks int) bool
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
 	// func returning false for the specific pack.
 	ignoredResourcePacks []exemptedResourcePack
@@ -816,12 +816,13 @@ func (conn *Conn) handleClientCacheStatus(pk *packet.ClientCacheStatus) error {
 func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	// First create a new resource pack queue with the information in the packet so we can download them
 	// properly later.
+	totalPacks := len(pk.TexturePacks) + len(pk.BehaviourPacks)
 	conn.packQueue = &resourcePackQueue{
-		packAmount:       len(pk.TexturePacks) + len(pk.BehaviourPacks),
+		packAmount:       totalPacks,
 		downloadingPacks: make(map[string]downloadingPack),
 		awaitingPacks:    make(map[string]*downloadingPack),
 	}
-	packsToDownload := make([]string, 0, len(pk.TexturePacks)+len(pk.BehaviourPacks))
+	packsToDownload := make([]string, 0, totalPacks)
 
 	for _, pack := range pk.TexturePacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
@@ -829,7 +830,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			conn.packQueue.packAmount--
 			continue
 		}
-		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version) {
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, totalPacks) {
 			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
 				uuid:    pack.UUID,
 				version: pack.Version,
@@ -852,7 +853,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			conn.packQueue.packAmount--
 			continue
 		}
-		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version) {
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, totalPacks) {
 			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
 				uuid:    pack.UUID,
 				version: pack.Version,
