@@ -68,7 +68,7 @@ func (FlateCompression) Compress(decompressed []byte) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("close flate writer: %w", err)
 	}
-	return compressed.Bytes(), nil
+	return append([]byte(nil), compressed.Bytes()...), nil
 }
 
 // Decompress ...
