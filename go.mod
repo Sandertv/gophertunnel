@@ -11,7 +11,7 @@ require (
 	github.com/pelletier/go-toml v1.9.4
 	github.com/sandertv/go-raknet v1.12.0
 	go.uber.org/atomic v1.9.0
-	golang.org/x/net v0.5.0
+	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/text v0.7.0
 	gopkg.in/square/go-jose.v2 v2.6.0
