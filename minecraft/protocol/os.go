@@ -15,9 +15,9 @@ const (
 	DeviceWin32
 	DeviceDedicated
 	DeviceTVOS
-	DeviceOrbis
+	DeviceOrbis // PlayStation
 	DeviceNX
 	DeviceXBOX
-	DeviceWP
+	DeviceWP // Windows Phone
 	DeviceLinux
 )
