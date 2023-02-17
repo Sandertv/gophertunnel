@@ -185,6 +185,8 @@ type ClientData struct {
 	UIProfile int
 	// TrustedSkin is a boolean indicating if the skin the client is using is trusted.
 	TrustedSkin bool
+	// OverrideSkin is a boolean that does not make sense to be here. The current usage of this field is unknown.
+	OverrideSkin bool
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
