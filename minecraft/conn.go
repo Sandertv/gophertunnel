@@ -122,7 +122,7 @@ type Conn struct {
 	packQueue            *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
-	downloadResourcePack func(id uuid.UUID, version string, totalPacks int) bool
+	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
 	// func returning false for the specific pack.
 	ignoredResourcePacks []exemptedResourcePack
@@ -824,13 +824,13 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	}
 	packsToDownload := make([]string, 0, totalPacks)
 
-	for _, pack := range pk.TexturePacks {
+	for index, pack := range pk.TexturePacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
 			conn.log.Printf("duplicate texture pack entry %v in resource pack info\n", pack.UUID)
 			conn.packQueue.packAmount--
 			continue
 		}
-		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, totalPacks) {
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, index, totalPacks) {
 			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
 				uuid:    pack.UUID,
 				version: pack.Version,
@@ -847,13 +847,13 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			contentKey: pack.ContentKey,
 		}
 	}
-	for _, pack := range pk.BehaviourPacks {
+	for index, pack := range pk.BehaviourPacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
 			conn.log.Printf("duplicate behaviour pack entry %v in resource pack info\n", pack.UUID)
 			conn.packQueue.packAmount--
 			continue
 		}
-		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, totalPacks) {
+		if conn.downloadResourcePack != nil && !conn.downloadResourcePack(uuid.MustParse(pack.UUID), pack.Version, index, totalPacks) {
 			conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
 				uuid:    pack.UUID,
 				version: pack.Version,
