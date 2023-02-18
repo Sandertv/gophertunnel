@@ -56,7 +56,7 @@ type Dialer struct {
 
 	// DownloadResourcePack is called individually for every texture and behaviour pack sent by the connection when
 	// using Dialer.Dial(), and can be used to stop the pack from being downloaded. The function is called with the UUID
-	// and version of the resource pack, the numer of the current pack being downloaded, and the total amount of packs. 
+	// and version of the resource pack, the number of the current pack being downloaded, and the total amount of packs. 
 	// The boolean returned determines if the pack will be downloaded or not.
 	DownloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
 
