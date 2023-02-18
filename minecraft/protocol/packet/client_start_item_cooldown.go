@@ -4,8 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// ClientStartItemCooldown is sent by the client to the server to initiate a cooldown on an item. The purpose of this
-// packet isn't entirely clear.
+// ClientStartItemCooldown is sent by the server to the client to initiate a cooldown on an item.
 type ClientStartItemCooldown struct {
 	// Category is the category of the item to start the cooldown on.
 	Category string
