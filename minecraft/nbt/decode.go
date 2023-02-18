@@ -15,6 +15,11 @@ type Decoder struct {
 	// Encoding is the variant to use for decoding the NBT passed. By default, the variant is set to
 	// NetworkLittleEndian, which is the variant used for network NBT.
 	Encoding Encoding
+	// AllowZero, when set to true, prevents an error from being returned if the
+	// first byte read from an io.Reader is 0x00 (TAG_End). This kind of data is
+	// technically invalid, but some implementations do this to represent an
+	// empty NBT tree.
+	AllowZero bool
 
 	r     *offsetReader
 	depth int
@@ -41,6 +46,9 @@ func (d *Decoder) Decode(v any) error {
 	if err != nil {
 		return err
 	}
+	if tagType == tagEnd && d.AllowZero {
+		return nil
+	}
 	return d.unmarshalTag(val.Elem(), tagType, tagName)
 }
 
@@ -49,16 +57,18 @@ func (d *Decoder) Decode(v any) error {
 //
 // The Go value passed must be a pointer to a value. Anything else will return an error before decoding.
 // The following NBT tags are decoded in the Go value passed as such:
-//   TAG_Byte: byte/uint8(/any) or bool
-//   TAG_Short: int16(/any)
-//   TAG_Int: int32(/any)
-//   TAG_Long: int64(/any)
-//   TAG_Float: float32(/any)
-//   TAG_Double: float64(/any)
-//   TAG_ByteArray: [...]byte(/any) (The value must be a byte array, not a slice)
-//   TAG_String: string(/any)
-//   TAG_List: []any(/any) (The value type of the slice may vary. Depending on the type of
-//             values in the List tag, it might be of the type of any of the other tags, such as []int64.
+//
+//	TAG_Byte: byte/uint8(/any) or bool
+//	TAG_Short: int16(/any)
+//	TAG_Int: int32(/any)
+//	TAG_Long: int64(/any)
+//	TAG_Float: float32(/any)
+//	TAG_Double: float64(/any)
+//	TAG_ByteArray: [...]byte(/any) (The value must be a byte array, not a slice)
+//	TAG_String: string(/any)
+//	TAG_List: []any(/any) (The value type of the slice may vary. Depending on the type of
+//	          values in the List tag, it might be of the type of any of the other tags, such as []int64.
+//
 // TAG_Compound: struct{...}/map[string]any(/any)
 // TAG_IntArray: [...]int32(/any) (The value must be an int32 array, not a slice)
 // TAG_LongArray: [...]int64(/any) (The value must be an int64 array, not a slice)
