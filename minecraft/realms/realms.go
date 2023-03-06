@@ -84,7 +84,7 @@ type Realm struct {
 	// Member is Unknown, always false. (even when member or owner)
 	Member bool `json:"member"`
 	// ClubID is the ID of the associated Xbox Live club as an integer.
-	ClubID int `json:"clubId"`
+	ClubID int64 `json:"clubId"`
 	// SubscriptionRefreshStatus is Unknown, always null.
 	SubscriptionRefreshStatus struct{} `json:"subscriptionRefreshStatus"`
 
