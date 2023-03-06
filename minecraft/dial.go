@@ -56,7 +56,7 @@ type Dialer struct {
 
 	// DownloadResourcePack is called individually for every texture and behaviour pack sent by the connection when
 	// using Dialer.Dial(), and can be used to stop the pack from being downloaded. The function is called with the UUID
-	// and version of the resource pack, the number of the current pack being downloaded, and the total amount of packs. 
+	// and version of the resource pack, the number of the current pack being downloaded, and the total amount of packs.
 	// The boolean returned determines if the pack will be downloaded or not.
 	DownloadResourcePack func(id uuid.UUID, version string, current, total int) bool
 
@@ -300,7 +300,7 @@ func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKe
 func defaultClientData(address, username string, d *login.ClientData) {
 	rand2.Seed(time.Now().Unix())
 
-	//d.ServerAddress = address this is very bad for lunar xd
+	d.ServerAddress = address
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
@@ -347,7 +347,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 
 // setAndroidData ensures the login.ClientData passed matches settings you would see on an Android device.
 func setAndroidData(data *login.ClientData) {
-	//data.DeviceOS = protocol.DeviceAndroid this is also not good for lunar
+	data.DeviceOS = protocol.DeviceAndroid
 	data.GameVersion = protocol.CurrentVersion
 }
 
