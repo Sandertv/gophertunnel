@@ -44,6 +44,7 @@ const (
 	InputFlagPerformBlockActions
 	InputFlagPerformItemStackRequest
 	InputFlagHandledTeleport
+	InputFlagEmoting
 )
 
 const (
@@ -113,6 +114,9 @@ type PlayerAuthInput struct {
 	ItemStackRequest protocol.ItemStackRequest
 	// BlockActions is a slice of block actions that the client has interacted with.
 	BlockActions []protocol.PlayerBlockAction
+	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination of X/Z
+	// values which are created using an analogue input.
+	AnalogueMoveVector mgl32.Vec2
 }
 
 // ID ...

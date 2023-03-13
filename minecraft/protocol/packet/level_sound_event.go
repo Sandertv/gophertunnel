@@ -469,6 +469,10 @@ const (
 	SoundEventPickup
 	SoundEventInsertEnchanted
 	SoundEventPickupEnchanted
+	SoundEventBrush
+	SoundEventBrushCompleted
+	SoundEventShatterDecoratedPot
+	SoundEventBreakDecoratedPot
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
