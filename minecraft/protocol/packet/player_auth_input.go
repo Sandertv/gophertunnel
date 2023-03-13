@@ -152,6 +152,8 @@ func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
 		protocol.SliceVarint32Length(w, &pk.BlockActions)
 	}
+
+	w.Vec2(&pk.AnalogueMoveVector)
 }
 
 // Unmarshal ...
@@ -182,4 +184,6 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	if pk.InputData&InputFlagPerformBlockActions != 0 {
 		protocol.SliceVarint32Length(r, &pk.BlockActions)
 	}
+
+	r.Vec2(&pk.AnalogueMoveVector)
 }
