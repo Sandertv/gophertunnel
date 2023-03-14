@@ -221,6 +221,10 @@ func init() {
 		IDGameTestResults:                   func() Packet { return &GameTestResults{} },
 		IDUpdateClientInputLocks:            func() Packet { return &UpdateClientInputLocks{} },
 		IDClientCheatAbility:                func() Packet { return &ClientCheatAbility{} },
+		IDCameraPresets:                     func() Packet { return &CameraPresets{} },
+		IDUnlockedRecipes:                   func() Packet { return &UnlockedRecipes{} },
+		// ---
+		IDCameraInstruction: func() Packet { return &CameraInstruction{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)
