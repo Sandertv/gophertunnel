@@ -208,7 +208,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	l, c := make(chan struct{}), make(chan struct{})
 	go listenConn(conn, d.ErrorLog, l, c)
 
-	conn.expect(packet.IDNetworkSettings)
+	conn.expect(packet.IDNetworkSettings, packet.IDPlayStatus)
 	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, conn.wrap(ctx.Err(), "dial")
 	case <-l:
 		// We've received our network settings, so we can now send our login request.
-		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
+		conn.expect(packet.IDServerToClientHandshake)
 		if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
 			return nil, err
 		}
