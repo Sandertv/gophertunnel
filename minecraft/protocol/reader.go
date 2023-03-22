@@ -571,10 +571,6 @@ func (r *Reader) AbilityValue(x *any) {
 	}
 }
 
-func (r *Reader) EventData(x *EventData) {
-
-}
-
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {
