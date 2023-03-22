@@ -1,9 +1,5 @@
 package protocol
 
-import (
-	"fmt"
-)
-
 const (
 	FilterCauseServerChatPublic = iota
 	FilterCauseServerChatWhisper
@@ -36,123 +32,106 @@ type ItemStackRequest struct {
 	FilterCause int32
 }
 
-// WriteStackRequest writes an ItemStackRequest x to Writer w.
-func WriteStackRequest(w *Writer, x *ItemStackRequest) {
-	l := uint32(len(x.Actions))
-	w.Varint32(&x.RequestID)
-	w.Varuint32(&l)
-	for _, action := range x.Actions {
-		var id byte
-		switch action.(type) {
-		case *TakeStackRequestAction:
-			id = StackRequestActionTake
-		case *PlaceStackRequestAction:
-			id = StackRequestActionPlace
-		case *SwapStackRequestAction:
-			id = StackRequestActionSwap
-		case *DropStackRequestAction:
-			id = StackRequestActionDrop
-		case *DestroyStackRequestAction:
-			id = StackRequestActionDestroy
-		case *ConsumeStackRequestAction:
-			id = StackRequestActionConsume
-		case *CreateStackRequestAction:
-			id = StackRequestActionCreate
-		case *LabTableCombineStackRequestAction:
-			id = StackRequestActionLabTableCombine
-		case *BeaconPaymentStackRequestAction:
-			id = StackRequestActionBeaconPayment
-		case *MineBlockStackRequestAction:
-			id = StackRequestActionMineBlock
-		case *CraftRecipeStackRequestAction:
-			id = StackRequestActionCraftRecipe
-		case *AutoCraftRecipeStackRequestAction:
-			id = StackRequestActionCraftRecipeAuto
-		case *CraftCreativeStackRequestAction:
-			id = StackRequestActionCraftCreative
-		case *CraftRecipeOptionalStackRequestAction:
-			id = StackRequestActionCraftRecipeOptional
-		case *CraftGrindstoneRecipeStackRequestAction:
-			id = StackRequestActionCraftGrindstone
-		case *CraftLoomRecipeStackRequestAction:
-			id = StackRequestActionCraftLoom
-		case *CraftNonImplementedStackRequestAction:
-			id = StackRequestActionCraftNonImplementedDeprecated
-		case *CraftResultsDeprecatedStackRequestAction:
-			id = StackRequestActionCraftResultsDeprecated
-		default:
-			w.UnknownEnumOption(fmt.Sprintf("%T", action), "stack request action type")
-		}
-		w.Uint8(&id)
-		action.Marshal(w)
-	}
-	FuncSlice(w, &x.FilterStrings, w.String)
-	w.Int32(&x.FilterCause)
-}
-
-// StackRequest reads an ItemStackRequest x from Reader r.
-func StackRequest(r *Reader, x *ItemStackRequest) {
-	var count uint32
+// Marshal encodes/decodes an ItemStackRequest.
+func (x *ItemStackRequest) Marshal(r IO) {
 	r.Varint32(&x.RequestID)
-	r.Varuint32(&count)
-	r.LimitUint32(count, mediumLimit)
-
-	x.Actions = make([]StackRequestAction, count)
-	for i := uint32(0); i < count; i++ {
-		var id uint8
-		r.Uint8(&id)
-
-		var action StackRequestAction
-		switch id {
-		case StackRequestActionTake:
-			action = &TakeStackRequestAction{}
-		case StackRequestActionPlace:
-			action = &PlaceStackRequestAction{}
-		case StackRequestActionSwap:
-			action = &SwapStackRequestAction{}
-		case StackRequestActionDrop:
-			action = &DropStackRequestAction{}
-		case StackRequestActionDestroy:
-			action = &DestroyStackRequestAction{}
-		case StackRequestActionConsume:
-			action = &ConsumeStackRequestAction{}
-		case StackRequestActionCreate:
-			action = &CreateStackRequestAction{}
-		case StackRequestActionPlaceInContainer:
-			action = &PlaceInContainerStackRequestAction{}
-		case StackRequestActionTakeOutContainer:
-			action = &TakeOutContainerStackRequestAction{}
-		case StackRequestActionLabTableCombine:
-			action = &LabTableCombineStackRequestAction{}
-		case StackRequestActionBeaconPayment:
-			action = &BeaconPaymentStackRequestAction{}
-		case StackRequestActionMineBlock:
-			action = &MineBlockStackRequestAction{}
-		case StackRequestActionCraftRecipe:
-			action = &CraftRecipeStackRequestAction{}
-		case StackRequestActionCraftRecipeAuto:
-			action = &AutoCraftRecipeStackRequestAction{}
-		case StackRequestActionCraftCreative:
-			action = &CraftCreativeStackRequestAction{}
-		case StackRequestActionCraftRecipeOptional:
-			action = &CraftRecipeOptionalStackRequestAction{}
-		case StackRequestActionCraftGrindstone:
-			action = &CraftGrindstoneRecipeStackRequestAction{}
-		case StackRequestActionCraftLoom:
-			action = &CraftLoomRecipeStackRequestAction{}
-		case StackRequestActionCraftNonImplementedDeprecated:
-			action = &CraftNonImplementedStackRequestAction{}
-		case StackRequestActionCraftResultsDeprecated:
-			action = &CraftResultsDeprecatedStackRequestAction{}
-		default:
-			r.UnknownEnumOption(id, "stack request action type")
-			return
-		}
-		action.Marshal(r)
-		x.Actions[i] = action
-	}
+	FuncSlice(r, &x.Actions, r.StackRequestAction)
 	FuncSlice(r, &x.FilterStrings, r.String)
 	r.Int32(&x.FilterCause)
+}
+
+// lookupStackRequestActionType looks up the ID of a StackRequestAction.
+func lookupStackRequestActionType(x StackRequestAction, id *uint8) bool {
+	switch x.(type) {
+	case *TakeStackRequestAction:
+		*id = StackRequestActionTake
+	case *PlaceStackRequestAction:
+		*id = StackRequestActionPlace
+	case *SwapStackRequestAction:
+		*id = StackRequestActionSwap
+	case *DropStackRequestAction:
+		*id = StackRequestActionDrop
+	case *DestroyStackRequestAction:
+		*id = StackRequestActionDestroy
+	case *ConsumeStackRequestAction:
+		*id = StackRequestActionConsume
+	case *CreateStackRequestAction:
+		*id = StackRequestActionCreate
+	case *LabTableCombineStackRequestAction:
+		*id = StackRequestActionLabTableCombine
+	case *BeaconPaymentStackRequestAction:
+		*id = StackRequestActionBeaconPayment
+	case *MineBlockStackRequestAction:
+		*id = StackRequestActionMineBlock
+	case *CraftRecipeStackRequestAction:
+		*id = StackRequestActionCraftRecipe
+	case *AutoCraftRecipeStackRequestAction:
+		*id = StackRequestActionCraftRecipeAuto
+	case *CraftCreativeStackRequestAction:
+		*id = StackRequestActionCraftCreative
+	case *CraftRecipeOptionalStackRequestAction:
+		*id = StackRequestActionCraftRecipeOptional
+	case *CraftGrindstoneRecipeStackRequestAction:
+		*id = StackRequestActionCraftGrindstone
+	case *CraftLoomRecipeStackRequestAction:
+		*id = StackRequestActionCraftLoom
+	case *CraftNonImplementedStackRequestAction:
+		*id = StackRequestActionCraftNonImplementedDeprecated
+	case *CraftResultsDeprecatedStackRequestAction:
+		*id = StackRequestActionCraftResultsDeprecated
+	default:
+		return false
+	}
+	return true
+}
+
+// lookupStackRequestAction looks up the StackRequestAction matching an ID.
+func lookupStackRequestAction(id uint8, x *StackRequestAction) bool {
+	switch id {
+	case StackRequestActionTake:
+		*x = &TakeStackRequestAction{}
+	case StackRequestActionPlace:
+		*x = &PlaceStackRequestAction{}
+	case StackRequestActionSwap:
+		*x = &SwapStackRequestAction{}
+	case StackRequestActionDrop:
+		*x = &DropStackRequestAction{}
+	case StackRequestActionDestroy:
+		*x = &DestroyStackRequestAction{}
+	case StackRequestActionConsume:
+		*x = &ConsumeStackRequestAction{}
+	case StackRequestActionCreate:
+		*x = &CreateStackRequestAction{}
+	case StackRequestActionPlaceInContainer:
+		*x = &PlaceInContainerStackRequestAction{}
+	case StackRequestActionTakeOutContainer:
+		*x = &TakeOutContainerStackRequestAction{}
+	case StackRequestActionLabTableCombine:
+		*x = &LabTableCombineStackRequestAction{}
+	case StackRequestActionBeaconPayment:
+		*x = &BeaconPaymentStackRequestAction{}
+	case StackRequestActionMineBlock:
+		*x = &MineBlockStackRequestAction{}
+	case StackRequestActionCraftRecipe:
+		*x = &CraftRecipeStackRequestAction{}
+	case StackRequestActionCraftRecipeAuto:
+		*x = &AutoCraftRecipeStackRequestAction{}
+	case StackRequestActionCraftCreative:
+		*x = &CraftCreativeStackRequestAction{}
+	case StackRequestActionCraftRecipeOptional:
+		*x = &CraftRecipeOptionalStackRequestAction{}
+	case StackRequestActionCraftGrindstone:
+		*x = &CraftGrindstoneRecipeStackRequestAction{}
+	case StackRequestActionCraftLoom:
+		*x = &CraftLoomRecipeStackRequestAction{}
+	case StackRequestActionCraftNonImplementedDeprecated:
+		*x = &CraftNonImplementedStackRequestAction{}
+	case StackRequestActionCraftResultsDeprecated:
+		*x = &CraftResultsDeprecatedStackRequestAction{}
+	default:
+		return false
+	}
+	return true
 }
 
 const (

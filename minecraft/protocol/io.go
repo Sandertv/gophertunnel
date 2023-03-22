@@ -47,10 +47,12 @@ type IO interface {
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
 	ItemDescriptorCount(i *ItemDescriptorCount)
+	StackRequestAction(x *StackRequestAction)
 	MaterialReducer(x *MaterialReducer)
 	Recipe(x *Recipe)
 	EventType(x *Event)
 	TransactionDataType(x *InventoryTransactionData)
+	PlayerInventoryAction(x *UseItemTransactionData)
 	GameRule(x *GameRule)
 	AbilityValue(x *any)
 

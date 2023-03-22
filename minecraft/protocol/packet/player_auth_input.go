@@ -126,38 +126,15 @@ func (pk *PlayerAuthInput) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerAuthInput) Marshal(w *protocol.Writer) {
-	w.Float32(&pk.Pitch)
-	w.Float32(&pk.Yaw)
-	w.Vec3(&pk.Position)
-	w.Vec2(&pk.MoveVector)
-	w.Float32(&pk.HeadYaw)
-	w.Varuint64(&pk.InputData)
-	w.Varuint32(&pk.InputMode)
-	w.Varuint32(&pk.PlayMode)
-	w.Varint32(&pk.InteractionModel)
-	if pk.PlayMode == PlayModeReality {
-		w.Vec3(&pk.GazeDirection)
-	}
-	w.Varuint64(&pk.Tick)
-	w.Vec3(&pk.Delta)
-
-	if pk.InputData&InputFlagPerformItemInteraction != 0 {
-		w.PlayerInventoryAction(&pk.ItemInteractionData)
-	}
-
-	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
-		protocol.WriteStackRequest(w, &pk.ItemStackRequest)
-	}
-
-	if pk.InputData&InputFlagPerformBlockActions != 0 {
-		protocol.SliceVarint32Length(w, &pk.BlockActions)
-	}
-
-	w.Vec2(&pk.AnalogueMoveVector)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PlayerAuthInput) marshal(r protocol.IO) {
 	r.Float32(&pk.Pitch)
 	r.Float32(&pk.Yaw)
 	r.Vec3(&pk.Position)
@@ -178,7 +155,7 @@ func (pk *PlayerAuthInput) Unmarshal(r *protocol.Reader) {
 	}
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
-		protocol.StackRequest(r, &pk.ItemStackRequest)
+		protocol.Single(r, &pk.ItemStackRequest)
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {

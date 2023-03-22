@@ -21,21 +21,14 @@ func (*ItemStackRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *ItemStackRequest) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.Requests))
-	w.Varuint32(&l)
-	for _, req := range pk.Requests {
-		protocol.WriteStackRequest(w, &req)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ItemStackRequest) Unmarshal(r *protocol.Reader) {
-	var count uint32
-	r.Varuint32(&count)
-	r.LimitUint32(count, 64)
+	pk.marshal(r)
+}
 
-	pk.Requests = make([]protocol.ItemStackRequest, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.StackRequest(r, &pk.Requests[i])
-	}
+func (pk *ItemStackRequest) marshal(r protocol.IO) {
+	protocol.Slice(r, &pk.Requests)
 }

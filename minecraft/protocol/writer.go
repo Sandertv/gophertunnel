@@ -362,6 +362,16 @@ func (w *Writer) Item(x *ItemStack) {
 	w.ByteSlice(&extraData)
 }
 
+// StackRequestAction writes a StackRequestAction to the writer.
+func (w *Writer) StackRequestAction(x *StackRequestAction) {
+	var id byte
+	if !lookupStackRequestActionType(*x, &id) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "stack request action type")
+	}
+	w.Uint8(&id)
+	(*x).Marshal(w)
+}
+
 // MaterialReducer writes a material reducer to the writer.
 func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)

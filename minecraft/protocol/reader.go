@@ -457,6 +457,17 @@ func (r *Reader) Item(x *ItemStack) {
 	}
 }
 
+// StackRequestAction reads a StackRequestAction from the reader.
+func (r *Reader) StackRequestAction(x *StackRequestAction) {
+	var id uint8
+	r.Uint8(&id)
+	if !lookupStackRequestAction(id, x) {
+		r.UnknownEnumOption(id, "stack request action type")
+		return
+	}
+	(*x).Marshal(r)
+}
+
 // MaterialReducer reads a material reducer from the reader.
 func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	var mix int32
