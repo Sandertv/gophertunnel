@@ -1,7 +1,6 @@
 package packet
 
 import (
-	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -32,77 +31,16 @@ func (*CraftingData) ID() uint32 {
 
 // Marshal ...
 func (pk *CraftingData) Marshal(w *protocol.Writer) {
-	l := uint32(len(pk.Recipes))
-	w.Varuint32(&l)
-	for _, recipe := range pk.Recipes {
-		var c int32
-		switch recipe.(type) {
-		case *protocol.ShapelessRecipe:
-			c = protocol.RecipeShapeless
-		case *protocol.ShapedRecipe:
-			c = protocol.RecipeShaped
-		case *protocol.FurnaceRecipe:
-			c = protocol.RecipeFurnace
-		case *protocol.FurnaceDataRecipe:
-			c = protocol.RecipeFurnaceData
-		case *protocol.MultiRecipe:
-			c = protocol.RecipeMulti
-		case *protocol.ShulkerBoxRecipe:
-			c = protocol.RecipeShulkerBox
-		case *protocol.ShapelessChemistryRecipe:
-			c = protocol.RecipeShapelessChemistry
-		case *protocol.ShapedChemistryRecipe:
-			c = protocol.RecipeShapedChemistry
-		case *protocol.SmithingTransformRecipe:
-			c = protocol.RecipeSmithingTransform
-		default:
-			w.UnknownEnumOption(fmt.Sprintf("%T", recipe), "crafting recipe type")
-		}
-		w.Varint32(&c)
-		recipe.Marshal(w)
-	}
-	protocol.Slice(w, &pk.PotionRecipes)
-	protocol.Slice(w, &pk.PotionContainerChangeRecipes)
-	protocol.FuncSlice(w, &pk.MaterialReducers, w.MaterialReducer)
-	w.Bool(&pk.ClearRecipes)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
-	var length uint32
-	r.Varuint32(&length)
-	pk.Recipes = make([]protocol.Recipe, length)
-	for i := uint32(0); i < length; i++ {
-		var recipeType int32
-		r.Varint32(&recipeType)
+	pk.marshal(r)
+}
 
-		var recipe protocol.Recipe
-		switch recipeType {
-		case protocol.RecipeShapeless:
-			recipe = &protocol.ShapelessRecipe{}
-		case protocol.RecipeShaped:
-			recipe = &protocol.ShapedRecipe{}
-		case protocol.RecipeFurnace:
-			recipe = &protocol.FurnaceRecipe{}
-		case protocol.RecipeFurnaceData:
-			recipe = &protocol.FurnaceDataRecipe{}
-		case protocol.RecipeMulti:
-			recipe = &protocol.MultiRecipe{}
-		case protocol.RecipeShulkerBox:
-			recipe = &protocol.ShulkerBoxRecipe{}
-		case protocol.RecipeShapelessChemistry:
-			recipe = &protocol.ShapelessChemistryRecipe{}
-		case protocol.RecipeShapedChemistry:
-			recipe = &protocol.ShapedChemistryRecipe{}
-		case protocol.RecipeSmithingTransform:
-			recipe = &protocol.SmithingTransformRecipe{}
-		default:
-			r.UnknownEnumOption(recipeType, "crafting data recipe type")
-			return
-		}
-		recipe.Unmarshal(r)
-		pk.Recipes[i] = recipe
-	}
+func (pk *CraftingData) marshal(r protocol.IO) {
+	protocol.FuncSlice(r, &pk.Recipes, r.Recipe)
 	protocol.Slice(r, &pk.PotionRecipes)
 	protocol.Slice(r, &pk.PotionContainerChangeRecipes)
 	protocol.FuncSlice(r, &pk.MaterialReducers, r.MaterialReducer)

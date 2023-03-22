@@ -369,6 +369,35 @@ func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	Slice(w, &m.Outputs)
 }
 
+// Recipe writes a Recipe to the writer.
+func (w *Writer) Recipe(x *Recipe) {
+	var c int32
+	switch (*x).(type) {
+	case *ShapelessRecipe:
+		c = RecipeShapeless
+	case *ShapedRecipe:
+		c = RecipeShaped
+	case *FurnaceRecipe:
+		c = RecipeFurnace
+	case *FurnaceDataRecipe:
+		c = RecipeFurnaceData
+	case *MultiRecipe:
+		c = RecipeMulti
+	case *ShulkerBoxRecipe:
+		c = RecipeShulkerBox
+	case *ShapelessChemistryRecipe:
+		c = RecipeShapelessChemistry
+	case *ShapedChemistryRecipe:
+		c = RecipeShapedChemistry
+	case *SmithingTransformRecipe:
+		c = RecipeSmithingTransform
+	default:
+		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "crafting recipe type")
+	}
+	w.Varint32(&c)
+	(*x).Marshal(w)
+}
+
 // AbilityValue writes an ability value to the writer.
 func (w *Writer) AbilityValue(x *any) {
 	switch val := (*x).(type) {

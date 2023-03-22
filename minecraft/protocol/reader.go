@@ -465,6 +465,37 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	Slice(r, &m.Outputs)
 }
 
+// Recipe reads a Recipe from the reader.
+func (r *Reader) Recipe(x *Recipe) {
+	var recipeType int32
+	r.Varint32(&recipeType)
+
+	switch recipeType {
+	case RecipeShapeless:
+		*x = &ShapelessRecipe{}
+	case RecipeShaped:
+		*x = &ShapedRecipe{}
+	case RecipeFurnace:
+		*x = &FurnaceRecipe{}
+	case RecipeFurnaceData:
+		*x = &FurnaceDataRecipe{}
+	case RecipeMulti:
+		*x = &MultiRecipe{}
+	case RecipeShulkerBox:
+		*x = &ShulkerBoxRecipe{}
+	case RecipeShapelessChemistry:
+		*x = &ShapelessChemistryRecipe{}
+	case RecipeShapedChemistry:
+		*x = &ShapedChemistryRecipe{}
+	case RecipeSmithingTransform:
+		*x = &SmithingTransformRecipe{}
+	default:
+		r.UnknownEnumOption(recipeType, "crafting data recipe type")
+		return
+	}
+	(*x).Unmarshal(r)
+}
+
 // AbilityValue reads an ability value from the reader.
 func (r *Reader) AbilityValue(x *any) {
 	valType, boolVal, floatVal := uint8(0), false, float32(0)
