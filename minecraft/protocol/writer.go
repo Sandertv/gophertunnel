@@ -379,11 +379,13 @@ func (w *Writer) Recipe(x *Recipe) {
 	(*x).Marshal(w)
 }
 
-// Event writes an Event to the writer.
-func (w *Writer) Event(x *Event) {
-	w.Varint32(&x.Type)
-	w.Uint8(&x.UsePlayerID)
-	x.Data.Marshal(w)
+// EventType writes an Event to the writer.
+func (w *Writer) EventType(x *Event) {
+	var t int32
+	if !lookupEventType(*x, &t) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event type")
+	}
+	w.Varint32(&t)
 }
 
 // TransactionDataType writes an InventoryTransactionData type to the writer.

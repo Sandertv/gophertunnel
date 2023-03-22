@@ -479,15 +479,13 @@ func (r *Reader) Recipe(x *Recipe) {
 	(*x).Unmarshal(r)
 }
 
-// Event reads an Event from the reader.
-func (r *Reader) Event(x *Event) {
-	r.Varint32(&x.Type)
-	r.Uint8(&x.UsePlayerID)
-	if !lookupEvent(x.Type, &x.Data) {
-		r.UnknownEnumOption(x.Type, "event packet event type")
-		return
+// EventType reads an Event's type from the reader.
+func (r *Reader) EventType(x *Event) {
+	var t int32
+	r.Varint32(&t)
+	if !lookupEvent(t, x) {
+		r.UnknownEnumOption(t, "event packet event type")
 	}
-	x.Data.Marshal(r)
 }
 
 // TransactionDataType reads an InventoryTransactionData type from the reader.
