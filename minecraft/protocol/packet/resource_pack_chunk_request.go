@@ -21,12 +21,15 @@ func (*ResourcePackChunkRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePackChunkRequest) Marshal(w *protocol.Writer) {
-	w.String(&pk.UUID)
-	w.Uint32(&pk.ChunkIndex)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackChunkRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ResourcePackChunkRequest) marshal(r protocol.IO) {
 	r.String(&pk.UUID)
 	r.Uint32(&pk.ChunkIndex)
 }

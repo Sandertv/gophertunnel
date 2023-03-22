@@ -61,20 +61,15 @@ func (*StructureBlockUpdate) ID() uint32 {
 
 // Marshal ...
 func (pk *StructureBlockUpdate) Marshal(w *protocol.Writer) {
-	w.UBlockPos(&pk.Position)
-	w.String(&pk.StructureName)
-	w.String(&pk.DataField)
-	w.Bool(&pk.IncludePlayers)
-	w.Bool(&pk.ShowBoundingBox)
-	w.Varint32(&pk.StructureBlockType)
-	protocol.StructSettings(w, &pk.Settings)
-	w.Varint32(&pk.RedstoneSaveMode)
-	w.Bool(&pk.ShouldTrigger)
-	w.Bool(&pk.Waterlogged)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *StructureBlockUpdate) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *StructureBlockUpdate) marshal(r protocol.IO) {
 	r.UBlockPos(&pk.Position)
 	r.String(&pk.StructureName)
 	r.String(&pk.DataField)

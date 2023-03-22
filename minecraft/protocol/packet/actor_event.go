@@ -92,13 +92,15 @@ func (*ActorEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *ActorEvent) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.Uint8(&pk.EventType)
-	w.Varint32(&pk.EventData)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ActorEvent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ActorEvent) marshal(r protocol.IO) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Uint8(&pk.EventType)
 	r.Varint32(&pk.EventData)

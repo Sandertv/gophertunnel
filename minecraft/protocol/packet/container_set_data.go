@@ -39,13 +39,15 @@ func (*ContainerSetData) ID() uint32 {
 
 // Marshal ...
 func (pk *ContainerSetData) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.WindowID)
-	w.Varint32(&pk.Key)
-	w.Varint32(&pk.Value)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ContainerSetData) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ContainerSetData) marshal(r protocol.IO) {
 	r.Uint8(&pk.WindowID)
 	r.Varint32(&pk.Key)
 	r.Varint32(&pk.Value)

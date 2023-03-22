@@ -17,10 +17,14 @@ func (*ItemComponent) ID() uint32 {
 
 // Marshal ...
 func (pk *ItemComponent) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Items)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ItemComponent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ItemComponent) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Items)
 }

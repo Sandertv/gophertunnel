@@ -24,13 +24,15 @@ func (*PlayerHotBar) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerHotBar) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.SelectedHotBarSlot)
-	w.Uint8(&pk.WindowID)
-	w.Bool(&pk.SelectHotBarSlot)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PlayerHotBar) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PlayerHotBar) marshal(r protocol.IO) {
 	r.Varuint32(&pk.SelectedHotBarSlot)
 	r.Uint8(&pk.WindowID)
 	r.Bool(&pk.SelectHotBarSlot)

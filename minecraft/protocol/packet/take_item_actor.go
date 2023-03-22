@@ -22,12 +22,15 @@ func (*TakeItemActor) ID() uint32 {
 
 // Marshal ...
 func (pk *TakeItemActor) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.ItemEntityRuntimeID)
-	w.Varuint64(&pk.TakerEntityRuntimeID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *TakeItemActor) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *TakeItemActor) marshal(r protocol.IO) {
 	r.Varuint64(&pk.ItemEntityRuntimeID)
 	r.Varuint64(&pk.TakerEntityRuntimeID)
 }

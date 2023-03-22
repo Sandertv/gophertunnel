@@ -31,14 +31,15 @@ func (*ContainerOpen) ID() uint32 {
 
 // Marshal ...
 func (pk *ContainerOpen) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.WindowID)
-	w.Uint8(&pk.ContainerType)
-	w.UBlockPos(&pk.ContainerPosition)
-	w.Varint64(&pk.ContainerEntityUniqueID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ContainerOpen) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ContainerOpen) marshal(r protocol.IO) {
 	r.Uint8(&pk.WindowID)
 	r.Uint8(&pk.ContainerType)
 	r.UBlockPos(&pk.ContainerPosition)

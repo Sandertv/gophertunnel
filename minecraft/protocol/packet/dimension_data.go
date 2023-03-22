@@ -19,10 +19,14 @@ func (*DimensionData) ID() uint32 {
 
 // Marshal ...
 func (pk *DimensionData) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Definitions)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *DimensionData) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *DimensionData) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Definitions)
 }

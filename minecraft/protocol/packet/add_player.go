@@ -71,27 +71,15 @@ func (*AddPlayer) ID() uint32 {
 
 // Marshal ...
 func (pk *AddPlayer) Marshal(w *protocol.Writer) {
-	w.UUID(&pk.UUID)
-	w.String(&pk.Username)
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.String(&pk.PlatformChatID)
-	w.Vec3(&pk.Position)
-	w.Vec3(&pk.Velocity)
-	w.Float32(&pk.Pitch)
-	w.Float32(&pk.Yaw)
-	w.Float32(&pk.HeadYaw)
-	w.ItemInstance(&pk.HeldItem)
-	w.Varint32(&pk.GameType)
-	w.EntityMetadata(&pk.EntityMetadata)
-	protocol.Single(w, &pk.EntityProperties)
-	protocol.Single(w, &pk.AbilityData)
-	protocol.Slice(w, &pk.EntityLinks)
-	w.String(&pk.DeviceID)
-	w.Int32(&pk.BuildPlatform)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddPlayer) marshal(r protocol.IO) {
 	r.UUID(&pk.UUID)
 	r.String(&pk.Username)
 	r.Varuint64(&pk.EntityRuntimeID)

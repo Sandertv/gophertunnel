@@ -28,14 +28,15 @@ func (*CommandRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *CommandRequest) Marshal(w *protocol.Writer) {
-	w.String(&pk.CommandLine)
-	protocol.CommandOriginData(w, &pk.CommandOrigin)
-	w.Bool(&pk.Internal)
-	w.Varint32(&pk.Version)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CommandRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CommandRequest) marshal(r protocol.IO) {
 	r.String(&pk.CommandLine)
 	protocol.CommandOriginData(r, &pk.CommandOrigin)
 	r.Bool(&pk.Internal)

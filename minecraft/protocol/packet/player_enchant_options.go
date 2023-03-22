@@ -23,10 +23,14 @@ func (*PlayerEnchantOptions) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerEnchantOptions) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Options)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PlayerEnchantOptions) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PlayerEnchantOptions) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Options)
 }

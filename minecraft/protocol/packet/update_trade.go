@@ -45,20 +45,15 @@ func (*UpdateTrade) ID() uint32 {
 
 // Marshal ...
 func (pk *UpdateTrade) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.WindowID)
-	w.Uint8(&pk.WindowType)
-	w.Varint32(&pk.Size)
-	w.Varint32(&pk.TradeTier)
-	w.Varint64(&pk.VillagerUniqueID)
-	w.Varint64(&pk.EntityUniqueID)
-	w.String(&pk.DisplayName)
-	w.Bool(&pk.NewTradeUI)
-	w.Bool(&pk.DemandBasedPrices)
-	w.Bytes(&pk.SerialisedOffers)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *UpdateTrade) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *UpdateTrade) marshal(r protocol.IO) {
 	r.Uint8(&pk.WindowID)
 	r.Uint8(&pk.WindowType)
 	r.Varint32(&pk.Size)

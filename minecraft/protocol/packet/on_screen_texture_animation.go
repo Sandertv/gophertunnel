@@ -19,10 +19,14 @@ func (*OnScreenTextureAnimation) ID() uint32 {
 
 // Marshal ...
 func (pk *OnScreenTextureAnimation) Marshal(w *protocol.Writer) {
-	w.Int32(&pk.AnimationType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *OnScreenTextureAnimation) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *OnScreenTextureAnimation) marshal(r protocol.IO) {
 	r.Int32(&pk.AnimationType)
 }

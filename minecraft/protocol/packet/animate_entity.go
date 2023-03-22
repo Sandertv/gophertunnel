@@ -36,17 +36,15 @@ func (*AnimateEntity) ID() uint32 {
 
 // Marshal ...
 func (pk *AnimateEntity) Marshal(w *protocol.Writer) {
-	w.String(&pk.Animation)
-	w.String(&pk.NextState)
-	w.String(&pk.StopCondition)
-	w.Int32(&pk.StopConditionVersion)
-	w.String(&pk.Controller)
-	w.Float32(&pk.BlendOutTime)
-	protocol.FuncSlice(w, &pk.EntityRuntimeIDs, w.Varuint64)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AnimateEntity) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AnimateEntity) marshal(r protocol.IO) {
 	r.String(&pk.Animation)
 	r.String(&pk.NextState)
 	r.String(&pk.StopCondition)

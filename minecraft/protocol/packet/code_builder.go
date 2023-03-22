@@ -22,12 +22,15 @@ func (*CodeBuilder) ID() uint32 {
 
 // Marshal ...
 func (pk *CodeBuilder) Marshal(w *protocol.Writer) {
-	w.String(&pk.URL)
-	w.Bool(&pk.ShouldOpenCodeBuilder)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CodeBuilder) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CodeBuilder) marshal(r protocol.IO) {
 	r.String(&pk.URL)
 	r.Bool(&pk.ShouldOpenCodeBuilder)
 }

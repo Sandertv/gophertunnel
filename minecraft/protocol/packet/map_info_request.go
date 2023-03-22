@@ -22,12 +22,15 @@ func (*MapInfoRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *MapInfoRequest) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.MapID)
-	protocol.SliceUint32Length(w, &pk.ClientPixels)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *MapInfoRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *MapInfoRequest) marshal(r protocol.IO) {
 	r.Varint64(&pk.MapID)
 	protocol.SliceUint32Length(r, &pk.ClientPixels)
 }

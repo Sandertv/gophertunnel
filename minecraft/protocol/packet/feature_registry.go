@@ -19,10 +19,14 @@ func (pk *FeatureRegistry) ID() uint32 {
 
 // Marshal ...
 func (pk *FeatureRegistry) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Features)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *FeatureRegistry) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *FeatureRegistry) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Features)
 }

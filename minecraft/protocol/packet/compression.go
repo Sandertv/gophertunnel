@@ -20,11 +20,22 @@ type Compression interface {
 	Decompress(compressed []byte) ([]byte, error)
 }
 
+var (
+	// FlateCompression is the implementation of the Flate compression
+	// algorithm. This was used by default until v1.19.30.
+	FlateCompression flateCompression
+	// SnappyCompression is the implementation of the Snappy compression
+	// algorithm. This is used by default.
+	SnappyCompression snappyCompression
+
+	DefaultCompression Compression = FlateCompression
+)
+
 type (
-	// FlateCompression is the implementation of the Flate compression algorithm. This was used by default until v1.19.30.
-	FlateCompression struct{}
-	// SnappyCompression is the implementation of the Snappy compression algorithm. This is used by default.
-	SnappyCompression struct{}
+	// flateCompression is the implementation of the Flate compression algorithm. This was used by default until v1.19.30.
+	flateCompression struct{}
+	// snappyCompression is the implementation of the Snappy compression algorithm. This is used by default.
+	snappyCompression struct{}
 )
 
 // flateDecompressPool is a sync.Pool for io.ReadCloser flate readers. These are
@@ -42,12 +53,12 @@ var (
 )
 
 // EncodeCompression ...
-func (FlateCompression) EncodeCompression() uint16 {
+func (flateCompression) EncodeCompression() uint16 {
 	return 0
 }
 
 // Compress ...
-func (FlateCompression) Compress(decompressed []byte) ([]byte, error) {
+func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 	compressed := internal.BufferPool.Get().(*bytes.Buffer)
 	w := flateCompressPool.Get().(*flate.Writer)
 
@@ -72,7 +83,7 @@ func (FlateCompression) Compress(decompressed []byte) ([]byte, error) {
 }
 
 // Decompress ...
-func (FlateCompression) Decompress(compressed []byte) ([]byte, error) {
+func (flateCompression) Decompress(compressed []byte) ([]byte, error) {
 	buf := bytes.NewReader(compressed)
 	c := flateDecompressPool.Get().(io.ReadCloser)
 	defer flateDecompressPool.Put(c)
@@ -91,21 +102,21 @@ func (FlateCompression) Decompress(compressed []byte) ([]byte, error) {
 }
 
 // EncodeCompression ...
-func (SnappyCompression) EncodeCompression() uint16 {
+func (snappyCompression) EncodeCompression() uint16 {
 	return 1
 }
 
 // Compress ...
-func (SnappyCompression) Compress(decompressed []byte) ([]byte, error) {
+func (snappyCompression) Compress(decompressed []byte) ([]byte, error) {
 	// Because Snappy allocates a slice only once, it is less important to have
-	// a dst slice pre-allocated. With FlateCompression this is more important,
+	// a dst slice pre-allocated. With flateCompression this is more important,
 	// because flate does a lot of smaller allocations which causes a
 	// considerable slowdown.
 	return snappy.Encode(nil, decompressed), nil
 }
 
 // Decompress ...
-func (SnappyCompression) Decompress(compressed []byte) ([]byte, error) {
+func (snappyCompression) Decompress(compressed []byte) ([]byte, error) {
 	// Snappy writes a decoded data length prefix, so it can allocate the
 	// perfect size right away and only needs to allocate once. No need to pool
 	// byte slices here either.
@@ -118,8 +129,8 @@ func (SnappyCompression) Decompress(compressed []byte) ([]byte, error) {
 
 // init registers all valid compressions with the protocol.
 func init() {
-	RegisterCompression(FlateCompression{})
-	RegisterCompression(SnappyCompression{})
+	RegisterCompression(flateCompression{})
+	RegisterCompression(snappyCompression{})
 }
 
 var compressions = map[uint16]Compression{}
@@ -133,5 +144,8 @@ func RegisterCompression(compression Compression) {
 // is returned and the bool is true.
 func CompressionByID(id uint16) (Compression, bool) {
 	c, ok := compressions[id]
+	if !ok {
+		c = DefaultCompression
+	}
 	return c, ok
 }

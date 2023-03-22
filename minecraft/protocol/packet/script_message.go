@@ -21,12 +21,15 @@ func (pk *ScriptMessage) ID() uint32 {
 
 // Marshal ...
 func (pk *ScriptMessage) Marshal(w *protocol.Writer) {
-	w.String(&pk.Identifier)
-	w.ByteSlice(&pk.Data)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ScriptMessage) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ScriptMessage) marshal(r protocol.IO) {
 	r.String(&pk.Identifier)
 	r.ByteSlice(&pk.Data)
 }

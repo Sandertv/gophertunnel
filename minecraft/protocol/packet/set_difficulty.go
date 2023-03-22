@@ -18,10 +18,14 @@ func (*SetDifficulty) ID() uint32 {
 
 // Marshal ...
 func (pk *SetDifficulty) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.Difficulty)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetDifficulty) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetDifficulty) marshal(r protocol.IO) {
 	r.Varuint32(&pk.Difficulty)
 }

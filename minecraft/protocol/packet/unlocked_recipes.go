@@ -20,12 +20,15 @@ func (*UnlockedRecipes) ID() uint32 {
 
 // Marshal ...
 func (pk *UnlockedRecipes) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.NewUnlocks)
-	protocol.FuncSlice(w, &pk.Recipes, w.String)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *UnlockedRecipes) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *UnlockedRecipes) marshal(r protocol.IO) {
 	r.Bool(&pk.NewUnlocks)
 	protocol.FuncSlice(r, &pk.Recipes, r.String)
 }

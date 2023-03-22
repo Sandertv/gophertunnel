@@ -29,12 +29,15 @@ func (*ResourcePackClientResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePackClientResponse) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.Response)
-	protocol.FuncSliceUint16Length(w, &pk.PacksToDownload, w.String)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackClientResponse) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ResourcePackClientResponse) marshal(r protocol.IO) {
 	r.Uint8(&pk.Response)
 	protocol.FuncSliceUint16Length(r, &pk.PacksToDownload, r.String)
 }

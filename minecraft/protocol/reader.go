@@ -147,6 +147,13 @@ func (r *Reader) SubChunkPos(x *SubChunkPos) {
 	r.Varint32(&x[2])
 }
 
+// SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
+func (r *Reader) SoundPos(x *mgl32.Vec3) {
+	var b BlockPos
+	r.BlockPos(&b)
+	*x = mgl32.Vec3{float32(b[0]) / 8, float32(b[1]) / 8, float32(b[2]) / 8}
+}
+
 // ByteFloat reads a rotational float32 from a single byte.
 func (r *Reader) ByteFloat(x *float32) {
 	var v uint8
@@ -450,12 +457,28 @@ func (r *Reader) Item(x *ItemStack) {
 	}
 }
 
-// MaterialReducer writes a material reducer to the writer.
+// MaterialReducer reads a material reducer from the reader.
 func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	var mix int32
 	r.Varint32(&mix)
 	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
 	Slice(r, &m.Outputs)
+}
+
+// AbilityValue reads an ability value from the reader.
+func (r *Reader) AbilityValue(x *any) {
+	valType, boolVal, floatVal := uint8(0), false, float32(0)
+	r.Uint8(&valType)
+	r.Bool(&boolVal)
+	r.Float32(&floatVal)
+	switch valType {
+	case 1:
+		*x = boolVal
+	case 2:
+		*x = floatVal
+	default:
+		r.InvalidValue(valType, "ability value type", "must be bool or float32")
+	}
 }
 
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.

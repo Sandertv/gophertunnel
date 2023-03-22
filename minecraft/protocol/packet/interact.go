@@ -36,20 +36,18 @@ func (*Interact) ID() uint32 {
 
 // Marshal ...
 func (pk *Interact) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.ActionType)
-	w.Varuint64(&pk.TargetEntityRuntimeID)
-	switch pk.ActionType {
-	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
-		w.Vec3(&pk.Position)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Interact) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Interact) marshal(r protocol.IO) {
 	r.Uint8(&pk.ActionType)
 	r.Varuint64(&pk.TargetEntityRuntimeID)
-	switch pk.ActionType {
-	case InteractActionMouseOverEntity, InteractActionLeaveVehicle:
+	if pk.ActionType == InteractActionMouseOverEntity || pk.ActionType == InteractActionLeaveVehicle {
 		r.Vec3(&pk.Position)
 	}
 }

@@ -31,10 +31,14 @@ func (*PlayStatus) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayStatus) Marshal(w *protocol.Writer) {
-	w.BEInt32(&pk.Status)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PlayStatus) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PlayStatus) marshal(r protocol.IO) {
 	r.BEInt32(&pk.Status)
 }

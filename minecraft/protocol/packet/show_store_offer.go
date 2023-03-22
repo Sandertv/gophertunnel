@@ -26,12 +26,15 @@ func (*ShowStoreOffer) ID() uint32 {
 
 // Marshal ...
 func (pk *ShowStoreOffer) Marshal(w *protocol.Writer) {
-	w.String(&pk.OfferID)
-	w.Bool(&pk.ShowAll)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ShowStoreOffer) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ShowStoreOffer) marshal(r protocol.IO) {
 	r.String(&pk.OfferID)
 	r.Bool(&pk.ShowAll)
 }

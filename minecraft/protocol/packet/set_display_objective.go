@@ -9,7 +9,7 @@ const (
 	ScoreboardSortOrderDescending
 )
 
-//noinspection SpellCheckingInspection
+// noinspection SpellCheckingInspection
 const (
 	ScoreboardSlotList      = "list"
 	ScoreboardSlotSidebar   = "sidebar"
@@ -42,15 +42,15 @@ func (*SetDisplayObjective) ID() uint32 {
 
 // Marshal ...
 func (pk *SetDisplayObjective) Marshal(w *protocol.Writer) {
-	w.String(&pk.DisplaySlot)
-	w.String(&pk.ObjectiveName)
-	w.String(&pk.DisplayName)
-	w.String(&pk.CriteriaName)
-	w.Varint32(&pk.SortOrder)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetDisplayObjective) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetDisplayObjective) marshal(r protocol.IO) {
 	r.String(&pk.DisplaySlot)
 	r.String(&pk.ObjectiveName)
 	r.String(&pk.DisplayName)

@@ -120,6 +120,12 @@ func (w *Writer) SubChunkPos(x *SubChunkPos) {
 	w.Varint32(&x[2])
 }
 
+// SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
+func (w *Writer) SoundPos(x *mgl32.Vec3) {
+	b := BlockPos{int32((*x)[0] * 8), int32((*x)[1] * 8), int32((*x)[2] * 8)}
+	w.BlockPos(&b)
+}
+
 // RGBA writes a color.RGBA x as a uint32 to the underlying buffer.
 func (w *Writer) RGBA(x *color.RGBA) {
 	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24
@@ -361,6 +367,24 @@ func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
 	w.Varint32(&mix)
 	Slice(w, &m.Outputs)
+}
+
+// AbilityValue writes an ability value to the writer.
+func (w *Writer) AbilityValue(x *any) {
+	switch val := (*x).(type) {
+	case bool:
+		valType, defaultVal := uint8(1), float32(0)
+		w.Uint8(&valType)
+		w.Bool(&val)
+		w.Float32(&defaultVal)
+	case float32:
+		valType, defaultVal := uint8(2), false
+		w.Uint8(&valType)
+		w.Bool(&defaultVal)
+		w.Float32(&val)
+	default:
+		w.InvalidValue(*x, "ability value type", "must be bool or float32")
+	}
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.

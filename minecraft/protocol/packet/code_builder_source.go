@@ -37,13 +37,15 @@ func (pk *CodeBuilderSource) ID() uint32 {
 
 // Marshal ...
 func (pk *CodeBuilderSource) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.Operation)
-	w.Uint8(&pk.Category)
-	w.ByteSlice(&pk.Value)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CodeBuilderSource) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CodeBuilderSource) marshal(r protocol.IO) {
 	r.Uint8(&pk.Operation)
 	r.Uint8(&pk.Category)
 	r.ByteSlice(&pk.Value)

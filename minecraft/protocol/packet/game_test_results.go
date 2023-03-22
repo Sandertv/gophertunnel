@@ -22,13 +22,15 @@ func (pk *GameTestResults) ID() uint32 {
 
 // Marshal ...
 func (pk *GameTestResults) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.Succeeded)
-	w.String(&pk.Error)
-	w.String(&pk.Name)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *GameTestResults) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *GameTestResults) marshal(r protocol.IO) {
 	r.Bool(&pk.Succeeded)
 	r.String(&pk.Error)
 	r.String(&pk.Name)

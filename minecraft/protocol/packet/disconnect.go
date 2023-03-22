@@ -22,14 +22,15 @@ func (*Disconnect) ID() uint32 {
 
 // Marshal ...
 func (pk *Disconnect) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.HideDisconnectionScreen)
-	if !pk.HideDisconnectionScreen {
-		w.String(&pk.Message)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Disconnect) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Disconnect) marshal(r protocol.IO) {
 	r.Bool(&pk.HideDisconnectionScreen)
 	if !pk.HideDisconnectionScreen {
 		r.String(&pk.Message)

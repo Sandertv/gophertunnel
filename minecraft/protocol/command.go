@@ -117,6 +117,13 @@ type CommandEnum struct {
 	Dynamic bool
 }
 
+// Marshal encodes/decodes a CommandEnum as a "soft" (dynamic) enum.
+func (x *CommandEnum) Marshal(r IO) {
+	x.Dynamic = true
+	r.String(&x.Type)
+	FuncSlice(r, &x.Options, r.String)
+}
+
 const (
 	CommandOriginPlayer = iota
 	CommandOriginBlock

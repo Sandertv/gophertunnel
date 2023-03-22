@@ -20,10 +20,14 @@ func (*SetLocalPlayerAsInitialised) ID() uint32 {
 
 // Marshal ...
 func (pk *SetLocalPlayerAsInitialised) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.EntityRuntimeID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetLocalPlayerAsInitialised) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetLocalPlayerAsInitialised) marshal(r protocol.IO) {
 	r.Varuint64(&pk.EntityRuntimeID)
 }

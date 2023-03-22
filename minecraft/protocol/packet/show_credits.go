@@ -27,12 +27,15 @@ func (*ShowCredits) ID() uint32 {
 
 // Marshal ...
 func (pk *ShowCredits) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.PlayerRuntimeID)
-	w.Varint32(&pk.StatusType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ShowCredits) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ShowCredits) marshal(r protocol.IO) {
 	r.Varuint64(&pk.PlayerRuntimeID)
 	r.Varint32(&pk.StatusType)
 }

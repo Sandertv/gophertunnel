@@ -34,18 +34,15 @@ func (*AddVolumeEntity) ID() uint32 {
 
 // Marshal ...
 func (pk *AddVolumeEntity) Marshal(w *protocol.Writer) {
-	w.Uint64(&pk.EntityRuntimeID)
-	w.NBT(&pk.EntityMetadata, nbt.NetworkLittleEndian)
-	w.String(&pk.EncodingIdentifier)
-	w.String(&pk.InstanceIdentifier)
-	w.UBlockPos(&pk.Bounds[0])
-	w.UBlockPos(&pk.Bounds[1])
-	w.Varint32(&pk.Dimension)
-	w.String(&pk.EngineVersion)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddVolumeEntity) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddVolumeEntity) marshal(r protocol.IO) {
 	r.Uint64(&pk.EntityRuntimeID)
 	r.NBT(&pk.EntityMetadata, nbt.NetworkLittleEndian)
 	r.String(&pk.EncodingIdentifier)

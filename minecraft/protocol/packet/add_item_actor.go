@@ -40,17 +40,15 @@ func (*AddItemActor) ID() uint32 {
 
 // Marshal ...
 func (pk *AddItemActor) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.EntityUniqueID)
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.ItemInstance(&pk.Item)
-	w.Vec3(&pk.Position)
-	w.Vec3(&pk.Velocity)
-	w.EntityMetadata(&pk.EntityMetadata)
-	w.Bool(&pk.FromFishing)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddItemActor) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddItemActor) marshal(r protocol.IO) {
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.ItemInstance(&pk.Item)

@@ -90,12 +90,15 @@ func (pk *LevelEventGeneric) ID() uint32 {
 
 // Marshal ...
 func (pk *LevelEventGeneric) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.EventID)
-	w.Bytes(&pk.SerialisedEventData)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *LevelEventGeneric) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *LevelEventGeneric) marshal(r protocol.IO) {
 	r.Varint32(&pk.EventID)
 	r.Bytes(&pk.SerialisedEventData)
 }

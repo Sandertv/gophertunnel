@@ -4,7 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-//noinspection SpellCheckingInspection
+// noinspection SpellCheckingInspection
 const (
 	ResourcePackTypeAddon = iota + 1
 	ResourcePackTypeCached
@@ -50,17 +50,15 @@ func (*ResourcePackDataInfo) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePackDataInfo) Marshal(w *protocol.Writer) {
-	w.String(&pk.UUID)
-	w.Uint32(&pk.DataChunkSize)
-	w.Uint32(&pk.ChunkCount)
-	w.Uint64(&pk.Size)
-	w.ByteSlice(&pk.Hash)
-	w.Bool(&pk.Premium)
-	w.Uint8(&pk.PackType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackDataInfo) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ResourcePackDataInfo) marshal(r protocol.IO) {
 	r.String(&pk.UUID)
 	r.Uint32(&pk.DataChunkSize)
 	r.Uint32(&pk.ChunkCount)

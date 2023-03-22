@@ -30,10 +30,14 @@ func (*SetPlayerGameType) ID() uint32 {
 
 // Marshal ...
 func (pk *SetPlayerGameType) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.GameType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetPlayerGameType) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetPlayerGameType) marshal(r protocol.IO) {
 	r.Varint32(&pk.GameType)
 }

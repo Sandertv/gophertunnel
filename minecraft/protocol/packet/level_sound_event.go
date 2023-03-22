@@ -508,16 +508,15 @@ func (*LevelSoundEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *LevelSoundEvent) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.SoundType)
-	w.Vec3(&pk.Position)
-	w.Varint32(&pk.ExtraData)
-	w.String(&pk.EntityType)
-	w.Bool(&pk.BabyMob)
-	w.Bool(&pk.DisableRelativeVolume)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *LevelSoundEvent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *LevelSoundEvent) marshal(r protocol.IO) {
 	r.Varuint32(&pk.SoundType)
 	r.Vec3(&pk.Position)
 	r.Varint32(&pk.ExtraData)

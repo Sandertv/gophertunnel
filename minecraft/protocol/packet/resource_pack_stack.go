@@ -36,16 +36,15 @@ func (*ResourcePackStack) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePackStack) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.TexturePackRequired)
-	protocol.Slice(w, &pk.BehaviourPacks)
-	protocol.Slice(w, &pk.TexturePacks)
-	w.String(&pk.BaseGameVersion)
-	protocol.SliceUint32Length(w, &pk.Experiments)
-	w.Bool(&pk.ExperimentsPreviouslyToggled)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackStack) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ResourcePackStack) marshal(r protocol.IO) {
 	r.Bool(&pk.TexturePackRequired)
 	protocol.Slice(r, &pk.BehaviourPacks)
 	protocol.Slice(r, &pk.TexturePacks)

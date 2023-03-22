@@ -18,10 +18,14 @@ func (pk *RequestNetworkSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *RequestNetworkSettings) Marshal(w *protocol.Writer) {
-	w.BEInt32(&pk.ClientProtocol)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *RequestNetworkSettings) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *RequestNetworkSettings) marshal(r protocol.IO) {
 	r.BEInt32(&pk.ClientProtocol)
 }

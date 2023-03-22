@@ -22,15 +22,15 @@ func (pk *ClientCacheBlobStatus) ID() uint32 {
 
 // Marshal ...
 func (pk *ClientCacheBlobStatus) Marshal(w *protocol.Writer) {
-	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
-	w.Varuint32(&missLen)
-	w.Varuint32(&hitLen)
-	protocol.FuncSliceOfLen(w, missLen, &pk.MissHashes, w.Uint64)
-	protocol.FuncSliceOfLen(w, hitLen, &pk.HitHashes, w.Uint64)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ClientCacheBlobStatus) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ClientCacheBlobStatus) marshal(r protocol.IO) {
 	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
 	r.Varuint32(&missLen)
 	r.Varuint32(&hitLen)

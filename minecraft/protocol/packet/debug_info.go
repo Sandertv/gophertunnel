@@ -20,12 +20,15 @@ func (*DebugInfo) ID() uint32 {
 
 // Marshal ...
 func (pk *DebugInfo) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.PlayerUniqueID)
-	w.ByteSlice(&pk.Data)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *DebugInfo) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *DebugInfo) marshal(r protocol.IO) {
 	r.Varint64(&pk.PlayerUniqueID)
 	r.ByteSlice(&pk.Data)
 }

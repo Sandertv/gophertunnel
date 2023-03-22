@@ -63,25 +63,15 @@ func (*CommandBlockUpdate) ID() uint32 {
 
 // Marshal ...
 func (pk *CommandBlockUpdate) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.Block)
-	if pk.Block {
-		w.UBlockPos(&pk.Position)
-		w.Varuint32(&pk.Mode)
-		w.Bool(&pk.NeedsRedstone)
-		w.Bool(&pk.Conditional)
-	} else {
-		w.Varuint64(&pk.MinecartEntityRuntimeID)
-	}
-	w.String(&pk.Command)
-	w.String(&pk.LastOutput)
-	w.String(&pk.Name)
-	w.Bool(&pk.ShouldTrackOutput)
-	w.Int32(&pk.TickDelay)
-	w.Bool(&pk.ExecuteOnFirstTick)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CommandBlockUpdate) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CommandBlockUpdate) marshal(r protocol.IO) {
 	r.Bool(&pk.Block)
 	if pk.Block {
 		r.UBlockPos(&pk.Position)

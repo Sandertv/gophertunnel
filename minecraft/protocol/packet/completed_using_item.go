@@ -40,12 +40,15 @@ func (*CompletedUsingItem) ID() uint32 {
 
 // Marshal ...
 func (pk *CompletedUsingItem) Marshal(w *protocol.Writer) {
-	w.Int16(&pk.UsedItemID)
-	w.Int32(&pk.UseMethod)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CompletedUsingItem) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CompletedUsingItem) marshal(r protocol.IO) {
 	r.Int16(&pk.UsedItemID)
 	r.Int32(&pk.UseMethod)
 }

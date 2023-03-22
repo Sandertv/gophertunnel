@@ -22,12 +22,15 @@ func (*Camera) ID() uint32 {
 
 // Marshal ...
 func (pk *Camera) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.CameraEntityUniqueID)
-	w.Varint64(&pk.TargetPlayerUniqueID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Camera) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Camera) marshal(r protocol.IO) {
 	r.Varint64(&pk.CameraEntityUniqueID)
 	r.Varint64(&pk.TargetPlayerUniqueID)
 }

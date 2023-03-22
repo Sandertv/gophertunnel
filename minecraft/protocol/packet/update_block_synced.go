@@ -42,16 +42,15 @@ func (*UpdateBlockSynced) ID() uint32 {
 
 // Marshal ...
 func (pk *UpdateBlockSynced) Marshal(w *protocol.Writer) {
-	w.UBlockPos(&pk.Position)
-	w.Varuint32(&pk.NewBlockRuntimeID)
-	w.Varuint32(&pk.Flags)
-	w.Varuint32(&pk.Layer)
-	w.Varint64(&pk.EntityUniqueID)
-	w.Varuint64(&pk.TransitionType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *UpdateBlockSynced) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *UpdateBlockSynced) marshal(r protocol.IO) {
 	r.UBlockPos(&pk.Position)
 	r.Varuint32(&pk.NewBlockRuntimeID)
 	r.Varuint32(&pk.Flags)

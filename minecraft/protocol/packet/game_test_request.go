@@ -35,17 +35,15 @@ func (pk *GameTestRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *GameTestRequest) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.MaxTestsPerBatch)
-	w.Varint32(&pk.Repetitions)
-	w.Uint8(&pk.Rotation)
-	w.Bool(&pk.StopOnError)
-	w.BlockPos(&pk.Position)
-	w.Varint32(&pk.TestsPerRow)
-	w.String(&pk.Name)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *GameTestRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *GameTestRequest) marshal(r protocol.IO) {
 	r.Varint32(&pk.MaxTestsPerBatch)
 	r.Varint32(&pk.Repetitions)
 	r.Uint8(&pk.Rotation)

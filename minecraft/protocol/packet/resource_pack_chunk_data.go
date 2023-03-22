@@ -28,14 +28,15 @@ func (*ResourcePackChunkData) ID() uint32 {
 
 // Marshal ...
 func (pk *ResourcePackChunkData) Marshal(w *protocol.Writer) {
-	w.String(&pk.UUID)
-	w.Uint32(&pk.ChunkIndex)
-	w.Uint64(&pk.DataOffset)
-	w.ByteSlice(&pk.Data)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ResourcePackChunkData) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ResourcePackChunkData) marshal(r protocol.IO) {
 	r.String(&pk.UUID)
 	r.Uint32(&pk.ChunkIndex)
 	r.Uint64(&pk.DataOffset)

@@ -23,12 +23,15 @@ func (*ContainerClose) ID() uint32 {
 
 // Marshal ...
 func (pk *ContainerClose) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.WindowID)
-	w.Bool(&pk.ServerSide)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ContainerClose) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ContainerClose) marshal(r protocol.IO) {
 	r.Uint8(&pk.WindowID)
 	r.Bool(&pk.ServerSide)
 }

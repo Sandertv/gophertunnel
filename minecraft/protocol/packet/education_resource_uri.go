@@ -15,10 +15,14 @@ func (*EducationResourceURI) ID() uint32 {
 
 // Marshal ...
 func (pk *EducationResourceURI) Marshal(w *protocol.Writer) {
-	protocol.EducationResourceURI(w, &pk.Resource)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *EducationResourceURI) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *EducationResourceURI) marshal(r protocol.IO) {
 	protocol.EducationResourceURI(r, &pk.Resource)
 }

@@ -59,23 +59,15 @@ func (*AddActor) ID() uint32 {
 
 // Marshal ...
 func (pk *AddActor) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.EntityUniqueID)
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.String(&pk.EntityType)
-	w.Vec3(&pk.Position)
-	w.Vec3(&pk.Velocity)
-	w.Float32(&pk.Pitch)
-	w.Float32(&pk.Yaw)
-	w.Float32(&pk.HeadYaw)
-	w.Float32(&pk.BodyYaw)
-	protocol.Slice(w, &pk.Attributes)
-	w.EntityMetadata(&pk.EntityMetadata)
-	protocol.Single(w, &pk.EntityProperties)
-	protocol.Slice(w, &pk.EntityLinks)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddActor) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddActor) marshal(r protocol.IO) {
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.String(&pk.EntityType)

@@ -30,17 +30,15 @@ func (*SetScoreboardIdentity) ID() uint32 {
 
 // Marshal ...
 func (pk *SetScoreboardIdentity) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.ActionType)
-	switch pk.ActionType {
-	case ScoreboardIdentityActionRegister:
-		protocol.Slice(w, &pk.Entries)
-	case ScoreboardIdentityActionClear:
-		protocol.FuncIOSlice(w, &pk.Entries, protocol.ScoreboardIdentityClearEntry)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetScoreboardIdentity) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetScoreboardIdentity) marshal(r protocol.IO) {
 	r.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case ScoreboardIdentityActionRegister:

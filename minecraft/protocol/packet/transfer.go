@@ -20,12 +20,15 @@ func (*Transfer) ID() uint32 {
 
 // Marshal ...
 func (pk *Transfer) Marshal(w *protocol.Writer) {
-	w.String(&pk.Address)
-	w.Uint16(&pk.Port)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Transfer) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Transfer) marshal(r protocol.IO) {
 	r.String(&pk.Address)
 	r.Uint16(&pk.Port)
 }

@@ -27,10 +27,14 @@ func (*MultiPlayerSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *MultiPlayerSettings) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.ActionType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *MultiPlayerSettings) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *MultiPlayerSettings) marshal(r protocol.IO) {
 	r.Varint32(&pk.ActionType)
 }

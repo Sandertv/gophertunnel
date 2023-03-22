@@ -30,24 +30,15 @@ func (*PlayerList) ID() uint32 {
 
 // Marshal ...
 func (pk *PlayerList) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.ActionType)
-	switch pk.ActionType {
-	case PlayerListActionAdd:
-		protocol.Slice(w, &pk.Entries)
-	case PlayerListActionRemove:
-		protocol.FuncIOSlice(w, &pk.Entries, protocol.PlayerListRemoveEntry)
-	default:
-		w.UnknownEnumOption(pk.ActionType, "player list action type")
-	}
-	if pk.ActionType == PlayerListActionAdd {
-		for i := 0; i < len(pk.Entries); i++ {
-			w.Bool(&pk.Entries[i].Skin.Trusted)
-		}
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PlayerList) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PlayerList) marshal(r protocol.IO) {
 	r.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case PlayerListActionAdd:

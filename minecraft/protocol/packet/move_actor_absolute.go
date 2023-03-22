@@ -34,16 +34,15 @@ func (*MoveActorAbsolute) ID() uint32 {
 
 // Marshal ...
 func (pk *MoveActorAbsolute) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.Uint8(&pk.Flags)
-	w.Vec3(&pk.Position)
-	w.ByteFloat(&pk.Rotation[0])
-	w.ByteFloat(&pk.Rotation[1])
-	w.ByteFloat(&pk.Rotation[2])
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *MoveActorAbsolute) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *MoveActorAbsolute) marshal(r protocol.IO) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Uint8(&pk.Flags)
 	r.Vec3(&pk.Position)

@@ -22,12 +22,15 @@ func (*StopSound) ID() uint32 {
 
 // Marshal ...
 func (pk *StopSound) Marshal(w *protocol.Writer) {
-	w.String(&pk.SoundName)
-	w.Bool(&pk.StopAll)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *StopSound) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *StopSound) marshal(r protocol.IO) {
 	r.String(&pk.SoundName)
 	r.Bool(&pk.StopAll)
 }

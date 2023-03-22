@@ -33,14 +33,15 @@ func (pk *StructureTemplateDataRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *StructureTemplateDataRequest) Marshal(w *protocol.Writer) {
-	w.String(&pk.StructureName)
-	w.UBlockPos(&pk.Position)
-	protocol.StructSettings(w, &pk.Settings)
-	w.Uint8(&pk.RequestType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *StructureTemplateDataRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *StructureTemplateDataRequest) marshal(r protocol.IO) {
 	r.String(&pk.StructureName)
 	r.UBlockPos(&pk.Position)
 	protocol.StructSettings(r, &pk.Settings)

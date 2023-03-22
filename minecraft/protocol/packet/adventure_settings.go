@@ -80,16 +80,15 @@ func (*AdventureSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *AdventureSettings) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.Flags)
-	w.Varuint32(&pk.CommandPermissionLevel)
-	w.Varuint32(&pk.ActionPermissions)
-	w.Varuint32(&pk.PermissionLevel)
-	w.Varuint32(&pk.CustomStoredPermissions)
-	w.Int64(&pk.PlayerUniqueID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AdventureSettings) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AdventureSettings) marshal(r protocol.IO) {
 	r.Varuint32(&pk.Flags)
 	r.Varuint32(&pk.CommandPermissionLevel)
 	r.Varuint32(&pk.ActionPermissions)

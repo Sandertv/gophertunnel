@@ -77,33 +77,15 @@ func (*ClientBoundMapItemData) ID() uint32 {
 
 // Marshal ...
 func (pk *ClientBoundMapItemData) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.MapID)
-	w.Varuint32(&pk.UpdateFlags)
-	w.Uint8(&pk.Dimension)
-	w.Bool(&pk.LockedMap)
-	w.BlockPos(&pk.Origin)
-
-	if pk.UpdateFlags&MapUpdateFlagInitialisation != 0 {
-		protocol.FuncSlice(w, &pk.MapsIncludedIn, w.Varint64)
-	}
-	if pk.UpdateFlags&(MapUpdateFlagInitialisation|MapUpdateFlagDecoration|MapUpdateFlagTexture) != 0 {
-		w.Uint8(&pk.Scale)
-	}
-	if pk.UpdateFlags&MapUpdateFlagDecoration != 0 {
-		protocol.Slice(w, &pk.TrackedObjects)
-		protocol.Slice(w, &pk.Decorations)
-	}
-	if pk.UpdateFlags&MapUpdateFlagTexture != 0 {
-		w.Varint32(&pk.Width)
-		w.Varint32(&pk.Height)
-		w.Varint32(&pk.XOffset)
-		w.Varint32(&pk.YOffset)
-		protocol.FuncSlice(w, &pk.Pixels, w.VarRGBA)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ClientBoundMapItemData) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ClientBoundMapItemData) marshal(r protocol.IO) {
 	r.Varint64(&pk.MapID)
 	r.Varuint32(&pk.UpdateFlags)
 	r.Uint8(&pk.Dimension)

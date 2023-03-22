@@ -23,12 +23,15 @@ func (*InventoryContent) ID() uint32 {
 
 // Marshal ...
 func (pk *InventoryContent) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.WindowID)
-	protocol.FuncSlice(w, &pk.Content, w.ItemInstance)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *InventoryContent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *InventoryContent) marshal(r protocol.IO) {
 	r.Varuint32(&pk.WindowID)
 	protocol.FuncSlice(r, &pk.Content, r.ItemInstance)
 }

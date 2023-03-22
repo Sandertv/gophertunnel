@@ -24,12 +24,15 @@ func (*NetworkStackLatency) ID() uint32 {
 
 // Marshal ...
 func (pk *NetworkStackLatency) Marshal(w *protocol.Writer) {
-	w.Int64(&pk.Timestamp)
-	w.Bool(&pk.NeedsResponse)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *NetworkStackLatency) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *NetworkStackLatency) marshal(r protocol.IO) {
 	r.Int64(&pk.Timestamp)
 	r.Bool(&pk.NeedsResponse)
 }

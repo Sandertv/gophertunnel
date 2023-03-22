@@ -22,11 +22,15 @@ func (pk *Unknown) ID() uint32 {
 
 // Marshal ...
 func (pk *Unknown) Marshal(w *protocol.Writer) {
-	w.Bytes(&pk.Payload)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Unknown) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Unknown) marshal(r protocol.IO) {
 	r.Bytes(&pk.Payload)
 }
 

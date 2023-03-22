@@ -31,13 +31,15 @@ func (*NetworkChunkPublisherUpdate) ID() uint32 {
 
 // Marshal ...
 func (pk *NetworkChunkPublisherUpdate) Marshal(w *protocol.Writer) {
-	w.BlockPos(&pk.Position)
-	w.Varuint32(&pk.Radius)
-	protocol.FuncSliceUint32Length(w, &pk.SavedChunks, w.ChunkPos)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *NetworkChunkPublisherUpdate) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *NetworkChunkPublisherUpdate) marshal(r protocol.IO) {
 	r.BlockPos(&pk.Position)
 	r.Varuint32(&pk.Radius)
 	protocol.FuncSliceUint32Length(r, &pk.SavedChunks, r.ChunkPos)

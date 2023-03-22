@@ -24,10 +24,14 @@ func (*SimpleEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *SimpleEvent) Marshal(w *protocol.Writer) {
-	w.Int16(&pk.EventType)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SimpleEvent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SimpleEvent) marshal(r protocol.IO) {
 	r.Int16(&pk.EventType)
 }

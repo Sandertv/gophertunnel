@@ -15,10 +15,14 @@ func (*TickingAreasLoadStatus) ID() uint32 {
 
 // Marshal ...
 func (pk *TickingAreasLoadStatus) Marshal(w *protocol.Writer) {
-	w.Bool(&pk.Preload)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *TickingAreasLoadStatus) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *TickingAreasLoadStatus) marshal(r protocol.IO) {
 	r.Bool(&pk.Preload)
 }

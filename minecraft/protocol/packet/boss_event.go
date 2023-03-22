@@ -74,37 +74,15 @@ func (*BossEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *BossEvent) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.BossEntityUniqueID)
-	w.Varuint32(&pk.EventType)
-	switch pk.EventType {
-	case BossEventShow:
-		w.String(&pk.BossBarTitle)
-		w.Float32(&pk.HealthPercentage)
-		w.Int16(&pk.ScreenDarkening)
-		w.Varuint32(&pk.Colour)
-		w.Varuint32(&pk.Overlay)
-	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
-		w.Varint64(&pk.PlayerUniqueID)
-	case BossEventHide:
-		// No extra payload for this boss event type.
-	case BossEventHealthPercentage:
-		w.Float32(&pk.HealthPercentage)
-	case BossEventTitle:
-		w.String(&pk.BossBarTitle)
-	case BossEventAppearanceProperties:
-		w.Int16(&pk.ScreenDarkening)
-		w.Varuint32(&pk.Colour)
-		w.Varuint32(&pk.Overlay)
-	case BossEventTexture:
-		w.Varuint32(&pk.Colour)
-		w.Varuint32(&pk.Overlay)
-	default:
-		w.UnknownEnumOption(pk.EventType, "boss event type")
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *BossEvent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *BossEvent) marshal(r protocol.IO) {
 	r.Varint64(&pk.BossEntityUniqueID)
 	r.Varuint32(&pk.EventType)
 	switch pk.EventType {

@@ -28,14 +28,15 @@ func (*CorrectPlayerMovePrediction) ID() uint32 {
 
 // Marshal ...
 func (pk *CorrectPlayerMovePrediction) Marshal(w *protocol.Writer) {
-	w.Vec3(&pk.Position)
-	w.Vec3(&pk.Delta)
-	w.Bool(&pk.OnGround)
-	w.Varuint64(&pk.Tick)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CorrectPlayerMovePrediction) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CorrectPlayerMovePrediction) marshal(r protocol.IO) {
 	r.Vec3(&pk.Position)
 	r.Vec3(&pk.Delta)
 	r.Bool(&pk.OnGround)

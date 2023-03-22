@@ -18,10 +18,14 @@ func (pk *AddEntity) ID() uint32 {
 
 // Marshal ...
 func (pk *AddEntity) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.EntityNetworkID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddEntity) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddEntity) marshal(r protocol.IO) {
 	r.Varuint64(&pk.EntityNetworkID)
 }

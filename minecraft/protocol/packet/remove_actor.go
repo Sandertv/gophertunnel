@@ -20,10 +20,14 @@ func (*RemoveActor) ID() uint32 {
 
 // Marshal ...
 func (pk *RemoveActor) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.EntityUniqueID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *RemoveActor) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *RemoveActor) marshal(r protocol.IO) {
 	r.Varint64(&pk.EntityUniqueID)
 }

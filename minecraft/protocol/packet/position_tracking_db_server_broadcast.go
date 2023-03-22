@@ -51,13 +51,15 @@ func (*PositionTrackingDBServerBroadcast) ID() uint32 {
 
 // Marshal ...
 func (pk *PositionTrackingDBServerBroadcast) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.BroadcastAction)
-	w.Varint32(&pk.TrackingID)
-	w.NBT(&pk.Payload, nbt.NetworkLittleEndian)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PositionTrackingDBServerBroadcast) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PositionTrackingDBServerBroadcast) marshal(r protocol.IO) {
 	r.Uint8(&pk.BroadcastAction)
 	r.Varint32(&pk.TrackingID)
 	r.NBT(&pk.Payload, nbt.NetworkLittleEndian)

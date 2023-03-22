@@ -18,10 +18,14 @@ func (*ItemFrameDropItem) ID() uint32 {
 
 // Marshal ...
 func (pk *ItemFrameDropItem) Marshal(w *protocol.Writer) {
-	w.UBlockPos(&pk.Position)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ItemFrameDropItem) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ItemFrameDropItem) marshal(r protocol.IO) {
 	r.UBlockPos(&pk.Position)
 }

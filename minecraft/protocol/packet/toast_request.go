@@ -18,12 +18,15 @@ func (*ToastRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *ToastRequest) Marshal(w *protocol.Writer) {
-	w.String(&pk.Title)
-	w.String(&pk.Message)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ToastRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ToastRequest) marshal(r protocol.IO) {
 	r.String(&pk.Title)
 	r.String(&pk.Message)
 }

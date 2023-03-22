@@ -38,34 +38,23 @@ func (*EducationSettings) ID() uint32 {
 
 // Marshal ...
 func (pk *EducationSettings) Marshal(w *protocol.Writer) {
-	w.String(&pk.CodeBuilderDefaultURI)
-	w.String(&pk.CodeBuilderTitle)
-	w.Bool(&pk.CanResizeCodeBuilder)
-	w.Bool(&pk.DisableLegacyTitleBar)
-	w.String(&pk.PostProcessFilter)
-	w.String(&pk.ScreenshotBorderPath)
-
-	protocol.OptionalFunc(w, &pk.CanModifyBlocks, w.Bool)
-	protocol.OptionalFunc(w, &pk.OverrideURI, w.String)
-
-	w.Bool(&pk.HasQuiz)
-
-	protocol.OptionalMarshaler(w, &pk.ExternalLinkSettings)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *EducationSettings) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *EducationSettings) marshal(r protocol.IO) {
 	r.String(&pk.CodeBuilderDefaultURI)
 	r.String(&pk.CodeBuilderTitle)
 	r.Bool(&pk.CanResizeCodeBuilder)
 	r.Bool(&pk.DisableLegacyTitleBar)
 	r.String(&pk.PostProcessFilter)
 	r.String(&pk.ScreenshotBorderPath)
-
 	protocol.OptionalFunc(r, &pk.CanModifyBlocks, r.Bool)
 	protocol.OptionalFunc(r, &pk.OverrideURI, r.String)
-
 	r.Bool(&pk.HasQuiz)
-
 	protocol.OptionalMarshaler(r, &pk.ExternalLinkSettings)
 }

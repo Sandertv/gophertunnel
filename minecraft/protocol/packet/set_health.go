@@ -19,10 +19,14 @@ func (*SetHealth) ID() uint32 {
 
 // Marshal ...
 func (pk *SetHealth) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.Health)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetHealth) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetHealth) marshal(r protocol.IO) {
 	r.Varint32(&pk.Health)
 }

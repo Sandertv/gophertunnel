@@ -18,10 +18,14 @@ func (*PassengerJump) ID() uint32 {
 
 // Marshal ...
 func (pk *PassengerJump) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.JumpStrength)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PassengerJump) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PassengerJump) marshal(r protocol.IO) {
 	r.Varint32(&pk.JumpStrength)
 }

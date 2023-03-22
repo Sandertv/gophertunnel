@@ -25,14 +25,15 @@ func (*LecternUpdate) ID() uint32 {
 
 // Marshal ...
 func (pk *LecternUpdate) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.Page)
-	w.Uint8(&pk.PageCount)
-	w.UBlockPos(&pk.Position)
-	w.Bool(&pk.DropBook)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *LecternUpdate) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *LecternUpdate) marshal(r protocol.IO) {
 	r.Uint8(&pk.Page)
 	r.Uint8(&pk.PageCount)
 	r.UBlockPos(&pk.Position)

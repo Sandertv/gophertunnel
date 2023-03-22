@@ -24,13 +24,15 @@ func (*BlockPickRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *BlockPickRequest) Marshal(w *protocol.Writer) {
-	w.BlockPos(&pk.Position)
-	w.Bool(&pk.AddBlockNBT)
-	w.Uint8(&pk.HotBarSlot)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *BlockPickRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *BlockPickRequest) marshal(r protocol.IO) {
 	r.BlockPos(&pk.Position)
 	r.Bool(&pk.AddBlockNBT)
 	r.Uint8(&pk.HotBarSlot)

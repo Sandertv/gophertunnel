@@ -24,12 +24,15 @@ func (*BlockActorData) ID() uint32 {
 
 // Marshal ...
 func (pk *BlockActorData) Marshal(w *protocol.Writer) {
-	w.UBlockPos(&pk.Position)
-	w.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *BlockActorData) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *BlockActorData) marshal(r protocol.IO) {
 	r.UBlockPos(&pk.Position)
 	r.NBT(&pk.NBTData, nbt.NetworkLittleEndian)
 }

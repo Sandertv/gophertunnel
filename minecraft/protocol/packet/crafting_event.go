@@ -31,15 +31,15 @@ func (*CraftingEvent) ID() uint32 {
 
 // Marshal ...
 func (pk *CraftingEvent) Marshal(w *protocol.Writer) {
-	w.Uint8(&pk.WindowID)
-	w.Varint32(&pk.CraftingType)
-	w.UUID(&pk.RecipeUUID)
-	protocol.FuncSlice(w, &pk.Input, w.ItemInstance)
-	protocol.FuncSlice(w, &pk.Output, w.ItemInstance)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CraftingEvent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CraftingEvent) marshal(r protocol.IO) {
 	r.Uint8(&pk.WindowID)
 	r.Varint32(&pk.CraftingType)
 	r.UUID(&pk.RecipeUUID)

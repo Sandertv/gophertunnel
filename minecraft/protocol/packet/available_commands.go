@@ -53,16 +53,7 @@ func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
 	}
 
 	// Soft enums follow, which may be changed after sending this packet.
-	dynamicEnumsLen := uint32(len(dynamicEnums))
-	w.Varuint32(&dynamicEnumsLen)
-	for _, enum := range dynamicEnums {
-		optionsLen := uint32(len(enum.Options))
-		w.String(&enum.Type)
-		w.Varuint32(&optionsLen)
-		for _, option := range enum.Options {
-			w.String(&option)
-		}
-	}
+	protocol.Slice(w, &dynamicEnums)
 
 	// Constraints are supposed to be here, but constraints are pointless, make no sense to be in this packet
 	// and are not worth implementing.
@@ -104,19 +95,8 @@ func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
 	}
 
 	// We first read all soft enums of the packet.
-	r.Varuint32(&count)
-	softEnums := make([]protocol.CommandEnum, count)
-	for i := uint32(0); i < count; i++ {
-		softEnums[i].Dynamic = true
-		r.String(&softEnums[i].Type)
-
-		var optionCount uint32
-		r.Varuint32(&optionCount)
-		softEnums[i].Options = make([]string, optionCount)
-		for j := uint32(0); j < optionCount; j++ {
-			r.String(&softEnums[i].Options[j])
-		}
-	}
+	var softEnums []protocol.CommandEnum
+	protocol.Slice(r, &softEnums)
 
 	// After we've read all soft enums, we need to match them with the values that are set in the commands
 	// that we read before.

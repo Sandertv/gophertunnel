@@ -32,15 +32,15 @@ func (*AddPainting) ID() uint32 {
 
 // Marshal ...
 func (pk *AddPainting) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.EntityUniqueID)
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.Vec3(&pk.Position)
-	w.Varint32(&pk.Direction)
-	w.String(&pk.Title)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *AddPainting) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *AddPainting) marshal(r protocol.IO) {
 	r.Varint64(&pk.EntityUniqueID)
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.Vec3(&pk.Position)

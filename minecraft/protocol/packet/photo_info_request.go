@@ -17,10 +17,14 @@ func (*PhotoInfoRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *PhotoInfoRequest) Marshal(w *protocol.Writer) {
-	w.Varint64(&pk.PhotoID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PhotoInfoRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PhotoInfoRequest) marshal(r protocol.IO) {
 	r.Varint64(&pk.PhotoID)
 }

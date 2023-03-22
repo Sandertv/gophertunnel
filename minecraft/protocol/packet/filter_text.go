@@ -21,12 +21,15 @@ func (*FilterText) ID() uint32 {
 
 // Marshal ...
 func (pk *FilterText) Marshal(w *protocol.Writer) {
-	w.String(&pk.Text)
-	w.Bool(&pk.FromServer)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *FilterText) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *FilterText) marshal(r protocol.IO) {
 	r.String(&pk.Text)
 	r.Bool(&pk.FromServer)
 }

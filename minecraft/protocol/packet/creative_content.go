@@ -21,10 +21,14 @@ func (*CreativeContent) ID() uint32 {
 
 // Marshal ...
 func (pk *CreativeContent) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Items)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CreativeContent) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CreativeContent) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Items)
 }

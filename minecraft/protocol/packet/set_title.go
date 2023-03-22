@@ -48,17 +48,15 @@ func (*SetTitle) ID() uint32 {
 
 // Marshal ...
 func (pk *SetTitle) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.ActionType)
-	w.String(&pk.Text)
-	w.Varint32(&pk.FadeInDuration)
-	w.Varint32(&pk.RemainDuration)
-	w.Varint32(&pk.FadeOutDuration)
-	w.String(&pk.XUID)
-	w.String(&pk.PlatformOnlineID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SetTitle) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SetTitle) marshal(r protocol.IO) {
 	r.Varint32(&pk.ActionType)
 	r.String(&pk.Text)
 	r.Varint32(&pk.FadeInDuration)

@@ -19,12 +19,15 @@ func (*RemoveVolumeEntity) ID() uint32 {
 
 // Marshal ...
 func (pk *RemoveVolumeEntity) Marshal(w *protocol.Writer) {
-	w.Uint64(&pk.EntityRuntimeID)
-	w.Varint32(&pk.Dimension)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *RemoveVolumeEntity) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *RemoveVolumeEntity) marshal(r protocol.IO) {
 	r.Uint64(&pk.EntityRuntimeID)
 	r.Varint32(&pk.Dimension)
 }

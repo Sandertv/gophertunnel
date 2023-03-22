@@ -25,12 +25,15 @@ func (*ServerSettingsResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ServerSettingsResponse) Marshal(w *protocol.Writer) {
-	w.Varuint32(&pk.FormID)
-	w.ByteSlice(&pk.FormData)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ServerSettingsResponse) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ServerSettingsResponse) marshal(r protocol.IO) {
 	r.Varuint32(&pk.FormID)
 	r.ByteSlice(&pk.FormData)
 }

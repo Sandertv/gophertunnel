@@ -22,13 +22,15 @@ func (*SubChunkRequest) ID() uint32 {
 
 // Marshal ...
 func (pk *SubChunkRequest) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.Dimension)
-	w.SubChunkPos(&pk.Position)
-	protocol.SliceUint32Length(w, &pk.Offsets)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *SubChunkRequest) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *SubChunkRequest) marshal(r protocol.IO) {
 	r.Varint32(&pk.Dimension)
 	r.SubChunkPos(&pk.Position)
 	protocol.SliceUint32Length(r, &pk.Offsets)

@@ -22,10 +22,14 @@ func (*ItemStackResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ItemStackResponse) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Responses)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ItemStackResponse) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ItemStackResponse) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Responses)
 }

@@ -23,12 +23,15 @@ func (*UpdatePlayerGameType) ID() uint32 {
 
 // Marshal ...
 func (pk *UpdatePlayerGameType) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.GameType)
-	w.Varint64(&pk.PlayerUniqueID)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *UpdatePlayerGameType) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *UpdatePlayerGameType) marshal(r protocol.IO) {
 	r.Varint32(&pk.GameType)
 	r.Varint64(&pk.PlayerUniqueID)
 }

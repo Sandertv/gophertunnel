@@ -42,17 +42,15 @@ func (*PhotoTransfer) ID() uint32 {
 
 // Marshal ...
 func (pk *PhotoTransfer) Marshal(w *protocol.Writer) {
-	w.String(&pk.PhotoName)
-	w.ByteSlice(&pk.PhotoData)
-	w.String(&pk.BookID)
-	w.Uint8(&pk.PhotoType)
-	w.Uint8(&pk.SourceType)
-	w.Int64(&pk.OwnerEntityUniqueID)
-	w.String(&pk.NewPhotoName)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *PhotoTransfer) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *PhotoTransfer) marshal(r protocol.IO) {
 	r.String(&pk.PhotoName)
 	r.ByteSlice(&pk.PhotoData)
 	r.String(&pk.BookID)

@@ -19,10 +19,14 @@ func (*RemoveObjective) ID() uint32 {
 
 // Marshal ...
 func (pk *RemoveObjective) Marshal(w *protocol.Writer) {
-	w.String(&pk.ObjectiveName)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *RemoveObjective) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *RemoveObjective) marshal(r protocol.IO) {
 	r.String(&pk.ObjectiveName)
 }

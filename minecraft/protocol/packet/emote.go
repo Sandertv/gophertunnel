@@ -29,13 +29,15 @@ func (*Emote) ID() uint32 {
 
 // Marshal ...
 func (pk *Emote) Marshal(w *protocol.Writer) {
-	w.Varuint64(&pk.EntityRuntimeID)
-	w.String(&pk.EmoteID)
-	w.Uint8(&pk.Flags)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *Emote) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *Emote) marshal(r protocol.IO) {
 	r.Varuint64(&pk.EntityRuntimeID)
 	r.String(&pk.EmoteID)
 	r.Uint8(&pk.Flags)

@@ -18,10 +18,14 @@ func (*CameraPresets) ID() uint32 {
 
 // Marshal ...
 func (pk *CameraPresets) Marshal(w *protocol.Writer) {
-	w.NBT(&pk.Data, nbt.NetworkLittleEndian)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *CameraPresets) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *CameraPresets) marshal(r protocol.IO) {
 	r.NBT(&pk.Data, nbt.NetworkLittleEndian)
 }

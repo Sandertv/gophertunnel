@@ -20,10 +20,14 @@ func (pk *ClientCacheMissResponse) ID() uint32 {
 
 // Marshal ...
 func (pk *ClientCacheMissResponse) Marshal(w *protocol.Writer) {
-	protocol.Slice(w, &pk.Blobs)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *ClientCacheMissResponse) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *ClientCacheMissResponse) marshal(r protocol.IO) {
 	protocol.Slice(r, &pk.Blobs)
 }
