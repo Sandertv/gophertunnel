@@ -398,6 +398,13 @@ func (w *Writer) Recipe(x *Recipe) {
 	(*x).Marshal(w)
 }
 
+// Event writes an Event to the writer.
+func (w *Writer) Event(x *Event) {
+	w.Varint32(&x.Type)
+	w.Uint8(&x.UsePlayerID)
+	x.Data.Marshal(w)
+}
+
 // AbilityValue writes an ability value to the writer.
 func (w *Writer) AbilityValue(x *any) {
 	switch val := (*x).(type) {

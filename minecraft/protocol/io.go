@@ -49,6 +49,7 @@ type IO interface {
 	ItemDescriptorCount(i *ItemDescriptorCount)
 	MaterialReducer(x *MaterialReducer)
 	Recipe(x *Recipe)
+	Event(x *Event)
 	GameRule(x *GameRule)
 	AbilityValue(x *any)
 

@@ -1,5 +1,51 @@
 package protocol
 
+// TODO: Support the last seven new events.
+const (
+	EventTypeAchievementAwarded = iota
+	EventTypeEntityInteract
+	EventTypePortalBuilt
+	EventTypePortalUsed
+	EventTypeMobKilled
+	EventTypeCauldronUsed
+	EventTypePlayerDied
+	EventTypeBossKilled
+	EventTypeAgentCommand
+	EventTypeAgentCreated // Unused for whatever reason?
+	EventTypePatternRemoved
+	EventTypeSlashCommandExecuted
+	EventTypeFishBucketed
+	EventTypeMobBorn
+	EventTypePetDied
+	EventTypeCauldronInteract
+	EventTypeComposterInteract
+	EventTypeBellUsed
+	EventTypeEntityDefinitionTrigger
+	EventTypeRaidUpdate
+	EventTypeMovementAnomaly
+	EventTypeMovementCorrected
+	EventTypeExtractHoney
+	EventTypeTargetBlockHit
+	EventTypePiglinBarter
+	EventTypePlayerWaxedOrUnwaxedCopper
+	EventTypeCodeBuilderRuntimeAction
+	EventTypeCodeBuilderScoreboard
+	EventTypeStriderRiddenInLavaInOverworld
+	EventTypeSneakCloseToSculkSensor
+)
+
+// Event is an event in the world that is transmitted for telemetry purposes in
+// a packet.Event.
+type Event struct {
+	// Type is the type of the event to be called. It is one of the constants that may be found above.
+	Type int32
+	// UsePlayerID ...
+	// TODO: Figure out what UsePlayerID is for.
+	UsePlayerID byte
+	// Data is the parsed event data.
+	Data EventData
+}
+
 // EventData represents an object that holds data specific to an event.
 // The data it holds depends on the type.
 type EventData interface {

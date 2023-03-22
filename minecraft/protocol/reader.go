@@ -496,6 +496,65 @@ func (r *Reader) Recipe(x *Recipe) {
 	(*x).Unmarshal(r)
 }
 
+// Event reads an Event from the reader.
+func (r *Reader) Event(x *Event) {
+	r.Varint32(&x.Type)
+	r.Uint8(&x.UsePlayerID)
+
+	switch x.Type {
+	case EventTypeAchievementAwarded:
+		x.Data = &AchievementAwardedEventData{}
+	case EventTypeEntityInteract:
+		x.Data = &EntityInteractEventData{}
+	case EventTypePortalBuilt:
+		x.Data = &PortalBuiltEventData{}
+	case EventTypePortalUsed:
+		x.Data = &PortalUsedEventData{}
+	case EventTypeMobKilled:
+		x.Data = &MobKilledEventData{}
+	case EventTypeCauldronUsed:
+		x.Data = &CauldronUsedEventData{}
+	case EventTypePlayerDied:
+		x.Data = &PlayerDiedEventData{}
+	case EventTypeBossKilled:
+		x.Data = &BossKilledEventData{}
+	case EventTypeAgentCommand:
+		x.Data = &AgentCommandEventData{}
+	case EventTypePatternRemoved:
+		x.Data = &PatternRemovedEventData{}
+	case EventTypeSlashCommandExecuted:
+		x.Data = &SlashCommandExecutedEventData{}
+	case EventTypeFishBucketed:
+		x.Data = &FishBucketedEventData{}
+	case EventTypeMobBorn:
+		x.Data = &MobBornEventData{}
+	case EventTypePetDied:
+		x.Data = &PetDiedEventData{}
+	case EventTypeCauldronInteract:
+		x.Data = &CauldronInteractEventData{}
+	case EventTypeComposterInteract:
+		x.Data = &ComposterInteractEventData{}
+	case EventTypeBellUsed:
+		x.Data = &BellUsedEventData{}
+	case EventTypeEntityDefinitionTrigger:
+		x.Data = &EntityDefinitionTriggerEventData{}
+	case EventTypeRaidUpdate:
+		x.Data = &RaidUpdateEventData{}
+	case EventTypeMovementAnomaly:
+		x.Data = &MovementAnomalyEventData{}
+	case EventTypeMovementCorrected:
+		x.Data = &MovementCorrectedEventData{}
+	case EventTypeExtractHoney:
+		x.Data = &ExtractHoneyEventData{}
+	case EventTypePlayerWaxedOrUnwaxedCopper:
+		x.Data = &WaxedOrUnwaxedCopperEventData{}
+	case EventTypeSneakCloseToSculkSensor:
+		x.Data = &SneakCloseToSculkSensorEventData{}
+	}
+
+	x.Data.Marshal(r)
+}
+
 // AbilityValue reads an ability value from the reader.
 func (r *Reader) AbilityValue(x *any) {
 	valType, boolVal, floatVal := uint8(0), false, float32(0)
@@ -510,6 +569,10 @@ func (r *Reader) AbilityValue(x *any) {
 	default:
 		r.InvalidValue(valType, "ability value type", "must be bool or float32")
 	}
+}
+
+func (r *Reader) EventData(x *EventData) {
+
 }
 
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
