@@ -47,52 +47,20 @@ func (*InventoryTransaction) ID() uint32 {
 
 // Marshal ...
 func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
-	w.Varint32(&pk.LegacyRequestID)
-	if pk.LegacyRequestID != 0 {
-		protocol.Slice(w, &pk.LegacySetItemSlots)
-	}
-	var id uint32
-	switch pk.TransactionData.(type) {
-	case nil, *protocol.NormalTransactionData:
-		id = InventoryTransactionTypeNormal
-	case *protocol.MismatchTransactionData:
-		id = InventoryTransactionTypeMismatch
-	case *protocol.UseItemTransactionData:
-		id = InventoryTransactionTypeUseItem
-	case *protocol.UseItemOnEntityTransactionData:
-		id = InventoryTransactionTypeUseItemOnEntity
-	case *protocol.ReleaseItemTransactionData:
-		id = InventoryTransactionTypeReleaseItem
-	}
-	w.Varuint32(&id)
-	protocol.Slice(w, &pk.Actions)
-	if pk.TransactionData != nil {
-		pk.TransactionData.Marshal(w)
-	}
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *InventoryTransaction) marshal(r protocol.IO) {
 	r.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
 		protocol.Slice(r, &pk.LegacySetItemSlots)
 	}
-	var transactionType uint32
-	r.Varuint32(&transactionType)
+	r.TransactionDataType(&pk.TransactionData)
 	protocol.Slice(r, &pk.Actions)
-	switch transactionType {
-	case InventoryTransactionTypeNormal:
-		pk.TransactionData = &protocol.NormalTransactionData{}
-	case InventoryTransactionTypeMismatch:
-		pk.TransactionData = &protocol.MismatchTransactionData{}
-	case InventoryTransactionTypeUseItem:
-		pk.TransactionData = &protocol.UseItemTransactionData{}
-	case InventoryTransactionTypeUseItemOnEntity:
-		pk.TransactionData = &protocol.UseItemOnEntityTransactionData{}
-	case InventoryTransactionTypeReleaseItem:
-		pk.TransactionData = &protocol.ReleaseItemTransactionData{}
-	default:
-		r.UnknownEnumOption(transactionType, "inventory transaction type")
-	}
 	pk.TransactionData.Marshal(r)
 }

@@ -467,29 +467,12 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 
 // Recipe reads a Recipe from the reader.
 func (r *Reader) Recipe(x *Recipe) {
-	var recipeType int32
+	var (
+		recipeType int32
+		recipe     Recipe
+	)
 	r.Varint32(&recipeType)
-
-	switch recipeType {
-	case RecipeShapeless:
-		*x = &ShapelessRecipe{}
-	case RecipeShaped:
-		*x = &ShapedRecipe{}
-	case RecipeFurnace:
-		*x = &FurnaceRecipe{}
-	case RecipeFurnaceData:
-		*x = &FurnaceDataRecipe{}
-	case RecipeMulti:
-		*x = &MultiRecipe{}
-	case RecipeShulkerBox:
-		*x = &ShulkerBoxRecipe{}
-	case RecipeShapelessChemistry:
-		*x = &ShapelessChemistryRecipe{}
-	case RecipeShapedChemistry:
-		*x = &ShapedChemistryRecipe{}
-	case RecipeSmithingTransform:
-		*x = &SmithingTransformRecipe{}
-	default:
+	if !lookupRecipe(recipeType, &recipe) {
 		r.UnknownEnumOption(recipeType, "crafting data recipe type")
 		return
 	}
@@ -500,59 +483,20 @@ func (r *Reader) Recipe(x *Recipe) {
 func (r *Reader) Event(x *Event) {
 	r.Varint32(&x.Type)
 	r.Uint8(&x.UsePlayerID)
-
-	switch x.Type {
-	case EventTypeAchievementAwarded:
-		x.Data = &AchievementAwardedEventData{}
-	case EventTypeEntityInteract:
-		x.Data = &EntityInteractEventData{}
-	case EventTypePortalBuilt:
-		x.Data = &PortalBuiltEventData{}
-	case EventTypePortalUsed:
-		x.Data = &PortalUsedEventData{}
-	case EventTypeMobKilled:
-		x.Data = &MobKilledEventData{}
-	case EventTypeCauldronUsed:
-		x.Data = &CauldronUsedEventData{}
-	case EventTypePlayerDied:
-		x.Data = &PlayerDiedEventData{}
-	case EventTypeBossKilled:
-		x.Data = &BossKilledEventData{}
-	case EventTypeAgentCommand:
-		x.Data = &AgentCommandEventData{}
-	case EventTypePatternRemoved:
-		x.Data = &PatternRemovedEventData{}
-	case EventTypeSlashCommandExecuted:
-		x.Data = &SlashCommandExecutedEventData{}
-	case EventTypeFishBucketed:
-		x.Data = &FishBucketedEventData{}
-	case EventTypeMobBorn:
-		x.Data = &MobBornEventData{}
-	case EventTypePetDied:
-		x.Data = &PetDiedEventData{}
-	case EventTypeCauldronInteract:
-		x.Data = &CauldronInteractEventData{}
-	case EventTypeComposterInteract:
-		x.Data = &ComposterInteractEventData{}
-	case EventTypeBellUsed:
-		x.Data = &BellUsedEventData{}
-	case EventTypeEntityDefinitionTrigger:
-		x.Data = &EntityDefinitionTriggerEventData{}
-	case EventTypeRaidUpdate:
-		x.Data = &RaidUpdateEventData{}
-	case EventTypeMovementAnomaly:
-		x.Data = &MovementAnomalyEventData{}
-	case EventTypeMovementCorrected:
-		x.Data = &MovementCorrectedEventData{}
-	case EventTypeExtractHoney:
-		x.Data = &ExtractHoneyEventData{}
-	case EventTypePlayerWaxedOrUnwaxedCopper:
-		x.Data = &WaxedOrUnwaxedCopperEventData{}
-	case EventTypeSneakCloseToSculkSensor:
-		x.Data = &SneakCloseToSculkSensorEventData{}
+	if !lookupEvent(x.Type, &x.Data) {
+		r.UnknownEnumOption(x.Type, "event packet event type")
+		return
 	}
-
 	x.Data.Marshal(r)
+}
+
+// TransactionDataType reads an InventoryTransactionData type from the reader.
+func (r *Reader) TransactionDataType(x *InventoryTransactionData) {
+	var transactionType uint32
+	r.Varuint32(&transactionType)
+	if !lookupTransactionData(transactionType, x) {
+		r.UnknownEnumOption(transactionType, "inventory transaction data type")
+	}
 }
 
 // AbilityValue reads an ability value from the reader.

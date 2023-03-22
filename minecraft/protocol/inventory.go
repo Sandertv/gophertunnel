@@ -54,11 +54,57 @@ func (x *InventoryAction) Marshal(r IO) {
 	r.ItemInstance(&x.NewItem)
 }
 
+const (
+	InventoryTransactionTypeNormal = iota
+	InventoryTransactionTypeMismatch
+	InventoryTransactionTypeUseItem
+	InventoryTransactionTypeUseItemOnEntity
+	InventoryTransactionTypeReleaseItem
+)
+
 // InventoryTransactionData represents an object that holds data specific to an inventory transaction type.
 // The data it holds depends on the type.
 type InventoryTransactionData interface {
 	// Marshal encodes/decodes a serialised inventory transaction data object.
 	Marshal(r IO)
+}
+
+// lookupTransactionData looks up inventory transaction data for the ID passed.
+func lookupTransactionData(id uint32, x *InventoryTransactionData) bool {
+	switch id {
+	case InventoryTransactionTypeNormal:
+		*x = &NormalTransactionData{}
+	case InventoryTransactionTypeMismatch:
+		*x = &MismatchTransactionData{}
+	case InventoryTransactionTypeUseItem:
+		*x = &UseItemTransactionData{}
+	case InventoryTransactionTypeUseItemOnEntity:
+		*x = &UseItemOnEntityTransactionData{}
+	case InventoryTransactionTypeReleaseItem:
+		*x = &ReleaseItemTransactionData{}
+	default:
+		return false
+	}
+	return true
+}
+
+// lookupTransactionDataType looks up an ID for a specific transaction data.
+func lookupTransactionDataType(x InventoryTransactionData, id *uint32) bool {
+	switch x.(type) {
+	case *NormalTransactionData:
+		*id = InventoryTransactionTypeNormal
+	case *MismatchTransactionData:
+		*id = InventoryTransactionTypeMismatch
+	case *UseItemTransactionData:
+		*id = InventoryTransactionTypeUseItem
+	case *UseItemOnEntityTransactionData:
+		*id = InventoryTransactionTypeUseItemOnEntity
+	case *ReleaseItemTransactionData:
+		*id = InventoryTransactionTypeReleaseItem
+	default:
+		return false
+	}
+	return true
 }
 
 // NormalTransactionData represents an inventory transaction data object for normal transactions, such as

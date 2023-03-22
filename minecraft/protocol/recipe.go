@@ -77,6 +77,62 @@ type Recipe interface {
 	Unmarshal(r *Reader)
 }
 
+// lookupRecipe looks up the Recipe for a recipe type. False is returned if not
+// found.
+func lookupRecipe(recipeType int32, x *Recipe) bool {
+	switch recipeType {
+	case RecipeShapeless:
+		*x = &ShapelessRecipe{}
+	case RecipeShaped:
+		*x = &ShapedRecipe{}
+	case RecipeFurnace:
+		*x = &FurnaceRecipe{}
+	case RecipeFurnaceData:
+		*x = &FurnaceDataRecipe{}
+	case RecipeMulti:
+		*x = &MultiRecipe{}
+	case RecipeShulkerBox:
+		*x = &ShulkerBoxRecipe{}
+	case RecipeShapelessChemistry:
+		*x = &ShapelessChemistryRecipe{}
+	case RecipeShapedChemistry:
+		*x = &ShapedChemistryRecipe{}
+	case RecipeSmithingTransform:
+		*x = &SmithingTransformRecipe{}
+	default:
+		return false
+	}
+	return true
+}
+
+// lookupRecipeType looks up the recipe type for a Recipe. False is returned if
+// none was found.
+func lookupRecipeType(x Recipe, recipeType *int32) bool {
+	switch x.(type) {
+	case *ShapelessRecipe:
+		*recipeType = RecipeShapeless
+	case *ShapedRecipe:
+		*recipeType = RecipeShaped
+	case *FurnaceRecipe:
+		*recipeType = RecipeFurnace
+	case *FurnaceDataRecipe:
+		*recipeType = RecipeFurnaceData
+	case *MultiRecipe:
+		*recipeType = RecipeMulti
+	case *ShulkerBoxRecipe:
+		*recipeType = RecipeShulkerBox
+	case *ShapelessChemistryRecipe:
+		*recipeType = RecipeShapelessChemistry
+	case *ShapedChemistryRecipe:
+		*recipeType = RecipeShapedChemistry
+	case *SmithingTransformRecipe:
+		*recipeType = RecipeSmithingTransform
+	default:
+		return false
+	}
+	return true
+}
+
 // ShapelessRecipe is a recipe that has no particular shape. Its functionality is shared with the
 // RecipeShulkerBox and RecipeShapelessChemistry types.
 type ShapelessRecipe struct {

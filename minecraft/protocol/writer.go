@@ -371,30 +371,11 @@ func (w *Writer) MaterialReducer(m *MaterialReducer) {
 
 // Recipe writes a Recipe to the writer.
 func (w *Writer) Recipe(x *Recipe) {
-	var c int32
-	switch (*x).(type) {
-	case *ShapelessRecipe:
-		c = RecipeShapeless
-	case *ShapedRecipe:
-		c = RecipeShaped
-	case *FurnaceRecipe:
-		c = RecipeFurnace
-	case *FurnaceDataRecipe:
-		c = RecipeFurnaceData
-	case *MultiRecipe:
-		c = RecipeMulti
-	case *ShulkerBoxRecipe:
-		c = RecipeShulkerBox
-	case *ShapelessChemistryRecipe:
-		c = RecipeShapelessChemistry
-	case *ShapedChemistryRecipe:
-		c = RecipeShapedChemistry
-	case *SmithingTransformRecipe:
-		c = RecipeSmithingTransform
-	default:
+	var recipeType int32
+	if !lookupRecipeType(*x, &recipeType) {
 		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "crafting recipe type")
 	}
-	w.Varint32(&c)
+	w.Varint32(&recipeType)
 	(*x).Marshal(w)
 }
 
@@ -403,6 +384,15 @@ func (w *Writer) Event(x *Event) {
 	w.Varint32(&x.Type)
 	w.Uint8(&x.UsePlayerID)
 	x.Data.Marshal(w)
+}
+
+// TransactionDataType writes an InventoryTransactionData type to the writer.
+func (w *Writer) TransactionDataType(x *InventoryTransactionData) {
+	var id uint32
+	if !lookupTransactionDataType(*x, &id) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", x), "inventory transaction data type")
+	}
+	w.Varuint32(&id)
 }
 
 // AbilityValue writes an ability value to the writer.

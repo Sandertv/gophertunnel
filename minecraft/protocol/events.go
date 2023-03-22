@@ -46,6 +46,64 @@ type Event struct {
 	Data EventData
 }
 
+// lookupEvent looks up an EventData matching the event type passed. False is
+// returned if no such event data exists.
+func lookupEvent(eventType int32, x *EventData) bool {
+	switch eventType {
+	case EventTypeAchievementAwarded:
+		*x = &AchievementAwardedEventData{}
+	case EventTypeEntityInteract:
+		*x = &EntityInteractEventData{}
+	case EventTypePortalBuilt:
+		*x = &PortalBuiltEventData{}
+	case EventTypePortalUsed:
+		*x = &PortalUsedEventData{}
+	case EventTypeMobKilled:
+		*x = &MobKilledEventData{}
+	case EventTypeCauldronUsed:
+		*x = &CauldronUsedEventData{}
+	case EventTypePlayerDied:
+		*x = &PlayerDiedEventData{}
+	case EventTypeBossKilled:
+		*x = &BossKilledEventData{}
+	case EventTypeAgentCommand:
+		*x = &AgentCommandEventData{}
+	case EventTypePatternRemoved:
+		*x = &PatternRemovedEventData{}
+	case EventTypeSlashCommandExecuted:
+		*x = &SlashCommandExecutedEventData{}
+	case EventTypeFishBucketed:
+		*x = &FishBucketedEventData{}
+	case EventTypeMobBorn:
+		*x = &MobBornEventData{}
+	case EventTypePetDied:
+		*x = &PetDiedEventData{}
+	case EventTypeCauldronInteract:
+		*x = &CauldronInteractEventData{}
+	case EventTypeComposterInteract:
+		*x = &ComposterInteractEventData{}
+	case EventTypeBellUsed:
+		*x = &BellUsedEventData{}
+	case EventTypeEntityDefinitionTrigger:
+		*x = &EntityDefinitionTriggerEventData{}
+	case EventTypeRaidUpdate:
+		*x = &RaidUpdateEventData{}
+	case EventTypeMovementAnomaly:
+		*x = &MovementAnomalyEventData{}
+	case EventTypeMovementCorrected:
+		*x = &MovementCorrectedEventData{}
+	case EventTypeExtractHoney:
+		*x = &ExtractHoneyEventData{}
+	case EventTypePlayerWaxedOrUnwaxedCopper:
+		*x = &WaxedOrUnwaxedCopperEventData{}
+	case EventTypeSneakCloseToSculkSensor:
+		*x = &SneakCloseToSculkSensorEventData{}
+	default:
+		return false
+	}
+	return true
+}
+
 // EventData represents an object that holds data specific to an event.
 // The data it holds depends on the type.
 type EventData interface {
