@@ -55,6 +55,7 @@ type IO interface {
 	PlayerInventoryAction(x *UseItemTransactionData)
 	GameRule(x *GameRule)
 	AbilityValue(x *any)
+	Commands(commands *[]Command, constraints *[]CommandEnumConstraint)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)

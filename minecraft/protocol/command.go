@@ -380,3 +380,94 @@ func (x *CommandOutputMessage) Marshal(r IO) {
 	r.String(&x.Message)
 	FuncSlice(r, &x.Parameters, r.String)
 }
+
+// enumValues runs through all commands set to the packet and collects enum values and a map of indices
+// indexed with the enum values.
+func enumValues(commands []Command) (values []string, indices map[string]int) {
+	indices = make(map[string]int)
+
+	for _, command := range commands {
+		for _, alias := range command.Aliases {
+			if _, ok := indices[alias]; !ok {
+				indices[alias] = len(values)
+				values = append(values, alias)
+			}
+		}
+		for _, overload := range command.Overloads {
+			for _, parameter := range overload.Parameters {
+				for _, option := range parameter.Enum.Options {
+					if _, ok := indices[option]; !ok {
+						indices[option] = len(values)
+						values = append(values, option)
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+// suffixes runs through all commands set to the packet and collects suffixes that the parameters of the
+// commands may have. It returns the suffixes and a map indexed by the suffixes.
+func suffixes(commands []Command) (suffixes []string, indices map[string]int) {
+	indices = make(map[string]int)
+
+	for _, command := range commands {
+		for _, overload := range command.Overloads {
+			for _, parameter := range overload.Parameters {
+				if parameter.Suffix != "" {
+					if _, ok := indices[parameter.Suffix]; !ok {
+						indices[parameter.Suffix] = len(suffixes)
+						suffixes = append(suffixes, parameter.Suffix)
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+// enums runs through all commands set to the packet and collects enums that the parameters of the commands
+// may have. It returns the enums and a map indexed by the enums and their offsets in the slice.
+func enums(commands []Command) (enums []CommandEnum, indices map[string]int) {
+	indices = make(map[string]int)
+
+	for _, command := range commands {
+		if len(command.Aliases) > 0 {
+			aliasEnum := CommandEnum{Type: command.Name + "Aliases", Options: command.Aliases}
+			indices[command.Name+"Aliases"] = len(enums)
+			enums = append(enums, aliasEnum)
+		}
+		for _, overload := range command.Overloads {
+			for _, parameter := range overload.Parameters {
+				if len(parameter.Enum.Options) != 0 && !parameter.Enum.Dynamic {
+					if _, ok := indices[parameter.Enum.Type]; !ok {
+						indices[parameter.Enum.Type] = len(enums)
+						enums = append(enums, parameter.Enum)
+					}
+				}
+			}
+		}
+	}
+	return
+}
+
+// dynamicEnums runs through all commands set to the packet and collects dynamic enums set as parameters of
+// commands. These dynamic enums may be updated over the course of the game and are written separately.
+func dynamicEnums(commands []Command) (enums []CommandEnum, indices map[string]int) {
+	indices = make(map[string]int)
+
+	for _, command := range commands {
+		for _, overload := range command.Overloads {
+			for _, parameter := range overload.Parameters {
+				if parameter.Enum.Dynamic {
+					if _, ok := indices[parameter.Enum.Type]; !ok {
+						indices[parameter.Enum.Type] = len(enums)
+						enums = append(enums, parameter.Enum)
+					}
+				}
+			}
+		}
+	}
+	return
+}
