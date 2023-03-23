@@ -43,8 +43,9 @@ func main() {
 // handleConn handles a new incoming minecraft.Conn from the minecraft.Listener passed.
 func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, src oauth2.TokenSource) {
 	serverConn, err := minecraft.Dialer{
-		TokenSource: src,
-		ClientData:  conn.ClientData(),
+		TokenSource:       src,
+		ClientData:        conn.ClientData(),
+		EnableClientCache: conn.ClientCacheEnabled(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)
