@@ -2,7 +2,6 @@ package packet
 
 import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"math"
 )
 
 // LevelChunk is sent by the server to provide the client with a chunk of a world data (16xYx16 blocks).
@@ -12,14 +11,16 @@ type LevelChunk struct {
 	// Position contains the X and Z coordinates of the chunk sent. You can convert a block coordinate to a chunk
 	// coordinate by right-shifting it four bits.
 	Position protocol.ChunkPos
-	// SubChunkRequestMode specifies the sub-chunk request format. If it is not set, then sub-chunk requesting will not
-	// be enabled. It is always one of the protocol.SubChunkRequestMode constants.
-	SubChunkRequestMode byte
 	// HighestSubChunk is the highest sub-chunk at the position that is not all air. It is only set if the
-	// RequestMode is set to protocol.SubChunkRequestModeLimited.
+	// SubChunkCount is set to protocol.SubChunkRequestModeLimited.
 	HighestSubChunk uint16
-	// SubChunkCount is the amount of sub-chunks that are part of the chunk sent. Depending on if the cache
-	// is enabled, a list of blob hashes will be sent, or, if disabled, the sub-chunk data.
+	// SubChunkCount is the amount of sub-chunks that are part of the chunk
+	// sent. Depending on if the cache is enabled, a list of blob hashes will be
+	// sent, or, if disabled, the sub-chunk data. SubChunkCount may be set to
+	// protocol.SubChunkRequestModeLimited or
+	// protocol.SubChunkRequestModeLimitless to prompt the client to send a
+	// SubChunkRequest in response. If this field is set to
+	// protocol.SubChunkRequestModeLimited, HighestSubChunk is used.
 	SubChunkCount uint32
 	// CacheEnabled specifies if the client blob cache should be enabled. This system is based on hashes of
 	// blobs which are consistent and saved by the client in combination with that blob, so that the server
@@ -45,43 +46,20 @@ func (*LevelChunk) ID() uint32 {
 
 // Marshal ...
 func (pk *LevelChunk) Marshal(w *protocol.Writer) {
-	w.ChunkPos(&pk.Position)
-	switch pk.SubChunkRequestMode {
-	case protocol.SubChunkRequestModeLegacy:
-		w.Varuint32(&pk.SubChunkCount)
-	case protocol.SubChunkRequestModeLimitless:
-		limitlessFlag := uint32(math.MaxUint32)
-		w.Varuint32(&limitlessFlag)
-	case protocol.SubChunkRequestModeLimited:
-		limitedFlag := uint32(math.MaxUint32 - 1)
-		w.Varuint32(&limitedFlag)
-		w.Uint16(&pk.HighestSubChunk)
-	}
-
-	w.Bool(&pk.CacheEnabled)
-	if pk.CacheEnabled {
-		protocol.FuncSlice(w, &pk.BlobHashes, w.Uint64)
-	}
-	w.ByteSlice(&pk.RawPayload)
+	pk.marshal(w)
 }
 
 // Unmarshal ...
 func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
+	pk.marshal(r)
+}
+
+func (pk *LevelChunk) marshal(r protocol.IO) {
 	r.ChunkPos(&pk.Position)
-
-	var potentialSubCount uint32
-	r.Varuint32(&potentialSubCount)
-
-	switch potentialSubCount {
-	case math.MaxUint32:
-		pk.SubChunkRequestMode = protocol.SubChunkRequestModeLimitless
-	case math.MaxUint32 - 1:
-		pk.SubChunkRequestMode = protocol.SubChunkRequestModeLimited
+	r.Varuint32(&pk.SubChunkCount)
+	if pk.SubChunkCount == protocol.SubChunkRequestModeLimited {
 		r.Uint16(&pk.HighestSubChunk)
-	default:
-		pk.SubChunkCount = potentialSubCount
 	}
-
 	r.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
 		protocol.FuncSlice(r, &pk.BlobHashes, r.Uint64)
