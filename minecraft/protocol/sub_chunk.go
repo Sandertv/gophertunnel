@@ -1,5 +1,7 @@
 package protocol
 
+import "math"
+
 const (
 	HeightMapDataNone = iota
 	HeightMapDataHasData
@@ -8,8 +10,7 @@ const (
 )
 
 const (
-	SubChunkRequestModeLegacy = iota
-	SubChunkRequestModeLimitless
+	SubChunkRequestModeLimitless = math.MaxUint32 - iota
 	SubChunkRequestModeLimited
 )
 
