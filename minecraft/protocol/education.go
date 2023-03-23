@@ -9,8 +9,8 @@ type EducationSharedResourceURI struct {
 	LinkURI string
 }
 
-// EducationResourceURI reads/writes an EducationSharedResourceURI to an IO.
-func EducationResourceURI(r IO, x *EducationSharedResourceURI) {
+// Marshal reads/writes an EducationSharedResourceURI to an IO.
+func (x *EducationSharedResourceURI) Marshal(r IO) {
 	r.String(&x.ButtonName)
 	r.String(&x.LinkURI)
 }

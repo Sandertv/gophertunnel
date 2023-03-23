@@ -33,7 +33,7 @@ func (pk *SetScore) Marshal(io protocol.IO) {
 	case ScoreboardActionRemove:
 		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreRemoveEntry)
 	case ScoreboardActionModify:
-		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreModifyEntry)
+		protocol.Slice(io, &pk.Entries)
 	default:
 		io.UnknownEnumOption(pk.ActionType, "set score action type")
 	}

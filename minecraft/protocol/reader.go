@@ -277,7 +277,6 @@ func (r *Reader) EntityMetadata(x *map[uint32]any) {
 
 	var count uint32
 	r.Varuint32(&count)
-	r.LimitUint32(count, mediumLimit)
 	for i := uint32(0); i < count; i++ {
 		var key, dataType uint32
 		r.Varuint32(&key)

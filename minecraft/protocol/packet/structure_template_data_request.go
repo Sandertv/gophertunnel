@@ -34,6 +34,6 @@ func (pk *StructureTemplateDataRequest) ID() uint32 {
 func (pk *StructureTemplateDataRequest) Marshal(io protocol.IO) {
 	io.String(&pk.StructureName)
 	io.UBlockPos(&pk.Position)
-	protocol.StructSettings(io, &pk.Settings)
+	protocol.Single(io, &pk.Settings)
 	io.Uint8(&pk.RequestType)
 }

@@ -285,7 +285,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Int32(&pk.LimitedWorldWidth)
 	io.Int32(&pk.LimitedWorldDepth)
 	io.Bool(&pk.NewNether)
-	protocol.EducationResourceURI(io, &pk.EducationSharedResourceURI)
+	protocol.Single(io, &pk.EducationSharedResourceURI)
 	protocol.OptionalFunc(io, &pk.ForceExperimentalGameplay, io.Bool)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)

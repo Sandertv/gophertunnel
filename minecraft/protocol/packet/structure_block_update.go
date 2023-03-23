@@ -66,7 +66,7 @@ func (pk *StructureBlockUpdate) Marshal(io protocol.IO) {
 	io.Bool(&pk.IncludePlayers)
 	io.Bool(&pk.ShowBoundingBox)
 	io.Varint32(&pk.StructureBlockType)
-	protocol.StructSettings(io, &pk.Settings)
+	protocol.Single(io, &pk.Settings)
 	io.Varint32(&pk.RedstoneSaveMode)
 	io.Bool(&pk.ShouldTrigger)
 	io.Bool(&pk.Waterlogged)

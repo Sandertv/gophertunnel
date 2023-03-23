@@ -34,6 +34,27 @@ type ScoreboardEntry struct {
 	DisplayName string
 }
 
+// Marshal encodes/decodes a ScoreboardEntry x as an entry for modification.
+func (x *ScoreboardEntry) Marshal(r IO) {
+	ScoreRemoveEntry(r, x)
+	r.Uint8(&x.IdentityType)
+	switch x.IdentityType {
+	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
+		r.Varint64(&x.EntityUniqueID)
+	case ScoreboardIdentityFakePlayer:
+		r.String(&x.DisplayName)
+	default:
+		r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
+	}
+}
+
+// ScoreRemoveEntry encodes/decodes a ScoreboardEntry x as an entry for removal.
+func ScoreRemoveEntry(r IO, x *ScoreboardEntry) {
+	r.Varint64(&x.EntryID)
+	r.String(&x.ObjectiveName)
+	r.Int32(&x.Score)
+}
+
 // ScoreboardIdentityEntry holds an entry to either associate an identity with one of the entries in a
 // scoreboard, or to remove associations.
 type ScoreboardIdentityEntry struct {
@@ -54,25 +75,4 @@ func (x *ScoreboardIdentityEntry) Marshal(r IO) {
 // ScoreboardIdentityClearEntry encodes/decodes a ScoreboardIdentityEntry for clearing the entry.
 func ScoreboardIdentityClearEntry(r IO, x *ScoreboardIdentityEntry) {
 	r.Varint64(&x.EntryID)
-}
-
-// ScoreRemoveEntry encodes/decodes a ScoreboardEntry x as an entry for removal.
-func ScoreRemoveEntry(r IO, x *ScoreboardEntry) {
-	r.Varint64(&x.EntryID)
-	r.String(&x.ObjectiveName)
-	r.Int32(&x.Score)
-}
-
-// ScoreModifyEntry encodes/decodes a ScoreboardEntry x as an entry for modification.
-func ScoreModifyEntry(r IO, x *ScoreboardEntry) {
-	ScoreRemoveEntry(r, x)
-	r.Uint8(&x.IdentityType)
-	switch x.IdentityType {
-	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-		r.Varint64(&x.EntityUniqueID)
-	case ScoreboardIdentityFakePlayer:
-		r.String(&x.DisplayName)
-	default:
-		r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
-	}
 }

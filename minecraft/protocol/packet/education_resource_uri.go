@@ -14,5 +14,5 @@ func (*EducationResourceURI) ID() uint32 {
 }
 
 func (pk *EducationResourceURI) Marshal(io protocol.IO) {
-	protocol.EducationResourceURI(io, &pk.Resource)
+	protocol.Single(io, &pk.Resource)
 }
