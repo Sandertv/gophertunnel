@@ -478,12 +478,9 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 
 // Recipe reads a Recipe from the reader.
 func (r *Reader) Recipe(x *Recipe) {
-	var (
-		recipeType int32
-		recipe     Recipe
-	)
+	var recipeType int32
 	r.Varint32(&recipeType)
-	if !lookupRecipe(recipeType, &recipe) {
+	if !lookupRecipe(recipeType, x) {
 		r.UnknownEnumOption(recipeType, "crafting data recipe type")
 		return
 	}
