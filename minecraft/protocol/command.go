@@ -2,7 +2,24 @@ package protocol
 
 import (
 	"github.com/google/uuid"
+	"math"
 )
+
+// AvailableCommandsContext holds the context required to encode/decode a
+// packet.AvailableCommands.
+type AvailableCommandsContext struct {
+	// Fields for encoding.
+	EnumIndices        map[string]int
+	EnumValueIndices   map[string]int
+	SuffixIndices      map[string]int
+	DynamicEnumIndices map[string]int
+
+	// Fields for decoding.
+	Enums        []CommandEnum
+	DynamicEnums []CommandEnum
+	EnumValues   []string
+	Suffixes     []string
+}
 
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
 // the /help command and auto-completed using this data.
@@ -27,6 +44,36 @@ type Command struct {
 	Overloads []CommandOverload
 }
 
+// WriteCommandData writes a Command x to Writer w, using the enum indices and suffix indices passed to
+// translate enums and suffixes to the indices that they're written in in the buffer.
+func (ctx AvailableCommandsContext) WriteCommandData(w IO, x *Command) {
+	alias := int32(-1)
+	if len(x.Aliases) != 0 {
+		alias = int32(ctx.EnumIndices[x.Name+"Aliases"])
+	}
+	w.String(&x.Name)
+	w.String(&x.Description)
+	w.Uint16(&x.Flags)
+	w.Uint8(&x.PermissionLevel)
+	w.Int32(&alias)
+	FuncIOSlice(w, &x.Overloads, ctx.WriteCommandOverload)
+}
+
+// CommandData reads a Command x from Buffer src using the enums and suffixes passed to match indices with
+// the values these slices hold.
+func (ctx AvailableCommandsContext) CommandData(r IO, x *Command) {
+	var aliasOffset int32
+	r.String(&x.Name)
+	r.String(&x.Description)
+	r.Uint16(&x.Flags)
+	r.Uint8(&x.PermissionLevel)
+	r.Int32(&aliasOffset)
+	if aliasOffset >= 0 {
+		x.Aliases = ctx.Enums[aliasOffset].Options
+	}
+	FuncIOSlice(r, &x.Overloads, ctx.CommandOverload)
+}
+
 // CommandOverload represents an overload of a command. This overload can be compared to function overloading
 // in languages such as java. It represents a single usage of the command. A command may have multiple
 // different overloads, which are handled differently.
@@ -34,6 +81,16 @@ type CommandOverload struct {
 	// Parameters is a list of command parameters that are part of the overload. These parameters specify the
 	// usage of the command when this overload is applied.
 	Parameters []CommandParameter
+}
+
+// WriteCommandOverload writes a CommandOverload x to a writer.
+func (ctx AvailableCommandsContext) WriteCommandOverload(r IO, x *CommandOverload) {
+	FuncIOSlice(r, &x.Parameters, ctx.WriteCommandParam)
+}
+
+// CommandOverload reads a CommandOverload x from a reader.
+func (ctx AvailableCommandsContext) CommandOverload(r IO, x *CommandOverload) {
+	FuncIOSlice(r, &x.Parameters, ctx.CommandParam)
 }
 
 const (
@@ -62,6 +119,7 @@ const (
 	CommandArgTypeBlockStates     = 67
 	CommandArgTypeCommand         = 70
 )
+
 const (
 	// ParamOptionCollapseEnum specifies if the enum (only if the Type is actually an enum type. If not,
 	// setting this to true has no effect) should be collapsed. This means that the options of the enum are
@@ -102,6 +160,42 @@ type CommandParameter struct {
 	Suffix string
 }
 
+// WriteCommandParam writes a CommandParameter x to Writer w, using the enum indices and suffix indices
+// to translate the respective values to the offset in the buffer.
+func (ctx AvailableCommandsContext) WriteCommandParam(w IO, x *CommandParameter) {
+	if x.Enum.Dynamic {
+		x.Type = CommandArgSoftEnum | CommandArgValid | uint32(ctx.DynamicEnumIndices[x.Enum.Type])
+	} else if len(x.Enum.Options) != 0 {
+		x.Type = CommandArgEnum | CommandArgValid | uint32(ctx.EnumIndices[x.Enum.Type])
+	} else if x.Suffix != "" {
+		x.Type = CommandArgSuffixed | uint32(ctx.SuffixIndices[x.Suffix])
+	}
+	w.String(&x.Name)
+	w.Uint32(&x.Type)
+	w.Bool(&x.Optional)
+	w.Uint8(&x.Options)
+}
+
+// CommandParam reads a CommandParam x from Buffer src using the enums and suffixes passed to translate
+// offsets to their respective values. CommandParam does not handle soft/dynamic enums. The caller is
+// responsible to do this itself.
+func (ctx AvailableCommandsContext) CommandParam(r IO, x *CommandParameter) {
+	r.String(&x.Name)
+	r.Uint32(&x.Type)
+	r.Bool(&x.Optional)
+	r.Uint8(&x.Options)
+
+	// We explicitly do not do the soft enums anything here, as we haven't yet read the soft enums. The packet
+	// read method will have to do this itself.
+	if x.Type&CommandArgEnum != 0 {
+		offset := x.Type & 0xffff
+		x.Enum = ctx.Enums[offset]
+	} else if x.Type&CommandArgSuffixed != 0 {
+		offset := x.Type & 0xffff
+		x.Suffix = ctx.Suffixes[offset]
+	}
+}
+
 // CommandEnum represents an enum in a command usage. The enum typically has a type and a set of options that
 // are valid. A value that is not one of the options results in a failure during execution.
 type CommandEnum struct {
@@ -122,6 +216,94 @@ func (x *CommandEnum) Marshal(r IO) {
 	x.Dynamic = true
 	r.String(&x.Type)
 	FuncSlice(r, &x.Options, r.String)
+}
+
+// WriteEnum writes a CommandEnum x to a writer.
+func (ctx AvailableCommandsContext) WriteEnum(w IO, x *CommandEnum) {
+	w.String(&x.Type)
+	FuncIOSlice(w, &x.Options, ctx.writeEnumOption)
+}
+
+// Enum reads a CommandEnum x from a reader.
+func (ctx AvailableCommandsContext) Enum(r IO, x *CommandEnum) {
+	r.String(&x.Type)
+	FuncIOSlice(r, &x.Options, ctx.enumOption)
+}
+
+// writeEnumOption writes an enum option to w using the value indices passed. It is written as a
+// byte/uint16/uint32 depending on the size of the value indices map.
+func (ctx AvailableCommandsContext) writeEnumOption(w IO, option *string) {
+	l := len(ctx.EnumValueIndices)
+	switch {
+	case l <= math.MaxUint8:
+		val := byte(ctx.EnumValueIndices[*option])
+		w.Uint8(&val)
+	case l <= math.MaxUint16:
+		val := uint16(ctx.EnumValueIndices[*option])
+		w.Uint16(&val)
+	default:
+		val := uint32(ctx.EnumValueIndices[*option])
+		w.Uint32(&val)
+	}
+}
+
+// enumOption reads an enum option from buf using the enum values passed. The option is written as a
+// byte/uint16/uint32, depending on the size of the enumValues slice.
+func (ctx AvailableCommandsContext) enumOption(r IO, option *string) {
+	l := len(ctx.EnumValues)
+	var index uint32
+	switch {
+	case l <= math.MaxUint8:
+		var v byte
+		r.Uint8(&v)
+		index = uint32(v)
+	case l <= math.MaxUint16:
+		var v uint16
+		r.Uint16(&v)
+		index = uint32(v)
+	default:
+		r.Uint32(&index)
+	}
+	*option = ctx.EnumValues[index]
+}
+
+const (
+	CommandEnumConstraintCheatsEnabled = iota
+	CommandEnumConstraintOperatorPermissions
+	CommandEnumConstraintHostPermissions
+	_
+)
+
+// CommandEnumConstraint is sent in the AvailableCommands packet to limit what values of an enum may be used
+// taking in account things such as whether cheats are enabled.
+type CommandEnumConstraint struct {
+	// EnumOption is the option in an enum that the constraints should be applied to.
+	EnumOption string
+	// EnumName is the name of the enum of which the EnumOption above should be constrained.
+	EnumName string
+	// Constraints is a list of constraints that should be applied to the enum option. It is one of the values
+	// found above.
+	Constraints []byte
+}
+
+// EnumConstraint reads a CommandEnumConstraint x from Buffer src using the enums and enum values passed.
+func (ctx AvailableCommandsContext) EnumConstraint(r IO, x *CommandEnumConstraint) {
+	var enumValueIndex, enumIndex uint32
+	r.Uint32(&enumValueIndex)
+	r.Uint32(&enumIndex)
+
+	x.EnumOption = ctx.EnumValues[enumValueIndex]
+	x.EnumName = ctx.Enums[enumIndex].Type
+
+	r.ByteSlice(&x.Constraints)
+}
+
+// WriteEnumConstraint writes a CommandEnumConstraint x to Writer w using the enum (value) indices passed.
+func (ctx AvailableCommandsContext) WriteEnumConstraint(w IO, x *CommandEnumConstraint) {
+	enumValueIndex, enumIndex := uint32(ctx.EnumValueIndices[x.EnumOption]), uint32(ctx.EnumIndices[x.EnumName])
+	w.Uint32(&enumValueIndex)
+	w.Uint32(&enumIndex)
+	w.ByteSlice(&x.Constraints)
 }
 
 const (
@@ -165,6 +347,16 @@ type CommandOrigin struct {
 	PlayerUniqueID int64
 }
 
+// CommandOriginData reads/writes a CommandOrigin x using IO r.
+func CommandOriginData(r IO, x *CommandOrigin) {
+	r.Varuint32(&x.Origin)
+	r.UUID(&x.UUID)
+	r.String(&x.RequestID)
+	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
+		r.Varint64(&x.PlayerUniqueID)
+	}
+}
+
 // CommandOutputMessage represents a message sent by a command that holds the output of one of the commands
 // executed.
 type CommandOutputMessage struct {
@@ -187,145 +379,4 @@ func (x *CommandOutputMessage) Marshal(r IO) {
 	r.Bool(&x.Success)
 	r.String(&x.Message)
 	FuncSlice(r, &x.Parameters, r.String)
-}
-
-// CommandOriginData reads/writes a CommandOrigin x using IO r.
-func CommandOriginData(r IO, x *CommandOrigin) {
-	r.Varuint32(&x.Origin)
-	r.UUID(&x.UUID)
-	r.String(&x.RequestID)
-	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
-		r.Varint64(&x.PlayerUniqueID)
-	}
-}
-
-// CommandData reads a Command x from Buffer src using the enums and suffixes passed to match indices with
-// the values these slices hold.
-func CommandData(r *Reader, x *Command, enums []CommandEnum, suffixes []string) {
-	var (
-		overloadCount, paramCount uint32
-		aliasOffset               int32
-	)
-	r.String(&x.Name)
-	r.String(&x.Description)
-	r.Uint16(&x.Flags)
-	r.Uint8(&x.PermissionLevel)
-	r.Int32(&aliasOffset)
-	if aliasOffset >= 0 {
-		r.LimitInt32(aliasOffset, 0, int32(len(enums)-1))
-		x.Aliases = enums[aliasOffset].Options
-	}
-	r.Varuint32(&overloadCount)
-	x.Overloads = make([]CommandOverload, overloadCount)
-	for i := uint32(0); i < overloadCount; i++ {
-		r.Varuint32(&paramCount)
-		x.Overloads[i].Parameters = make([]CommandParameter, paramCount)
-		for j := uint32(0); j < paramCount; j++ {
-			CommandParam(r, &x.Overloads[i].Parameters[j], enums, suffixes)
-		}
-	}
-}
-
-// WriteCommandData writes a Command x to Writer w, using the enum indices and suffix indices passed to
-// translate enums and suffixes to the indices that they're written in in the buffer.
-func WriteCommandData(w *Writer, x *Command, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) {
-	l := uint32(len(x.Overloads))
-
-	alias := int32(-1)
-	if len(x.Aliases) != 0 {
-		alias = int32(enumIndices[x.Name+"Aliases"])
-	}
-	w.String(&x.Name)
-	w.String(&x.Description)
-	w.Uint16(&x.Flags)
-	w.Uint8(&x.PermissionLevel)
-	w.Int32(&alias)
-	w.Varuint32(&l)
-	for _, overload := range x.Overloads {
-		paramsLen := uint32(len(overload.Parameters))
-		w.Varuint32(&paramsLen)
-		for _, param := range overload.Parameters {
-			WriteCommandParam(w, &param, enumIndices, suffixIndices, dynamicEnumIndices)
-		}
-	}
-}
-
-// WriteCommandParam writes a CommandParameter x to Writer w, using the enum indices and suffix indices
-// to translate the respective values to the offset in the buffer.
-func WriteCommandParam(w *Writer, x *CommandParameter, enumIndices map[string]int, suffixIndices map[string]int, dynamicEnumIndices map[string]int) {
-	if x.Enum.Dynamic {
-		x.Type = CommandArgSoftEnum | CommandArgValid | uint32(dynamicEnumIndices[x.Enum.Type])
-	} else if len(x.Enum.Options) != 0 {
-		x.Type = CommandArgEnum | CommandArgValid | uint32(enumIndices[x.Enum.Type])
-	} else if x.Suffix != "" {
-		x.Type = CommandArgSuffixed | uint32(suffixIndices[x.Suffix])
-	}
-	w.String(&x.Name)
-	w.Uint32(&x.Type)
-	w.Bool(&x.Optional)
-	w.Uint8(&x.Options)
-}
-
-// CommandParam reads a CommandParam x from Buffer src using the enums and suffixes passed to translate
-// offsets to their respective values. CommandParam does not handle soft/dynamic enums. The caller is
-// responsible to do this itself.
-func CommandParam(r *Reader, x *CommandParameter, enums []CommandEnum, suffixes []string) {
-	r.String(&x.Name)
-	r.Uint32(&x.Type)
-	r.Bool(&x.Optional)
-	r.Uint8(&x.Options)
-
-	// We explicitly do not do the soft enums anything here, as we haven't yet read the soft enums. The packet
-	// read method will have to do this itself.
-	if x.Type&CommandArgEnum != 0 {
-		offset := x.Type & 0xffff
-		r.LimitUint32(offset, uint32(len(enums))-1)
-		x.Enum = enums[offset]
-	} else if x.Type&CommandArgSuffixed != 0 {
-		offset := x.Type & 0xffff
-		r.LimitUint32(offset, uint32(len(suffixes))-1)
-		x.Suffix = suffixes[offset]
-	}
-}
-
-const (
-	CommandEnumConstraintCheatsEnabled = iota
-	CommandEnumConstraintOperatorPermissions
-	CommandEnumConstraintHostPermissions
-	_
-)
-
-// CommandEnumConstraint is sent in the AvailableCommands packet to limit what values of an enum may be used
-// taking in account things such as whether cheats are enabled.
-type CommandEnumConstraint struct {
-	// EnumOption is the option in an enum that the constraints should be applied to.
-	EnumOption string
-	// EnumName is the name of the enum of which the EnumOption above should be constrained.
-	EnumName string
-	// Constraints is a list of constraints that should be applied to the enum option. It is one of the values
-	// found above.
-	Constraints []byte
-}
-
-// WriteEnumConstraint writes a CommandEnumConstraint x to Writer w using the enum (value) indices passed.
-func WriteEnumConstraint(w *Writer, x *CommandEnumConstraint, enumIndices map[string]int, enumValueIndices map[string]int) {
-	enumValueIndex, enumIndex := uint32(enumValueIndices[x.EnumOption]), uint32(enumIndices[x.EnumName])
-	w.Uint32(&enumValueIndex)
-	w.Uint32(&enumIndex)
-	w.ByteSlice(&x.Constraints)
-}
-
-// EnumConstraint reads a CommandEnumConstraint x from Buffer src using the enums and enum values passed.
-func EnumConstraint(r *Reader, x *CommandEnumConstraint, enums []CommandEnum, enumValues []string) {
-	var enumValueIndex, enumIndex uint32
-	r.Uint32(&enumValueIndex)
-	r.Uint32(&enumIndex)
-
-	r.LimitUint32(enumValueIndex, uint32(len(enumValues))-1)
-	r.LimitUint32(enumIndex, uint32(len(enums))-1)
-
-	x.EnumOption = enumValues[enumValueIndex]
-	x.EnumName = enums[enumIndex].Type
-
-	r.ByteSlice(&x.Constraints)
 }

@@ -2,7 +2,6 @@ package packet
 
 import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"math"
 )
 
 // AvailableCommands is sent by the server to send a list of all commands that the player is able to use on
@@ -29,74 +28,48 @@ func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
 	enums, enumIndices := pk.enums()
 	dynamicEnums, dynamicEnumIndices := pk.dynamicEnums()
 
+	ctx := protocol.AvailableCommandsContext{
+		EnumIndices:        enumIndices,
+		EnumValueIndices:   valueIndices,
+		SuffixIndices:      suffixIndices,
+		DynamicEnumIndices: dynamicEnumIndices,
+	}
+
 	// Start by writing all enum values and suffixes to the buffer.
 	protocol.FuncSlice(w, &values, w.String)
 	protocol.FuncSlice(w, &suffixes, w.String)
 
 	// After that all actual enums, which point to enum values rather than directly writing strings.
-	enumsLen := uint32(len(enums))
-	w.Varuint32(&enumsLen)
-	for _, enum := range enums {
-		optionsLen := uint32(len(enum.Options))
-		w.String(&enum.Type)
-		w.Varuint32(&optionsLen)
-		for _, option := range enum.Options {
-			writeEnumOption(w, option, valueIndices)
-		}
-	}
+	protocol.FuncIOSlice(w, &enums, ctx.WriteEnum)
 
 	// Finally we write the command data which includes all usages of the commands.
-	commandsLen := uint32(len(pk.Commands))
-	w.Varuint32(&commandsLen)
-	for _, command := range pk.Commands {
-		protocol.WriteCommandData(w, &command, enumIndices, suffixIndices, dynamicEnumIndices)
-	}
+	protocol.FuncIOSlice(w, &pk.Commands, ctx.WriteCommandData)
 
 	// Soft enums follow, which may be changed after sending this packet.
 	protocol.Slice(w, &dynamicEnums)
 
-	// Constraints are supposed to be here, but constraints are pointless, make no sense to be in this packet
-	// and are not worth implementing.
-	constraintsLen := uint32(len(pk.Constraints))
-	w.Varuint32(&constraintsLen)
-	for _, constraint := range pk.Constraints {
-		protocol.WriteEnumConstraint(w, &constraint, enumIndices, valueIndices)
-	}
+	protocol.FuncIOSlice(w, &pk.Constraints, ctx.WriteEnumConstraint)
 }
 
 // Unmarshal ...
 func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
-	var count uint32
+	var ctx protocol.AvailableCommandsContext
 
 	// First we read all the enum values and suffixes.
-	var enumValues, suffixes []string
-	protocol.FuncSlice(r, &enumValues, r.String)
-	protocol.FuncSlice(r, &suffixes, r.String)
+	protocol.FuncSlice(r, &ctx.EnumValues, r.String)
+	protocol.FuncSlice(r, &ctx.Suffixes, r.String)
 
 	// After that we create all enums, which are composed of pointers to the enum values above.
-	r.Varuint32(&count)
-	enums := make([]protocol.CommandEnum, count)
-	var optionCount uint32
-	for i := uint32(0); i < count; i++ {
-		r.String(&enums[i].Type)
-		r.Varuint32(&optionCount)
-		enums[i].Options = make([]string, optionCount)
-		for j := uint32(0); j < optionCount; j++ {
-			enumOption(r, &enums[i].Options[j], enumValues)
-		}
-	}
+	protocol.FuncIOSlice(r, &ctx.Enums, ctx.Enum)
 
 	// We read all the commands, which will have their enums and suffixes set automatically. We don't yet set
 	// the dynamic enums as we haven't read them yet.
-	r.Varuint32(&count)
-	pk.Commands = make([]protocol.Command, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.CommandData(r, &pk.Commands[i], enums, suffixes)
-	}
+	protocol.FuncIOSlice(r, &pk.Commands, ctx.CommandData)
 
 	// We first read all soft enums of the packet.
-	var softEnums []protocol.CommandEnum
-	protocol.Slice(r, &softEnums)
+	protocol.Slice(r, &ctx.DynamicEnums)
+
+	protocol.FuncIOSlice(r, &pk.Constraints, ctx.EnumConstraint)
 
 	// After we've read all soft enums, we need to match them with the values that are set in the commands
 	// that we read before.
@@ -104,57 +77,11 @@ func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
 		for j, overload := range command.Overloads {
 			for k, param := range overload.Parameters {
 				if param.Type&protocol.CommandArgSoftEnum != 0 {
-					offset := param.Type & 0xffff
-					r.LimitUint32(offset, uint32(len(softEnums))-1)
-					pk.Commands[i].Overloads[j].Parameters[k].Enum = softEnums[offset]
+					pk.Commands[i].Overloads[j].Parameters[k].Enum = ctx.DynamicEnums[param.Type&0xffff]
 				}
 			}
 		}
 	}
-
-	r.Varuint32(&count)
-	pk.Constraints = make([]protocol.CommandEnumConstraint, count)
-	for i := uint32(0); i < count; i++ {
-		protocol.EnumConstraint(r, &pk.Constraints[i], enums, enumValues)
-	}
-}
-
-// writeEnumOption writes an enum option to w using the value indices passed. It is written as a
-// byte/uint16/uint32 depending on the size of the value indices map.
-func writeEnumOption(w *protocol.Writer, option string, valueIndices map[string]int) {
-	l := len(valueIndices)
-	switch {
-	case l <= math.MaxUint8:
-		val := byte(valueIndices[option])
-		w.Uint8(&val)
-	case l <= math.MaxUint16:
-		val := uint16(valueIndices[option])
-		w.Uint16(&val)
-	default:
-		val := uint32(valueIndices[option])
-		w.Uint32(&val)
-	}
-}
-
-// enumOption reads an enum option from buf using the enum values passed. The option is written as a
-// byte/uint16/uint32, depending on the size of the enumValues slice.
-func enumOption(r *protocol.Reader, option *string, enumValues []string) {
-	l := len(enumValues)
-	var index uint32
-	switch {
-	case l <= math.MaxUint8:
-		var v byte
-		r.Uint8(&v)
-		index = uint32(v)
-	case l <= math.MaxUint16:
-		var v uint16
-		r.Uint16(&v)
-		index = uint32(v)
-	default:
-		r.Uint32(&index)
-	}
-	r.LimitUint32(index, uint32(len(enumValues))-1)
-	*option = enumValues[index]
 }
 
 // enumValues runs through all commands set to the packet and collects enum values and a map of indices
