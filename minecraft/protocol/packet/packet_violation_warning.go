@@ -34,19 +34,9 @@ func (*PacketViolationWarning) ID() uint32 {
 	return IDPacketViolationWarning
 }
 
-// Marshal ...
-func (pk *PacketViolationWarning) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PacketViolationWarning) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PacketViolationWarning) marshal(r protocol.IO) {
-	r.Varint32(&pk.Type)
-	r.Varint32(&pk.Severity)
-	r.Varint32(&pk.PacketID)
-	r.String(&pk.ViolationContext)
+func (pk *PacketViolationWarning) Marshal(io protocol.IO) {
+	io.Varint32(&pk.Type)
+	io.Varint32(&pk.Severity)
+	io.Varint32(&pk.PacketID)
+	io.String(&pk.ViolationContext)
 }

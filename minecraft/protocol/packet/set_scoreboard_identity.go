@@ -28,22 +28,12 @@ func (*SetScoreboardIdentity) ID() uint32 {
 	return IDSetScoreboardIdentity
 }
 
-// Marshal ...
-func (pk *SetScoreboardIdentity) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *SetScoreboardIdentity) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *SetScoreboardIdentity) marshal(r protocol.IO) {
-	r.Uint8(&pk.ActionType)
+func (pk *SetScoreboardIdentity) Marshal(io protocol.IO) {
+	io.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case ScoreboardIdentityActionRegister:
-		protocol.Slice(r, &pk.Entries)
+		protocol.Slice(io, &pk.Entries)
 	case ScoreboardIdentityActionClear:
-		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreboardIdentityClearEntry)
+		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreboardIdentityClearEntry)
 	}
 }

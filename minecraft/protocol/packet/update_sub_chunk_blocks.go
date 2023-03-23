@@ -17,18 +17,8 @@ func (*UpdateSubChunkBlocks) ID() uint32 {
 	return IDUpdateSubChunkBlocks
 }
 
-// Marshal ...
-func (pk *UpdateSubChunkBlocks) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateSubChunkBlocks) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateSubChunkBlocks) marshal(r protocol.IO) {
-	r.SubChunkPos(&pk.Position)
-	protocol.Slice(r, &pk.Blocks)
-	protocol.Slice(r, &pk.Extra)
+func (pk *UpdateSubChunkBlocks) Marshal(io protocol.IO) {
+	io.SubChunkPos(&pk.Position)
+	protocol.Slice(io, &pk.Blocks)
+	protocol.Slice(io, &pk.Extra)
 }

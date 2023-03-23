@@ -43,25 +43,15 @@ func (*UpdateTrade) ID() uint32 {
 	return IDUpdateTrade
 }
 
-// Marshal ...
-func (pk *UpdateTrade) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateTrade) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateTrade) marshal(r protocol.IO) {
-	r.Uint8(&pk.WindowID)
-	r.Uint8(&pk.WindowType)
-	r.Varint32(&pk.Size)
-	r.Varint32(&pk.TradeTier)
-	r.Varint64(&pk.VillagerUniqueID)
-	r.Varint64(&pk.EntityUniqueID)
-	r.String(&pk.DisplayName)
-	r.Bool(&pk.NewTradeUI)
-	r.Bool(&pk.DemandBasedPrices)
-	r.Bytes(&pk.SerialisedOffers)
+func (pk *UpdateTrade) Marshal(io protocol.IO) {
+	io.Uint8(&pk.WindowID)
+	io.Uint8(&pk.WindowType)
+	io.Varint32(&pk.Size)
+	io.Varint32(&pk.TradeTier)
+	io.Varint64(&pk.VillagerUniqueID)
+	io.Varint64(&pk.EntityUniqueID)
+	io.String(&pk.DisplayName)
+	io.Bool(&pk.NewTradeUI)
+	io.Bool(&pk.DemandBasedPrices)
+	io.Bytes(&pk.SerialisedOffers)
 }

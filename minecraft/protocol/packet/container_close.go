@@ -21,17 +21,7 @@ func (*ContainerClose) ID() uint32 {
 	return IDContainerClose
 }
 
-// Marshal ...
-func (pk *ContainerClose) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ContainerClose) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ContainerClose) marshal(r protocol.IO) {
-	r.Uint8(&pk.WindowID)
-	r.Bool(&pk.ServerSide)
+func (pk *ContainerClose) Marshal(io protocol.IO) {
+	io.Uint8(&pk.WindowID)
+	io.Bool(&pk.ServerSide)
 }

@@ -30,20 +30,10 @@ func (*NetworkSettings) ID() uint32 {
 	return IDNetworkSettings
 }
 
-// Marshal ...
-func (pk *NetworkSettings) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *NetworkSettings) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *NetworkSettings) marshal(r protocol.IO) {
-	r.Uint16(&pk.CompressionThreshold)
-	r.Uint16(&pk.CompressionAlgorithm)
-	r.Bool(&pk.ClientThrottle)
-	r.Uint8(&pk.ClientThrottleThreshold)
-	r.Float32(&pk.ClientThrottleScalar)
+func (pk *NetworkSettings) Marshal(io protocol.IO) {
+	io.Uint16(&pk.CompressionThreshold)
+	io.Uint16(&pk.CompressionAlgorithm)
+	io.Bool(&pk.ClientThrottle)
+	io.Uint8(&pk.ClientThrottleThreshold)
+	io.Float32(&pk.ClientThrottleScalar)
 }

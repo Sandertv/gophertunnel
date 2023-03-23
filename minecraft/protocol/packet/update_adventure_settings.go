@@ -25,20 +25,10 @@ func (*UpdateAdventureSettings) ID() uint32 {
 	return IDUpdateAdventureSettings
 }
 
-// Marshal ...
-func (pk *UpdateAdventureSettings) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateAdventureSettings) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateAdventureSettings) marshal(r protocol.IO) {
-	r.Bool(&pk.NoPvM)
-	r.Bool(&pk.NoMvP)
-	r.Bool(&pk.ImmutableWorld)
-	r.Bool(&pk.ShowNameTags)
-	r.Bool(&pk.AutoJump)
+func (pk *UpdateAdventureSettings) Marshal(io protocol.IO) {
+	io.Bool(&pk.NoPvM)
+	io.Bool(&pk.NoMvP)
+	io.Bool(&pk.ImmutableWorld)
+	io.Bool(&pk.ShowNameTags)
+	io.Bool(&pk.AutoJump)
 }

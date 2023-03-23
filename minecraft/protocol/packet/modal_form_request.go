@@ -20,17 +20,7 @@ func (*ModalFormRequest) ID() uint32 {
 	return IDModalFormRequest
 }
 
-// Marshal ...
-func (pk *ModalFormRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ModalFormRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ModalFormRequest) marshal(r protocol.IO) {
-	r.Varuint32(&pk.FormID)
-	r.ByteSlice(&pk.FormData)
+func (pk *ModalFormRequest) Marshal(io protocol.IO) {
+	io.Varuint32(&pk.FormID)
+	io.ByteSlice(&pk.FormData)
 }

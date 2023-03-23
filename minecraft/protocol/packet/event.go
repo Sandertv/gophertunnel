@@ -22,19 +22,9 @@ func (*Event) ID() uint32 {
 	return IDEvent
 }
 
-// Marshal ...
-func (pk *Event) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Event) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Event) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.EventType(&pk.Event)
-	r.Uint8(&pk.UsePlayerID)
-	pk.Event.Marshal(r)
+func (pk *Event) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.EventType(&pk.Event)
+	io.Uint8(&pk.UsePlayerID)
+	pk.Event.Marshal(io)
 }

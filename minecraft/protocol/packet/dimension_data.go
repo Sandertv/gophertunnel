@@ -17,16 +17,6 @@ func (*DimensionData) ID() uint32 {
 	return IDDimensionData
 }
 
-// Marshal ...
-func (pk *DimensionData) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *DimensionData) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *DimensionData) marshal(r protocol.IO) {
-	protocol.Slice(r, &pk.Definitions)
+func (pk *DimensionData) Marshal(io protocol.IO) {
+	protocol.Slice(io, &pk.Definitions)
 }

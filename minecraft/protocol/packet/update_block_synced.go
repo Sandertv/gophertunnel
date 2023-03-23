@@ -40,21 +40,11 @@ func (*UpdateBlockSynced) ID() uint32 {
 	return IDUpdateBlockSynced
 }
 
-// Marshal ...
-func (pk *UpdateBlockSynced) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateBlockSynced) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateBlockSynced) marshal(r protocol.IO) {
-	r.UBlockPos(&pk.Position)
-	r.Varuint32(&pk.NewBlockRuntimeID)
-	r.Varuint32(&pk.Flags)
-	r.Varuint32(&pk.Layer)
-	r.Varint64(&pk.EntityUniqueID)
-	r.Varuint64(&pk.TransitionType)
+func (pk *UpdateBlockSynced) Marshal(io protocol.IO) {
+	io.UBlockPos(&pk.Position)
+	io.Varuint32(&pk.NewBlockRuntimeID)
+	io.Varuint32(&pk.Flags)
+	io.Varuint32(&pk.Layer)
+	io.Varint64(&pk.EntityUniqueID)
+	io.Varuint64(&pk.TransitionType)
 }

@@ -22,18 +22,8 @@ func (*RequestPermissions) ID() uint32 {
 	return IDRequestPermissions
 }
 
-// Marshal ...
-func (pk *RequestPermissions) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *RequestPermissions) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *RequestPermissions) marshal(r protocol.IO) {
-	r.Int64(&pk.EntityUniqueID)
-	r.Uint8(&pk.PermissionLevel)
-	r.Uint16(&pk.RequestedPermissions)
+func (pk *RequestPermissions) Marshal(io protocol.IO) {
+	io.Int64(&pk.EntityUniqueID)
+	io.Uint8(&pk.PermissionLevel)
+	io.Uint16(&pk.RequestedPermissions)
 }

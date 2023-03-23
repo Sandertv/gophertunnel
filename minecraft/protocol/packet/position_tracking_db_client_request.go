@@ -28,17 +28,7 @@ func (*PositionTrackingDBClientRequest) ID() uint32 {
 	return IDPositionTrackingDBClientRequest
 }
 
-// Marshal ...
-func (pk *PositionTrackingDBClientRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PositionTrackingDBClientRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PositionTrackingDBClientRequest) marshal(r protocol.IO) {
-	r.Uint8(&pk.RequestAction)
-	r.Varint32(&pk.TrackingID)
+func (pk *PositionTrackingDBClientRequest) Marshal(io protocol.IO) {
+	io.Uint8(&pk.RequestAction)
+	io.Varint32(&pk.TrackingID)
 }

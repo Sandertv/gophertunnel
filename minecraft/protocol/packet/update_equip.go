@@ -31,20 +31,10 @@ func (*UpdateEquip) ID() uint32 {
 	return IDUpdateEquip
 }
 
-// Marshal ...
-func (pk *UpdateEquip) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateEquip) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateEquip) marshal(r protocol.IO) {
-	r.Uint8(&pk.WindowID)
-	r.Uint8(&pk.WindowType)
-	r.Varint32(&pk.Size)
-	r.Varint64(&pk.EntityUniqueID)
-	r.Bytes(&pk.SerialisedInventoryData)
+func (pk *UpdateEquip) Marshal(io protocol.IO) {
+	io.Uint8(&pk.WindowID)
+	io.Uint8(&pk.WindowType)
+	io.Varint32(&pk.Size)
+	io.Varint64(&pk.EntityUniqueID)
+	io.Bytes(&pk.SerialisedInventoryData)
 }

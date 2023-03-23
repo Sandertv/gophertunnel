@@ -17,17 +17,7 @@ func (*RemoveVolumeEntity) ID() uint32 {
 	return IDRemoveVolumeEntity
 }
 
-// Marshal ...
-func (pk *RemoveVolumeEntity) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *RemoveVolumeEntity) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *RemoveVolumeEntity) marshal(r protocol.IO) {
-	r.Uint64(&pk.EntityRuntimeID)
-	r.Varint32(&pk.Dimension)
+func (pk *RemoveVolumeEntity) Marshal(io protocol.IO) {
+	io.Uint64(&pk.EntityRuntimeID)
+	io.Varint32(&pk.Dimension)
 }

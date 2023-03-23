@@ -18,16 +18,6 @@ func (*AutomationClientConnect) ID() uint32 {
 	return IDAutomationClientConnect
 }
 
-// Marshal ...
-func (pk *AutomationClientConnect) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *AutomationClientConnect) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *AutomationClientConnect) marshal(r protocol.IO) {
-	r.String(&pk.ServerURI)
+func (pk *AutomationClientConnect) Marshal(io protocol.IO) {
+	io.String(&pk.ServerURI)
 }

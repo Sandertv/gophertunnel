@@ -72,42 +72,32 @@ func (*BossEvent) ID() uint32 {
 	return IDBossEvent
 }
 
-// Marshal ...
-func (pk *BossEvent) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *BossEvent) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *BossEvent) marshal(r protocol.IO) {
-	r.Varint64(&pk.BossEntityUniqueID)
-	r.Varuint32(&pk.EventType)
+func (pk *BossEvent) Marshal(io protocol.IO) {
+	io.Varint64(&pk.BossEntityUniqueID)
+	io.Varuint32(&pk.EventType)
 	switch pk.EventType {
 	case BossEventShow:
-		r.String(&pk.BossBarTitle)
-		r.Float32(&pk.HealthPercentage)
-		r.Int16(&pk.ScreenDarkening)
-		r.Varuint32(&pk.Colour)
-		r.Varuint32(&pk.Overlay)
+		io.String(&pk.BossBarTitle)
+		io.Float32(&pk.HealthPercentage)
+		io.Int16(&pk.ScreenDarkening)
+		io.Varuint32(&pk.Colour)
+		io.Varuint32(&pk.Overlay)
 	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
-		r.Varint64(&pk.PlayerUniqueID)
+		io.Varint64(&pk.PlayerUniqueID)
 	case BossEventHide:
 		// No extra payload for this boss event type.
 	case BossEventHealthPercentage:
-		r.Float32(&pk.HealthPercentage)
+		io.Float32(&pk.HealthPercentage)
 	case BossEventTitle:
-		r.String(&pk.BossBarTitle)
+		io.String(&pk.BossBarTitle)
 	case BossEventAppearanceProperties:
-		r.Int16(&pk.ScreenDarkening)
-		r.Varuint32(&pk.Colour)
-		r.Varuint32(&pk.Overlay)
+		io.Int16(&pk.ScreenDarkening)
+		io.Varuint32(&pk.Colour)
+		io.Varuint32(&pk.Overlay)
 	case BossEventTexture:
-		r.Varuint32(&pk.Colour)
-		r.Varuint32(&pk.Overlay)
+		io.Varuint32(&pk.Colour)
+		io.Varuint32(&pk.Overlay)
 	default:
-		r.UnknownEnumOption(pk.EventType, "boss event type")
+		io.UnknownEnumOption(pk.EventType, "boss event type")
 	}
 }

@@ -18,16 +18,6 @@ func (pk *ClientCacheMissResponse) ID() uint32 {
 	return IDClientCacheMissResponse
 }
 
-// Marshal ...
-func (pk *ClientCacheMissResponse) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ClientCacheMissResponse) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ClientCacheMissResponse) marshal(r protocol.IO) {
-	protocol.Slice(r, &pk.Blobs)
+func (pk *ClientCacheMissResponse) Marshal(io protocol.IO) {
+	protocol.Slice(io, &pk.Blobs)
 }

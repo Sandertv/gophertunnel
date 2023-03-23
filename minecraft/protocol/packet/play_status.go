@@ -29,16 +29,6 @@ func (*PlayStatus) ID() uint32 {
 	return IDPlayStatus
 }
 
-// Marshal ...
-func (pk *PlayStatus) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PlayStatus) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PlayStatus) marshal(r protocol.IO) {
-	r.BEInt32(&pk.Status)
+func (pk *PlayStatus) Marshal(io protocol.IO) {
+	io.BEInt32(&pk.Status)
 }

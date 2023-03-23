@@ -27,18 +27,8 @@ func (*PlayerInput) ID() uint32 {
 	return IDPlayerInput
 }
 
-// Marshal ...
-func (pk *PlayerInput) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PlayerInput) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PlayerInput) marshal(r protocol.IO) {
-	r.Vec2(&pk.Movement)
-	r.Bool(&pk.Jumping)
-	r.Bool(&pk.Sneaking)
+func (pk *PlayerInput) Marshal(io protocol.IO) {
+	io.Vec2(&pk.Movement)
+	io.Bool(&pk.Jumping)
+	io.Bool(&pk.Sneaking)
 }

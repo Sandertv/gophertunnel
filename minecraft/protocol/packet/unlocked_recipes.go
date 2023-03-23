@@ -18,17 +18,7 @@ func (*UnlockedRecipes) ID() uint32 {
 	return IDUnlockedRecipes
 }
 
-// Marshal ...
-func (pk *UnlockedRecipes) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UnlockedRecipes) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UnlockedRecipes) marshal(r protocol.IO) {
-	r.Bool(&pk.NewUnlocks)
-	protocol.FuncSlice(r, &pk.Recipes, r.String)
+func (pk *UnlockedRecipes) Marshal(io protocol.IO) {
+	io.Bool(&pk.NewUnlocks)
+	protocol.FuncSlice(io, &pk.Recipes, io.String)
 }

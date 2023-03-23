@@ -26,19 +26,9 @@ func (*CorrectPlayerMovePrediction) ID() uint32 {
 	return IDCorrectPlayerMovePrediction
 }
 
-// Marshal ...
-func (pk *CorrectPlayerMovePrediction) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CorrectPlayerMovePrediction) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CorrectPlayerMovePrediction) marshal(r protocol.IO) {
-	r.Vec3(&pk.Position)
-	r.Vec3(&pk.Delta)
-	r.Bool(&pk.OnGround)
-	r.Varuint64(&pk.Tick)
+func (pk *CorrectPlayerMovePrediction) Marshal(io protocol.IO) {
+	io.Vec3(&pk.Position)
+	io.Vec3(&pk.Delta)
+	io.Bool(&pk.OnGround)
+	io.Varuint64(&pk.Tick)
 }

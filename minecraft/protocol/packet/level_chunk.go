@@ -44,25 +44,15 @@ func (*LevelChunk) ID() uint32 {
 	return IDLevelChunk
 }
 
-// Marshal ...
-func (pk *LevelChunk) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *LevelChunk) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *LevelChunk) marshal(r protocol.IO) {
-	r.ChunkPos(&pk.Position)
-	r.Varuint32(&pk.SubChunkCount)
+func (pk *LevelChunk) Marshal(io protocol.IO) {
+	io.ChunkPos(&pk.Position)
+	io.Varuint32(&pk.SubChunkCount)
 	if pk.SubChunkCount == protocol.SubChunkRequestModeLimited {
-		r.Uint16(&pk.HighestSubChunk)
+		io.Uint16(&pk.HighestSubChunk)
 	}
-	r.Bool(&pk.CacheEnabled)
+	io.Bool(&pk.CacheEnabled)
 	if pk.CacheEnabled {
-		protocol.FuncSlice(r, &pk.BlobHashes, r.Uint64)
+		protocol.FuncSlice(io, &pk.BlobHashes, io.Uint64)
 	}
-	r.ByteSlice(&pk.RawPayload)
+	io.ByteSlice(&pk.RawPayload)
 }

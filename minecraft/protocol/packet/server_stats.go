@@ -16,17 +16,7 @@ func (pk *ServerStats) ID() uint32 {
 	return IDServerStats
 }
 
-// Marshal ...
-func (pk *ServerStats) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ServerStats) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ServerStats) marshal(r protocol.IO) {
-	r.Float32(&pk.ServerTime)
-	r.Float32(&pk.NetworkTime)
+func (pk *ServerStats) Marshal(io protocol.IO) {
+	io.Float32(&pk.ServerTime)
+	io.Float32(&pk.NetworkTime)
 }

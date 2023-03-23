@@ -17,16 +17,6 @@ func (*EditorNetwork) ID() uint32 {
 	return IDEditorNetwork
 }
 
-// Marshal ...
-func (pk *EditorNetwork) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *EditorNetwork) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *EditorNetwork) marshal(r protocol.IO) {
-	r.NBT(&pk.Payload, nbt.NetworkLittleEndian)
+func (pk *EditorNetwork) Marshal(io protocol.IO) {
+	io.NBT(&pk.Payload, nbt.NetworkLittleEndian)
 }

@@ -18,16 +18,6 @@ func (*SetDefaultGameType) ID() uint32 {
 	return IDSetDefaultGameType
 }
 
-// Marshal ...
-func (pk *SetDefaultGameType) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *SetDefaultGameType) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *SetDefaultGameType) marshal(r protocol.IO) {
-	r.Varint32(&pk.GameType)
+func (pk *SetDefaultGameType) Marshal(io protocol.IO) {
+	io.Varint32(&pk.GameType)
 }

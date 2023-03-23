@@ -17,16 +17,6 @@ func (pk *FeatureRegistry) ID() uint32 {
 	return IDFeatureRegistry
 }
 
-// Marshal ...
-func (pk *FeatureRegistry) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *FeatureRegistry) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *FeatureRegistry) marshal(r protocol.IO) {
-	protocol.Slice(r, &pk.Features)
+func (pk *FeatureRegistry) Marshal(io protocol.IO) {
+	protocol.Slice(io, &pk.Features)
 }

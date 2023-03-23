@@ -15,8 +15,4 @@ func (*ServerSettingsRequest) ID() uint32 {
 	return IDServerSettingsRequest
 }
 
-// Marshal ...
-func (*ServerSettingsRequest) Marshal(*protocol.Writer) {}
-
-// Unmarshal ...
-func (*ServerSettingsRequest) Unmarshal(*protocol.Reader) {}
+func (*ServerSettingsRequest) Marshal(protocol.IO) {}

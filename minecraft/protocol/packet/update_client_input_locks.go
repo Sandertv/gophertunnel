@@ -29,17 +29,7 @@ func (pk *UpdateClientInputLocks) ID() uint32 {
 	return IDUpdateClientInputLocks
 }
 
-// Marshal ...
-func (pk *UpdateClientInputLocks) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateClientInputLocks) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateClientInputLocks) marshal(r protocol.IO) {
-	r.Varuint32(&pk.Locks)
-	r.Vec3(&pk.Position)
+func (pk *UpdateClientInputLocks) Marshal(io protocol.IO) {
+	io.Varuint32(&pk.Locks)
+	io.Vec3(&pk.Position)
 }

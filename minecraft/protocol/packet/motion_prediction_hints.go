@@ -23,18 +23,8 @@ func (*MotionPredictionHints) ID() uint32 {
 	return IDMotionPredictionHints
 }
 
-// Marshal ...
-func (pk *MotionPredictionHints) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *MotionPredictionHints) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *MotionPredictionHints) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.Vec3(&pk.Velocity)
-	r.Bool(&pk.OnGround)
+func (pk *MotionPredictionHints) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.Vec3(&pk.Velocity)
+	io.Bool(&pk.OnGround)
 }

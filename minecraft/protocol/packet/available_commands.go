@@ -21,16 +21,6 @@ func (*AvailableCommands) ID() uint32 {
 	return IDAvailableCommands
 }
 
-// Marshal ...
-func (pk *AvailableCommands) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *AvailableCommands) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *AvailableCommands) marshal(r protocol.IO) {
-	r.Commands(&pk.Commands, &pk.Constraints)
+func (pk *AvailableCommands) Marshal(io protocol.IO) {
+	io.Commands(&pk.Commands, &pk.Constraints)
 }

@@ -16,16 +16,6 @@ func (*SetDifficulty) ID() uint32 {
 	return IDSetDifficulty
 }
 
-// Marshal ...
-func (pk *SetDifficulty) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *SetDifficulty) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *SetDifficulty) marshal(r protocol.IO) {
-	r.Varuint32(&pk.Difficulty)
+func (pk *SetDifficulty) Marshal(io protocol.IO) {
+	io.Varuint32(&pk.Difficulty)
 }

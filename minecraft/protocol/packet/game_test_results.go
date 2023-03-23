@@ -20,18 +20,8 @@ func (pk *GameTestResults) ID() uint32 {
 	return IDGameTestResults
 }
 
-// Marshal ...
-func (pk *GameTestResults) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *GameTestResults) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *GameTestResults) marshal(r protocol.IO) {
-	r.Bool(&pk.Succeeded)
-	r.String(&pk.Error)
-	r.String(&pk.Name)
+func (pk *GameTestResults) Marshal(io protocol.IO) {
+	io.Bool(&pk.Succeeded)
+	io.String(&pk.Error)
+	io.String(&pk.Name)
 }

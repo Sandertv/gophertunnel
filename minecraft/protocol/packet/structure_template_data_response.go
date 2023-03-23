@@ -32,21 +32,11 @@ func (pk *StructureTemplateDataResponse) ID() uint32 {
 	return IDStructureTemplateDataResponse
 }
 
-// Marshal ...
-func (pk *StructureTemplateDataResponse) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *StructureTemplateDataResponse) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *StructureTemplateDataResponse) marshal(r protocol.IO) {
-	r.String(&pk.StructureName)
-	r.Bool(&pk.Success)
+func (pk *StructureTemplateDataResponse) Marshal(io protocol.IO) {
+	io.String(&pk.StructureName)
+	io.Bool(&pk.Success)
 	if pk.Success {
-		r.NBT(&pk.StructureTemplate, nbt.NetworkLittleEndian)
+		io.NBT(&pk.StructureTemplate, nbt.NetworkLittleEndian)
 	}
-	r.Uint8(&pk.ResponseType)
+	io.Uint8(&pk.ResponseType)
 }

@@ -20,18 +20,8 @@ func (pk *Unknown) ID() uint32 {
 	return pk.PacketID
 }
 
-// Marshal ...
-func (pk *Unknown) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Unknown) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Unknown) marshal(r protocol.IO) {
-	r.Bytes(&pk.Payload)
+func (pk *Unknown) Marshal(io protocol.IO) {
+	io.Bytes(&pk.Payload)
 }
 
 // String implements a hex representation of an unknown packet, so that it is easier to read and identify

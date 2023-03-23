@@ -60,28 +60,18 @@ func (*MovePlayer) ID() uint32 {
 	return IDMovePlayer
 }
 
-// Marshal ...
-func (pk *MovePlayer) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *MovePlayer) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *MovePlayer) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.Vec3(&pk.Position)
-	r.Float32(&pk.Pitch)
-	r.Float32(&pk.Yaw)
-	r.Float32(&pk.HeadYaw)
-	r.Uint8(&pk.Mode)
-	r.Bool(&pk.OnGround)
-	r.Varuint64(&pk.RiddenEntityRuntimeID)
+func (pk *MovePlayer) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.Vec3(&pk.Position)
+	io.Float32(&pk.Pitch)
+	io.Float32(&pk.Yaw)
+	io.Float32(&pk.HeadYaw)
+	io.Uint8(&pk.Mode)
+	io.Bool(&pk.OnGround)
+	io.Varuint64(&pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
-		r.Int32(&pk.TeleportCause)
-		r.Int32(&pk.TeleportSourceEntityType)
+		io.Int32(&pk.TeleportCause)
+		io.Int32(&pk.TeleportSourceEntityType)
 	}
-	r.Varuint64(&pk.Tick)
+	io.Varuint64(&pk.Tick)
 }

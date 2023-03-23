@@ -24,17 +24,7 @@ func (*ShowStoreOffer) ID() uint32 {
 	return IDShowStoreOffer
 }
 
-// Marshal ...
-func (pk *ShowStoreOffer) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ShowStoreOffer) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ShowStoreOffer) marshal(r protocol.IO) {
-	r.String(&pk.OfferID)
-	r.Bool(&pk.ShowAll)
+func (pk *ShowStoreOffer) Marshal(io protocol.IO) {
+	io.String(&pk.OfferID)
+	io.Bool(&pk.ShowAll)
 }

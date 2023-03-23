@@ -41,18 +41,8 @@ func (*AgentAction) ID() uint32 {
 	return IDAgentAction
 }
 
-// Marshal ...
-func (pk *AgentAction) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *AgentAction) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *AgentAction) marshal(r protocol.IO) {
-	r.String(&pk.Identifier)
-	r.Varint32(&pk.Action)
-	r.ByteSlice(&pk.Response)
+func (pk *AgentAction) Marshal(io protocol.IO) {
+	io.String(&pk.Identifier)
+	io.Varint32(&pk.Action)
+	io.ByteSlice(&pk.Response)
 }

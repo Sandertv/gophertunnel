@@ -16,16 +16,6 @@ func (*CameraInstruction) ID() uint32 {
 	return IDCameraInstruction
 }
 
-// Marshal ...
-func (pk *CameraInstruction) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CameraInstruction) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CameraInstruction) marshal(r protocol.IO) {
-	r.NBT(&pk.Data, nbt.NetworkLittleEndian)
+func (pk *CameraInstruction) Marshal(io protocol.IO) {
+	io.NBT(&pk.Data, nbt.NetworkLittleEndian)
 }

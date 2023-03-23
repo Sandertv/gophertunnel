@@ -18,16 +18,6 @@ func (*RequestChunkRadius) ID() uint32 {
 	return IDRequestChunkRadius
 }
 
-// Marshal ...
-func (pk *RequestChunkRadius) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *RequestChunkRadius) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *RequestChunkRadius) marshal(r protocol.IO) {
-	r.Varint32(&pk.ChunkRadius)
+func (pk *RequestChunkRadius) Marshal(io protocol.IO) {
+	io.Varint32(&pk.ChunkRadius)
 }

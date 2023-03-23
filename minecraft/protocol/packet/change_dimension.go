@@ -35,18 +35,8 @@ func (*ChangeDimension) ID() uint32 {
 	return IDChangeDimension
 }
 
-// Marshal ...
-func (pk *ChangeDimension) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ChangeDimension) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ChangeDimension) marshal(r protocol.IO) {
-	r.Varint32(&pk.Dimension)
-	r.Vec3(&pk.Position)
-	r.Bool(&pk.Respawn)
+func (pk *ChangeDimension) Marshal(io protocol.IO) {
+	io.Varint32(&pk.Dimension)
+	io.Vec3(&pk.Position)
+	io.Bool(&pk.Respawn)
 }

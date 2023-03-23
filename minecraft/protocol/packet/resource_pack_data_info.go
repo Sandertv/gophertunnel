@@ -48,22 +48,12 @@ func (*ResourcePackDataInfo) ID() uint32 {
 	return IDResourcePackDataInfo
 }
 
-// Marshal ...
-func (pk *ResourcePackDataInfo) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ResourcePackDataInfo) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ResourcePackDataInfo) marshal(r protocol.IO) {
-	r.String(&pk.UUID)
-	r.Uint32(&pk.DataChunkSize)
-	r.Uint32(&pk.ChunkCount)
-	r.Uint64(&pk.Size)
-	r.ByteSlice(&pk.Hash)
-	r.Bool(&pk.Premium)
-	r.Uint8(&pk.PackType)
+func (pk *ResourcePackDataInfo) Marshal(io protocol.IO) {
+	io.String(&pk.UUID)
+	io.Uint32(&pk.DataChunkSize)
+	io.Uint32(&pk.ChunkCount)
+	io.Uint64(&pk.Size)
+	io.ByteSlice(&pk.Hash)
+	io.Bool(&pk.Premium)
+	io.Uint8(&pk.PackType)
 }

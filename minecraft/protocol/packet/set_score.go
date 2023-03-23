@@ -27,24 +27,14 @@ func (*SetScore) ID() uint32 {
 	return IDSetScore
 }
 
-// Marshal ...
-func (pk *SetScore) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *SetScore) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *SetScore) marshal(r protocol.IO) {
-	r.Uint8(&pk.ActionType)
+func (pk *SetScore) Marshal(io protocol.IO) {
+	io.Uint8(&pk.ActionType)
 	switch pk.ActionType {
 	case ScoreboardActionRemove:
-		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreRemoveEntry)
+		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreRemoveEntry)
 	case ScoreboardActionModify:
-		protocol.FuncIOSlice(r, &pk.Entries, protocol.ScoreModifyEntry)
+		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreModifyEntry)
 	default:
-		r.UnknownEnumOption(pk.ActionType, "set score action type")
+		io.UnknownEnumOption(pk.ActionType, "set score action type")
 	}
 }

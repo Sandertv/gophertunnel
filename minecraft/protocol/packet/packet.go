@@ -10,11 +10,12 @@ import (
 type Packet interface {
 	// ID returns the ID of the packet. All of these identifiers of packets may be found in id.go.
 	ID() uint32
-	// Marshal encodes the packet to its binary representation into buf.
-	Marshal(w *protocol.Writer)
-	// Unmarshal decodes a serialised packet in buf into the Packet instance. The serialised packet passed
-	// into Unmarshal will not have a header in it.
-	Unmarshal(r *protocol.Reader)
+	// Marshal encodes or decodes a Packet, depending on the protocol.IO
+	// implementation passed. When passing a protocol.Writer, Marshal will
+	// encode the Packet into its binary representation and write it to the
+	// protocol.Writer. On the other hand, when passing a protocol.Reader,
+	// Marshal will decode the bytes from the reader into the Packet.
+	Marshal(io protocol.IO)
 }
 
 // Header is the header of a packet. It exists out of a single varuint32 which is composed of a packet ID and

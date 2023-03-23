@@ -16,16 +16,6 @@ func (*ShowProfile) ID() uint32 {
 	return IDShowProfile
 }
 
-// Marshal ...
-func (pk *ShowProfile) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ShowProfile) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ShowProfile) marshal(r protocol.IO) {
-	r.String(&pk.XUID)
+func (pk *ShowProfile) Marshal(io protocol.IO) {
+	io.String(&pk.XUID)
 }

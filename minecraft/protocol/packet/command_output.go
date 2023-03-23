@@ -42,22 +42,12 @@ func (*CommandOutput) ID() uint32 {
 	return IDCommandOutput
 }
 
-// Marshal ...
-func (pk *CommandOutput) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CommandOutput) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CommandOutput) marshal(r protocol.IO) {
-	protocol.CommandOriginData(r, &pk.CommandOrigin)
-	r.Uint8(&pk.OutputType)
-	r.Varuint32(&pk.SuccessCount)
-	protocol.Slice(r, &pk.OutputMessages)
+func (pk *CommandOutput) Marshal(io protocol.IO) {
+	protocol.CommandOriginData(io, &pk.CommandOrigin)
+	io.Uint8(&pk.OutputType)
+	io.Varuint32(&pk.SuccessCount)
+	protocol.Slice(io, &pk.OutputMessages)
 	if pk.OutputType == CommandOutputTypeDataSet {
-		r.String(&pk.DataSet)
+		io.String(&pk.DataSet)
 	}
 }

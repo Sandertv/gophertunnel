@@ -42,17 +42,7 @@ func (*RequestAbility) ID() uint32 {
 	return IDRequestAbility
 }
 
-// Marshal ...
-func (pk *RequestAbility) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *RequestAbility) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *RequestAbility) marshal(r protocol.IO) {
-	r.Varint32(&pk.Ability)
-	r.AbilityValue(&pk.Value)
+func (pk *RequestAbility) Marshal(io protocol.IO) {
+	io.Varint32(&pk.Ability)
+	io.AbilityValue(&pk.Value)
 }

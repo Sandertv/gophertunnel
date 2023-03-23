@@ -30,18 +30,8 @@ func (*LabTable) ID() uint32 {
 	return IDLabTable
 }
 
-// Marshal ...
-func (pk *LabTable) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *LabTable) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *LabTable) marshal(r protocol.IO) {
-	r.Uint8(&pk.ActionType)
-	r.BlockPos(&pk.Position)
-	r.Uint8(&pk.ReactionType)
+func (pk *LabTable) Marshal(io protocol.IO) {
+	io.Uint8(&pk.ActionType)
+	io.BlockPos(&pk.Position)
+	io.Uint8(&pk.ReactionType)
 }

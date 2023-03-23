@@ -69,32 +69,22 @@ func (*AddPlayer) ID() uint32 {
 	return IDAddPlayer
 }
 
-// Marshal ...
-func (pk *AddPlayer) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *AddPlayer) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *AddPlayer) marshal(r protocol.IO) {
-	r.UUID(&pk.UUID)
-	r.String(&pk.Username)
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.String(&pk.PlatformChatID)
-	r.Vec3(&pk.Position)
-	r.Vec3(&pk.Velocity)
-	r.Float32(&pk.Pitch)
-	r.Float32(&pk.Yaw)
-	r.Float32(&pk.HeadYaw)
-	r.ItemInstance(&pk.HeldItem)
-	r.Varint32(&pk.GameType)
-	r.EntityMetadata(&pk.EntityMetadata)
-	protocol.Single(r, &pk.EntityProperties)
-	protocol.Single(r, &pk.AbilityData)
-	protocol.Slice(r, &pk.EntityLinks)
-	r.String(&pk.DeviceID)
-	r.Int32(&pk.BuildPlatform)
+func (pk *AddPlayer) Marshal(io protocol.IO) {
+	io.UUID(&pk.UUID)
+	io.String(&pk.Username)
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.String(&pk.PlatformChatID)
+	io.Vec3(&pk.Position)
+	io.Vec3(&pk.Velocity)
+	io.Float32(&pk.Pitch)
+	io.Float32(&pk.Yaw)
+	io.Float32(&pk.HeadYaw)
+	io.ItemInstance(&pk.HeldItem)
+	io.Varint32(&pk.GameType)
+	io.EntityMetadata(&pk.EntityMetadata)
+	protocol.Single(io, &pk.EntityProperties)
+	protocol.Single(io, &pk.AbilityData)
+	protocol.Slice(io, &pk.EntityLinks)
+	io.String(&pk.DeviceID)
+	io.Int32(&pk.BuildPlatform)
 }

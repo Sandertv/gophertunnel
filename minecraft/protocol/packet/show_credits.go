@@ -25,17 +25,7 @@ func (*ShowCredits) ID() uint32 {
 	return IDShowCredits
 }
 
-// Marshal ...
-func (pk *ShowCredits) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ShowCredits) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ShowCredits) marshal(r protocol.IO) {
-	r.Varuint64(&pk.PlayerRuntimeID)
-	r.Varint32(&pk.StatusType)
+func (pk *ShowCredits) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.PlayerRuntimeID)
+	io.Varint32(&pk.StatusType)
 }

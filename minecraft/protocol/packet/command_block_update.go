@@ -61,30 +61,20 @@ func (*CommandBlockUpdate) ID() uint32 {
 	return IDCommandBlockUpdate
 }
 
-// Marshal ...
-func (pk *CommandBlockUpdate) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CommandBlockUpdate) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CommandBlockUpdate) marshal(r protocol.IO) {
-	r.Bool(&pk.Block)
+func (pk *CommandBlockUpdate) Marshal(io protocol.IO) {
+	io.Bool(&pk.Block)
 	if pk.Block {
-		r.UBlockPos(&pk.Position)
-		r.Varuint32(&pk.Mode)
-		r.Bool(&pk.NeedsRedstone)
-		r.Bool(&pk.Conditional)
+		io.UBlockPos(&pk.Position)
+		io.Varuint32(&pk.Mode)
+		io.Bool(&pk.NeedsRedstone)
+		io.Bool(&pk.Conditional)
 	} else {
-		r.Varuint64(&pk.MinecartEntityRuntimeID)
+		io.Varuint64(&pk.MinecartEntityRuntimeID)
 	}
-	r.String(&pk.Command)
-	r.String(&pk.LastOutput)
-	r.String(&pk.Name)
-	r.Bool(&pk.ShouldTrackOutput)
-	r.Int32(&pk.TickDelay)
-	r.Bool(&pk.ExecuteOnFirstTick)
+	io.String(&pk.Command)
+	io.String(&pk.LastOutput)
+	io.String(&pk.Name)
+	io.Bool(&pk.ShouldTrackOutput)
+	io.Int32(&pk.TickDelay)
+	io.Bool(&pk.ExecuteOnFirstTick)
 }

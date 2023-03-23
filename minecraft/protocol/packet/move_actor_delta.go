@@ -38,46 +38,36 @@ func (*MoveActorDelta) ID() uint32 {
 	return IDMoveActorDelta
 }
 
-// Marshal ...
-func (pk *MoveActorDelta) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *MoveActorDelta) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *MoveActorDelta) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.Uint16(&pk.Flags)
+func (pk *MoveActorDelta) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.Uint16(&pk.Flags)
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
-		r.Float32(&pk.Position[0])
+		io.Float32(&pk.Position[0])
 	} else {
 		pk.Position[0] = 0
 	}
 	if pk.Flags&MoveActorDeltaFlagHasY != 0 {
-		r.Float32(&pk.Position[1])
+		io.Float32(&pk.Position[1])
 	} else {
 		pk.Position[1] = 0
 	}
 	if pk.Flags&MoveActorDeltaFlagHasZ != 0 {
-		r.Float32(&pk.Position[2])
+		io.Float32(&pk.Position[2])
 	} else {
 		pk.Position[2] = 0
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotX != 0 {
-		r.ByteFloat(&pk.Rotation[0])
+		io.ByteFloat(&pk.Rotation[0])
 	} else {
 		pk.Rotation[0] = 0
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotY != 0 {
-		r.ByteFloat(&pk.Rotation[1])
+		io.ByteFloat(&pk.Rotation[1])
 	} else {
 		pk.Rotation[1] = 0
 	}
 	if pk.Flags&MoveActorDeltaFlagHasRotZ != 0 {
-		r.ByteFloat(&pk.Rotation[2])
+		io.ByteFloat(&pk.Rotation[2])
 	} else {
 		pk.Rotation[2] = 0
 	}

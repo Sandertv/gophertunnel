@@ -29,20 +29,10 @@ func (*CraftingData) ID() uint32 {
 	return IDCraftingData
 }
 
-// Marshal ...
-func (pk *CraftingData) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CraftingData) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CraftingData) marshal(r protocol.IO) {
-	protocol.FuncSlice(r, &pk.Recipes, r.Recipe)
-	protocol.Slice(r, &pk.PotionRecipes)
-	protocol.Slice(r, &pk.PotionContainerChangeRecipes)
-	protocol.FuncSlice(r, &pk.MaterialReducers, r.MaterialReducer)
-	r.Bool(&pk.ClearRecipes)
+func (pk *CraftingData) Marshal(io protocol.IO) {
+	protocol.FuncSlice(io, &pk.Recipes, io.Recipe)
+	protocol.Slice(io, &pk.PotionRecipes)
+	protocol.Slice(io, &pk.PotionContainerChangeRecipes)
+	protocol.FuncSlice(io, &pk.MaterialReducers, io.MaterialReducer)
+	io.Bool(&pk.ClearRecipes)
 }

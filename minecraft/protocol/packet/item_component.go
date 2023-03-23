@@ -15,16 +15,6 @@ func (*ItemComponent) ID() uint32 {
 	return IDItemComponent
 }
 
-// Marshal ...
-func (pk *ItemComponent) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ItemComponent) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ItemComponent) marshal(r protocol.IO) {
-	protocol.Slice(r, &pk.Items)
+func (pk *ItemComponent) Marshal(io protocol.IO) {
+	protocol.Slice(io, &pk.Items)
 }

@@ -19,17 +19,7 @@ func (pk *ScriptMessage) ID() uint32 {
 	return IDScriptMessage
 }
 
-// Marshal ...
-func (pk *ScriptMessage) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ScriptMessage) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ScriptMessage) marshal(r protocol.IO) {
-	r.String(&pk.Identifier)
-	r.ByteSlice(&pk.Data)
+func (pk *ScriptMessage) Marshal(io protocol.IO) {
+	io.String(&pk.Identifier)
+	io.ByteSlice(&pk.Data)
 }

@@ -17,16 +17,6 @@ func (*PlayerFog) ID() uint32 {
 	return IDPlayerFog
 }
 
-// Marshal ...
-func (pk *PlayerFog) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PlayerFog) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PlayerFog) marshal(r protocol.IO) {
-	protocol.FuncSlice(r, &pk.Stack, r.String)
+func (pk *PlayerFog) Marshal(io protocol.IO) {
+	protocol.FuncSlice(io, &pk.Stack, io.String)
 }

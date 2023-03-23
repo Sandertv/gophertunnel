@@ -16,16 +16,6 @@ func (*ItemFrameDropItem) ID() uint32 {
 	return IDItemFrameDropItem
 }
 
-// Marshal ...
-func (pk *ItemFrameDropItem) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ItemFrameDropItem) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ItemFrameDropItem) marshal(r protocol.IO) {
-	r.UBlockPos(&pk.Position)
+func (pk *ItemFrameDropItem) Marshal(io protocol.IO) {
+	io.UBlockPos(&pk.Position)
 }

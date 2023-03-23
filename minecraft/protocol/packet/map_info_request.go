@@ -20,17 +20,7 @@ func (*MapInfoRequest) ID() uint32 {
 	return IDMapInfoRequest
 }
 
-// Marshal ...
-func (pk *MapInfoRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *MapInfoRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *MapInfoRequest) marshal(r protocol.IO) {
-	r.Varint64(&pk.MapID)
-	protocol.SliceUint32Length(r, &pk.ClientPixels)
+func (pk *MapInfoRequest) Marshal(io protocol.IO) {
+	io.Varint64(&pk.MapID)
+	protocol.SliceUint32Length(io, &pk.ClientPixels)
 }

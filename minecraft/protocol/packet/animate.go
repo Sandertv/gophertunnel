@@ -36,20 +36,10 @@ func (*Animate) ID() uint32 {
 	return IDAnimate
 }
 
-// Marshal ...
-func (pk *Animate) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Animate) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Animate) marshal(r protocol.IO) {
-	r.Varint32(&pk.ActionType)
-	r.Varuint64(&pk.EntityRuntimeID)
+func (pk *Animate) Marshal(io protocol.IO) {
+	io.Varint32(&pk.ActionType)
+	io.Varuint64(&pk.EntityRuntimeID)
 	if pk.ActionType&0x80 != 0 {
-		r.Float32(&pk.BoatRowingTime)
+		io.Float32(&pk.BoatRowingTime)
 	}
 }

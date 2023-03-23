@@ -16,8 +16,4 @@ func (*ClientToServerHandshake) ID() uint32 {
 	return IDClientToServerHandshake
 }
 
-// Marshal ...
-func (*ClientToServerHandshake) Marshal(*protocol.Writer) {}
-
-// Unmarshal ...
-func (*ClientToServerHandshake) Unmarshal(*protocol.Reader) {}
+func (*ClientToServerHandshake) Marshal(protocol.IO) {}

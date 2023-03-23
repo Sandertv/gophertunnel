@@ -29,19 +29,9 @@ func (*ContainerOpen) ID() uint32 {
 	return IDContainerOpen
 }
 
-// Marshal ...
-func (pk *ContainerOpen) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ContainerOpen) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ContainerOpen) marshal(r protocol.IO) {
-	r.Uint8(&pk.WindowID)
-	r.Uint8(&pk.ContainerType)
-	r.UBlockPos(&pk.ContainerPosition)
-	r.Varint64(&pk.ContainerEntityUniqueID)
+func (pk *ContainerOpen) Marshal(io protocol.IO) {
+	io.Uint8(&pk.WindowID)
+	io.Uint8(&pk.ContainerType)
+	io.UBlockPos(&pk.ContainerPosition)
+	io.Varint64(&pk.ContainerEntityUniqueID)
 }

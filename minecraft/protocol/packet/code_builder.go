@@ -20,17 +20,7 @@ func (*CodeBuilder) ID() uint32 {
 	return IDCodeBuilder
 }
 
-// Marshal ...
-func (pk *CodeBuilder) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *CodeBuilder) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *CodeBuilder) marshal(r protocol.IO) {
-	r.String(&pk.URL)
-	r.Bool(&pk.ShouldOpenCodeBuilder)
+func (pk *CodeBuilder) Marshal(io protocol.IO) {
+	io.String(&pk.URL)
+	io.Bool(&pk.ShouldOpenCodeBuilder)
 }

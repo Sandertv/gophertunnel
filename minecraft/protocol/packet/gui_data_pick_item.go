@@ -22,18 +22,8 @@ func (*GUIDataPickItem) ID() uint32 {
 	return IDGUIDataPickItem
 }
 
-// Marshal ...
-func (pk *GUIDataPickItem) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *GUIDataPickItem) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *GUIDataPickItem) marshal(r protocol.IO) {
-	r.String(&pk.ItemName)
-	r.String(&pk.ItemEffects)
-	r.Int32(&pk.HotBarSlot)
+func (pk *GUIDataPickItem) Marshal(io protocol.IO) {
+	io.String(&pk.ItemName)
+	io.String(&pk.ItemEffects)
+	io.Int32(&pk.HotBarSlot)
 }

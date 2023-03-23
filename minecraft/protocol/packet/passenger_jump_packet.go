@@ -16,16 +16,6 @@ func (*PassengerJump) ID() uint32 {
 	return IDPassengerJump
 }
 
-// Marshal ...
-func (pk *PassengerJump) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PassengerJump) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PassengerJump) marshal(r protocol.IO) {
-	r.Varint32(&pk.JumpStrength)
+func (pk *PassengerJump) Marshal(io protocol.IO) {
+	io.Varint32(&pk.JumpStrength)
 }

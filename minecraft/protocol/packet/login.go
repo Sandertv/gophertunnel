@@ -22,17 +22,7 @@ func (*Login) ID() uint32 {
 	return IDLogin
 }
 
-// Marshal ...
-func (pk *Login) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Login) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Login) marshal(r protocol.IO) {
-	r.BEInt32(&pk.ClientProtocol)
-	r.ByteSlice(&pk.ConnectionRequest)
+func (pk *Login) Marshal(io protocol.IO) {
+	io.BEInt32(&pk.ClientProtocol)
+	io.ByteSlice(&pk.ConnectionRequest)
 }

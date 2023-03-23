@@ -18,16 +18,6 @@ func (pk *ClientCacheStatus) ID() uint32 {
 	return IDClientCacheStatus
 }
 
-// Marshal ...
-func (pk *ClientCacheStatus) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ClientCacheStatus) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ClientCacheStatus) marshal(r protocol.IO) {
-	r.Bool(&pk.Enabled)
+func (pk *ClientCacheStatus) Marshal(io protocol.IO) {
+	io.Bool(&pk.Enabled)
 }

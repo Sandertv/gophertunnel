@@ -20,17 +20,7 @@ func (*TakeItemActor) ID() uint32 {
 	return IDTakeItemActor
 }
 
-// Marshal ...
-func (pk *TakeItemActor) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *TakeItemActor) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *TakeItemActor) marshal(r protocol.IO) {
-	r.Varuint64(&pk.ItemEntityRuntimeID)
-	r.Varuint64(&pk.TakerEntityRuntimeID)
+func (pk *TakeItemActor) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.ItemEntityRuntimeID)
+	io.Varuint64(&pk.TakerEntityRuntimeID)
 }

@@ -25,21 +25,11 @@ func (*ChangeMobProperty) ID() uint32 {
 	return IDChangeMobProperty
 }
 
-// Marshal ...
-func (pk *ChangeMobProperty) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ChangeMobProperty) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ChangeMobProperty) marshal(r protocol.IO) {
-	r.Uint64(&pk.EntityUniqueID)
-	r.String(&pk.Property)
-	r.Bool(&pk.BoolValue)
-	r.String(&pk.StringValue)
-	r.Varint32(&pk.IntValue)
-	r.Float32(&pk.FloatValue)
+func (pk *ChangeMobProperty) Marshal(io protocol.IO) {
+	io.Uint64(&pk.EntityUniqueID)
+	io.String(&pk.Property)
+	io.Bool(&pk.BoolValue)
+	io.String(&pk.StringValue)
+	io.Varint32(&pk.IntValue)
+	io.Float32(&pk.FloatValue)
 }

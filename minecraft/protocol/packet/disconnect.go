@@ -20,19 +20,9 @@ func (*Disconnect) ID() uint32 {
 	return IDDisconnect
 }
 
-// Marshal ...
-func (pk *Disconnect) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Disconnect) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Disconnect) marshal(r protocol.IO) {
-	r.Bool(&pk.HideDisconnectionScreen)
+func (pk *Disconnect) Marshal(io protocol.IO) {
+	io.Bool(&pk.HideDisconnectionScreen)
 	if !pk.HideDisconnectionScreen {
-		r.String(&pk.Message)
+		io.String(&pk.Message)
 	}
 }

@@ -53,29 +53,19 @@ func (*Text) ID() uint32 {
 	return IDText
 }
 
-// Marshal ...
-func (pk *Text) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Text) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Text) marshal(r protocol.IO) {
-	r.Uint8(&pk.TextType)
-	r.Bool(&pk.NeedsTranslation)
+func (pk *Text) Marshal(io protocol.IO) {
+	io.Uint8(&pk.TextType)
+	io.Bool(&pk.NeedsTranslation)
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		r.String(&pk.SourceName)
-		r.String(&pk.Message)
+		io.String(&pk.SourceName)
+		io.String(&pk.Message)
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper, TextTypeObjectAnnouncement:
-		r.String(&pk.Message)
+		io.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
-		r.String(&pk.Message)
-		protocol.FuncSlice(r, &pk.Parameters, r.String)
+		io.String(&pk.Message)
+		protocol.FuncSlice(io, &pk.Parameters, io.String)
 	}
-	r.String(&pk.XUID)
-	r.String(&pk.PlatformChatID)
+	io.String(&pk.XUID)
+	io.String(&pk.PlatformChatID)
 }

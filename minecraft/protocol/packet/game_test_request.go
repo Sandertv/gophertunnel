@@ -33,22 +33,12 @@ func (pk *GameTestRequest) ID() uint32 {
 	return IDGameTestRequest
 }
 
-// Marshal ...
-func (pk *GameTestRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *GameTestRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *GameTestRequest) marshal(r protocol.IO) {
-	r.Varint32(&pk.MaxTestsPerBatch)
-	r.Varint32(&pk.Repetitions)
-	r.Uint8(&pk.Rotation)
-	r.Bool(&pk.StopOnError)
-	r.BlockPos(&pk.Position)
-	r.Varint32(&pk.TestsPerRow)
-	r.String(&pk.Name)
+func (pk *GameTestRequest) Marshal(io protocol.IO) {
+	io.Varint32(&pk.MaxTestsPerBatch)
+	io.Varint32(&pk.Repetitions)
+	io.Uint8(&pk.Rotation)
+	io.Bool(&pk.StopOnError)
+	io.BlockPos(&pk.Position)
+	io.Varint32(&pk.TestsPerRow)
+	io.String(&pk.Name)
 }

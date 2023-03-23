@@ -69,21 +69,11 @@ func (*MobEffect) ID() uint32 {
 	return IDMobEffect
 }
 
-// Marshal ...
-func (pk *MobEffect) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *MobEffect) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *MobEffect) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.Uint8(&pk.Operation)
-	r.Varint32(&pk.EffectType)
-	r.Varint32(&pk.Amplifier)
-	r.Bool(&pk.Particles)
-	r.Varint32(&pk.Duration)
+func (pk *MobEffect) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.Uint8(&pk.Operation)
+	io.Varint32(&pk.EffectType)
+	io.Varint32(&pk.Amplifier)
+	io.Bool(&pk.Particles)
+	io.Varint32(&pk.Duration)
 }

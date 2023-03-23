@@ -57,28 +57,18 @@ func (*AddActor) ID() uint32 {
 	return IDAddActor
 }
 
-// Marshal ...
-func (pk *AddActor) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *AddActor) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *AddActor) marshal(r protocol.IO) {
-	r.Varint64(&pk.EntityUniqueID)
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.String(&pk.EntityType)
-	r.Vec3(&pk.Position)
-	r.Vec3(&pk.Velocity)
-	r.Float32(&pk.Pitch)
-	r.Float32(&pk.Yaw)
-	r.Float32(&pk.HeadYaw)
-	r.Float32(&pk.BodyYaw)
-	protocol.Slice(r, &pk.Attributes)
-	r.EntityMetadata(&pk.EntityMetadata)
-	protocol.Single(r, &pk.EntityProperties)
-	protocol.Slice(r, &pk.EntityLinks)
+func (pk *AddActor) Marshal(io protocol.IO) {
+	io.Varint64(&pk.EntityUniqueID)
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.String(&pk.EntityType)
+	io.Vec3(&pk.Position)
+	io.Vec3(&pk.Velocity)
+	io.Float32(&pk.Pitch)
+	io.Float32(&pk.Yaw)
+	io.Float32(&pk.HeadYaw)
+	io.Float32(&pk.BodyYaw)
+	protocol.Slice(io, &pk.Attributes)
+	io.EntityMetadata(&pk.EntityMetadata)
+	protocol.Single(io, &pk.EntityProperties)
+	protocol.Slice(io, &pk.EntityLinks)
 }

@@ -27,17 +27,7 @@ func (*ResourcePackClientResponse) ID() uint32 {
 	return IDResourcePackClientResponse
 }
 
-// Marshal ...
-func (pk *ResourcePackClientResponse) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ResourcePackClientResponse) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ResourcePackClientResponse) marshal(r protocol.IO) {
-	r.Uint8(&pk.Response)
-	protocol.FuncSliceUint16Length(r, &pk.PacksToDownload, r.String)
+func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
+	io.Uint8(&pk.Response)
+	protocol.FuncSliceUint16Length(io, &pk.PacksToDownload, io.String)
 }

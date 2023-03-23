@@ -19,17 +19,7 @@ func (*ResourcePackChunkRequest) ID() uint32 {
 	return IDResourcePackChunkRequest
 }
 
-// Marshal ...
-func (pk *ResourcePackChunkRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ResourcePackChunkRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ResourcePackChunkRequest) marshal(r protocol.IO) {
-	r.String(&pk.UUID)
-	r.Uint32(&pk.ChunkIndex)
+func (pk *ResourcePackChunkRequest) Marshal(io protocol.IO) {
+	io.String(&pk.UUID)
+	io.Uint32(&pk.ChunkIndex)
 }

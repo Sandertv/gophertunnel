@@ -45,22 +45,12 @@ func (*InventoryTransaction) ID() uint32 {
 	return IDInventoryTransaction
 }
 
-// Marshal ...
-func (pk *InventoryTransaction) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *InventoryTransaction) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *InventoryTransaction) marshal(r protocol.IO) {
-	r.Varint32(&pk.LegacyRequestID)
+func (pk *InventoryTransaction) Marshal(io protocol.IO) {
+	io.Varint32(&pk.LegacyRequestID)
 	if pk.LegacyRequestID != 0 {
-		protocol.Slice(r, &pk.LegacySetItemSlots)
+		protocol.Slice(io, &pk.LegacySetItemSlots)
 	}
-	r.TransactionDataType(&pk.TransactionData)
-	protocol.Slice(r, &pk.Actions)
-	pk.TransactionData.Marshal(r)
+	io.TransactionDataType(&pk.TransactionData)
+	protocol.Slice(io, &pk.Actions)
+	pk.TransactionData.Marshal(io)
 }

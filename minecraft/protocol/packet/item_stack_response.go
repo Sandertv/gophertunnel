@@ -20,16 +20,6 @@ func (*ItemStackResponse) ID() uint32 {
 	return IDItemStackResponse
 }
 
-// Marshal ...
-func (pk *ItemStackResponse) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *ItemStackResponse) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *ItemStackResponse) marshal(r protocol.IO) {
-	protocol.Slice(r, &pk.Responses)
+func (pk *ItemStackResponse) Marshal(io protocol.IO) {
+	protocol.Slice(io, &pk.Responses)
 }

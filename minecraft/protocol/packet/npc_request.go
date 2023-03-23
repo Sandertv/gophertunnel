@@ -37,20 +37,10 @@ func (*NPCRequest) ID() uint32 {
 	return IDNPCRequest
 }
 
-// Marshal ...
-func (pk *NPCRequest) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *NPCRequest) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *NPCRequest) marshal(r protocol.IO) {
-	r.Varuint64(&pk.EntityRuntimeID)
-	r.Uint8(&pk.RequestType)
-	r.String(&pk.CommandString)
-	r.Uint8(&pk.ActionType)
-	r.String(&pk.SceneName)
+func (pk *NPCRequest) Marshal(io protocol.IO) {
+	io.Varuint64(&pk.EntityRuntimeID)
+	io.Uint8(&pk.RequestType)
+	io.String(&pk.CommandString)
+	io.Uint8(&pk.ActionType)
+	io.String(&pk.SceneName)
 }

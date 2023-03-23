@@ -24,18 +24,8 @@ func (*InventorySlot) ID() uint32 {
 	return IDInventorySlot
 }
 
-// Marshal ...
-func (pk *InventorySlot) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *InventorySlot) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *InventorySlot) marshal(r protocol.IO) {
-	r.Varuint32(&pk.WindowID)
-	r.Varuint32(&pk.Slot)
-	r.ItemInstance(&pk.NewItem)
+func (pk *InventorySlot) Marshal(io protocol.IO) {
+	io.Varuint32(&pk.WindowID)
+	io.Varuint32(&pk.Slot)
+	io.ItemInstance(&pk.NewItem)
 }

@@ -136,18 +136,8 @@ func (*LevelEvent) ID() uint32 {
 	return IDLevelEvent
 }
 
-// Marshal ...
-func (pk *LevelEvent) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *LevelEvent) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *LevelEvent) marshal(r protocol.IO) {
-	r.Varint32(&pk.EventType)
-	r.Vec3(&pk.Position)
-	r.Varint32(&pk.EventData)
+func (pk *LevelEvent) Marshal(io protocol.IO) {
+	io.Varint32(&pk.EventType)
+	io.Vec3(&pk.Position)
+	io.Varint32(&pk.EventData)
 }

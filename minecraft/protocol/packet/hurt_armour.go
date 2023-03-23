@@ -23,18 +23,8 @@ func (*HurtArmour) ID() uint32 {
 	return IDHurtArmour
 }
 
-// Marshal ...
-func (pk *HurtArmour) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *HurtArmour) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *HurtArmour) marshal(r protocol.IO) {
-	r.Varint32(&pk.Cause)
-	r.Varint32(&pk.Damage)
-	r.Varint64(&pk.ArmourSlots)
+func (pk *HurtArmour) Marshal(io protocol.IO) {
+	io.Varint32(&pk.Cause)
+	io.Varint32(&pk.Damage)
+	io.Varint64(&pk.ArmourSlots)
 }

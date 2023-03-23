@@ -18,16 +18,6 @@ func (*BiomeDefinitionList) ID() uint32 {
 	return IDBiomeDefinitionList
 }
 
-// Marshal ...
-func (pk *BiomeDefinitionList) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *BiomeDefinitionList) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *BiomeDefinitionList) marshal(r protocol.IO) {
-	r.Bytes(&pk.SerialisedBiomeDefinitions)
+func (pk *BiomeDefinitionList) Marshal(io protocol.IO) {
+	io.Bytes(&pk.SerialisedBiomeDefinitions)
 }

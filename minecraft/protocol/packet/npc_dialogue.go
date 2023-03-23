@@ -29,21 +29,11 @@ func (*NPCDialogue) ID() uint32 {
 	return IDNPCDialogue
 }
 
-// Marshal ...
-func (pk *NPCDialogue) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *NPCDialogue) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *NPCDialogue) marshal(r protocol.IO) {
-	r.Uint64(&pk.EntityUniqueID)
-	r.Varint32(&pk.ActionType)
-	r.String(&pk.Dialogue)
-	r.String(&pk.SceneName)
-	r.String(&pk.NPCName)
-	r.String(&pk.ActionJSON)
+func (pk *NPCDialogue) Marshal(io protocol.IO) {
+	io.Uint64(&pk.EntityUniqueID)
+	io.Varint32(&pk.ActionType)
+	io.String(&pk.Dialogue)
+	io.String(&pk.SceneName)
+	io.String(&pk.NPCName)
+	io.String(&pk.ActionJSON)
 }

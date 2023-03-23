@@ -26,20 +26,10 @@ func (*PlayerSkin) ID() uint32 {
 	return IDPlayerSkin
 }
 
-// Marshal ...
-func (pk *PlayerSkin) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *PlayerSkin) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *PlayerSkin) marshal(r protocol.IO) {
-	r.UUID(&pk.UUID)
-	protocol.Single(r, &pk.Skin)
-	r.String(&pk.NewSkinName)
-	r.String(&pk.OldSkinName)
-	r.Bool(&pk.Skin.Trusted)
+func (pk *PlayerSkin) Marshal(io protocol.IO) {
+	io.UUID(&pk.UUID)
+	protocol.Single(io, &pk.Skin)
+	io.String(&pk.NewSkinName)
+	io.String(&pk.OldSkinName)
+	io.Bool(&pk.Skin.Trusted)
 }

@@ -32,19 +32,9 @@ func (*UpdateBlock) ID() uint32 {
 	return IDUpdateBlock
 }
 
-// Marshal ...
-func (pk *UpdateBlock) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *UpdateBlock) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *UpdateBlock) marshal(r protocol.IO) {
-	r.UBlockPos(&pk.Position)
-	r.Varuint32(&pk.NewBlockRuntimeID)
-	r.Varuint32(&pk.Flags)
-	r.Varuint32(&pk.Layer)
+func (pk *UpdateBlock) Marshal(io protocol.IO) {
+	io.UBlockPos(&pk.Position)
+	io.Varuint32(&pk.NewBlockRuntimeID)
+	io.Varuint32(&pk.Flags)
+	io.Varuint32(&pk.Layer)
 }

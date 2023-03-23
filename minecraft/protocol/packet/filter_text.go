@@ -19,17 +19,7 @@ func (*FilterText) ID() uint32 {
 	return IDFilterText
 }
 
-// Marshal ...
-func (pk *FilterText) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *FilterText) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *FilterText) marshal(r protocol.IO) {
-	r.String(&pk.Text)
-	r.Bool(&pk.FromServer)
+func (pk *FilterText) Marshal(io protocol.IO) {
+	io.String(&pk.Text)
+	io.Bool(&pk.FromServer)
 }

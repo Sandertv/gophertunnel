@@ -40,20 +40,10 @@ func (*SetDisplayObjective) ID() uint32 {
 	return IDSetDisplayObjective
 }
 
-// Marshal ...
-func (pk *SetDisplayObjective) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *SetDisplayObjective) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *SetDisplayObjective) marshal(r protocol.IO) {
-	r.String(&pk.DisplaySlot)
-	r.String(&pk.ObjectiveName)
-	r.String(&pk.DisplayName)
-	r.String(&pk.CriteriaName)
-	r.Varint32(&pk.SortOrder)
+func (pk *SetDisplayObjective) Marshal(io protocol.IO) {
+	io.String(&pk.DisplaySlot)
+	io.String(&pk.ObjectiveName)
+	io.String(&pk.DisplayName)
+	io.String(&pk.CriteriaName)
+	io.Varint32(&pk.SortOrder)
 }

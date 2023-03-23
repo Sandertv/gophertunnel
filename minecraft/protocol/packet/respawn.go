@@ -32,18 +32,8 @@ func (*Respawn) ID() uint32 {
 	return IDRespawn
 }
 
-// Marshal ...
-func (pk *Respawn) Marshal(w *protocol.Writer) {
-	pk.marshal(w)
-}
-
-// Unmarshal ...
-func (pk *Respawn) Unmarshal(r *protocol.Reader) {
-	pk.marshal(r)
-}
-
-func (pk *Respawn) marshal(r protocol.IO) {
-	r.Vec3(&pk.Position)
-	r.Uint8(&pk.State)
-	r.Varuint64(&pk.EntityRuntimeID)
+func (pk *Respawn) Marshal(io protocol.IO) {
+	io.Vec3(&pk.Position)
+	io.Uint8(&pk.State)
+	io.Varuint64(&pk.EntityRuntimeID)
 }
