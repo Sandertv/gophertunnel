@@ -21,9 +21,7 @@ version of gophertunnel supports **v1.19.0**.
 ## Sponsors
 [![Become Patron](https://img.shields.io/badge/dynamic/json?logo=patreon&style=for-the-badge&color=%23e85b46&label=Patreon&query=data.attributes.patron_count&suffix=%20patrons&url=https%3A%2F%2Fwww.patreon.com%2Fapi%2Fcampaigns%2F2832539)](https://patreon.com/sandertv)
 
-Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to the Very Important Gophers below.
-
-<a href="https://github.com/andresbytes"><img src="https://avatars.githubusercontent.com/u/21067195?v=4" width="60" height="60"></a>
+Gophertunnel is sponsored by all my gopher sponsors. A special thanks goes to the Very Important Gophers!
 
 ## Contact
 [![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.com/invite/U4kFWHhTNR)
