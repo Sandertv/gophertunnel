@@ -66,6 +66,7 @@ const (
 	RecipeShapelessChemistry
 	RecipeShapedChemistry
 	RecipeSmithingTransform
+	RecipeSmithingTrim
 )
 
 // Recipe represents a recipe that may be sent in a CraftingData packet to let the client know what recipes
@@ -99,6 +100,8 @@ func lookupRecipe(recipeType int32, x *Recipe) bool {
 		*x = &ShapedChemistryRecipe{}
 	case RecipeSmithingTransform:
 		*x = &SmithingTransformRecipe{}
+	case RecipeSmithingTrim:
+		*x = &SmithingTrimRecipe{}
 	default:
 		return false
 	}
@@ -127,6 +130,8 @@ func lookupRecipeType(x Recipe, recipeType *int32) bool {
 		*recipeType = RecipeShapedChemistry
 	case *SmithingTransformRecipe:
 		*recipeType = RecipeSmithingTransform
+	case *SmithingTrimRecipe:
+		*recipeType = RecipeSmithingTrim
 	default:
 		return false
 	}
@@ -254,6 +259,8 @@ type SmithingTransformRecipe struct {
 	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
 	// but its functionality is not exactly known.
 	RecipeID string
+	// Template is the item that is used to shape the Base item based on the Addition being applied.
+	Template ItemDescriptorCount
 	// Base is the item that the Addition is being applied to in the smithing table.
 	Base ItemDescriptorCount
 	// Addition is the item that is being added to the Base item to result in a modified item.
@@ -263,6 +270,10 @@ type SmithingTransformRecipe struct {
 	// Block is the block name that is required to create the output of the recipe. The block is not prefixed with
 	// 'minecraft:', so it will look like 'smithing_table' as an example.
 	Block string
+}
+
+type SmithingTrimRecipe struct {
+	ShapelessRecipe
 }
 
 // Marshal ...
@@ -363,6 +374,7 @@ func (recipe *MultiRecipe) Unmarshal(r *Reader) {
 // Marshal ...
 func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
 	w.String(&recipe.RecipeID)
+	w.ItemDescriptorCount(&recipe.Template)
 	w.ItemDescriptorCount(&recipe.Base)
 	w.ItemDescriptorCount(&recipe.Addition)
 	w.Item(&recipe.Result)
@@ -373,11 +385,22 @@ func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
 // Unmarshal ...
 func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 	r.String(&recipe.RecipeID)
+	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
 	r.ItemDescriptorCount(&recipe.Addition)
 	r.Item(&recipe.Result)
 	r.String(&recipe.Block)
 	r.Varuint32(&recipe.RecipeNetworkID)
+}
+
+// Marshal ...
+func (recipe *SmithingTrimRecipe) Marshal(w *Writer) {
+	marshalShapeless(w, &recipe.ShapelessRecipe)
+}
+
+// Unmarshal ...
+func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
+	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // marshalShaped ...

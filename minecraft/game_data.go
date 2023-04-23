@@ -56,6 +56,12 @@ type GameData struct {
 	// EditorWorld is a value to dictate if the world is in editor mode, a special mode recently introduced adding
 	// "powerful tools for editing worlds, intended for experienced creators."
 	EditorWorld bool
+	// CreatedInEditor is a value to dictate if the world was created as a project in the editor mode. The functionality
+	// of this field is currently unknown.
+	CreatedInEditor bool
+	// ExportedFromEditor is a value to dictate if the world was exported from editor mode. The functionality of this
+	// field is currently unknown.
+	ExportedFromEditor bool
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32

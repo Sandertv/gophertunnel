@@ -201,4 +201,7 @@ const (
 	IDCameraPresets
 	IDUnlockedRecipes
 	IDCameraInstruction = iota + 101
+	IDCompressedBiomeDefinitionList
+	IDTrimData
+	IDOpenSign
 )
