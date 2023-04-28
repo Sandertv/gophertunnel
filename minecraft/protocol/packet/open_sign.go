@@ -5,7 +5,7 @@ import (
 )
 
 // OpenSign is sent by the server to open a sign for editing. As of 1.19.80, the player can interact with a sign to edit
-// either the text on either side instead of just the front.
+// the text on either side instead of just the front.
 type OpenSign struct {
 	// Position is the position of the sign to edit. The client uses this position to get the data of the sign, including
 	// the existing text and formatting etc.
