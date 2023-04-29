@@ -62,6 +62,7 @@ const (
 	ContainerBarrel
 	ContainerCursor
 	ContainerCreatedOutput
+	ContainerSmithingTableTemplate
 )
 
 const (

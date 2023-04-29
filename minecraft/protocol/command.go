@@ -109,15 +109,15 @@ const (
 	CommandArgTypeWildcardTarget  = 10
 	CommandArgTypeFilepath        = 17
 	CommandArgTypeIntegerRange    = 23
-	CommandArgTypeEquipmentSlots  = 38
-	CommandArgTypeString          = 39
-	CommandArgTypeBlockPosition   = 47
-	CommandArgTypePosition        = 48
-	CommandArgTypeMessage         = 51
-	CommandArgTypeRawText         = 53
-	CommandArgTypeJSON            = 57
-	CommandArgTypeBlockStates     = 67
-	CommandArgTypeCommand         = 70
+	CommandArgTypeEquipmentSlots  = 43
+	CommandArgTypeString          = 44
+	CommandArgTypeBlockPosition   = 52
+	CommandArgTypePosition        = 53
+	CommandArgTypeMessage         = 55
+	CommandArgTypeRawText         = 58
+	CommandArgTypeJSON            = 62
+	CommandArgTypeBlockStates     = 71
+	CommandArgTypeCommand         = 74
 )
 
 const (

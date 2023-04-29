@@ -187,6 +187,9 @@ type ClientData struct {
 	TrustedSkin bool
 	// OverrideSkin is a boolean that does not make sense to be here. The current usage of this field is unknown.
 	OverrideSkin bool
+	// CompatibleWithClientSideChunkGen is a boolean indicating if the client's hardware is capable of using the client
+	// side chunk generation system.
+	CompatibleWithClientSideChunkGen bool
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
