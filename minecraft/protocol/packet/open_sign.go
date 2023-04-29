@@ -21,6 +21,6 @@ func (*OpenSign) ID() uint32 {
 }
 
 func (pk *OpenSign) Marshal(io protocol.IO) {
-	io.BlockPos(&pk.Position)
+	io.UBlockPos(&pk.Position)
 	io.Bool(&pk.FrontSide)
 }
