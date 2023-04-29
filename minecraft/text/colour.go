@@ -8,7 +8,7 @@ import (
 )
 
 // cleaner represents the regex used to clean Minecraft formatting codes from a string.
-var cleaner = regexp.MustCompile("§[0-9a-gk-or]")
+var cleaner = regexp.MustCompile("§[0-9a-u]")
 
 // Clean removes all Minecraft formatting codes from the string passed.
 func Clean(s string) string {
@@ -29,7 +29,8 @@ func ANSI(a ...any) string {
 // substituting them in the format string. The following colours and formatting may be used:
 //
 //	black, dark-blue, dark-green, dark-aqua, dark-red, dark-purple, gold, grey, dark-grey, blue, green, aqua,
-//	red, purple, yellow, white, dark-yellow, obfuscated, bold (b), and italic (i).
+//	red, purple, yellow, white, dark-yellow, quartz, iron, netherite, redstone, copper, gold, emerald, diamond,
+//	lapis, amethyst, obfuscated, bold (b), and italic (i).
 //
 // These HTML tags may also be nested, like so:
 // `<red>Hello <bold>World</bold>!</red>`

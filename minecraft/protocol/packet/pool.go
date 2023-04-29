@@ -224,7 +224,10 @@ func init() {
 		IDCameraPresets:                     func() Packet { return &CameraPresets{} },
 		IDUnlockedRecipes:                   func() Packet { return &UnlockedRecipes{} },
 		// ---
-		IDCameraInstruction: func() Packet { return &CameraInstruction{} },
+		IDCameraInstruction:             func() Packet { return &CameraInstruction{} },
+		IDCompressedBiomeDefinitionList: func() Packet { return &CompressedBiomeDefinitionList{} },
+		IDTrimData:                      func() Packet { return &TrimData{} },
+		IDOpenSign:                      func() Packet { return &OpenSign{} },
 	}
 	for id, pk := range packets {
 		Register(id, pk)

@@ -9,7 +9,7 @@ const (
 	darkAqua   = "§3"
 	darkRed    = "§4"
 	darkPurple = "§5"
-	gold       = "§6"
+	orange     = "§6"
 	grey       = "§7"
 	darkGrey   = "§8"
 	blue       = "§9"
@@ -20,11 +20,20 @@ const (
 	yellow     = "§e"
 	white      = "§f"
 	darkYellow = "§g"
-
+	quartz     = "§h"
+	iron       = "§i"
+	netherite  = "§j"
 	obfuscated = "§k"
 	bold       = "§l"
+	redstone   = "§m"
+	copper     = "§n"
 	italic     = "§o"
+	gold       = "§p"
+	emerald    = "§q"
 	reset      = "§r"
+	diamond    = "§s"
+	lapis      = "§t"
+	amethyst   = "§u"
 )
 
 const (
@@ -34,7 +43,7 @@ const (
 	ansiDarkAqua   = "\x1b[38;5;37m"
 	ansiDarkRed    = "\x1b[38;5;124m"
 	ansiDarkPurple = "\x1b[38;5;127m"
-	ansiGold       = "\x1b[38;5;214m"
+	ansiOrange     = "\x1b[38;5;214m"
 	ansiGrey       = "\x1b[38;5;145m"
 	ansiDarkGrey   = "\x1b[38;5;59m"
 	ansiBlue       = "\x1b[38;5;63m"
@@ -45,6 +54,16 @@ const (
 	ansiYellow     = "\x1b[38;5;227m"
 	ansiWhite      = "\x1b[38;5;231m"
 	ansiDarkYellow = "\x1b[38;5;226m"
+	ansiQuartz     = "\x1b[38;5;224m"
+	ansiIron       = "\x1b[38;5;251m"
+	ansiNetherite  = "\x1b[38;5;234m"
+	ansiRedstone   = "\x1b[38;5;1m"
+	ansiCopper     = "\x1b[38;5;216m"
+	ansiGold       = "\x1b[38;5;220m"
+	ansiEmerald    = "\x1b[38;5;71m"
+	ansiDiamond    = "\x1b[38;5;122m"
+	ansiLapis      = "\x1b[38;5;4m"
+	ansiAmethyst   = "\x1b[38;5;171m"
 
 	ansiObfuscated = ""
 	ansiBold       = "\x1b[1m"
@@ -59,7 +78,7 @@ var m = map[string]string{
 	darkAqua:   ansiDarkAqua,
 	darkRed:    ansiDarkRed,
 	darkPurple: ansiDarkPurple,
-	gold:       ansiGold,
+	orange:     ansiOrange,
 	grey:       ansiGrey,
 	darkGrey:   ansiDarkGrey,
 	blue:       ansiBlue,
@@ -70,6 +89,17 @@ var m = map[string]string{
 	yellow:     ansiYellow,
 	white:      ansiWhite,
 	darkYellow: ansiDarkYellow,
+	quartz:     ansiQuartz,
+	iron:       ansiIron,
+	netherite:  ansiNetherite,
+	redstone:   ansiRedstone,
+	copper:     ansiCopper,
+	gold:       ansiGold,
+	emerald:    ansiEmerald,
+	diamond:    ansiDiamond,
+	lapis:      ansiLapis,
+	amethyst:   ansiAmethyst,
+
 	obfuscated: ansiObfuscated,
 	bold:       ansiBold,
 	reset:      ansiReset,
@@ -83,7 +113,7 @@ var strMap = map[string]string{
 	"dark-aqua":   darkAqua,
 	"dark-red":    darkRed,
 	"dark-purple": darkPurple,
-	"gold":        gold,
+	"orange":      orange,
 	"grey":        grey,
 	"dark-grey":   darkGrey,
 	"blue":        blue,
@@ -94,11 +124,21 @@ var strMap = map[string]string{
 	"yellow":      yellow,
 	"white":       white,
 	"dark-yellow": darkYellow,
+	"quartz":      quartz,
+	"iron":        iron,
+	"netherite":   netherite,
 	"obfuscated":  obfuscated,
 	"bold":        bold,
 	"b":           bold,
+	"redstone":    redstone,
+	"copper":      copper,
+	"gold":        gold,
+	"emerald":     emerald,
 	"italic":      italic,
 	"i":           italic,
+	"diamond":     diamond,
+	"lapis":       lapis,
+	"amethyst":    amethyst,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting

@@ -41,6 +41,7 @@ const (
 	LevelEventSoundPointedDripstoneLand    = 1064
 	LevelEventSoundDyeUsed                 = 1065
 	LevelEventSoundInkSacUsed              = 1066
+	LevelEventSoundAmethystResonate        = 1067
 	LevelEventQueueCustomMusic             = 1900
 	LevelEventPlayCustomMusic              = 1901
 	LevelEventStopCustomMusic              = 1902
@@ -111,6 +112,12 @@ const (
 	LevelEventStartBlockCracking           = 3600
 	LevelEventStopBlockCracking            = 3601
 	LevelEventUpdateBlockCracking          = 3602
+	LevelEventParticlesCrackBlockDown      = 3603
+	LevelEventParticlesCrackBlockUp        = 3604
+	LevelEventParticlesCrackBlockNorth     = 3605
+	LevelEventParticlesCrackBlockSouth     = 3606
+	LevelEventParticlesCrackBlockWest      = 3607
+	LevelEventParticlesCrackBlockEast      = 3608
 	LevelEventAllPlayersSleeping           = 9800
 	LevelEventSleepingPlayers              = 9801
 	LevelEventJumpPrevented                = 9810
