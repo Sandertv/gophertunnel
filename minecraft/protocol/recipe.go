@@ -272,7 +272,7 @@ type SmithingTransformRecipe struct {
 	Block string
 }
 
-// SmithingTrimRecipe is a recipe specifically used for smithing tables. It has three input items and adds them together.
+// SmithingTrimRecipe is a recipe specifically used for applying armour trims to an armour piece inside a smithing table.
 type SmithingTrimRecipe struct {
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
