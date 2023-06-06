@@ -233,7 +233,12 @@ type StartGame struct {
 	ChatRestrictionLevel uint8
 	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
 	DisablePlayerInteractions bool
-	UseBlockNetworkIDHashes   bool
+	// UseBlockNetworkIDHashes is true if the client should use the hash of a block's name as its network ID rather than
+	// its index in the expected block palette. This is useful for servers that wish to support multiple protocol versions
+	// and custom blocks, but it will result in extra bytes being written for every block in a sub chunk palette.
+	UseBlockNetworkIDHashes bool
+	// ServerAuthoritativeSound is currently unknown as to what it does.
+	ServerAuthoritativeSound bool
 }
 
 // ID ...
@@ -315,4 +320,5 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.UUID(&pk.WorldTemplateID)
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
+	io.Bool(&pk.ServerAuthoritativeSound)
 }

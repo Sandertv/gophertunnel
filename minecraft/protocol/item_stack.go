@@ -12,7 +12,9 @@ const (
 	FilterCauseLeaveEventText
 	FilterCauseSlashCommandChat
 	FilterCauseCartographyText
-	FilterCauseSlashCommandNonChat
+	FilterCauseKickCommand
+	FilterCauseTitleCommand
+	FilterCauseSummonCommand
 )
 
 // ItemStackRequest represents a single request present in an ItemStackRequest packet sent by the client to

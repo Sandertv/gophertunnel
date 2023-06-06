@@ -32,6 +32,7 @@ const (
 	EventTypeCodeBuilderScoreboard
 	EventTypeStriderRiddenInLavaInOverworld
 	EventTypeSneakCloseToSculkSensor
+	EventTypeCarefulRestoration
 )
 
 // lookupEvent looks up an Event matching the event type passed. False is
