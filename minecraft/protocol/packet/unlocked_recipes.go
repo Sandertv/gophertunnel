@@ -4,11 +4,20 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	UnlockedRecipesTypeEmpty = iota
+	UnlockedRecipesTypeInitiallyUnlocked
+	UnlockedRecipesTypeNewlyUnlocked
+	UnlockedRecipesTypeRemoveUnlocked
+	UnlockedRecipesTypeRemoveAllUnlocked
+)
+
 // UnlockedRecipes gives the client a list of recipes that have been unlocked, restricting the recipes that appear in
 // the recipe book.
 type UnlockedRecipes struct {
-	// NewUnlocks determines if new recipes have been unlocked since the packet was last sent.
-	NewUnlocks bool
+	// UnlockType is the type of unlock that the packet represents, and can either be adding or removing a list of recipes.
+	// It is one of the constants listed above.
+	UnlockType uint32
 	// Recipes is a list of recipe names that have been unlocked.
 	Recipes []string
 }
@@ -19,6 +28,6 @@ func (*UnlockedRecipes) ID() uint32 {
 }
 
 func (pk *UnlockedRecipes) Marshal(io protocol.IO) {
-	io.Bool(&pk.NewUnlocks)
+	io.Uint32(&pk.UnlockType)
 	protocol.FuncSlice(io, &pk.Recipes, io.String)
 }
