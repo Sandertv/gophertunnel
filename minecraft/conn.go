@@ -319,7 +319,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	l := buf.Len()
 
 	for _, converted := range conn.proto.ConvertFromLatest(pk, conn) {
-		converted.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
+		converted.Marshal(conn.proto.NewWriter(buf, conn.shieldID.Load()))
 
 		if conn.packetFunc != nil {
 			conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())

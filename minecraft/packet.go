@@ -3,7 +3,6 @@ package minecraft
 import (
 	"bytes"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -42,7 +41,7 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		pk = pkFunc()
 	}
 
-	r := protocol.NewReader(p.payload, conn.shieldID.Load())
+	r := conn.proto.NewReader(p.payload, conn.shieldID.Load())
 	defer func() {
 		if recoveredErr := recover(); recoveredErr != nil {
 			err = fmt.Errorf("%T: %w", pk, recoveredErr.(error))
