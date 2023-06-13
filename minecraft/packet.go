@@ -39,7 +39,6 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
 		if conn.disconnectOnUnknownPacket {
 			_ = conn.Close()
-			fmt.Println("unknown packet:", p.h.PacketID)
 			return nil, fmt.Errorf("unknown packet with ID %v", p.h.PacketID)
 		}
 	} else {
