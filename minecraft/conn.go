@@ -1042,6 +1042,7 @@ func (conn *Conn) startGame() {
 		DisablePlayerInteractions:    data.DisablePlayerInteractions,
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
+		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 	})
 	_ = conn.Flush()
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
@@ -1231,6 +1232,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		DisablePlayerInteractions:    pk.DisablePlayerInteractions,
 		ClientSideGeneration:         pk.ClientSideGeneration,
 		Experiments:                  pk.Experiments,
+		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
 	}
 	for _, item := range pk.Items {
 		if item.Name == "minecraft:shield" {
