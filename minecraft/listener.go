@@ -33,6 +33,16 @@ type ListenConfig struct {
 	// accepted into the server.
 	MaximumPlayers int
 
+	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
+	// in the packet pool. If false (by default), such packets lead to the connection being closed immediately.
+	// If set to true, the packets will be returned as a packet.Unknown.
+	AllowUnknownPackets bool
+
+	// AllowInvalidPackets specifies if invalid packets (either too few bytes or too many bytes) should be
+	// allowed. If false (by default), such packets lead to the connection being closed immediately. If true,
+	// packets with too many bytes will be returned while packets with too few bytes will be skipped.
+	AllowInvalidPackets bool
+
 	// StatusProvider is the ServerStatusProvider of the Listener. When set to nil, the default provider,
 	// ListenerStatusProvider, is used as provider.
 	StatusProvider ServerStatusProvider
@@ -220,7 +230,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
-	conn.pool = conn.proto.Packets()
+	conn.pool = conn.proto.Packets(true)
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
@@ -228,6 +238,8 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
+	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
+	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.

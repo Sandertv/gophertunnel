@@ -37,6 +37,11 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 	if !ok {
 		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
+		if conn.disconnectOnUnknownPacket {
+			_ = conn.Close()
+			fmt.Println("unknown packet:", p.h.PacketID)
+			return nil, fmt.Errorf("unknown packet with ID %v", p.h.PacketID)
+		}
 	} else {
 		pk = pkFunc()
 	}
@@ -50,6 +55,10 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 	pk.Marshal(r)
 	if p.payload.Len() != 0 {
 		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())
+	}
+	if conn.disconnectOnInvalidPacket && err != nil {
+		_ = conn.Close()
+		return nil, err
 	}
 	return conn.proto.ConvertToLatest(pk, conn), err
 }

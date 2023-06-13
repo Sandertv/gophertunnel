@@ -60,6 +60,16 @@ type Dialer struct {
 	// The boolean returned determines if the pack will be downloaded or not.
 	DownloadResourcePack func(id uuid.UUID, version string, current, total int) bool
 
+	// DisconnectOnUnknownPackets specifies if the connection should disconnect if packets received are not present
+	// in the packet pool. If true, such packets lead to the connection being closed immediately.
+	// If set to false, the packets will be returned as a packet.Unknown.
+	DisconnectOnUnknownPackets bool
+
+	// DisconnectOnInvalidPackets specifies if invalid packets (either too few bytes or too many bytes) should be
+	// allowed. If true, such packets lead to the connection being closed immediately. If false,
+	// packets with too many bytes will be returned while packets with too few bytes will be skipped.
+	DisconnectOnInvalidPackets bool
+
 	// Protocol is the Protocol version used to communicate with the target server. By default, this field is
 	// set to the current protocol as implemented in the minecraft/protocol package. Note that packets written
 	// to and read from the Conn are always any of those found in the protocol/packet package, as packets
@@ -171,12 +181,14 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	}
 
 	conn = newConn(netConn, key, d.ErrorLog, d.Protocol, d.FlushRate, false)
-	conn.pool = conn.proto.Packets()
+	conn.pool = conn.proto.Packets(false)
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc
 	conn.downloadResourcePack = d.DownloadResourcePack
 	conn.cacheEnabled = d.EnableClientCache
+	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
+	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)

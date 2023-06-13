@@ -65,6 +65,9 @@ type Conn struct {
 	compression   packet.Compression
 	readerLimits  bool
 
+	disconnectOnUnknownPacket bool
+	disconnectOnInvalidPacket bool
+
 	identityData login.IdentityData
 	clientData   login.ClientData
 
@@ -668,7 +671,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
 			conn.proto = pro
-			conn.pool = pro.Packets()
+			conn.pool = pro.Packets(true)
 			found = true
 			break
 		}
