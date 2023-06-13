@@ -21,15 +21,16 @@ type Reader struct {
 		io.Reader
 		io.ByteReader
 	}
-	shieldID int32
+	shieldID      int32
+	limitsEnabled bool
 }
 
 // NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
 func NewReader(r interface {
 	io.Reader
 	io.ByteReader
-}, shieldID int32) *Reader {
-	return &Reader{r: r, shieldID: shieldID}
+}, shieldID int32, enableLimits bool) *Reader {
+	return &Reader{r: r, shieldID: shieldID, limitsEnabled: enableLimits}
 }
 
 // Uint8 reads a uint8 from the underlying buffer.
@@ -379,7 +380,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 	r.ByteSlice(&extraData)
 
 	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID)
+	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
 
 	var length int16
 	bufReader.Int16(&length)
@@ -427,7 +428,7 @@ func (r *Reader) Item(x *ItemStack) {
 	r.ByteSlice(&extraData)
 
 	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID)
+	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
 
 	var length int16
 	bufReader.Int16(&length)

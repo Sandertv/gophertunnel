@@ -20,7 +20,7 @@ type Protocol interface {
 	Packets() packet.Pool
 	// NewReader returns a protocol.IO that implements reading operations for reading types
 	// that are used for this Protocol.
-	NewReader(r reader, shieldID int32) protocol.IO
+	NewReader(r reader, shieldID int32, enableLimits bool) protocol.IO
 	// NewWriter returns a protocol.IO that implements writing operations for writing types
 	// that are used for this Protocol.
 	NewWriter(w writer, shieldID int32) protocol.IO
@@ -54,8 +54,8 @@ type proto struct{}
 func (proto) ID() int32              { return protocol.CurrentProtocol }
 func (p proto) Ver() string          { return protocol.CurrentVersion }
 func (p proto) Packets() packet.Pool { return packet.NewPool() }
-func (p proto) NewReader(r reader, shieldID int32) protocol.IO {
-	return protocol.NewReader(r, shieldID)
+func (p proto) NewReader(r reader, shieldID int32, enableLimits bool) protocol.IO {
+	return protocol.NewReader(r, shieldID, enableLimits)
 }
 func (p proto) NewWriter(w writer, shieldID int32) protocol.IO {
 	return protocol.NewWriter(w, shieldID)

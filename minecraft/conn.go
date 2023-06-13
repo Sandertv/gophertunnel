@@ -63,6 +63,7 @@ type Conn struct {
 	enc           *packet.Encoder
 	dec           *packet.Decoder
 	compression   packet.Compression
+	readerLimits  bool
 
 	identityData login.IdentityData
 	clientData   login.ClientData
@@ -144,23 +145,29 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
 	conn := &Conn{
-		enc:        packet.NewEncoder(netConn),
-		dec:        packet.NewDecoder(netConn),
-		salt:       make([]byte, 16),
-		packets:    make(chan *packetData, 8),
-		additional: make(chan packet.Packet, 16),
-		close:      make(chan struct{}),
-		spawn:      make(chan struct{}),
-		conn:       netConn,
-		privateKey: key,
-		log:        log,
-		hdr:        &packet.Header{},
-		proto:      proto,
+		enc:          packet.NewEncoder(netConn),
+		dec:          packet.NewDecoder(netConn),
+		salt:         make([]byte, 16),
+		packets:      make(chan *packetData, 8),
+		additional:   make(chan packet.Packet, 16),
+		close:        make(chan struct{}),
+		spawn:        make(chan struct{}),
+		conn:         netConn,
+		privateKey:   key,
+		log:          log,
+		hdr:          &packet.Header{},
+		proto:        proto,
+		readerLimits: limits,
 	}
-	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
+	if limits {
+		// Disable the batch packet limit so that the server can send packets as often as it wants to.
+		conn.dec.DisableBatchPacketLimit()
+	}
 	_, _ = rand.Read(conn.salt)
+
+	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 
 	if flushRate <= 0 {
 		return conn
