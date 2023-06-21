@@ -395,6 +395,9 @@ func enumValues(commands []Command) (values []string, indices map[string]int) {
 		}
 		for _, overload := range command.Overloads {
 			for _, parameter := range overload.Parameters {
+				if parameter.Enum.Dynamic {
+					continue
+				}
 				for _, option := range parameter.Enum.Options {
 					if _, ok := indices[option]; !ok {
 						indices[option] = len(values)
