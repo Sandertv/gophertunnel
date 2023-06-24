@@ -4,7 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// MapCreateLockedCopy is sent by the server to create a locked copy of one map into another map. In vanilla,
+// MapCreateLockedCopy is sent by the client to create a locked copy of one map into another map. In vanilla,
 // it is used in the cartography table to create a map that is locked and cannot be modified.
 type MapCreateLockedCopy struct {
 	// OriginalMapID is the ID of the map that is being copied. The locked copy will obtain all content that

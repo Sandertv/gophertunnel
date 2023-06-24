@@ -63,6 +63,10 @@ type Conn struct {
 	enc           *packet.Encoder
 	dec           *packet.Decoder
 	compression   packet.Compression
+	readerLimits  bool
+
+	disconnectOnUnknownPacket bool
+	disconnectOnInvalidPacket bool
 
 	identityData login.IdentityData
 	clientData   login.ClientData
@@ -144,23 +148,29 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
 	conn := &Conn{
-		enc:        packet.NewEncoder(netConn),
-		dec:        packet.NewDecoder(netConn),
-		salt:       make([]byte, 16),
-		packets:    make(chan *packetData, 8),
-		additional: make(chan packet.Packet, 16),
-		close:      make(chan struct{}),
-		spawn:      make(chan struct{}),
-		conn:       netConn,
-		privateKey: key,
-		log:        log,
-		hdr:        &packet.Header{},
-		proto:      proto,
+		enc:          packet.NewEncoder(netConn),
+		dec:          packet.NewDecoder(netConn),
+		salt:         make([]byte, 16),
+		packets:      make(chan *packetData, 8),
+		additional:   make(chan packet.Packet, 16),
+		close:        make(chan struct{}),
+		spawn:        make(chan struct{}),
+		conn:         netConn,
+		privateKey:   key,
+		log:          log,
+		hdr:          &packet.Header{},
+		proto:        proto,
+		readerLimits: limits,
 	}
-	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
+	if limits {
+		// Disable the batch packet limit so that the server can send packets as often as it wants to.
+		conn.dec.DisableBatchPacketLimit()
+	}
 	_, _ = rand.Read(conn.salt)
+
+	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 
 	if flushRate <= 0 {
 		return conn
@@ -319,7 +329,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 	l := buf.Len()
 
 	for _, converted := range conn.proto.ConvertFromLatest(pk, conn) {
-		converted.Marshal(protocol.NewWriter(buf, conn.shieldID.Load()))
+		converted.Marshal(conn.proto.NewWriter(buf, conn.shieldID.Load()))
 
 		if conn.packetFunc != nil {
 			conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
@@ -661,7 +671,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
 			conn.proto = pro
-			conn.pool = pro.Packets()
+			conn.pool = pro.Packets(true)
 			found = true
 			break
 		}
@@ -966,7 +976,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			return err
 		}
 	case packet.PackResponseAllPacksDownloaded:
-		pk := &packet.ResourcePackStack{BaseGameVersion: protocol.CurrentVersion}
+		pk := &packet.ResourcePackStack{BaseGameVersion: protocol.CurrentVersion, Experiments: []protocol.ExperimentData{{Name: "cameras", Enabled: true}}}
 		for _, pack := range conn.resourcePacks {
 			resourcePack := protocol.StackResourcePack{UUID: pack.UUID(), Version: pack.Version()}
 			// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
@@ -1035,6 +1045,7 @@ func (conn *Conn) startGame() {
 		DisablePlayerInteractions:    data.DisablePlayerInteractions,
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
+		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 	})
 	_ = conn.Flush()
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
@@ -1224,6 +1235,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		DisablePlayerInteractions:    pk.DisablePlayerInteractions,
 		ClientSideGeneration:         pk.ClientSideGeneration,
 		Experiments:                  pk.Experiments,
+		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
 	}
 	for _, item := range pk.Items {
 		if item.Name == "minecraft:shield" {

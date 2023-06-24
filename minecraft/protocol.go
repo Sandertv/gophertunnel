@@ -3,6 +3,7 @@ package minecraft
 import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"io"
 )
 
 // Protocol represents the Minecraft protocol used to communicate over network. It comprises a unique set of packets
@@ -14,9 +15,17 @@ type Protocol interface {
 	ID() int32
 	// Ver returns the Minecraft version associated with this Protocol, such as "1.18.10".
 	Ver() string
-	// Packets returns a packet.Pool with all packets registered for this Protocol. It is used to lookup packets by a
-	// packet ID.
-	Packets() packet.Pool
+	// Packets returns a packet.Pool with all packets registered for this
+	// Protocol. It is used to lookup packets by a packet ID. If listener is set
+	// to true, the pool should be created for a Listener. This means that only
+	// packets that may be sent by a client should be allowed.
+	Packets(listener bool) packet.Pool
+	// NewReader returns a protocol.IO that implements reading operations for reading types
+	// that are used for this Protocol.
+	NewReader(r reader, shieldID int32, enableLimits bool) protocol.IO
+	// NewWriter returns a protocol.IO that implements writing operations for writing types
+	// that are used for this Protocol.
+	NewWriter(w writer, shieldID int32) protocol.IO
 	// ConvertToLatest converts a packet.Packet obtained from the other end of a Conn to a slice of packet.Packets from
 	// the latest protocol. Any packet.Packet implementation in the packet.Pool obtained through a call to Packets that
 	// is not identical to the most recent version of that packet.Packet must be converted to the most recent version of
@@ -30,13 +39,34 @@ type Protocol interface {
 	ConvertFromLatest(pk packet.Packet, conn *Conn) []packet.Packet
 }
 
+type reader interface {
+	io.Reader
+	io.ByteReader
+}
+
+type writer interface {
+	io.Writer
+	io.ByteWriter
+}
+
 // proto is the default Protocol implementation. It returns the current protocol, version and packet pool and does not
 // convert any packets, as they are already of the right type.
 type proto struct{}
 
-func (proto) ID() int32                                                   { return protocol.CurrentProtocol }
-func (p proto) Ver() string                                               { return protocol.CurrentVersion }
-func (p proto) Packets() packet.Pool                                      { return packet.NewPool() }
+func (proto) ID() int32     { return protocol.CurrentProtocol }
+func (p proto) Ver() string { return protocol.CurrentVersion }
+func (p proto) Packets(listener bool) packet.Pool {
+	if listener {
+		packet.NewClientPool()
+	}
+	return packet.NewServerPool()
+}
+func (p proto) NewReader(r reader, shieldID int32, enableLimits bool) protocol.IO {
+	return protocol.NewReader(r, shieldID, enableLimits)
+}
+func (p proto) NewWriter(w writer, shieldID int32) protocol.IO {
+	return protocol.NewWriter(w, shieldID)
+}
 func (p proto) ConvertToLatest(pk packet.Packet, _ *Conn) []packet.Packet { return []packet.Packet{pk} }
 func (p proto) ConvertFromLatest(pk packet.Packet, _ *Conn) []packet.Packet {
 	return []packet.Packet{pk}

@@ -72,6 +72,9 @@ func (t tagType) IsValid() bool {
 // tagFromType matches a reflect.Type with a tag type that can hold its value. If none is found, math.MaxUint8
 // is returned.
 func tagFromType(p reflect.Type) tagType {
+	if p == nil {
+		return tagEnd
+	}
 	switch p.Kind() {
 	case reflect.Uint8, reflect.Bool:
 		return tagByte

@@ -3,7 +3,6 @@ package minecraft
 import (
 	"bytes"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -30,27 +29,52 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 	return &packetData{h: header, full: data, payload: buf}, nil
 }
 
+type unknownPacketError struct {
+	id uint32
+}
+
+func (err unknownPacketError) Error() string {
+	return fmt.Sprintf("unknown packet with ID %v", err.id)
+}
+
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
 func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
+	defer func() {
+		if recoveredErr := recover(); recoveredErr != nil {
+			err = fmt.Errorf("packet %v: %w", p.h.PacketID, recoveredErr.(error))
+		}
+		if err == nil {
+			return
+		}
+		if _, ok := err.(unknownPacketError); ok {
+			if conn.disconnectOnUnknownPacket {
+				_ = conn.Close()
+			}
+		} else if conn.disconnectOnInvalidPacket {
+			_ = conn.Close()
+		}
+	}()
+
 	// Attempt to fetch the packet with the right packet ID from the pool.
 	pkFunc, ok := conn.pool[p.h.PacketID]
 	var pk packet.Packet
 	if !ok {
 		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
+		if conn.disconnectOnUnknownPacket {
+			return nil, unknownPacketError{id: p.h.PacketID}
+		}
 	} else {
 		pk = pkFunc()
 	}
 
-	r := protocol.NewReader(p.payload, conn.shieldID.Load())
-	defer func() {
-		if recoveredErr := recover(); recoveredErr != nil {
-			err = fmt.Errorf("%T: %w", pk, recoveredErr.(error))
-		}
-	}()
+	r := conn.proto.NewReader(p.payload, conn.shieldID.Load(), false)
 	pk.Marshal(r)
 	if p.payload.Len() != 0 {
 		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())
+	}
+	if conn.disconnectOnInvalidPacket && err != nil {
+		return nil, err
 	}
 	return conn.proto.ConvertToLatest(pk, conn), err
 }
