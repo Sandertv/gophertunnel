@@ -204,4 +204,5 @@ const (
 	IDCompressedBiomeDefinitionList
 	IDTrimData
 	IDOpenSign
+	IDAgentAnimation
 )

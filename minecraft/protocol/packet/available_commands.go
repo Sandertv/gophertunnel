@@ -15,12 +15,18 @@ type AvailableCommands struct {
 	// possible value only once. Enums are built by pointing to entries in this
 	// slice.
 	EnumValues []string
+	// ChainedSubcommandValues is a slice of all chained subcommand names. ChainedSubcommandValues generally should
+	//contain each possible value only once. ChainedSubCommands are built by pointing to entries in this slice.
+	ChainedSubcommandValues []string
 	// Suffixes, like EnumValues, is a slice of all suffix values of any command
 	// parameter in the AvailableCommands packet.
 	Suffixes []string
 	// Enums is a slice of all (fixed) command enums present in any of the
 	// commands.
 	Enums []protocol.CommandEnum
+	// ChainedSubcommands is a slice of all subcommands that are followed by a chained command. An example usage of this
+	// is /execute which allows you to run another command as another entity or at a different position etc.
+	ChainedSubcommands []protocol.ChainedSubcommand
 	// Commands is a list of all commands that the client should show
 	// client-side. The AvailableCommands packet replaces any commands sent
 	// before. It does not only add the commands that are sent in it.
@@ -41,8 +47,10 @@ func (*AvailableCommands) ID() uint32 {
 
 func (pk *AvailableCommands) Marshal(io protocol.IO) {
 	protocol.FuncSlice(io, &pk.EnumValues, io.String)
+	protocol.FuncSlice(io, &pk.ChainedSubcommandValues, io.String)
 	protocol.FuncSlice(io, &pk.Suffixes, io.String)
 	protocol.FuncIOSlice(io, &pk.Enums, protocol.CommandEnumContext{EnumValues: pk.EnumValues}.Marshal)
+	protocol.Slice(io, &pk.ChainedSubcommands)
 	protocol.Slice(io, &pk.Commands)
 	protocol.Slice(io, &pk.DynamicEnums)
 	protocol.Slice(io, &pk.Constraints)
