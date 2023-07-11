@@ -21,5 +21,5 @@ func (*AgentAnimation) ID() uint32 {
 
 func (pk *AgentAnimation) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Animation)
-	io.Varuint64(&pk.EntityRuntimeID)W
+	io.Varuint64(&pk.EntityRuntimeID)
 }
