@@ -460,36 +460,6 @@ func (w *Writer) CompressedBiomeDefinitions(x *map[string]any) {
 	w.Bytes(&compressed)
 }
 
-// Commands writes a Command slice and its constraints to a writer.
-func (w *Writer) Commands(commands *[]Command, constraints *[]CommandEnumConstraint) {
-	values, valueIndices := enumValues(*commands)
-	suffixes, suffixIndices := suffixes(*commands)
-	enums, enumIndices := enums(*commands)
-	dynamicEnums, dynamicEnumIndices := dynamicEnums(*commands)
-
-	ctx := AvailableCommandsContext{
-		EnumIndices:        enumIndices,
-		EnumValueIndices:   valueIndices,
-		SuffixIndices:      suffixIndices,
-		DynamicEnumIndices: dynamicEnumIndices,
-	}
-
-	// Start by writing all enum values and suffixes to the buffer.
-	FuncSlice(w, &values, w.String)
-	FuncSlice(w, &suffixes, w.String)
-
-	// After that all actual enums, which point to enum values rather than directly writing strings.
-	FuncIOSlice(w, &enums, ctx.WriteEnum)
-
-	// Finally we write the command data which includes all usages of the commands.
-	FuncIOSlice(w, commands, ctx.WriteCommandData)
-
-	// Soft enums follow, which may be changed after sending this packet.
-	Slice(w, &dynamicEnums)
-
-	FuncIOSlice(w, constraints, ctx.WriteEnumConstraint)
-}
-
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x

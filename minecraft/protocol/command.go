@@ -5,22 +5,6 @@ import (
 	"math"
 )
 
-// AvailableCommandsContext holds the context required to encode/decode a
-// packet.AvailableCommands.
-type AvailableCommandsContext struct {
-	// Fields for encoding.
-	EnumIndices        map[string]int
-	EnumValueIndices   map[string]int
-	SuffixIndices      map[string]int
-	DynamicEnumIndices map[string]int
-
-	// Fields for decoding.
-	Enums        []CommandEnum
-	DynamicEnums []CommandEnum
-	EnumValues   []string
-	Suffixes     []string
-}
-
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
 // the /help command and auto-completed using this data.
 type Command struct {
@@ -36,42 +20,21 @@ type Command struct {
 	// field no longer seems to serve a purpose, as the client does not handle the execution of commands
 	// anymore: The permissions should be checked server-side.
 	PermissionLevel byte
-	// Aliases is a list of aliases of the command name, that may alternatively be used to execute the command
-	// in the same way.
-	Aliases []string
+	// AliasOffset is the offset to a CommandEnum that holds the values that
+	// should be used as aliases for this command.
+	AliasesOffset uint32
 	// Overloads is a list of command overloads that specify the ways in which a command may be executed. The
 	// overloads may be completely different.
 	Overloads []CommandOverload
 }
 
-// WriteCommandData writes a Command x to Writer w, using the enum indices and suffix indices passed to
-// translate enums and suffixes to the indices that they're written in in the buffer.
-func (ctx AvailableCommandsContext) WriteCommandData(w IO, x *Command) {
-	alias := int32(-1)
-	if len(x.Aliases) != 0 {
-		alias = int32(ctx.EnumIndices[x.Name+"Aliases"])
-	}
-	w.String(&x.Name)
-	w.String(&x.Description)
-	w.Uint16(&x.Flags)
-	w.Uint8(&x.PermissionLevel)
-	w.Int32(&alias)
-	FuncIOSlice(w, &x.Overloads, ctx.WriteCommandOverload)
-}
-
-// CommandData reads a Command x from Buffer src using the enums and suffixes passed to match indices with
-// the values these slices hold.
-func (ctx AvailableCommandsContext) CommandData(r IO, x *Command) {
-	var aliasOffset int32
-	r.String(&x.Name)
-	r.String(&x.Description)
-	r.Uint16(&x.Flags)
-	r.Uint8(&x.PermissionLevel)
-	r.Int32(&aliasOffset)
-	if aliasOffset >= 0 {
-		x.Aliases = ctx.Enums[aliasOffset].Options
-	}
-	FuncIOSlice(r, &x.Overloads, ctx.CommandOverload)
+func (c *Command) Marshal(r IO) {
+	r.String(&c.Name)
+	r.String(&c.Description)
+	r.Uint16(&c.Flags)
+	r.Uint8(&c.PermissionLevel)
+	r.Uint32(&c.AliasesOffset)
+	Slice(r, &c.Overloads)
 }
 
 // CommandOverload represents an overload of a command. This overload can be compared to function overloading
@@ -83,14 +46,8 @@ type CommandOverload struct {
 	Parameters []CommandParameter
 }
 
-// WriteCommandOverload writes a CommandOverload x to a writer.
-func (ctx AvailableCommandsContext) WriteCommandOverload(r IO, x *CommandOverload) {
-	FuncIOSlice(r, &x.Parameters, ctx.WriteCommandParam)
-}
-
-// CommandOverload reads a CommandOverload x from a reader.
-func (ctx AvailableCommandsContext) CommandOverload(r IO, x *CommandOverload) {
-	FuncIOSlice(r, &x.Parameters, ctx.CommandParam)
+func (c *CommandOverload) Marshal(r IO) {
+	Slice(r, &c.Parameters)
 }
 
 const (
@@ -150,50 +107,13 @@ type CommandParameter struct {
 	// Options holds a combinations of options that additionally apply to the command parameter. The list of
 	// options can be found above.
 	Options byte
-
-	// Enum is the enum of the parameter if it should be of the type enum. If non-empty, the parameter will
-	// be treated as an enum and show up as such client-side.
-	Enum CommandEnum
-	// Suffix is the suffix of the parameter if it should receive one. Note that only integer argument types
-	// are able to receive a suffix, and so the type, if Suffix is a non-empty string, will always be an
-	// integer.
-	Suffix string
 }
 
-// WriteCommandParam writes a CommandParameter x to Writer w, using the enum indices and suffix indices
-// to translate the respective values to the offset in the buffer.
-func (ctx AvailableCommandsContext) WriteCommandParam(w IO, x *CommandParameter) {
-	if x.Enum.Dynamic {
-		x.Type = CommandArgSoftEnum | CommandArgValid | uint32(ctx.DynamicEnumIndices[x.Enum.Type])
-	} else if len(x.Enum.Options) != 0 {
-		x.Type = CommandArgEnum | CommandArgValid | uint32(ctx.EnumIndices[x.Enum.Type])
-	} else if x.Suffix != "" {
-		x.Type = CommandArgSuffixed | uint32(ctx.SuffixIndices[x.Suffix])
-	}
-	w.String(&x.Name)
-	w.Uint32(&x.Type)
-	w.Bool(&x.Optional)
-	w.Uint8(&x.Options)
-}
-
-// CommandParam reads a CommandParam x from Buffer src using the enums and suffixes passed to translate
-// offsets to their respective values. CommandParam does not handle soft/dynamic enums. The caller is
-// responsible to do this itself.
-func (ctx AvailableCommandsContext) CommandParam(r IO, x *CommandParameter) {
-	r.String(&x.Name)
-	r.Uint32(&x.Type)
-	r.Bool(&x.Optional)
-	r.Uint8(&x.Options)
-
-	// We explicitly do not do the soft enums anything here, as we haven't yet read the soft enums. The packet
-	// read method will have to do this itself.
-	if x.Type&CommandArgEnum != 0 {
-		offset := x.Type & 0xffff
-		x.Enum = ctx.Enums[offset]
-	} else if x.Type&CommandArgSuffixed != 0 {
-		offset := x.Type & 0xffff
-		x.Suffix = ctx.Suffixes[offset]
-	}
+func (c *CommandParameter) Marshal(r IO) {
+	r.String(&c.Name)
+	r.Uint32(&c.Type)
+	r.Bool(&c.Optional)
+	r.Uint8(&c.Options)
 }
 
 // CommandEnum represents an enum in a command usage. The enum typically has a type and a set of options that
@@ -203,68 +123,57 @@ type CommandEnum struct {
 	// argument if it has a certain amount of arguments, or when Options is set to true in the
 	// command holding the enum.
 	Type string
-	// Options is a list of options that are valid for the client to submit to the command. They will be able
-	// to be auto-completed and show up as options client-side.
-	Options []string
-	// Dynamic specifies if the command enum is considered dynamic. If set to true, it is written differently
-	// and may be updated during runtime as a result using the UpdateSoftEnum packet.
-	Dynamic bool
+	// ValueIndices holds a list of indices that point to the EnumValues slice in the
+	// AvailableCommandsPacket. These represent the options of the enum.
+	ValueIndices []uint
 }
 
-// Marshal encodes/decodes a CommandEnum as a "soft" (dynamic) enum.
-func (x *CommandEnum) Marshal(r IO) {
-	x.Dynamic = true
+// CommandEnumContext holds context required for encoding command enums.
+type CommandEnumContext struct {
+	EnumValues []string
+}
+
+// Marshal encodes/decodes a CommandEnum.
+func (ctx CommandEnumContext) Marshal(r IO, x *CommandEnum) {
 	r.String(&x.Type)
-	FuncSlice(r, &x.Options, r.String)
+	FuncIOSlice(r, &x.ValueIndices, ctx.enumOption)
 }
 
-// WriteEnum writes a CommandEnum x to a writer.
-func (ctx AvailableCommandsContext) WriteEnum(w IO, x *CommandEnum) {
-	w.String(&x.Type)
-	FuncIOSlice(w, &x.Options, ctx.writeEnumOption)
-}
-
-// Enum reads a CommandEnum x from a reader.
-func (ctx AvailableCommandsContext) Enum(r IO, x *CommandEnum) {
-	r.String(&x.Type)
-	FuncIOSlice(r, &x.Options, ctx.enumOption)
-}
-
-// writeEnumOption writes an enum option to w using the value indices passed. It is written as a
-// byte/uint16/uint32 depending on the size of the value indices map.
-func (ctx AvailableCommandsContext) writeEnumOption(w IO, option *string) {
-	l := len(ctx.EnumValueIndices)
+// enumOption writes/reads a command enum option as a byte/uint16/uint32,
+// depending on the amount of enum values.
+func (ctx CommandEnumContext) enumOption(r IO, opt *uint) {
+	n := len(ctx.EnumValues)
 	switch {
-	case l <= math.MaxUint8:
-		val := byte(ctx.EnumValueIndices[*option])
-		w.Uint8(&val)
-	case l <= math.MaxUint16:
-		val := uint16(ctx.EnumValueIndices[*option])
-		w.Uint16(&val)
+	case n <= math.MaxUint8:
+		val := byte(*opt)
+		r.Uint8(&val)
+		*opt = uint(val)
+	case n <= math.MaxUint16:
+		val := uint16(*opt)
+		r.Uint16(&val)
+		*opt = uint(val)
 	default:
-		val := uint32(ctx.EnumValueIndices[*option])
-		w.Uint32(&val)
+		val := uint32(*opt)
+		r.Uint32(&val)
+		*opt = uint(val)
 	}
 }
 
-// enumOption reads an enum option from buf using the enum values passed. The option is written as a
-// byte/uint16/uint32, depending on the size of the enumValues slice.
-func (ctx AvailableCommandsContext) enumOption(r IO, option *string) {
-	l := len(ctx.EnumValues)
-	var index uint32
-	switch {
-	case l <= math.MaxUint8:
-		var v byte
-		r.Uint8(&v)
-		index = uint32(v)
-	case l <= math.MaxUint16:
-		var v uint16
-		r.Uint16(&v)
-		index = uint32(v)
-	default:
-		r.Uint32(&index)
-	}
-	*option = ctx.EnumValues[index]
+// DynamicEnum is an enum variant that can have its options changed during runtime,
+// without sending a new AvailableCommands packet.
+type DynamicEnum struct {
+	// Type is the type of the command enum. The type will show up in the command usage as the type of the
+	// argument if it has a certain amount of arguments, or when Options is set to true in the
+	// command holding the enum.
+	Type string
+	// Values is a slice of possible options for the enum.
+	Values []string
+}
+
+// Marshal encodes/decodes a DynamicEnum.
+func (x *DynamicEnum) Marshal(r IO) {
+	r.String(&x.Type)
+	FuncSlice(r, &x.Values, r.String)
 }
 
 const (
@@ -277,33 +186,21 @@ const (
 // CommandEnumConstraint is sent in the AvailableCommands packet to limit what values of an enum may be used
 // taking in account things such as whether cheats are enabled.
 type CommandEnumConstraint struct {
-	// EnumOption is the option in an enum that the constraints should be applied to.
-	EnumOption string
-	// EnumName is the name of the enum of which the EnumOption above should be constrained.
-	EnumName string
-	// Constraints is a list of constraints that should be applied to the enum option. It is one of the values
-	// found above.
+	// EnumValueIndex points to an enum value in the AvailableCommands packet that this
+	// constraint should apply to.
+	EnumValueIndex uint32
+	// EnumIndex points to an enum in the AvailableCommands packet to which this
+	// constraint should apply to.
+	EnumIndex uint32
+	// Constraints holds a slice of constraints as present in the constants above.
 	Constraints []byte
 }
 
-// EnumConstraint reads a CommandEnumConstraint x from Buffer src using the enums and enum values passed.
-func (ctx AvailableCommandsContext) EnumConstraint(r IO, x *CommandEnumConstraint) {
-	var enumValueIndex, enumIndex uint32
-	r.Uint32(&enumValueIndex)
-	r.Uint32(&enumIndex)
-
-	x.EnumOption = ctx.EnumValues[enumValueIndex]
-	x.EnumName = ctx.Enums[enumIndex].Type
-
-	r.ByteSlice(&x.Constraints)
-}
-
-// WriteEnumConstraint writes a CommandEnumConstraint x to Writer w using the enum (value) indices passed.
-func (ctx AvailableCommandsContext) WriteEnumConstraint(w IO, x *CommandEnumConstraint) {
-	enumValueIndex, enumIndex := uint32(ctx.EnumValueIndices[x.EnumOption]), uint32(ctx.EnumIndices[x.EnumName])
-	w.Uint32(&enumValueIndex)
-	w.Uint32(&enumIndex)
-	w.ByteSlice(&x.Constraints)
+// Marshal encodes/decodes a CommandEnumConstraint.
+func (c *CommandEnumConstraint) Marshal(r IO) {
+	r.Uint32(&c.EnumValueIndex)
+	r.Uint32(&c.EnumIndex)
+	r.ByteSlice(&c.Constraints)
 }
 
 const (
@@ -379,98 +276,4 @@ func (x *CommandOutputMessage) Marshal(r IO) {
 	r.Bool(&x.Success)
 	r.String(&x.Message)
 	FuncSlice(r, &x.Parameters, r.String)
-}
-
-// enumValues runs through all commands set to the packet and collects enum values and a map of indices
-// indexed with the enum values.
-func enumValues(commands []Command) (values []string, indices map[string]int) {
-	indices = make(map[string]int)
-
-	for _, command := range commands {
-		for _, alias := range command.Aliases {
-			if _, ok := indices[alias]; !ok {
-				indices[alias] = len(values)
-				values = append(values, alias)
-			}
-		}
-		for _, overload := range command.Overloads {
-			for _, parameter := range overload.Parameters {
-				if parameter.Enum.Dynamic {
-					continue
-				}
-				for _, option := range parameter.Enum.Options {
-					if _, ok := indices[option]; !ok {
-						indices[option] = len(values)
-						values = append(values, option)
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
-// suffixes runs through all commands set to the packet and collects suffixes that the parameters of the
-// commands may have. It returns the suffixes and a map indexed by the suffixes.
-func suffixes(commands []Command) (suffixes []string, indices map[string]int) {
-	indices = make(map[string]int)
-
-	for _, command := range commands {
-		for _, overload := range command.Overloads {
-			for _, parameter := range overload.Parameters {
-				if parameter.Suffix != "" {
-					if _, ok := indices[parameter.Suffix]; !ok {
-						indices[parameter.Suffix] = len(suffixes)
-						suffixes = append(suffixes, parameter.Suffix)
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
-// enums runs through all commands set to the packet and collects enums that the parameters of the commands
-// may have. It returns the enums and a map indexed by the enums and their offsets in the slice.
-func enums(commands []Command) (enums []CommandEnum, indices map[string]int) {
-	indices = make(map[string]int)
-
-	for _, command := range commands {
-		if len(command.Aliases) > 0 {
-			aliasEnum := CommandEnum{Type: command.Name + "Aliases", Options: command.Aliases}
-			indices[command.Name+"Aliases"] = len(enums)
-			enums = append(enums, aliasEnum)
-		}
-		for _, overload := range command.Overloads {
-			for _, parameter := range overload.Parameters {
-				if len(parameter.Enum.Options) != 0 && !parameter.Enum.Dynamic {
-					if _, ok := indices[parameter.Enum.Type]; !ok {
-						indices[parameter.Enum.Type] = len(enums)
-						enums = append(enums, parameter.Enum)
-					}
-				}
-			}
-		}
-	}
-	return
-}
-
-// dynamicEnums runs through all commands set to the packet and collects dynamic enums set as parameters of
-// commands. These dynamic enums may be updated over the course of the game and are written separately.
-func dynamicEnums(commands []Command) (enums []CommandEnum, indices map[string]int) {
-	indices = make(map[string]int)
-
-	for _, command := range commands {
-		for _, overload := range command.Overloads {
-			for _, parameter := range overload.Parameters {
-				if parameter.Enum.Dynamic {
-					if _, ok := indices[parameter.Enum.Type]; !ok {
-						indices[parameter.Enum.Type] = len(enums)
-						enums = append(enums, parameter.Enum)
-					}
-				}
-			}
-		}
-	}
-	return
 }
