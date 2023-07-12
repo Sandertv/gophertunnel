@@ -20,9 +20,12 @@ type Command struct {
 	// field no longer seems to serve a purpose, as the client does not handle the execution of commands
 	// anymore: The permissions should be checked server-side.
 	PermissionLevel byte
-	// AliasOffset is the offset to a CommandEnum that holds the values that
+	// AliasesOffset is the offset to a CommandEnum that holds the values that
 	// should be used as aliases for this command.
 	AliasesOffset uint32
+	// ChainedSubcommandOffsets is a slice of offsets that all point to a different ChainedSubcommand from the
+	// ChainedSubcommands slice in the AvailableCommands packet.
+	ChainedSubcommandOffsets []uint16
 	// Overloads is a list of command overloads that specify the ways in which a command may be executed. The
 	// overloads may be completely different.
 	Overloads []CommandOverload
@@ -34,6 +37,7 @@ func (c *Command) Marshal(r IO) {
 	r.Uint16(&c.Flags)
 	r.Uint8(&c.PermissionLevel)
 	r.Uint32(&c.AliasesOffset)
+	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint16)
 	Slice(r, &c.Overloads)
 }
 
@@ -41,12 +45,15 @@ func (c *Command) Marshal(r IO) {
 // in languages such as java. It represents a single usage of the command. A command may have multiple
 // different overloads, which are handled differently.
 type CommandOverload struct {
+	// Chaining determines if the parameters use chained subcommands or not.
+	Chaining bool
 	// Parameters is a list of command parameters that are part of the overload. These parameters specify the
 	// usage of the command when this overload is applied.
 	Parameters []CommandParameter
 }
 
 func (c *CommandOverload) Marshal(r IO) {
+	r.Bool(&c.Chaining)
 	Slice(r, &c.Parameters)
 }
 
@@ -157,6 +164,35 @@ func (ctx CommandEnumContext) enumOption(r IO, opt *uint) {
 		r.Uint32(&val)
 		*opt = uint(val)
 	}
+}
+
+// ChainedSubcommand represents a subcommand that can have chained commands, such as /execute which allows you to run
+// another command as another entity or at a different position etc.
+type ChainedSubcommand struct {
+	// Name is the name of the chained subcommand and shows up in the list as a regular subcommand enum.
+	Name string
+	// Values contains the index and parameter type of the chained subcommand.
+	Values []ChainedSubcommandValue
+}
+
+func (x *ChainedSubcommand) Marshal(r IO) {
+	r.String(&x.Name)
+	Slice(r, &x.Values)
+}
+
+// ChainedSubcommandValue represents the value for a chained subcommand argument.
+type ChainedSubcommandValue struct {
+	// Index is the index of the argument in the ChainedSubcommandValues slice from the AvailableCommands packet. This is
+	// then used to set the type specified by the Value field below.
+	Index uint16
+	// Value is a combination of the flags above and specified the type of argument. Unlike regular parameter types,
+	// this should NOT contain any of the special flags (valid, enum, suffixed or soft enum) but only the basic types.
+	Value uint16
+}
+
+func (x *ChainedSubcommandValue) Marshal(r IO) {
+	r.Uint16(&x.Index)
+	r.Uint16(&x.Value)
 }
 
 // DynamicEnum is an enum variant that can have its options changed during runtime,

@@ -131,6 +131,7 @@ const (
 	EntityDataKeyPlayerLastDeathPosition
 	EntityDataKeyPlayerLastDeathDimension
 	EntityDataKeyPlayerHasDied
+	EntityDataKeyCollisionBox
 )
 
 const (
@@ -248,6 +249,7 @@ const (
 	EntityDataFlagRising
 	EntityDataFlagFeelingHappy
 	EntityDataFlagSearching
+	EntityDataFlagCrawling
 )
 
 const (
