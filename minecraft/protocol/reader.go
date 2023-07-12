@@ -574,39 +574,6 @@ func (r *Reader) CompressedBiomeDefinitions(x *map[string]any) {
 	}
 }
 
-// Commands reads a Command slice and its constraints from a reader.
-func (r *Reader) Commands(commands *[]Command, constraints *[]CommandEnumConstraint) {
-	var ctx AvailableCommandsContext
-
-	// First we read all the enum values and suffixes.
-	FuncSlice(r, &ctx.EnumValues, r.String)
-	FuncSlice(r, &ctx.Suffixes, r.String)
-
-	// After that we create all enums, which are composed of pointers to the enum values above.
-	FuncIOSlice(r, &ctx.Enums, ctx.Enum)
-
-	// We read all the commands, which will have their enums and suffixes set automatically. We don't yet set
-	// the dynamic enums as we haven't read them yet.
-	FuncIOSlice(r, commands, ctx.CommandData)
-
-	// We first read all soft enums of the packet.
-	Slice(r, &ctx.DynamicEnums)
-
-	// After we've read all soft enums, we need to match them with the values that are set in the commands
-	// that we read before.
-	for i, command := range *commands {
-		for j, overload := range command.Overloads {
-			for k, param := range overload.Parameters {
-				if param.Type&CommandArgSoftEnum != 0 {
-					(*commands)[i].Overloads[j].Parameters[k].Enum = ctx.DynamicEnums[param.Type&0xffff]
-				}
-			}
-		}
-	}
-
-	FuncIOSlice(r, constraints, ctx.EnumConstraint)
-}
-
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {

@@ -64,7 +64,7 @@ const (
 	ActorEventBalloonPop
 	ActorEventTreasureHunt
 	ActorEventSummonAgent
-	ActorEventFinishedChargingCrossbow
+	ActorEventFinishedChargingItem
 	ActorEventLandedOnGround
 	ActorEventActorGrowUp
 	ActorEventVibrationDetected

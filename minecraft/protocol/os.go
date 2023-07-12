@@ -14,10 +14,12 @@ const (
 	DeviceWin10
 	DeviceWin32
 	DeviceDedicated
+	// Deprecated: DeviceTVOS is deprecated as of 1.20.10.
 	DeviceTVOS
 	DeviceOrbis // PlayStation
 	DeviceNX
 	DeviceXBOX
+	// Deprecated: DeviceWP is deprecated as of 1.20.10.
 	DeviceWP // Windows Phone
 	DeviceLinux
 )

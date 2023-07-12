@@ -45,6 +45,9 @@ const (
 	InputFlagPerformItemStackRequest
 	InputFlagHandledTeleport
 	InputFlagEmoting
+	InputFlagMissedSwing
+	InputFlagStartCrawling
+	InputFlagStopCrawling
 )
 
 const (
