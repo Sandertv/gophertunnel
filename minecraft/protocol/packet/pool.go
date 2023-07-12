@@ -249,6 +249,7 @@ func init() {
 		IDCompressedBiomeDefinitionList: func() Packet { return &CompressedBiomeDefinitionList{} },
 		IDTrimData:                      func() Packet { return &TrimData{} },
 		IDOpenSign:                      func() Packet { return &OpenSign{} },
+		IDAgentAnimation:                func() Packet { return &AgentAnimation{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

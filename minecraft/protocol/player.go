@@ -36,6 +36,9 @@ const (
 	PlayerActionStartItemUseOn
 	PlayerActionStopItemUseOn
 	PlayerActionHandledTeleport
+	PlayerActionMissedSwing
+	PlayerActionStartCrawling
+	PlayerActionStopCrawling
 )
 
 const (
