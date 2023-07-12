@@ -16,7 +16,7 @@ type AvailableCommands struct {
 	// slice.
 	EnumValues []string
 	// ChainedSubcommandValues is a slice of all chained subcommand names. ChainedSubcommandValues generally should
-	//contain each possible value only once. ChainedSubCommands are built by pointing to entries in this slice.
+	//contain each possible value only once. ChainedSubcommands are built by pointing to entries in this slice.
 	ChainedSubcommandValues []string
 	// Suffixes, like EnumValues, is a slice of all suffix values of any command
 	// parameter in the AvailableCommands packet.
