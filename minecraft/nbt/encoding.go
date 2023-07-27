@@ -86,8 +86,8 @@ func (networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 
 // WriteString ...
 func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxInt16 {
-		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
+	if len(x) > math.MaxUint16 {
+		return InvalidStringError{Off: w.off, N: uint(len(x)), Err: errors.New("string length exceeds maximum length prefix")}
 	}
 	ux := uint32(len(x))
 	for ux >= 0x80 {
@@ -159,8 +159,8 @@ func (e networkLittleEndian) String(r *offsetReader) (string, error) {
 			break
 		}
 	}
-	if length > math.MaxInt16 {
-		return "", InvalidStringError{Off: r.off, Err: errors.New("string length exceeds maximum length prefix")}
+	if length > math.MaxUint16 {
+		return "", InvalidStringError{N: uint(length), Off: r.off, Err: errors.New("string length exceeds maximum length prefix")}
 	}
 	data := make([]byte, length)
 	if _, err := r.Read(data); err != nil {

@@ -120,14 +120,14 @@ func (err IncompatibleTypeError) Error() string {
 // InvalidStringError is returned if a string read is not valid, meaning it does not exist exclusively out of
 // utf8 characters, or if it is longer than the length prefix can carry.
 type InvalidStringError struct {
-	Off    int64
-	Err    error
-	String string
+	Off int64
+	Err error
+	N   uint
 }
 
 // Error ...
 func (err InvalidStringError) Error() string {
-	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (%v)", err.Off, err.Err, err.String)
+	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (len=%v)", err.Off, err.Err, err.N)
 }
 
 const maximumNestingDepth = 512
