@@ -1,7 +1,6 @@
 package nbt
 
 import (
-	"errors"
 	"math"
 	"unsafe"
 )
@@ -46,6 +45,8 @@ var (
 	_ Encoding = BigEndian
 )
 
+const maxStringSize = math.MaxInt16
+
 type networkLittleEndian struct{ littleEndian }
 
 // WriteInt32 ...
@@ -86,8 +87,8 @@ func (networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
 
 // WriteString ...
 func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxUint16 {
-		return InvalidStringError{Off: w.off, N: uint(len(x)), Err: errors.New("string length exceeds maximum length prefix")}
+	if len(x) > maxStringSize {
+		return InvalidStringError{Off: w.off, N: uint(len(x)), Err: errStringTooLong}
 	}
 	ux := uint32(len(x))
 	for ux >= 0x80 {
@@ -116,14 +117,14 @@ func (networkLittleEndian) Int32(r *offsetReader) (int32, error) {
 		}
 		ux |= uint32(b&0x7f) << i
 		if b&0x80 == 0 {
-			break
+			x := int32(ux >> 1)
+			if ux&1 != 0 {
+				x = ^x
+			}
+			return x, nil
 		}
 	}
-	x := int32(ux >> 1)
-	if ux&1 != 0 {
-		x = ^x
-	}
-	return x, nil
+	return 0, InvalidVarintError{N: 5, Off: r.off}
 }
 
 // Int64 ...
@@ -136,37 +137,46 @@ func (networkLittleEndian) Int64(r *offsetReader) (int64, error) {
 		}
 		ux |= uint64(b&0x7f) << i
 		if b&0x80 == 0 {
-			break
+			x := int64(ux >> 1)
+			if ux&1 != 0 {
+				x = ^x
+			}
+			return x, nil
 		}
 	}
-	x := int64(ux >> 1)
-	if ux&1 != 0 {
-		x = ^x
-	}
-	return x, nil
+	return 0, InvalidVarintError{N: 10, Off: r.off}
 }
 
 // String ...
 func (e networkLittleEndian) String(r *offsetReader) (string, error) {
-	var length uint32
-	for i := uint(0); i < 35; i += 7 {
-		b, err := r.ReadByte()
-		if err != nil {
-			return "", BufferOverrunError{Op: "String"}
-		}
-		length |= uint32(b&0x7f) << i
-		if b&0x80 == 0 {
-			break
-		}
+	length, err := e.stringLength(r)
+	if err != nil {
+		return "", err
 	}
-	if length > math.MaxUint16 {
-		return "", InvalidStringError{N: uint(length), Off: r.off, Err: errors.New("string length exceeds maximum length prefix")}
+	if length > maxStringSize {
+		return "", InvalidStringError{N: uint(length), Off: r.off, Err: errStringTooLong}
 	}
 	data := make([]byte, length)
 	if _, err := r.Read(data); err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
 	return *(*string)(unsafe.Pointer(&data)), nil
+}
+
+// stringLength reads the length of a string as a varuint32.
+func (networkLittleEndian) stringLength(r *offsetReader) (uint32, error) {
+	var ux uint32
+	for i := uint(0); i < 35; i += 7 {
+		b, err := r.ReadByte()
+		if err != nil {
+			return 0, BufferOverrunError{Op: "StringLength"}
+		}
+		ux |= uint32(b&0x7f) << i
+		if b&0x80 == 0 {
+			return ux, nil
+		}
+	}
+	return 0, InvalidVarintError{N: 5, Off: r.off}
 }
 
 // Int32Slice ...
