@@ -164,7 +164,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 		proto:        proto,
 		readerLimits: limits,
 	}
-	if limits {
+	if !limits {
 		// Disable the batch packet limit so that the server can send packets as often as it wants to.
 		conn.dec.DisableBatchPacketLimit()
 	}

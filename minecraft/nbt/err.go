@@ -1,6 +1,7 @@
 package nbt
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 )
@@ -117,17 +118,19 @@ func (err IncompatibleTypeError) Error() string {
 	return fmt.Sprintf("nbt: value type %v (%v) cannot be translated to an NBT tag", err.Type, err.ValueName)
 }
 
+var errStringTooLong = errors.New("string length exceeds maximum length")
+
 // InvalidStringError is returned if a string read is not valid, meaning it does not exist exclusively out of
 // utf8 characters, or if it is longer than the length prefix can carry.
 type InvalidStringError struct {
-	Off    int64
-	Err    error
-	String string
+	Off int64
+	Err error
+	N   uint
 }
 
 // Error ...
 func (err InvalidStringError) Error() string {
-	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (%v)", err.Off, err.Err, err.String)
+	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (len=%v)", err.Off, err.Err, err.N)
 }
 
 const maximumNestingDepth = 512
@@ -152,4 +155,16 @@ type MaximumBytesReadError struct {
 // Error ...
 func (err MaximumBytesReadError) Error() string {
 	return fmt.Sprintf("nbt: limit of bytes read %v with NetworkLittleEndian format exhausted", maximumNetworkOffset)
+}
+
+// InvalidVarintError is returned if a varint(32/64) is encountered that does
+// not end after 5 or 10 bytes respectively.
+type InvalidVarintError struct {
+	Off int64
+	N   int
+}
+
+// Error ...
+func (err InvalidVarintError) Error() string {
+	return fmt.Sprintf("nbt: varint did not terminate after %v bytes at offset %v", err.N, err.Off)
 }

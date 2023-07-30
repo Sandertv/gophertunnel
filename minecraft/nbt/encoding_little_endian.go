@@ -4,7 +4,6 @@ package nbt
 
 import (
 	"encoding/binary"
-	"errors"
 	"math"
 	"unsafe"
 )
@@ -58,10 +57,10 @@ func (littleEndian) WriteFloat64(w *offsetWriter, x float64) error {
 
 // WriteString ...
 func (e littleEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxInt16 {
-		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
+	if len(x) > maxStringSize {
+		return InvalidStringError{Off: w.off, N: uint(len(x)), Err: errStringTooLong}
 	}
-	if err := e.WriteInt16(w, int16(len(x))); err != nil {
+	if err := e.WriteInt16(w, int16(uint16(len(x)))); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
@@ -123,7 +122,7 @@ func (e littleEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	b := make([]byte, strLen)
+	b := make([]byte, uint16(strLen))
 	if _, err := r.Read(b); err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
@@ -216,10 +215,10 @@ func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
 
 // WriteString ...
 func (e bigEndian) WriteString(w *offsetWriter, x string) error {
-	if len(x) > math.MaxInt16 {
-		return InvalidStringError{Off: w.off, String: x, Err: errors.New("string length exceeds maximum length prefix")}
+	if len(x) > maxStringSize {
+		return InvalidStringError{Off: w.off, N: uint(len(x)), Err: errStringTooLong}
 	}
-	if err := e.WriteInt16(w, int16(len(x))); err != nil {
+	if err := e.WriteInt16(w, int16(uint16(len(x)))); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
@@ -281,7 +280,7 @@ func (e bigEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
-	b := make([]byte, strLen)
+	b := make([]byte, uint16(strLen))
 	if _, err := r.Read(b); err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
