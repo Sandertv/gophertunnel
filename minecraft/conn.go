@@ -17,7 +17,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"go.uber.org/atomic"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 	"io"
@@ -25,6 +24,7 @@ import (
 	"net"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -137,7 +137,7 @@ type Conn struct {
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	disconnectMessage atomic.String
+	disconnectMessage atomic.Pointer[string]
 
 	shieldID atomic.Int32
 
@@ -164,6 +164,9 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 		proto:        proto,
 		readerLimits: limits,
 	}
+	var s string
+	conn.disconnectMessage.Store(&s)
+
 	if !limits {
 		// Disable the batch packet limit so that the server can send packets as often as it wants to.
 		conn.dec.DisableBatchPacketLimit()
@@ -564,7 +567,7 @@ func (conn *Conn) receive(data []byte) error {
 		if err != nil {
 			return err
 		}
-		conn.disconnectMessage.Store(pks[0].(*packet.Disconnect).Message)
+		conn.disconnectMessage.Store(&pks[0].(*packet.Disconnect).Message)
 		_ = conn.Close()
 		return nil
 	}
@@ -1302,7 +1305,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 	if pk.EntityRuntimeID != conn.gameData.EntityRuntimeID {
 		return fmt.Errorf("entity runtime ID mismatch: entity runtime ID in StartGame and SetLocalPlayerAsInitialised packets should be equal")
 	}
-	if conn.waitingForSpawn.CAS(true, false) {
+	if conn.waitingForSpawn.CompareAndSwap(true, false) {
 		close(conn.spawn)
 	}
 	return nil
@@ -1358,8 +1361,8 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 // PlayStatus packets have been sent.
 func (conn *Conn) tryFinaliseClientConn() {
 	if conn.waitingForSpawn.Load() && conn.gameDataReceived.Load() {
-		conn.waitingForSpawn.Toggle()
-		conn.gameDataReceived.Toggle()
+		conn.waitingForSpawn.Store(false)
+		conn.gameDataReceived.Store(false)
 
 		close(conn.spawn)
 		conn.loggedIn = true
@@ -1407,7 +1410,7 @@ func (conn *Conn) expect(packetIDs ...uint32) {
 // closeErr returns an adequate connection closed error for the op passed. If the connection was closed
 // through a Disconnect packet, the message is contained.
 func (conn *Conn) closeErr(op string) error {
-	if msg := conn.disconnectMessage.Load(); msg != "" {
+	if msg := *conn.disconnectMessage.Load(); msg != "" {
 		return conn.wrap(DisconnectError(msg), op)
 	}
 	return conn.wrap(errClosed, op)
