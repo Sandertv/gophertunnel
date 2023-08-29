@@ -8,6 +8,14 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"io"
+	"log"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
@@ -19,13 +27,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/text"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
-	"io"
-	"log"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -84,6 +85,11 @@ type Conn struct {
 	// packets is a channel of byte slices containing serialised packets that are coming in from the other
 	// side of the connection.
 	packets chan *packetData
+
+	// packetBatches is a channel of byte slices containing a list of serialised packets that are coming in from the
+	// side of the connection.
+	packetBatches chan []*packetData
+	readBatches   bool
 
 	deferredPacketMu sync.Mutex
 	// deferredPackets is a list of packets that were pushed back during the login sequence because they
@@ -148,21 +154,23 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool, readBatches bool) *Conn {
 	conn := &Conn{
-		enc:          packet.NewEncoder(netConn),
-		dec:          packet.NewDecoder(netConn),
-		salt:         make([]byte, 16),
-		packets:      make(chan *packetData, 8),
-		additional:   make(chan packet.Packet, 16),
-		close:        make(chan struct{}),
-		spawn:        make(chan struct{}),
-		conn:         netConn,
-		privateKey:   key,
-		log:          log,
-		hdr:          &packet.Header{},
-		proto:        proto,
-		readerLimits: limits,
+		enc:           packet.NewEncoder(netConn),
+		dec:           packet.NewDecoder(netConn),
+		salt:          make([]byte, 16),
+		packets:       make(chan *packetData, 8),
+		packetBatches: make(chan []*packetData, 8),
+		additional:    make(chan packet.Packet, 16),
+		close:         make(chan struct{}),
+		spawn:         make(chan struct{}),
+		conn:          netConn,
+		privateKey:    key,
+		log:           log,
+		hdr:           &packet.Header{},
+		proto:         proto,
+		readerLimits:  limits,
+		readBatches:   readBatches,
 	}
 	var s string
 	conn.disconnectMessage.Store(&s)
@@ -388,6 +396,67 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	}
 }
 
+// ReadBatch reads a packet batch from the Conn. If a read deadline is set, an error is returned if the deadline is reached before any
+// packet is received. ReadBatch must not be called on multiple goroutines simultaneously.
+//
+// If the packet read was not implemented, a *packet.Unknown is used, containing the raw payload of the packet read.
+func (conn *Conn) ReadBatch() (pks []packet.Packet, err error) {
+	if !conn.readBatches {
+		return nil, fmt.Errorf("reading batches is disabled")
+	}
+
+	var deferred []packet.Packet
+	for {
+		data, ok := conn.takeDeferredPacket()
+		if !ok {
+			break
+		}
+
+		pk, err := data.decode(conn)
+		if err != nil {
+			conn.log.Println(err)
+			continue
+		}
+
+		if len(pk) == 0 {
+			continue
+		}
+
+		deferred = append(deferred, pk...)
+	}
+
+	if len(deferred) > 0 {
+		return deferred, nil
+	}
+
+	select {
+	case <-conn.close:
+		return nil, conn.closeErr("read batch")
+	case <-conn.readDeadline:
+		return nil, conn.wrap(context.DeadlineExceeded, "read batch")
+	case batch := <-conn.packetBatches:
+		for _, data := range batch {
+			pk, err := data.decode(conn)
+			if err != nil {
+				conn.log.Println(err)
+				continue
+			}
+
+			if len(pk) == 0 {
+				continue
+			}
+
+			pks = append(pks, pk...)
+		}
+
+		if len(pks) == 0 {
+			return conn.ReadBatch()
+		}
+
+		return pks, nil
+	}
+}
+
 // ResourcePacks returns a slice of all resource packs the connection holds. For a Conn obtained using a
 // Listener, this holds all resource packs set to the Listener. For a Conn obtained using Dial, the resource
 // packs include all packs sent by the server connected to.
@@ -587,6 +656,47 @@ func (conn *Conn) receive(data []byte) error {
 		return nil
 	}
 	return conn.handle(pkData)
+}
+
+func (conn *Conn) receiveMultiple(data [][]byte) error {
+	var packets []*packetData
+	for _, d := range data {
+		pkData, err := parseData(d, conn)
+		if err != nil {
+			return err
+		}
+
+		if pkData.h.PacketID == packet.IDDisconnect {
+			// We always handle disconnect packets and close the connection if one comes in.
+			pks, err := pkData.decode(conn)
+			if err != nil {
+				return err
+			}
+
+			conn.disconnectMessage.Store(&pks[0].(*packet.Disconnect).Message)
+			_ = conn.Close()
+			return nil
+		}
+
+		packets = append(packets, pkData)
+	}
+
+	if conn.loggedIn && !conn.waitingForSpawn.Load() {
+		select {
+		case <-conn.close:
+		case conn.packetBatches <- packets:
+		}
+
+		return nil
+	}
+
+	for _, pkData := range packets {
+		if err := conn.handle(pkData); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // handle tries to handle the incoming packetData.
