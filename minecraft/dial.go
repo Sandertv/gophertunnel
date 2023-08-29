@@ -297,7 +297,7 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 			return
 		}
 
-		if conn.readBatches {
+		if conn.readBatches && conn.loggedIn {
 			if err := conn.receiveMultiple(packets); err != nil {
 				logger.Printf("error: %v", err)
 				return

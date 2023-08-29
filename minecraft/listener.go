@@ -285,7 +285,7 @@ func (listener *Listener) handleConn(conn *Conn) {
 			return
 		}
 
-		if conn.readBatches {
+		if conn.readBatches && conn.loggedIn {
 			if err := conn.receiveMultiple(packets); err != nil {
 				listener.cfg.ErrorLog.Printf("error: %v", err)
 				return
