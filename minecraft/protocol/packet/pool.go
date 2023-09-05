@@ -292,7 +292,7 @@ func init() {
 		IDAutomationClientConnect:         func() Packet { return &AutomationClientConnect{} },
 		IDBookEdit:                        func() Packet { return &BookEdit{} },
 		IDNPCRequest:                      func() Packet { return &NPCRequest{} },
-		IDModalFormRequest:                func() Packet { return &ModalFormRequest{} },
+		IDModalFormResponse:               func() Packet { return &ModalFormResponse{} },
 		IDServerSettingsRequest:           func() Packet { return &ServerSettingsRequest{} },
 		IDSetDefaultGameType:              func() Packet { return &SetDefaultGameType{} },
 		IDLabTable:                        func() Packet { return &LabTable{} },
