@@ -54,7 +54,7 @@ type BossEvent struct {
 	// BossEntityUniqueID matches the client's entity unique ID.
 	HealthPercentage float32
 	// ScreenDarkening currently seems not to do anything.
-	ScreenDarkening int16
+	ScreenDarkening uint16
 	// Colour is the colour of the boss bar that is shown when a player is
 	// subscribed. It is only set if the EventType is BossEventShow,
 	// BossEventAppearanceProperties or BossEventTexture. This is functional as
@@ -79,7 +79,7 @@ func (pk *BossEvent) Marshal(io protocol.IO) {
 	case BossEventShow:
 		io.String(&pk.BossBarTitle)
 		io.Float32(&pk.HealthPercentage)
-		io.Int16(&pk.ScreenDarkening)
+		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)
 		io.Varuint32(&pk.Overlay)
 	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
@@ -91,7 +91,7 @@ func (pk *BossEvent) Marshal(io protocol.IO) {
 	case BossEventTitle:
 		io.String(&pk.BossBarTitle)
 	case BossEventAppearanceProperties:
-		io.Int16(&pk.ScreenDarkening)
+		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)
 		io.Varuint32(&pk.Overlay)
 	case BossEventTexture:
