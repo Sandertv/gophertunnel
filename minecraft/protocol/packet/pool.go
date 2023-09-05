@@ -298,6 +298,7 @@ func init() {
 		IDSetLocalPlayerAsInitialised:     func() Packet { return &SetLocalPlayerAsInitialised{} },
 		IDNetworkStackLatency:             func() Packet { return &NetworkStackLatency{} },
 		IDScriptCustomEvent:               func() Packet { return &ScriptCustomEvent{} },
+		IDLevelSoundEvent:                 func() Packet { return &LevelSoundEvent{} },
 		IDLecternUpdate:                   func() Packet { return &LecternUpdate{} },
 		IDClientCacheStatus:               func() Packet { return &ClientCacheStatus{} },
 		IDMapCreateLockedCopy:             func() Packet { return &MapCreateLockedCopy{} },
