@@ -272,6 +272,7 @@ func init() {
 		IDBlockPickRequest:                func() Packet { return &BlockPickRequest{} },
 		IDActorPickRequest:                func() Packet { return &ActorPickRequest{} },
 		IDPlayerAction:                    func() Packet { return &PlayerAction{} },
+		IDSetActorLink:                    func() Packet { return &SetActorLink{} },
 		IDAnimate:                         func() Packet { return &Animate{} },
 		IDRespawn:                         func() Packet { return &Respawn{} },
 		IDContainerOpen:                   func() Packet { return &ContainerOpen{} },
