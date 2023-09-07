@@ -34,7 +34,7 @@ type unknownPacketError struct {
 }
 
 func (err unknownPacketError) Error() string {
-	return fmt.Sprintf("unknown packet with ID %v", err.id)
+	return fmt.Sprintf("unexpected packet with ID %v", err.id)
 }
 
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
@@ -46,11 +46,7 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		if err == nil {
 			return
 		}
-		if _, ok := err.(unknownPacketError); ok {
-			if conn.disconnectOnUnknownPacket {
-				_ = conn.Close()
-			}
-		} else if conn.disconnectOnInvalidPacket {
+		if _, ok := err.(unknownPacketError); ok || conn.disconnectOnInvalidPacket {
 			_ = conn.Close()
 		}
 	}()
@@ -68,7 +64,7 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		pk = pkFunc()
 	}
 
-	r := conn.proto.NewReader(p.payload, conn.shieldID.Load(), false)
+	r := conn.proto.NewReader(p.payload, conn.shieldID.Load(), conn.readerLimits)
 	pk.Marshal(r)
 	if p.payload.Len() != 0 {
 		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())

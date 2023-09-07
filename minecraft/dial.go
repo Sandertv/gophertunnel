@@ -6,12 +6,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	_ "embed"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
-	"github.com/sandertv/gophertunnel/internal/resource"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -332,6 +332,12 @@ func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKe
 	return chain, nil
 }
 
+//go:embed skin_resource_patch.json
+var skinResourcePatch []byte
+
+//go:embed skin_geometry.json
+var skinGeometry []byte
+
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
 	rand2.Seed(time.Now().Unix())
@@ -374,10 +380,10 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.SkinImageWidth = 64
 	}
 	if d.SkinResourcePatch == "" {
-		d.SkinResourcePatch = base64.StdEncoding.EncodeToString([]byte(resource.DefaultSkinResourcePatch))
+		d.SkinResourcePatch = base64.StdEncoding.EncodeToString(skinResourcePatch)
 	}
 	if d.SkinGeometry == "" {
-		d.SkinGeometry = base64.StdEncoding.EncodeToString([]byte(resource.DefaultSkinGeometry))
+		d.SkinGeometry = base64.StdEncoding.EncodeToString(skinGeometry)
 	}
 }
 

@@ -6,7 +6,7 @@ import (
 
 // ScriptCustomEvent is sent by both the client and the server. It is a way to let scripts communicate with
 // the server, so that the client can let the server know it triggered an event, or the other way around.
-// Deprecated: ScriptCustomEvent is deprecated as of 1.20.10.
+// ScriptCustomEvent is deprecated as of 1.20.10.
 type ScriptCustomEvent struct {
 	// EventName is the name of the event. The script and the server will use this event name to identify the
 	// data that is sent.

@@ -9,10 +9,10 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
-	"go.uber.org/atomic"
 	"log"
 	"net"
 	"os"
+	"sync/atomic"
 	"time"
 )
 
