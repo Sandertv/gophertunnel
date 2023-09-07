@@ -7,6 +7,7 @@ import (
 )
 
 // packetData holds the data of a Minecraft packet.
+// hello world...
 type packetData struct {
 	h       *packet.Header
 	full    []byte
