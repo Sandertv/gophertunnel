@@ -41,6 +41,7 @@ type IO interface {
 	NBT(m *map[string]any, encoding nbt.Encoding)
 	NBTList(m *[]any, encoding nbt.Encoding)
 	UUID(x *uuid.UUID)
+	RGB(x *color.RGBA)
 	RGBA(x *color.RGBA)
 	VarRGBA(x *color.RGBA)
 	EntityMetadata(x *map[uint32]any)

@@ -18,6 +18,12 @@ const (
 	ChatRestrictionLevelDisabled = 2
 )
 
+const (
+	EditorWorldTypeNotEditor = iota
+	EditorWorldTypeProject
+	EditorWorldTypeTestLevel
+)
+
 // StartGame is sent by the server to send information about the world the player will be spawned in. It
 // contains information about the position the player spawns in, and information about the world in general
 // such as its game rules.
@@ -72,9 +78,9 @@ type StartGame struct {
 	// value is set to true while the player's or the world's game mode is creative, and it's recommended to
 	// simply always set this to false as a server.
 	AchievementsDisabled bool
-	// EditorWorld is a value to dictate if the world is in editor mode, a special mode recently introduced adding
-	// "powerful tools for editing worlds, intended for experienced creators."
-	EditorWorld bool
+	// EditorWorldType is a value to dictate the type of editor mode, a special mode recently introduced adding
+	// "powerful tools for editing worlds, intended for experienced creators." It is one of the constants above.
+	EditorWorldType int32
 	// CreatedInEditor is a value to dictate if the world was created as a project in the editor mode. The functionality
 	// of this field is currently unknown.
 	CreatedInEditor bool
@@ -262,7 +268,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Difficulty)
 	io.UBlockPos(&pk.WorldSpawn)
 	io.Bool(&pk.AchievementsDisabled)
-	io.Bool(&pk.EditorWorld)
+	io.Varint32(&pk.EditorWorldType)
 	io.Bool(&pk.CreatedInEditor)
 	io.Bool(&pk.ExportedFromEditor)
 	io.Varint32(&pk.DayCycleLockTime)

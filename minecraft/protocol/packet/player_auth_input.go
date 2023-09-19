@@ -48,6 +48,8 @@ const (
 	InputFlagMissedSwing
 	InputFlagStartCrawling
 	InputFlagStopCrawling
+	InputFlagStartFlying
+	InputFlagStopFlying
 )
 
 const (

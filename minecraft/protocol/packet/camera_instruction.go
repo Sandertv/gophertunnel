@@ -1,14 +1,13 @@
 package packet
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // CameraInstruction gives a custom camera specific instructions to operate.
 type CameraInstruction struct {
-	// Data is a compound tag of the instructions to sent. The structure of this tag is currently unknown.
-	Data map[string]any
+	// Instructions is a list of the instructions that should be executed by the camera.
+	Instructions []protocol.CameraInstruction
 }
 
 // ID ...
@@ -17,5 +16,5 @@ func (*CameraInstruction) ID() uint32 {
 }
 
 func (pk *CameraInstruction) Marshal(io protocol.IO) {
-	io.NBT(&pk.Data, nbt.NetworkLittleEndian)
+	protocol.Slice(io, &pk.Instructions)
 }
