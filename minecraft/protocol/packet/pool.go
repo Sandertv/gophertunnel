@@ -267,6 +267,7 @@ func init() {
 		IDMovePlayer:                      func() Packet { return &MovePlayer{} },
 		IDPassengerJump:                   func() Packet { return &PassengerJump{} },
 		IDTickSync:                        func() Packet { return &TickSync{} },
+		IDActorEvent:                      func() Packet { return &ActorEvent{} },
 		IDInventoryTransaction:            func() Packet { return &InventoryTransaction{} },
 		IDMobEquipment:                    func() Packet { return &MobEquipment{} },
 		IDInteract:                        func() Packet { return &Interact{} },
