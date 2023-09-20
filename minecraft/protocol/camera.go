@@ -59,6 +59,7 @@ func (x *CameraEase) Marshal(r IO) {
 	r.Float32(&x.Duration)
 }
 
+// CameraInstruction represents an instruction that can be one of three different operations.
 type CameraInstruction struct {
 	// Set is a camera instruction that sets the camera to a specified preset.
 	Set Optional[CameraInstructionSet]
@@ -128,20 +129,20 @@ type CameraPreset struct {
 	Name string
 	// Parent is the name of the preset that this preset extends upon. This can be left empty.
 	Parent string
-	// PosX ...
+	// PosX is the default X position of the camera.
 	PosX Optional[float32]
-	// PosY ...
+	// PosY is the default Y position of the camera.
 	PosY Optional[float32]
-	// PosZ ...
+	// PosZ is the default Z position of the camera.
 	PosZ Optional[float32]
-	// RotX ...
+	// RotX is the default pitch of the camera.
 	RotX Optional[float32]
-	// RotY ...
+	// RotY is the default yaw of the camera.
 	RotY Optional[float32]
 	// AudioListener defines where the audio should be played from when using this preset. This is one of the constants
 	// above.
 	AudioListener Optional[byte]
-	// PlayerEffects ...
+	// PlayerEffects is currently unknown.
 	PlayerEffects Optional[bool]
 }
 
