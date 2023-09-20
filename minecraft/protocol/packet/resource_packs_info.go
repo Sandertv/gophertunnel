@@ -23,6 +23,9 @@ type ResourcePacksInfo struct {
 	TexturePacks []protocol.TexturePackInfo
 	// ForcingServerPacks is currently an unclear field.
 	ForcingServerPacks bool
+	// PackURLs is a list of URLs that the client can use to download a resource pack instead of downloading
+	// it the usual way.
+	PackURLs []protocol.PackURL
 }
 
 // ID ...
@@ -36,4 +39,5 @@ func (pk *ResourcePacksInfo) Marshal(io protocol.IO) {
 	io.Bool(&pk.ForcingServerPacks)
 	protocol.SliceUint16Length(io, &pk.BehaviourPacks)
 	protocol.SliceUint16Length(io, &pk.TexturePacks)
+	protocol.Slice(io, &pk.PackURLs)
 }

@@ -477,6 +477,13 @@ const (
 	SoundEventSnifferEggHatched
 	SoundEventWaxedSignInteractFail
 	SoundEventRecordRelic
+	SoundEventBump
+	SoundEventPumpkinCarve
+	SoundEventConvertHuskToZombie
+	SoundEventPigDeath
+	SoundEventHoglinZombified
+	SoundEventAmbientUnderwaterEnter
+	SoundEventAmbientUnderwaterExit
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
