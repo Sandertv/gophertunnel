@@ -46,7 +46,8 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		if err == nil {
 			return
 		}
-		if _, ok := err.(unknownPacketError); ok && conn.disconnectOnInvalidPacket {
+		if _, ok := err.(unknownPacketError); ok || conn.disconnectOnInvalidPacket {
+			fmt.Println("Closing!")
 			_ = conn.Close()
 		}
 	}()
