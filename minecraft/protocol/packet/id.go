@@ -205,4 +205,5 @@ const (
 	IDTrimData
 	IDOpenSign
 	IDAgentAnimation
+	IDRefreshEntitlements
 )

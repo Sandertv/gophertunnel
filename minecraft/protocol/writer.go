@@ -126,6 +126,16 @@ func (w *Writer) SoundPos(x *mgl32.Vec3) {
 	w.BlockPos(&b)
 }
 
+// RGB writes a color.RGBA x as 3 float32s to the underlying buffer.
+func (w *Writer) RGB(x *color.RGBA) {
+	red := float32(x.R) / 255
+	green := float32(x.G) / 255
+	blue := float32(x.B) / 255
+	w.Float32(&red)
+	w.Float32(&green)
+	w.Float32(&blue)
+}
+
 // RGBA writes a color.RGBA x as a uint32 to the underlying buffer.
 func (w *Writer) RGBA(x *color.RGBA) {
 	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24

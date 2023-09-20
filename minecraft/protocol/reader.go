@@ -162,6 +162,19 @@ func (r *Reader) ByteFloat(x *float32) {
 	*x = float32(v) * (360.0 / 256.0)
 }
 
+// RGB reads a color.RGBA x from three float32s.
+func (r *Reader) RGB(x *color.RGBA) {
+	var red, green, blue float32
+	r.Float32(&red)
+	r.Float32(&green)
+	r.Float32(&blue)
+	*x = color.RGBA{
+		R: uint8(red * 255),
+		G: uint8(green * 255),
+		B: uint8(blue * 255),
+	}
+}
+
 // RGBA reads a color.RGBA x from a uint32.
 func (r *Reader) RGBA(x *color.RGBA) {
 	var v uint32

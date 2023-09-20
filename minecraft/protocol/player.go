@@ -39,6 +39,8 @@ const (
 	PlayerActionMissedSwing
 	PlayerActionStartCrawling
 	PlayerActionStopCrawling
+	PlayerActionStartFlying
+	PlayerActionStopFlying
 )
 
 const (
