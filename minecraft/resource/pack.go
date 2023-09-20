@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -20,6 +21,9 @@ type Pack struct {
 	// version and description.
 	manifest *Manifest
 
+	// downloadURL is the URL that the resource pack can be downloaded from. If the string is empty, then the
+	// resource pack will be downloaded over RakNet rather than HTTP.
+	downloadURL string
 	// content is a bytes.Reader that contains the full content of the zip file. It is used to send the full
 	// data to a client.
 	content *bytes.Reader
@@ -32,22 +36,41 @@ type Pack struct {
 	checksum [32]byte
 }
 
-// Compile compiles a resource pack found at the path passed. The resource pack must either be a zip archive
+// ReadPath compiles a resource pack found at the path passed. The resource pack must either be a zip archive
 // (extension does not matter, could be .zip or .mcpack), or a directory containing a resource pack. In the
 // case of a directory, the directory is compiled into an archive and the pack is parsed from that.
-// Compile operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
+// ReadPath operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
 // will fail and return an error.
-func Compile(path string) (*Pack, error) {
+func ReadPath(path string) (*Pack, error) {
 	return compile(path)
 }
 
-// MustCompile compiles a resource pack found at the path passed. The resource pack must either be a zip
+// ReadURL compiles a resource pack found at the URL passed. The resource pack must be a valid zip archive
+// where the manifest.json file is inside a subdirectory rather than the root itself. If the resource pack is
+// not a valid zip or there is no manifest.json file, an error is returned.
+func ReadURL(url string) (*Pack, error) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("error downloading resource pack: %v", err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("error downloading resource pack: %v (%d)", resp.Status, resp.StatusCode)
+	}
+	pack, err := Read(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return pack.WithDownloadURL(url), nil
+}
+
+// MustReadPath compiles a resource pack found at the path passed. The resource pack must either be a zip
 // archive (extension does not matter, could be .zip or .mcpack), or a directory containing a resource pack.
 // In the case of a directory, the directory is compiled into an archive and the pack is parsed from that.
-// Compile operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
+// ReadPath operates assuming the resource pack has a 'manifest.json' file in it. If it does not, the function
 // will fail and return an error.
-// Unlike Compile, MustCompile does not return an error and panics if an error occurs instead.
-func MustCompile(path string) *Pack {
+// Unlike ReadPath, MustReadPath does not return an error and panics if an error occurs instead.
+func MustReadPath(path string) *Pack {
 	pack, err := compile(path)
 	if err != nil {
 		panic(err)
@@ -55,19 +78,31 @@ func MustCompile(path string) *Pack {
 	return pack
 }
 
-// FromBytes parses an archived resource pack written to a raw byte slice passed. The data must be a valid
+// MustReadURL compiles a resource pack found at the URL passed. The resource pack must be a valid zip archive
+// where the manifest.json file is inside a subdirectory rather than the root itself. If the resource pack is
+// not a valid zip or there is no manifest.json file, an error is returned.
+// Unlike ReadURL, MustReadURL does not return an error and panics if an error occurs instead.
+func MustReadURL(url string) *Pack {
+	pack, err := ReadURL(url)
+	if err != nil {
+		panic(err)
+	}
+	return pack
+}
+
+// Read parses an archived resource pack written to a raw byte slice passed. The data must be a valid
 // zip archive and contain a pack manifest in order for the function to succeed.
-// FromBytes saves the data to a temporary archive.
-func FromBytes(data []byte) (*Pack, error) {
+// Read saves the data to a temporary archive.
+func Read(r io.Reader) (*Pack, error) {
 	temp, err := createTempFile()
 	if err != nil {
 		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
 	}
-	_, _ = temp.Write(data)
+	_, _ = io.Copy(temp, r)
 	if err := temp.Close(); err != nil {
 		return nil, fmt.Errorf("error closing temp zip archive: %v", err)
 	}
-	pack, parseErr := Compile(temp.Name())
+	pack, parseErr := ReadPath(temp.Name())
 	if err := os.Remove(temp.Name()); err != nil {
 		return nil, fmt.Errorf("error removing temp zip archive: %v", err)
 	}
@@ -147,6 +182,19 @@ func (pack *Pack) HasTextures() bool {
 // a world template.
 func (pack *Pack) HasWorldTemplate() bool {
 	return pack.manifest.worldTemplate
+}
+
+// DownloadURL returns the URL that the resource pack can be downloaded from. If the string is empty, then the
+// resource pack will be downloaded over RakNet rather than HTTP.
+func (pack *Pack) DownloadURL() string {
+	return pack.downloadURL
+}
+
+// WithDownloadURL creates a copy of the pack and sets the download URL to the URL provided, after which the new
+// Pack is returned.
+func (pack Pack) WithDownloadURL(url string) *Pack {
+	pack.downloadURL = url
+	return &pack
 }
 
 // Checksum returns the SHA256 checksum made from the full, compressed content of the resource pack archive.
