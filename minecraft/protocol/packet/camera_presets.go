@@ -1,14 +1,14 @@
 package packet
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // CameraPresets gives the client a list of custom camera presets.
 type CameraPresets struct {
-	// Data is a compound tag of the presets being set. The structure of this tag is currently unknown.
-	Data map[string]any
+	// Presets is a list of camera presets that can be used by other cameras. The order of this list is important because
+	// the index of presets is used as a pointer in the CameraInstruction packet.
+	Presets []protocol.CameraPreset
 }
 
 // ID ...
@@ -17,5 +17,5 @@ func (*CameraPresets) ID() uint32 {
 }
 
 func (pk *CameraPresets) Marshal(io protocol.IO) {
-	io.NBT(&pk.Data, nbt.NetworkLittleEndian)
+	protocol.Slice(io, &pk.Presets)
 }

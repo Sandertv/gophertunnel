@@ -250,6 +250,7 @@ func init() {
 		IDTrimData:                      func() Packet { return &TrimData{} },
 		IDOpenSign:                      func() Packet { return &OpenSign{} },
 		IDAgentAnimation:                func() Packet { return &AgentAnimation{} },
+		IDRefreshEntitlements:           func() Packet { return &RefreshEntitlements{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

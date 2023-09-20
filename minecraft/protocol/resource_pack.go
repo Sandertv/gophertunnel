@@ -96,3 +96,20 @@ func (x *StackResourcePack) Marshal(r IO) {
 	r.String(&x.Version)
 	r.String(&x.SubPackName)
 }
+
+// PackURL represents a resource pack that is being served from a HTTP server rather than being sent over
+// the Minecraft protocol.
+type PackURL struct {
+	// UUID is the UUID of the resource pack. Each resource pack downloaded must have a different UUID in
+	// order for the client to be able to handle them properly.
+	UUID string
+	// URL is the URL from which the resource pack is downloaded. This URL must serve a zip file containing
+	// a manifest.json file inside of another folder. The manifest cannot be in the root of the zip file.
+	URL string
+}
+
+// Marshal encodes/decodes a CDNURL.
+func (x *PackURL) Marshal(r IO) {
+	r.String(&x.UUID)
+	r.String(&x.URL)
+}
