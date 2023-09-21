@@ -748,6 +748,13 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
+		if pack.DownloadURL() != "" {
+			pk.PackURLs = append(pk.PackURLs, protocol.PackURL{
+				UUIDVersion: fmt.Sprintf("%s_%s", pack.UUID(), pack.Version()),
+				URL:         pack.DownloadURL(),
+			})
+		}
+
 		// If it has behaviours, add it to the behaviour pack list. If not, we add it to the texture packs
 		// list.
 		if pack.HasBehaviours() {
@@ -1123,7 +1130,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 			return
 		}
 		// First parse the resource pack from the total byte buffer we obtained.
-		newPack, err := resource.FromBytes(pack.buf.Bytes())
+		newPack, err := resource.Read(pack.buf)
 		if err != nil {
 			conn.log.Printf("invalid full resource pack data for UUID %v: %v\n", id, err)
 			return
