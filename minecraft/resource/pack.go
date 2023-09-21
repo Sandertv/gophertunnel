@@ -45,9 +45,9 @@ func ReadPath(path string) (*Pack, error) {
 	return compile(path)
 }
 
-// ReadURL compiles a resource pack found at the URL passed. The resource pack must be a valid zip archive
-// where the manifest.json file is inside a subdirectory rather than the root itself. If the resource pack is
-// not a valid zip or there is no manifest.json file, an error is returned.
+// ReadURL downloads a resource pack found at the URL passed and compiles it. The resource pack must be a valid
+// zip archive where the manifest.json file is inside a subdirectory rather than the root itself. If the resource
+// pack is not a valid zip or there is no manifest.json file, an error is returned.
 func ReadURL(url string) (*Pack, error) {
 	resp, err := http.Get(url)
 	if err != nil {
@@ -61,7 +61,8 @@ func ReadURL(url string) (*Pack, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pack.WithDownloadURL(url), nil
+	pack.downloadURL = url
+	return pack, nil
 }
 
 // MustReadPath compiles a resource pack found at the path passed. The resource pack must either be a zip
@@ -78,9 +79,9 @@ func MustReadPath(path string) *Pack {
 	return pack
 }
 
-// MustReadURL compiles a resource pack found at the URL passed. The resource pack must be a valid zip archive
-// where the manifest.json file is inside a subdirectory rather than the root itself. If the resource pack is
-// not a valid zip or there is no manifest.json file, an error is returned.
+// MustReadURL downloads a resource pack found at the URL passed and compiles it. The resource pack must be a valid
+// zip archive where the manifest.json file is inside a subdirectory rather than the root itself. If the resource
+// pack is not a valid zip or there is no manifest.json file, an error is returned.
 // Unlike ReadURL, MustReadURL does not return an error and panics if an error occurs instead.
 func MustReadURL(url string) *Pack {
 	pack, err := ReadURL(url)
@@ -188,13 +189,6 @@ func (pack *Pack) HasWorldTemplate() bool {
 // resource pack will be downloaded over RakNet rather than HTTP.
 func (pack *Pack) DownloadURL() string {
 	return pack.downloadURL
-}
-
-// WithDownloadURL creates a copy of the pack and sets the download URL to the URL provided, after which the new
-// Pack is returned.
-func (pack Pack) WithDownloadURL(url string) *Pack {
-	pack.downloadURL = url
-	return &pack
 }
 
 // Checksum returns the SHA256 checksum made from the full, compressed content of the resource pack archive.
