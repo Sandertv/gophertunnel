@@ -188,7 +188,7 @@ type StartGame struct {
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
 	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
 	// should always be set to false.
-	ForceExperimentalGameplay bool
+	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -306,7 +306,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Int32(&pk.LimitedWorldDepth)
 	io.Bool(&pk.NewNether)
 	protocol.Single(io, &pk.EducationSharedResourceURI)
-	io.Bool(&pk.ForceExperimentalGameplay)
+	protocol.OptionalFunc(io, &pk.ForceExperimentalGameplay, io.Bool)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)
 	io.String(&pk.LevelID)
