@@ -199,6 +199,11 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 	return conn
 }
 
+// DisconnectReason returns the disconnect message that is stored but never used anywhere for some reason! lolxd
+func (conn *Conn) DisconnectReason() string {
+	return *(conn.disconnectMessage.Load())
+}
+
 // IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
 // connected client.
 func (conn *Conn) IdentityData() login.IdentityData {
