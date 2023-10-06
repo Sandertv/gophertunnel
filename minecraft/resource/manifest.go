@@ -1,7 +1,7 @@
 package resource
 
 // Documentation on this may be found here:
-// https://minecraft.gamepedia.com/Bedrock_Edition_add-on_documentation
+// https://learn.microsoft.com/en-us/minecraft/creator/reference/content/addonsreference/examples/addonmanifest
 
 // Manifest contains all the basic information about the pack that Minecraft needs to identify it.
 type Manifest struct {

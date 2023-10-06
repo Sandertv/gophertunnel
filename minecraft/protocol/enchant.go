@@ -8,7 +8,7 @@ type EnchantmentOption struct {
 	// Enchantments holds the enchantments that will be applied to the item when this option is clicked.
 	Enchantments ItemEnchantments
 	// Name is a name that will be translated to the 'Standard Galactic Alphabet'
-	// (https://minecraft.gamepedia.com/Enchanting_Table#Standard_Galactic_Alphabet) client-side. The names
+	// (https://minecraft.wiki/w/Enchanting_Table#Standard_Galactic_Alphabet) client-side. The names
 	// generally have no meaning, such as:
 	// 'animal imbue range galvanize '
 	// 'bless inside creature shrink '
