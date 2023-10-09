@@ -232,10 +232,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		for {
 			select {
 			case <-t.C:
-				fmt.Println("flush")
 				conn.Flush()
 			case <-fchan:
-				fmt.Println("done")
 				return
 			}
 		}
