@@ -73,6 +73,9 @@ type Dialer struct {
 	// packets with too many bytes will be returned while packets with too few bytes will be skipped.
 	DisconnectOnInvalidPackets bool
 
+	// ReadBatches is an option if you want to read batches instead of individual packets.
+	ReadBatches bool
+
 	// Protocol is the Protocol version used to communicate with the target server. By default, this field is
 	// set to the current protocol as implemented in the minecraft/protocol package. Note that packets written
 	// to and read from the Conn are always any of those found in the protocol/packet package, as packets
