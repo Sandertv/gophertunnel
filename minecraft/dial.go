@@ -87,10 +87,6 @@ type Dialer struct {
 	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
 	FlushRate time.Duration
 
-	// ReadBatches determines whether packets should be retrieved in conn's batches. When enabled, the conn.ReadBatch()
-	// function should be used as opposed to conn.ReadPacket()
-	ReadBatches bool
-
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
@@ -188,7 +184,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, err
 	}
 
-	conn = newConn(netConn, key, d.ErrorLog, d.Protocol, d.FlushRate, false, d.ReadBatches)
+	conn = newConn(netConn, key, d.ErrorLog, d.Protocol, d.FlushRate, false)
 	conn.pool = conn.proto.Packets(false)
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
@@ -229,12 +225,28 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
 		return nil, err
 	}
-	_ = conn.Flush()
+
+	fchan := make(chan bool, 1)
+	go func() {
+		t := time.NewTicker(time.Millisecond * 50)
+		for {
+			select {
+			case <-t.C:
+				fmt.Println("flush")
+				conn.Flush()
+			case <-fchan:
+				fmt.Println("done")
+				return
+			}
+		}
+	}()
 
 	select {
 	case <-conn.close:
+		fchan <- true
 		return nil, conn.closeErr("dial")
 	case <-ctx.Done():
+		fchan <- true
 		return nil, conn.wrap(ctx.Err(), "dial")
 	case <-l:
 		// We've received our network settings, so we can now send our login request.
@@ -246,10 +258,13 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 		select {
 		case <-conn.close:
+			fchan <- true
 			return nil, conn.closeErr("dial")
 		case <-ctx.Done():
+			fchan <- true
 			return nil, conn.wrap(ctx.Err(), "dial")
 		case <-c:
+			fchan <- true
 			// We've connected successfully. We return the connection and no error.
 			return conn, nil
 		}
@@ -296,16 +311,6 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 			}
 			return
 		}
-
-		if conn.readBatches && conn.loggedIn {
-			if err := conn.receiveMultiple(packets); err != nil {
-				logger.Printf("error: %v", err)
-				return
-			}
-
-			continue
-		}
-
 		for _, data := range packets {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
