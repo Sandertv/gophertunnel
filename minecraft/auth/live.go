@@ -73,7 +73,7 @@ func RequestLiveToken() (*oauth2.Token, error) {
 // be printed to the io.Writer passed with a user code which the user must use to submit.
 // Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
 func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
-	d, err := startDeviceAuth()
+	d, err := StartDeviceAuth()
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	defer ticker.Stop()
 
 	for range ticker.C {
-		t, err := pollDeviceAuth(d.DeviceCode)
+		t, err := PollDeviceAuth(d.DeviceCode)
 		if err != nil {
 			return nil, fmt.Errorf("error polling for device auth: %w", err)
 		}
@@ -96,9 +96,9 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	panic("unreachable")
 }
 
-// startDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
+// StartDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
 // enter.
-func startDeviceAuth() (*deviceAuthConnect, error) {
+func StartDeviceAuth() (*deviceAuthConnect, error) {
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
 		"client_id":     {"0000000048183522"},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
@@ -117,9 +117,9 @@ func startDeviceAuth() (*deviceAuthConnect, error) {
 	return data, json.NewDecoder(resp.Body).Decode(data)
 }
 
-// pollDeviceAuth polls the token endpoint for the device code. A token is returned if the user authenticated
+// PollDeviceAuth polls the token endpoint for the device code. A token is returned if the user authenticated
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
-func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
+func PollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
 		"client_id":   {"0000000048183522"},
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
