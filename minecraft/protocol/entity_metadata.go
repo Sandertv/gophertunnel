@@ -250,6 +250,9 @@ const (
 	EntityDataFlagFeelingHappy
 	EntityDataFlagSearching
 	EntityDataFlagCrawling
+	EntityDataFlagTimerFlag1
+	EntityDataFlagTimerFlag2
+	EntityDataFlagTimerFlag3
 )
 
 const (
