@@ -5,6 +5,33 @@ import (
 )
 
 const (
+	MapDecorationTypeMarkerWhite = iota
+	MapDecorationTypeMarkerGreen
+	MapDecorationTypeMarkerRed
+	MapDecorationTypeMarkerBlue
+	MapDecorationTypeCrossWhite
+	MapDecorationTypeTriangleRed
+	MapDecorationTypeSquareWhite
+	MapDecorationTypeMarkerSign
+	MapDecorationTypeMarkerPink
+	MapDecorationTypeMarkerOrange
+	MapDecorationTypeMarkerYellow
+	MapDecorationTypeMarkerTeal
+	MapDecorationTypeTriangleGreen
+	MapDecorationTypeSmallSquareWhite
+	MapDecorationTypeMansion
+	MapDecorationTypeMonument
+	MapDecorationTypeNoDraw
+	MapDecorationTypeVillageDesert
+	MapDecorationTypeVillagePlains
+	MapDecorationTypeVillageSavanna
+	MapDecorationTypeVillageSnowy
+	MapDecorationTypeVillageTaiga
+	MapDecorationTypeJungleTemple
+	MapDecorationTypeWitchHut
+)
+
+const (
 	MapObjectTypeEntity = iota
 	MapObjectTypeBlock
 )
@@ -39,7 +66,7 @@ func (x *MapTrackedObject) Marshal(r IO) {
 // client-side.
 type MapDecoration struct {
 	// Type is the type of the map decoration. The type specifies the shape (and sometimes the colour) that
-	// the map decoration gets.
+	// the map decoration gets. It is one of the MapDecorationType constants above.
 	Type byte
 	// Rotation is the rotation of the map decoration. It is byte due to the 16 fixed directions that the
 	// map decoration may face.
