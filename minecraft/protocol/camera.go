@@ -59,23 +59,6 @@ func (x *CameraEase) Marshal(r IO) {
 	r.Float32(&x.Duration)
 }
 
-// CameraInstruction represents an instruction that can be one of three different operations.
-type CameraInstruction struct {
-	// Set is a camera instruction that sets the camera to a specified preset.
-	Set Optional[CameraInstructionSet]
-	// Clear can be set to true to clear all the current camera instructions.
-	Clear Optional[bool]
-	// Fade is a camera instruction that fades the screen to a specified colour.
-	Fade Optional[CameraInstructionFade]
-}
-
-// Marshal encodes/decodes a CameraInstruction.
-func (x *CameraInstruction) Marshal(r IO) {
-	OptionalMarshaler(r, &x.Set)
-	OptionalFunc(r, &x.Clear, r.Bool)
-	OptionalMarshaler(r, &x.Fade)
-}
-
 // CameraInstructionSet represents a camera instruction that sets the camera to a specified preset and can be extended
 // with easing functions and translations to the camera's position and rotation.
 type CameraInstructionSet struct {

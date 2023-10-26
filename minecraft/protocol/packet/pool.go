@@ -285,6 +285,7 @@ func init() {
 		IDSetPlayerGameType:               func() Packet { return &SetPlayerGameType{} },
 		IDMapInfoRequest:                  func() Packet { return &MapInfoRequest{} },
 		IDRequestChunkRadius:              func() Packet { return &RequestChunkRadius{} },
+		IDBossEvent:                       func() Packet { return &BossEvent{} },
 		IDCommandRequest:                  func() Packet { return &CommandRequest{} },
 		IDCommandBlockUpdate:              func() Packet { return &CommandBlockUpdate{} },
 		IDResourcePackChunkRequest:        func() Packet { return &ResourcePackChunkRequest{} },

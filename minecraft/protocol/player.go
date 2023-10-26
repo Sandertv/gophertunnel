@@ -41,6 +41,7 @@ const (
 	PlayerActionStopCrawling
 	PlayerActionStartFlying
 	PlayerActionStopFlying
+	PlayerActionClientAckServerData
 )
 
 const (
