@@ -29,7 +29,7 @@ type StructureBlockUpdate struct {
 	// used to export the structure to a file.
 	StructureName string
 	// DataField is the name of a function to run, usually used during natural generation. A description can
-	// be found here: https://minecraft.gamepedia.com/Structure_Block#Data.
+	// be found here: https://minecraft.wiki/w/Structure_Block#Data.
 	DataField string
 	// IncludePlayers specifies if the 'Include Players' toggle has been enabled, meaning players are also
 	// exported by the structure block.

@@ -50,6 +50,7 @@ const (
 	InputFlagStopCrawling
 	InputFlagStartFlying
 	InputFlagStopFlying
+	InputFlagClientAckServerData
 )
 
 const (

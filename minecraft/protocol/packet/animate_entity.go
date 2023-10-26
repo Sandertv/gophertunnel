@@ -8,7 +8,7 @@ import (
 // animation, or to activate a controller which can start a sequence of animations based on different
 // conditions specified in an animation controller.
 // Much of the documentation of this packet can be found at
-// https://minecraft.gamepedia.com/Bedrock_Edition_beta_animation_documentation.
+// https://learn.microsoft.com/en-us/minecraft/creator/reference/content/animationsreference
 type AnimateEntity struct {
 	// Animation is the name of a single animation to start playing.
 	Animation string
