@@ -201,6 +201,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
+	xuid := conn.identityData.XUID
 	if d.TokenSource == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
@@ -252,6 +253,20 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	case <-l:
 		// We've received our network settings, so we can now send our login request.
 		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
+		jsn, err := json.Marshal(map[string]interface{}{
+			"xuid": xuid,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		if err := conn.WritePacket(&packet.ScriptMessage{
+			Identifier: "oomph:authentication",
+			Data:       jsn,
+		}); err != nil {
+			return nil, err
+		}
+
 		if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
 			return nil, err
 		}
