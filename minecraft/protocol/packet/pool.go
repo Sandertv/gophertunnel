@@ -332,6 +332,7 @@ func init() {
 		IDRequestNetworkSettings:          func() Packet { return &RequestNetworkSettings{} },
 		IDGameTestResults:                 func() Packet { return &GameTestResults{} },
 		IDOpenSign:                        func() Packet { return &OpenSign{} },
+		IDBlockActorData:                  func() Packet { return &BlockActorData{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
