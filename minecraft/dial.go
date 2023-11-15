@@ -255,6 +255,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 		jsn, err := json.Marshal(map[string]interface{}{
 			"xuid": xuid,
+			"address": conn.RemoteAddr().String(),
 		})
 		if err != nil {
 			return nil, err
