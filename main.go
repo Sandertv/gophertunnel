@@ -45,6 +45,7 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 	serverConn, err := minecraft.Dialer{
 		TokenSource: src,
 		ClientData:  conn.ClientData(),
+        IPAddress: conn.RemoteAddr().String(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)
