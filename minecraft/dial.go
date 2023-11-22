@@ -90,6 +90,8 @@ type Dialer struct {
 	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
 	FlushRate time.Duration
 
+    IPAddress string
+
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
 	// transmitted every time, resulting in less network transmission.
@@ -255,7 +257,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 		jsn, err := json.Marshal(map[string]interface{}{
 			"xuid": xuid,
-			"address": conn.RemoteAddr().String(),
+			"address": d.IPAddress,
 		})
 		if err != nil {
 			return nil, err
