@@ -199,6 +199,11 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 	return conn
 }
 
+// Protocol returns the protocol that the connection is using.
+func (conn *Conn) Protocol() Protocol {
+	return conn.proto
+}
+
 // DisconnectReason returns the disconnect message that is stored but never used anywhere for some reason! lolxd
 func (conn *Conn) DisconnectReason() string {
 	return *(conn.disconnectMessage.Load())
@@ -786,6 +791,7 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 // version is not supported, otherwise sending back a NetworkSettings packet.
 func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings) error {
 	found := false
+
 	for _, pro := range conn.acceptedProto {
 		if pro.ID() == pk.ClientProtocol {
 			conn.proto = pro
