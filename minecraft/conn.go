@@ -650,6 +650,9 @@ func (conn *Conn) receive(data []byte) error {
 		_ = conn.Close()
 		return nil
 	}
+	if conn.waitingForSpawn.Load() && pkData.h.PacketID == packet.IDPlayerAuthInput {
+		return nil
+	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
 		select {
 		case <-conn.close:
@@ -687,7 +690,9 @@ func (conn *Conn) receiveMultiple(data [][]byte) error {
 			_ = conn.Close()
 			return nil
 		}
-
+		if conn.waitingForSpawn.Load() && pkData.h.PacketID == packet.IDPlayerAuthInput {
+			return nil
+		}
 		packets = append(packets, pkData)
 	}
 
