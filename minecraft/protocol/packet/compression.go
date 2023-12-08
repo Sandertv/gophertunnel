@@ -54,7 +54,7 @@ var (
 
 // EncodeCompression ...
 func (flateCompression) EncodeCompression() uint16 {
-	return 0
+	return CompressionAlgorithmFlate
 }
 
 // Compress ...
@@ -103,7 +103,7 @@ func (flateCompression) Decompress(compressed []byte) ([]byte, error) {
 
 // EncodeCompression ...
 func (snappyCompression) EncodeCompression() uint16 {
-	return 1
+	return CompressionAlgorithmSnappy
 }
 
 // Compress ...

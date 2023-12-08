@@ -63,6 +63,7 @@ const (
 	ContainerCursor
 	ContainerCreatedOutput
 	ContainerSmithingTableTemplate
+	ContainerCrafterLevelEntity
 )
 
 const (
@@ -102,4 +103,6 @@ const (
 	ContainerTypeJigsawEditor
 	ContainerTypeSmithingTable
 	ContainerTypeChestBoat
+	ContainerTypeDecoratedPot
+	ContainerTypeCrafter
 )

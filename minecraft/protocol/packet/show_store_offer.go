@@ -4,6 +4,12 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	StoreOfferTypeMarketplace = iota
+	StoreOfferTypeDressingRoom
+	StoreOfferTypeServerPage
+)
+
 // ShowStoreOffer is sent by the server to show a Marketplace store offer to a player. It opens a window
 // client-side that displays the item.
 // The ShowStoreOffer packet only works on the partnered servers: Servers that are not partnered will not have
@@ -11,12 +17,12 @@ import (
 // on the client side. Sending the packet does therefore not work when using a proxy that is not connected to
 // with the domain of one of the partnered servers.
 type ShowStoreOffer struct {
-	// OfferID is a string that identifies the offer for which a window should be opened. While typically a
-	// UUID, the ID could be anything.
+	// OfferID is a string that identifies the offer for which a window should be opened. ID should be in the format of
+	// a UUID, however it can be left empty if StoreOfferTypeServerPage is used.
 	OfferID string
-	// ShowAll specifies if all other offers of the same 'author' as the one of the offer associated with the
-	// OfferID should also be displayed, alongside the target offer.
-	ShowAll bool
+	// Type is the type of the store offer that is being shown to the player. It is one of the constants that may be
+	// found above.
+	Type byte
 }
 
 // ID ...
@@ -26,5 +32,5 @@ func (*ShowStoreOffer) ID() uint32 {
 
 func (pk *ShowStoreOffer) Marshal(io protocol.IO) {
 	io.String(&pk.OfferID)
-	io.Bool(&pk.ShowAll)
+	io.Uint8(&pk.Type)
 }
