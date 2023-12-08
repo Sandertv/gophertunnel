@@ -86,6 +86,7 @@ const (
 	LevelEventSculkCharge                  = 2037
 	LevelEventSculkChargePop               = 2038
 	LevelEventSonicExplosion               = 2039
+	LevelEventDustPlume                    = 2040
 	LevelEventStartRaining                 = 3001
 	LevelEventStartThunderstorm            = 3002
 	LevelEventStopRaining                  = 3003
@@ -118,6 +119,7 @@ const (
 	LevelEventParticlesCrackBlockSouth     = 3606
 	LevelEventParticlesCrackBlockWest      = 3607
 	LevelEventParticlesCrackBlockEast      = 3608
+	LevelEventParticlesShootWhiteSmoke     = 3609
 	LevelEventAllPlayersSleeping           = 9800
 	LevelEventSleepingPlayers              = 9801
 	LevelEventJumpPrevented                = 9810

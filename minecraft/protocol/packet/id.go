@@ -53,7 +53,7 @@ const (
 	IDInventorySlot
 	IDContainerSetData
 	IDCraftingData
-	IDCraftingEvent
+	_
 	IDGUIDataPickItem
 	IDAdventureSettings
 	IDBlockActorData
@@ -206,4 +206,6 @@ const (
 	IDOpenSign
 	IDAgentAnimation
 	IDRefreshEntitlements
+	IDPlayerToggleCrafterSlotRequest
+	IDSetPlayerInventoryOptions
 )
