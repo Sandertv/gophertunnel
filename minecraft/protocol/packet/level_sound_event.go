@@ -486,6 +486,13 @@ const (
 	SoundEventAmbientUnderwaterExit
 	SoundEventBottleFill
 	SoundEventBottleEmpty
+	SoundEventCrafterCraft
+	SoundEventCrafterFail
+	SoundEventDecoratedPotInsert
+	SoundEventDecoratedPotInsertFail
+	SoundEventCrafterDisableSlot
+	SoundEventCopperBulbTurnOn
+	SoundEventCopperBulbTurnOff
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

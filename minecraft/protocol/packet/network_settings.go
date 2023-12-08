@@ -4,6 +4,12 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	CompressionAlgorithmFlate = iota
+	CompressionAlgorithmSnappy
+	CompressionAlgorithmNone = 0xffff
+)
+
 // NetworkSettings is sent by the server to update a variety of network settings. These settings modify the
 // way packets are sent over the network stack.
 type NetworkSettings struct {

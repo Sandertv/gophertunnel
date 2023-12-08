@@ -214,6 +214,15 @@ func OptionalFunc[T any](r IO, x *Optional[T], f func(*T)) any {
 	return x
 }
 
+// OptionalFuncIO reads/writes an Optional[T].
+func OptionalFuncIO[T any](r IO, x *Optional[T], f func(IO, *T)) any {
+	r.Bool(&x.set)
+	if x.set {
+		f(r, &x.val)
+	}
+	return x
+}
+
 // OptionalMarshaler reads/writes an Optional assuming *T implements Marshaler.
 func OptionalMarshaler[T any, A PtrMarshaler[T]](r IO, x *Optional[T]) {
 	r.Bool(&x.set)
