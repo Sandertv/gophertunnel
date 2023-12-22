@@ -335,6 +335,7 @@ func init() {
 		IDBlockActorData:                  func() Packet { return &BlockActorData{} },
 		IDPlayerToggleCrafterSlotRequest:  func() Packet { return &PlayerToggleCrafterSlotRequest{} },
 		IDSetPlayerInventoryOptions:       func() Packet { return &SetPlayerInventoryOptions{} },
+		IDItemFrameDropItem:               func() Packet { return &ItemFrameDropItem{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
