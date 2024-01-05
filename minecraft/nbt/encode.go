@@ -299,5 +299,9 @@ func (e *Encoder) writeTag(t tagType, tagName string) error {
 	if err := e.w.WriteByte(byte(t)); err != nil {
 		return err
 	}
+	if _, ok := e.Encoding.(networkBigEndian); ok && t == tagStruct && e.depth == 1 {
+		// As of Minecraft Java 1.20.2, the name of the root compound tag is not written over the network.
+		return nil
+	}
 	return e.Encoding.WriteString(e.w, tagName)
 }
