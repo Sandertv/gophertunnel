@@ -2,8 +2,10 @@ package minecraft
 
 import (
 	"context"
-	"github.com/sandertv/go-raknet"
 	"net"
+
+	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // RakNet is an implementation of a RakNet v10 Network.
@@ -23,6 +25,8 @@ func (r RakNet) PingContext(ctx context.Context, address string) (response []byt
 func (r RakNet) Listen(address string) (NetworkListener, error) {
 	return raknet.Listen(address)
 }
+
+func (RakNet) Compression(net.Conn) packet.Compression { return packet.FlateCompression }
 
 // init registers the RakNet network.
 func init() {

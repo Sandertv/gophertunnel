@@ -3,6 +3,8 @@ package minecraft
 import (
 	"context"
 	"net"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // Network represents an implementation of a supported network layers, such as RakNet.
@@ -24,6 +26,9 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
+
+	// Compression returns a new compression instance used by this Protocol.
+	Compression(conn net.Conn) packet.Compression
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra
