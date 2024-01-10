@@ -2,11 +2,10 @@ package packet
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
@@ -22,7 +21,7 @@ type Decoder struct {
 	pr packetReader
 
 	compression Compression
-	encrypt     *encrypt
+	encryption  Encryption
 
 	checkPacketLimit bool
 }
@@ -48,11 +47,8 @@ func NewDecoder(reader io.Reader) *Decoder {
 
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
-func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	first12 := append([]byte(nil), keyBytes[:12]...)
-	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
-	decoder.encrypt = newEncrypt(keyBytes[:], stream)
+func (decoder *Decoder) EnableEncryption(encryption Encryption) {
+	decoder.encryption = encryption
 }
 
 // EnableCompression enables compression for the Decoder.
@@ -95,9 +91,9 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		return nil, fmt.Errorf("error reading packet: invalid packet header %x: expected %x", data[0], header)
 	}
 	data = data[1:]
-	if decoder.encrypt != nil {
-		decoder.encrypt.decrypt(data)
-		if err := decoder.encrypt.verify(data); err != nil {
+	if decoder.encryption != nil {
+		decoder.encryption.Decrypt(data)
+		if err := decoder.encryption.Verify(data); err != nil {
 			// The packet did not have a correct checksum.
 			return nil, fmt.Errorf("error verifying packet: %v", err)
 		}

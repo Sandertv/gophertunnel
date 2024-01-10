@@ -946,8 +946,8 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
 
 	// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
-	conn.enc.EnableEncryption(keyBytes)
-	conn.dec.EnableEncryption(keyBytes)
+	conn.enc.EnableEncryption(conn.proto.Encryption(keyBytes))
+	conn.dec.EnableEncryption(conn.proto.Encryption(keyBytes))
 
 	// We write a ClientToServerHandshake packet (which has no payload) as a response.
 	_ = conn.WritePacket(&packet.ClientToServerHandshake{})
@@ -1529,8 +1529,8 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
-	conn.enc.EnableEncryption(keyBytes)
-	conn.dec.EnableEncryption(keyBytes)
+	conn.enc.EnableEncryption(conn.proto.Encryption(keyBytes))
+	conn.dec.EnableEncryption(conn.proto.Encryption(keyBytes))
 
 	return nil
 }

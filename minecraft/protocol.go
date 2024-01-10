@@ -1,9 +1,10 @@
 package minecraft
 
 import (
+	"io"
+
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"io"
 )
 
 // Protocol represents the Minecraft protocol used to communicate over network. It comprises a unique set of packets
@@ -20,6 +21,8 @@ type Protocol interface {
 	// to true, the pool should be created for a Listener. This means that only
 	// packets that may be sent by a client should be allowed.
 	Packets(listener bool) packet.Pool
+	// Encryption returns a new encryption instance used by this Protocol.
+	Encryption(key [32]byte) packet.Encryption
 	// NewReader returns a protocol.IO that implements reading operations for reading types
 	// that are used for this Protocol.
 	NewReader(r ByteReader, shieldID int32, enableLimits bool) protocol.IO
@@ -53,8 +56,9 @@ type ByteWriter interface {
 // convert any packets, as they are already of the right type.
 type proto struct{}
 
-func (proto) ID() int32     { return protocol.CurrentProtocol }
-func (p proto) Ver() string { return protocol.CurrentVersion }
+func (proto) ID() int32                                 { return protocol.CurrentProtocol }
+func (p proto) Ver() string                             { return protocol.CurrentVersion }
+func (proto) Encryption(key [32]byte) packet.Encryption { return packet.NewCTREncryption(key[:]) }
 func (p proto) Packets(listener bool) packet.Pool {
 	if listener {
 		return packet.NewClientPool()

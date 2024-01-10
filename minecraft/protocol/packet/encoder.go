@@ -2,11 +2,10 @@ package packet
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
@@ -15,7 +14,7 @@ type Encoder struct {
 	w io.Writer
 
 	compression Compression
-	encrypt     *encrypt
+	encryption  Encryption
 }
 
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
@@ -28,11 +27,8 @@ func NewEncoder(w io.Writer) *Encoder {
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
 // after encryption is enabled will be encrypted.
-func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	first12 := append([]byte(nil), keyBytes[:12]...)
-	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
-	encoder.encrypt = newEncrypt(keyBytes[:], stream)
+func (encoder *Encoder) EnableEncryption(encryption Encryption) {
+	encoder.encryption = encryption
 }
 
 // EnableCompression enables compression for the Encoder.
@@ -71,10 +67,10 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data = append([]byte{header}, data...)
-	if encoder.encrypt != nil {
-		// If the encryption session is not nil, encryption is enabled, meaning we should encrypt the
+	if encoder.encryption != nil {
+		// If the encryption session is not nil, encryption is enabled, meaning we should ctr the
 		// compressed data of this packet.
-		data = encoder.encrypt.encrypt(data)
+		data = encoder.encryption.Encrypt(data)
 	}
 	if _, err := encoder.w.Write(data); err != nil {
 		return fmt.Errorf("error writing compressed packet to io.Writer: %v", err)
