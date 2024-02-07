@@ -15,7 +15,7 @@ const (
 	HudElementProgressBar
 	HudElementHunger
 	HudElementAirBubbles
-	HudElementHourseHealth
+	HudElementHorseHealth
 )
 
 const (
