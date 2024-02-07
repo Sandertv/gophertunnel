@@ -127,8 +127,8 @@ const (
 	IDLevelEventGeneric
 	IDLecternUpdate
 	_
-	IDAddEntity
-	IDRemoveEntity
+	_
+	_
 	IDClientCacheStatus
 	IDMapCreateLockedCopy
 	IDOnScreenTextureAnimation
@@ -208,4 +208,5 @@ const (
 	IDRefreshEntitlements
 	IDPlayerToggleCrafterSlotRequest
 	IDSetPlayerInventoryOptions
+	IDSetHud
 )

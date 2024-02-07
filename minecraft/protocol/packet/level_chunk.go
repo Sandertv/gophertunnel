@@ -11,6 +11,9 @@ type LevelChunk struct {
 	// Position contains the X and Z coordinates of the chunk sent. You can convert a block coordinate to a chunk
 	// coordinate by right-shifting it four bits.
 	Position protocol.ChunkPos
+	// Dimension is the ID of the dimension that the chunk belongs to. This must always be set otherwise the
+	// client will always assume the chunk is part of the overworld dimension.
+	Dimension int32
 	// HighestSubChunk is the highest sub-chunk at the position that is not all air. It is only set if the
 	// SubChunkCount is set to protocol.SubChunkRequestModeLimited.
 	HighestSubChunk uint16
@@ -46,6 +49,7 @@ func (*LevelChunk) ID() uint32 {
 
 func (pk *LevelChunk) Marshal(io protocol.IO) {
 	io.ChunkPos(&pk.Position)
+	io.Varint32(&pk.Dimension)
 	io.Varuint32(&pk.SubChunkCount)
 	if pk.SubChunkCount == protocol.SubChunkRequestModeLimited {
 		io.Uint16(&pk.HighestSubChunk)
