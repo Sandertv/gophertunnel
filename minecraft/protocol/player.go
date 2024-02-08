@@ -79,6 +79,8 @@ type PlayerListEntry struct {
 	Teacher bool
 	// Host specifies if the player that is added to the player list is the host of the game.
 	Host bool
+	// SubClient specifies if the player that is added to the player list is a sub-client of another player.
+	SubClient bool
 }
 
 // Marshal encodes/decodes a PlayerListEntry.
@@ -92,6 +94,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	Single(r, &x.Skin)
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
+	r.Bool(&x.SubClient)
 }
 
 // PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.

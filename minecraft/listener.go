@@ -249,7 +249,7 @@ func (listener *Listener) createConn(n Network, netConn net.Conn) {
 
 	if netConn.(*raknet.Conn).ProtocolVersion() <= 10 {
 		conn.enc.EnableCompression(n.Compression(netConn))
-		conn.dec.EnableCompression(n.Compression(netConn))
+		conn.dec.EnableCompression()
 	}
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {

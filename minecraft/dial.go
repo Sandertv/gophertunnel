@@ -18,6 +18,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
 	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
@@ -25,7 +26,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
-	"gopkg.in/square/go-jose.v2/jwt"
 )
 
 // Dialer allows specifying specific settings for connection to a Minecraft server.
@@ -90,7 +90,7 @@ type Dialer struct {
 	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
 	FlushRate time.Duration
 
-    IPAddress string
+	IPAddress string
 
 	// EnableClientCache, if set to true, enables the client blob cache for the client. This means that the
 	// server will send chunks as blobs, which may be saved by the client so that chunks don't have to be
@@ -256,7 +256,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		// We've received our network settings, so we can now send our login request.
 		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
 		jsn, err := json.Marshal(map[string]interface{}{
-			"xuid": xuid,
+			"xuid":    xuid,
 			"address": d.IPAddress,
 		})
 		if err != nil {
