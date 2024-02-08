@@ -36,12 +36,18 @@ var (
 	// writing Minecraft (Bedrock Edition) world saves.
 	LittleEndian littleEndian
 
+	// NetworkBigEndian is a version of BigEndian introduced in 1.20.2 where the name of the root compound tag is
+	// not written. Similarly to BigEndian, it is only used on Minecraft Java Edition and generally used for NBT
+	// sent over the network.
+	NetworkBigEndian networkBigEndian
+
 	// BigEndian is the fixed size big endian implementation of NBT. It is the original implementation, and is
 	// used only on Minecraft Java Edition.
 	BigEndian bigEndian
 
 	_ Encoding = NetworkLittleEndian
 	_ Encoding = LittleEndian
+	_ Encoding = NetworkBigEndian
 	_ Encoding = BigEndian
 )
 
@@ -210,3 +216,5 @@ func (e networkLittleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	}
 	return m, nil
 }
+
+type networkBigEndian struct{ bigEndian }

@@ -51,6 +51,7 @@ const (
 	InputFlagStartFlying
 	InputFlagStopFlying
 	InputFlagClientAckServerData
+	InputFlagClientPredictedVehicle
 )
 
 const (
@@ -120,8 +121,10 @@ type PlayerAuthInput struct {
 	ItemStackRequest protocol.ItemStackRequest
 	// BlockActions is a slice of block actions that the client has interacted with.
 	BlockActions []protocol.PlayerBlockAction
-	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination of X/Z
-	// values which are created using an analogue input.
+	// ClientPredictedVehicle is the unique ID of the vehicle that the client predicts the player to be in.
+	ClientPredictedVehicle int64
+	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination
+	// of X/Z values which are created using an analogue input.
 	AnalogueMoveVector mgl32.Vec2
 }
 
@@ -152,6 +155,10 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 
 	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
 		protocol.Single(io, &pk.ItemStackRequest)
+	}
+
+	if pk.InputData&InputFlagClientPredictedVehicle != 0 {
+		io.Varint64(&pk.ClientPredictedVehicle)
 	}
 
 	if pk.InputData&InputFlagPerformBlockActions != 0 {

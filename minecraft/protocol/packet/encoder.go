@@ -58,7 +58,9 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
+	prepend := []byte{header}
 	if encoder.compression != nil {
+		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
 		var err error
 		data, err = encoder.compression.Compress(data)
 		if err != nil {
@@ -66,9 +68,9 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		}
 	}
 
-	data = append([]byte{header}, data...)
+	data = append(prepend, data...)
 	if encoder.encryption != nil {
-		// If the encryption session is not nil, encryption is enabled, meaning we should ctr the
+		// If the encryption session is not nil, encryption is enabled, meaning we should encrypt the
 		// compressed data of this packet.
 		data = encoder.encryption.Encrypt(data)
 	}
