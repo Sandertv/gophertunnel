@@ -170,8 +170,6 @@ func init() {
 		IDLevelEventGeneric:           func() Packet { return &LevelEventGeneric{} },
 		IDLecternUpdate:               func() Packet { return &LecternUpdate{} },
 		// ---
-		IDAddEntity:                     func() Packet { return &AddEntity{} },
-		IDRemoveEntity:                  func() Packet { return &RemoveEntity{} },
 		IDClientCacheStatus:             func() Packet { return &ClientCacheStatus{} },
 		IDOnScreenTextureAnimation:      func() Packet { return &OnScreenTextureAnimation{} },
 		IDMapCreateLockedCopy:           func() Packet { return &MapCreateLockedCopy{} },
@@ -252,6 +250,7 @@ func init() {
 		IDRefreshEntitlements:            func() Packet { return &RefreshEntitlements{} },
 		IDPlayerToggleCrafterSlotRequest: func() Packet { return &PlayerToggleCrafterSlotRequest{} },
 		IDSetPlayerInventoryOptions:      func() Packet { return &SetPlayerInventoryOptions{} },
+		IDSetHud:                         func() Packet { return &SetHud{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

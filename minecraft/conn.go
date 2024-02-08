@@ -697,7 +697,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	_ = conn.Flush()
 	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression(conn.compression)
+	conn.dec.EnableCompression()
 	return nil
 }
 
@@ -708,7 +708,7 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 		return fmt.Errorf("unknown compression algorithm: %v", pk.CompressionAlgorithm)
 	}
 	conn.enc.EnableCompression(alg)
-	conn.dec.EnableCompression(alg)
+	conn.dec.EnableCompression()
 	conn.readyToLogin = true
 	return nil
 }
