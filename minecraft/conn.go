@@ -822,8 +822,15 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		return fmt.Errorf("error sending network settings: %v", err)
 	}
 	_ = conn.Flush()
-	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression()
+	conn.enc.EnableCompression(conn.compression, conn.proto.ID() <= 630)
+
+	// Compression/decompression changed in 1.20.60. Protocol 630 is version 1.20.50.
+	if conn.proto.ID() <= 630 {
+		conn.dec.SetCompression(conn.compression)
+	} else {
+		conn.dec.EnableCompression()
+	}
+
 	return nil
 }
 
@@ -833,8 +840,15 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 	if !ok {
 		return fmt.Errorf("unknown compression algorithm: %v", pk.CompressionAlgorithm)
 	}
-	conn.enc.EnableCompression(alg)
-	conn.dec.EnableCompression()
+	conn.enc.EnableCompression(alg, conn.proto.ID() <= 630)
+
+	// Compression/decompression changed in 1.20.60. Protocol 630 is version 1.20.50.
+	if conn.proto.ID() <= 630 {
+		conn.dec.SetCompression(alg)
+	} else {
+		conn.dec.EnableCompression()
+	}
+
 	conn.readyToLogin = true
 	return nil
 }

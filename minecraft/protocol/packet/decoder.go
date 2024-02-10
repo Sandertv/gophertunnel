@@ -20,7 +20,9 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
-	decompress bool
+	decompress        bool
+	compressionMethod Compression
+
 	encryption Encryption
 
 	checkPacketLimit bool
@@ -54,6 +56,11 @@ func (decoder *Decoder) EnableEncryption(encryption Encryption) {
 // EnableCompression enables compression for the Decoder.
 func (decoder *Decoder) EnableCompression() {
 	decoder.decompress = true
+}
+
+// SetCompression sets the compression method to use for the Decoder. This method should be used for versions below 1.20.60.
+func (decoder *Decoder) SetCompression(method Compression) {
+	decoder.compressionMethod = method
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -112,6 +119,11 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 			if err != nil {
 				return nil, fmt.Errorf("error decompressing packet: %v", err)
 			}
+		}
+	} else if decoder.compressionMethod != nil {
+		data, err = decoder.compressionMethod.Decompress(data)
+		if err != nil {
+			return nil, fmt.Errorf("error decompressing packet: %v", err)
 		}
 	}
 

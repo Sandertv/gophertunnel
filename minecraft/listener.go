@@ -248,8 +248,12 @@ func (listener *Listener) createConn(n Network, netConn net.Conn) {
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 
 	if netConn.(*raknet.Conn).ProtocolVersion() <= 10 {
-		conn.enc.EnableCompression(n.Compression(netConn))
-		conn.dec.EnableCompression()
+		conn.enc.EnableCompression(n.Compression(netConn), conn.proto.ID() <= 630)
+		if conn.proto.ID() <= 630 {
+			conn.dec.SetCompression(n.Compression(netConn))
+		} else {
+			conn.dec.EnableCompression()
+		}
 	}
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {

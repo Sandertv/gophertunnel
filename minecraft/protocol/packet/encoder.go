@@ -13,8 +13,10 @@ import (
 type Encoder struct {
 	w io.Writer
 
-	compression Compression
-	encryption  Encryption
+	compression    Compression
+	oldCompression bool
+
+	encryption Encryption
 }
 
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
@@ -32,8 +34,9 @@ func (encoder *Encoder) EnableEncryption(encryption Encryption) {
 }
 
 // EnableCompression enables compression for the Encoder.
-func (encoder *Encoder) EnableCompression(compression Compression) {
+func (encoder *Encoder) EnableCompression(compression Compression, oldCompression bool) {
 	encoder.compression = compression
+	encoder.oldCompression = oldCompression
 }
 
 // Encode encodes the packets passed. It writes all of them as a single packet which is  compressed and
@@ -60,7 +63,10 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	data := buf.Bytes()
 	prepend := []byte{header}
 	if encoder.compression != nil {
-		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
+		if !encoder.oldCompression {
+			prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
+		}
+
 		var err error
 		data, err = encoder.compression.Compress(data)
 		if err != nil {
