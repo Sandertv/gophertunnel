@@ -330,6 +330,29 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 			}
 			return
 		}
+
+		if conn.readBatches {
+			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
+			if err := conn.receiveMultiple(packets); err != nil {
+				logger.Printf("error: %v", err)
+				return
+			}
+
+			if !readyToLoginBefore && conn.readyToLogin {
+				// This is the signal that the connection is ready to login, so we put a value in the channel so that
+				// it may be detected.
+				l <- struct{}{}
+			}
+
+			if !loggedInBefore && conn.loggedIn {
+				// This is the signal that the connection was considered logged in, so we put a value in the channel so
+				// that it may be detected.
+				c <- struct{}{}
+			}
+
+			continue
+		}
+		
 		for _, data := range packets {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
