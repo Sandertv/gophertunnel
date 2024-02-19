@@ -690,7 +690,7 @@ func (conn *Conn) receiveMultiple(data [][]byte) error {
 			return nil
 		}
 		if conn.waitingForSpawn.Load() && pkData.h.PacketID == packet.IDPlayerAuthInput {
-			return nil
+			continue
 		}
 		packets = append(packets, pkData)
 	}
