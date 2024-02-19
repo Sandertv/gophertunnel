@@ -296,10 +296,23 @@ func (listener *Listener) handleConn(conn *Conn) {
 			return
 		}
 
-		if conn.readBatches && conn.loggedIn {
+		if conn.readBatches {
+			loggedInBefore := conn.loggedIn
 			if err := conn.receiveMultiple(packets); err != nil {
 				listener.cfg.ErrorLog.Printf("error: %v", err)
 				return
+			}
+			if !loggedInBefore && conn.loggedIn {
+				select {
+				case <-listener.close:
+					// The listener was closed while this one was logged in, so the incoming channel will be
+					// closed. Just return so the connection is closed and cleaned up.
+					return
+				case listener.incoming <- conn:
+					// The connection was previously not logged in, but was after receiving this packet,
+					// meaning the connection is fully completely now. We add it to the channel so that
+					// a call to Accept() can receive it.
+				}
 			}
 
 			continue
