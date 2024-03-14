@@ -71,7 +71,7 @@ const (
 	IDMapInfoRequest
 	IDRequestChunkRadius
 	IDChunkRadiusUpdated
-	IDItemFrameDropItem
+	_
 	IDGameRulesChanged
 	IDCamera
 	IDBossEvent
