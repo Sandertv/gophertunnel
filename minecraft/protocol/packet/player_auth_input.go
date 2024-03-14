@@ -52,6 +52,8 @@ const (
 	InputFlagStopFlying
 	InputFlagClientAckServerData
 	InputFlagClientPredictedVehicle
+	InputFlagPaddlingLeft
+	InputFlagPaddlingRight
 )
 
 const (
@@ -121,6 +123,8 @@ type PlayerAuthInput struct {
 	ItemStackRequest protocol.ItemStackRequest
 	// BlockActions is a slice of block actions that the client has interacted with.
 	BlockActions []protocol.PlayerBlockAction
+	// VehicleRotation is the rotation of the vehicle that the player is in, if any.
+	VehicleRotation mgl32.Vec2
 	// ClientPredictedVehicle is the unique ID of the vehicle that the client predicts the player to be in.
 	ClientPredictedVehicle int64
 	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination
@@ -158,6 +162,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	}
 
 	if pk.InputData&InputFlagClientPredictedVehicle != 0 {
+		io.Vec2(&pk.VehicleRotation)
 		io.Varint64(&pk.ClientPredictedVehicle)
 	}
 

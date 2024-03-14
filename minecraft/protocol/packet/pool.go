@@ -115,7 +115,6 @@ func init() {
 		IDMapInfoRequest:              func() Packet { return &MapInfoRequest{} },
 		IDRequestChunkRadius:          func() Packet { return &RequestChunkRadius{} },
 		IDChunkRadiusUpdated:          func() Packet { return &ChunkRadiusUpdated{} },
-		IDItemFrameDropItem:           func() Packet { return &ItemFrameDropItem{} },
 		IDGameRulesChanged:            func() Packet { return &GameRulesChanged{} },
 		IDCamera:                      func() Packet { return &Camera{} },
 		IDBossEvent:                   func() Packet { return &BossEvent{} },
@@ -334,7 +333,6 @@ func init() {
 		IDBlockActorData:                  func() Packet { return &BlockActorData{} },
 		IDPlayerToggleCrafterSlotRequest:  func() Packet { return &PlayerToggleCrafterSlotRequest{} },
 		IDSetPlayerInventoryOptions:       func() Packet { return &SetPlayerInventoryOptions{} },
-		IDItemFrameDropItem:               func() Packet { return &ItemFrameDropItem{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

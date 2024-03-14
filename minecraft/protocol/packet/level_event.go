@@ -127,6 +127,9 @@ const (
 	LevelEventAllPlayersSleeping             = 9800
 	LevelEventSleepingPlayers                = 9801
 	LevelEventJumpPrevented                  = 9810
+	LevelEventAnimationVaultActivate         = 9811
+	LevelEventAnimationVaultDeactivate       = 9812
+	LevelEventAnimationVaultEjectItem        = 9813
 	LevelEventParticleLegacyEvent            = 0x4000
 )
 

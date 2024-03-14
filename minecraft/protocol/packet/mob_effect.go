@@ -62,6 +62,8 @@ type MobEffect struct {
 	// Duration is the duration of the effect in seconds. After the duration has elapsed, the effect will be
 	// removed automatically client-side.
 	Duration int32
+	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
+	Tick uint64
 }
 
 // ID ...
@@ -76,4 +78,5 @@ func (pk *MobEffect) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Amplifier)
 	io.Bool(&pk.Particles)
 	io.Varint32(&pk.Duration)
+	io.Uint64(&pk.Tick)
 }
