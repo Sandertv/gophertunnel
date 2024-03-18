@@ -14,8 +14,6 @@ type LecternUpdate struct {
 	// Position is the position of the lectern that was updated. If no lectern is at the block position,
 	// the packet should be ignored.
 	Position protocol.BlockPos
-	// DropBook specifies if the book currently set on display in the lectern should be dropped server-side.
-	DropBook bool
 }
 
 // ID ...
@@ -27,5 +25,4 @@ func (pk *LecternUpdate) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Page)
 	io.Uint8(&pk.PageCount)
 	io.UBlockPos(&pk.Position)
-	io.Bool(&pk.DropBook)
 }

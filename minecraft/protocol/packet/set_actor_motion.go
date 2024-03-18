@@ -14,6 +14,8 @@ type SetActorMotion struct {
 	// Velocity is the new velocity the entity gets. This velocity will initiate the client-side movement of
 	// the entity.
 	Velocity mgl32.Vec3
+	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
+	Tick uint64
 }
 
 // ID ...
@@ -24,4 +26,5 @@ func (*SetActorMotion) ID() uint32 {
 func (pk *SetActorMotion) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Velocity)
+	io.Varuint64(&pk.Tick)
 }
