@@ -1,6 +1,8 @@
 module github.com/sandertv/gophertunnel
 
-go 1.19
+go 1.21.0
+
+toolchain go1.22.1
 
 require (
 	github.com/go-gl/mathgl v1.0.0
@@ -10,7 +12,7 @@ require (
 	github.com/klauspost/compress v1.15.1
 	github.com/muhammadmuzzammil1998/jsonc v1.0.0
 	github.com/pelletier/go-toml v1.9.4
-	github.com/sandertv/go-raknet v1.12.0
+	github.com/sandertv/go-raknet v1.13.0
 	golang.org/x/net v0.7.0
 	golang.org/x/oauth2 v0.4.0
 	golang.org/x/text v0.7.0

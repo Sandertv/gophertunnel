@@ -894,15 +894,16 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		}
 	}
 
-	if len(packsToDownload) != 0 {
-		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData)
-		_ = conn.WritePacket(&packet.ResourcePackClientResponse{
-			Response:        packet.PackResponseSendPacks,
-			PacksToDownload: packsToDownload,
-		})
-		return nil
-	}
-	conn.expect(packet.IDResourcePackStack)
+	// if len(packsToDownload) != 0 {
+	// 	fmt.Println(packsToDownload)
+	// 	conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData, packet.IDPlayStatus, packet.IDResourcePacksInfo)
+	// 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{
+	// 		Response:        packet.PackResponseSendPacks,
+	// 		PacksToDownload: packsToDownload,
+	// 	})
+	// 	return nil
+	// }
+	conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus)
 
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 	return nil
@@ -911,6 +912,9 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 // handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
 // that resource packs are applied in.
 func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
+	conn.expect(packet.IDStartGame)
+	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
+	return nil
 	// We currently don't apply resource packs in any way, so instead we just check if all resource packs in
 	// the stacks are also downloaded.
 	for _, pack := range pk.TexturePacks {
@@ -1326,7 +1330,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 			return fmt.Errorf("error sending client cache status: %v", err)
 		}
 		// The next packet we expect is the ResourcePacksInfo packet.
-		conn.expect(packet.IDResourcePacksInfo)
+		conn.expect(packet.IDResourcePacksInfo, packet.IDResourcePackStack)
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.Close()
