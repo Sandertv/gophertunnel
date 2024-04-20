@@ -86,24 +86,36 @@ func (x *CameraInstructionSet) Marshal(r IO) {
 	OptionalFunc(r, &x.Default, r.Bool)
 }
 
-// CameraInstructionFade represents a camera instruction that fades the screen to a specified colour.
-type CameraInstructionFade struct {
+// CameraFadeTimeData represents the time data for a CameraInstructionFade.
+type CameraFadeTimeData struct {
 	// FadeInDuration is the time in seconds for the screen to fully fade in.
 	FadeInDuration float32
 	// WaitDuration is time in seconds to wait before fading out.
 	WaitDuration float32
 	// FadeOutDuration is the time in seconds for the screen to fully fade out.
 	FadeOutDuration float32
+}
+
+// Marshal encodes/decodes a CameraFadeTimeData.
+func (x *CameraFadeTimeData) Marshal(r IO) {
+	r.Float32(&x.FadeInDuration)
+	r.Float32(&x.WaitDuration)
+	r.Float32(&x.FadeOutDuration)
+}
+
+// CameraInstructionFade represents a camera instruction that fades the screen to a specified colour.
+type CameraInstructionFade struct {
+	// TimeData is the time data for the fade, which includes the fade in duration, wait duration and fade out
+	// duration.
+	TimeData Optional[CameraFadeTimeData]
 	// Colour is the colour of the screen to fade to. This only uses the red, green and blue components.
-	Colour color.RGBA
+	Colour Optional[color.RGBA]
 }
 
 // Marshal encodes/decodes a CameraInstructionFade.
 func (x *CameraInstructionFade) Marshal(r IO) {
-	r.Float32(&x.FadeInDuration)
-	r.Float32(&x.WaitDuration)
-	r.Float32(&x.FadeOutDuration)
-	r.RGB(&x.Colour)
+	OptionalMarshaler(r, &x.TimeData)
+	OptionalFunc(r, &x.Colour, r.RGB)
 }
 
 // CameraPreset represents a basic preset that can be extended upon by more complex instructions.

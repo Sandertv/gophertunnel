@@ -447,6 +447,9 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	if d.SkinGeometry == "" {
 		d.SkinGeometry = base64.StdEncoding.EncodeToString(skinGeometry)
 	}
+	if d.SkinGeometryVersion == "" {
+		d.SkinGeometryVersion = base64.StdEncoding.EncodeToString([]byte("0.0.0"))
+	}
 }
 
 // setAndroidData ensures the login.ClientData passed matches settings you would see on an Android device.
