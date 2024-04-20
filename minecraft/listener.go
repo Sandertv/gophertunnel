@@ -83,6 +83,9 @@ type ListenConfig struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	// If enabled, respond to UT3 queries
+	EnableQuery bool
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -137,6 +140,14 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		key:      key,
 	}
 
+	if cfg.EnableQuery {
+		if c, ok := listener.listener.(interface {
+			EnableQuery(enabled bool)
+		}); ok {
+			c.EnableQuery(true)
+		}
+	}
+
 	// Actually start listening.
 	go listener.listen(n)
 	return listener, nil
@@ -184,6 +195,26 @@ func (listener *Listener) Addr() net.Addr {
 // Close closes the listener and the underlying net.Listener. Pending calls to Accept will fail immediately.
 func (listener *Listener) Close() error {
 	return listener.listener.Close()
+}
+
+func (listener *Listener) QueryData(data map[string]string) {
+	if c, ok := listener.listener.(interface {
+		SetQueryInfo(queryInfo map[string]string)
+	}); ok {
+		c.SetQueryInfo(data)
+		return
+	}
+	panic(fmt.Sprintf("connection type %T has no SetQueryInfo(queryInfo map[string]string) method", listener.listener))
+}
+
+func (listener *Listener) QueryPlayers(players []string) {
+	if c, ok := listener.listener.(interface {
+		SetQueryPlayers(queryPlayers []string)
+	}); ok {
+		c.SetQueryPlayers(players)
+		return
+	}
+	panic(fmt.Sprintf("connection type %T has no SetQueryPlayers(queryPlayers []string) method", listener.listener))
 }
 
 // updatePongData updates the pong data of the listener using the current only players, maximum players and

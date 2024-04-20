@@ -2,13 +2,14 @@ package main
 
 import (
 	"errors"
+	"log"
+	"os"
+	"sync"
+
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"golang.org/x/oauth2"
-	"log"
-	"os"
-	"sync"
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
@@ -45,7 +46,7 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 	serverConn, err := minecraft.Dialer{
 		TokenSource: src,
 		ClientData:  conn.ClientData(),
-        IPAddress: conn.RemoteAddr().String(),
+		IPAddress:   conn.RemoteAddr().String(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)
