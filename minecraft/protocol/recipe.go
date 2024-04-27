@@ -205,6 +205,9 @@ type ShapedRecipe struct {
 	Block string
 	// Priority ...
 	Priority int32
+	// AssumeSymmetry specifies if the recipe is symmetrical. If this is set to true, the recipe will be
+	// mirrored along the diagonal axis. This means that the recipe will be the same if rotated 180 degrees.
+	AssumeSymmetry bool
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
@@ -436,6 +439,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
+	r.Bool(&recipe.AssumeSymmetry)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 

@@ -68,6 +68,8 @@ type StartGame struct {
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32
+	// Hardcore is if the world is in hardcore mode. In hardcore mode, the player cannot respawn after dying.
+	Hardcore bool
 	// Difficulty is the difficulty of the world. It is a value from 0-3, with 0 being peaceful, 1 being easy,
 	// 2 being normal and 3 being hard.
 	Difficulty int32
@@ -265,6 +267,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Dimension)
 	io.Varint32(&pk.Generator)
 	io.Varint32(&pk.WorldGameMode)
+	io.Bool(&pk.Hardcore)
 	io.Varint32(&pk.Difficulty)
 	io.UBlockPos(&pk.WorldSpawn)
 	io.Bool(&pk.AchievementsDisabled)
