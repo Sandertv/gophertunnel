@@ -65,6 +65,8 @@ type GameData struct {
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32
+	// Hardcore is if the world is in hardcore mode. In hardcore mode, the player cannot respawn after dying.
+	Hardcore bool
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.

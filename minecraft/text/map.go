@@ -3,37 +3,37 @@ package text
 import "strings"
 
 const (
-	black      = "§0"
-	darkBlue   = "§1"
-	darkGreen  = "§2"
-	darkAqua   = "§3"
-	darkRed    = "§4"
-	darkPurple = "§5"
-	orange     = "§6"
-	grey       = "§7"
-	darkGrey   = "§8"
-	blue       = "§9"
-	green      = "§a"
-	aqua       = "§b"
-	red        = "§c"
-	purple     = "§d"
-	yellow     = "§e"
-	white      = "§f"
-	darkYellow = "§g"
-	quartz     = "§h"
-	iron       = "§i"
-	netherite  = "§j"
-	obfuscated = "§k"
-	bold       = "§l"
-	redstone   = "§m"
-	copper     = "§n"
-	italic     = "§o"
-	gold       = "§p"
-	emerald    = "§q"
-	reset      = "§r"
-	diamond    = "§s"
-	lapis      = "§t"
-	amethyst   = "§u"
+	Black      = "§0"
+	DarkBlue   = "§1"
+	DarkGreen  = "§2"
+	DarkAqua   = "§3"
+	DarkRed    = "§4"
+	DarkPurple = "§5"
+	Orange     = "§6"
+	Grey       = "§7"
+	DarkGrey   = "§8"
+	Blue       = "§9"
+	Green      = "§a"
+	Aqua       = "§b"
+	Red        = "§c"
+	Purple     = "§d"
+	Yellow     = "§e"
+	White      = "§f"
+	DarkYellow = "§g"
+	Quartz     = "§h"
+	Iron       = "§i"
+	Netherite  = "§j"
+	Obfuscated = "§k"
+	Bold       = "§l"
+	Redstone   = "§m"
+	Copper     = "§n"
+	Italic     = "§o"
+	Gold       = "§p"
+	Emerald    = "§q"
+	Reset      = "§r"
+	Diamond    = "§s"
+	Lapis      = "§t"
+	Amethyst   = "§u"
 )
 
 const (
@@ -72,73 +72,73 @@ const (
 )
 
 var m = map[string]string{
-	black:      ansiBlack,
-	darkBlue:   ansiDarkBlue,
-	darkGreen:  ansiDarkGreen,
-	darkAqua:   ansiDarkAqua,
-	darkRed:    ansiDarkRed,
-	darkPurple: ansiDarkPurple,
-	orange:     ansiOrange,
-	grey:       ansiGrey,
-	darkGrey:   ansiDarkGrey,
-	blue:       ansiBlue,
-	green:      ansiGreen,
-	aqua:       ansiAqua,
-	red:        ansiRed,
-	purple:     ansiPurple,
-	yellow:     ansiYellow,
-	white:      ansiWhite,
-	darkYellow: ansiDarkYellow,
-	quartz:     ansiQuartz,
-	iron:       ansiIron,
-	netherite:  ansiNetherite,
-	redstone:   ansiRedstone,
-	copper:     ansiCopper,
-	gold:       ansiGold,
-	emerald:    ansiEmerald,
-	diamond:    ansiDiamond,
-	lapis:      ansiLapis,
-	amethyst:   ansiAmethyst,
+	Black:      ansiBlack,
+	DarkBlue:   ansiDarkBlue,
+	DarkGreen:  ansiDarkGreen,
+	DarkAqua:   ansiDarkAqua,
+	DarkRed:    ansiDarkRed,
+	DarkPurple: ansiDarkPurple,
+	Orange:     ansiOrange,
+	Grey:       ansiGrey,
+	DarkGrey:   ansiDarkGrey,
+	Blue:       ansiBlue,
+	Green:      ansiGreen,
+	Aqua:       ansiAqua,
+	Red:        ansiRed,
+	Purple:     ansiPurple,
+	Yellow:     ansiYellow,
+	White:      ansiWhite,
+	DarkYellow: ansiDarkYellow,
+	Quartz:     ansiQuartz,
+	Iron:       ansiIron,
+	Netherite:  ansiNetherite,
+	Redstone:   ansiRedstone,
+	Copper:     ansiCopper,
+	Gold:       ansiGold,
+	Emerald:    ansiEmerald,
+	Diamond:    ansiDiamond,
+	Lapis:      ansiLapis,
+	Amethyst:   ansiAmethyst,
 
-	obfuscated: ansiObfuscated,
-	bold:       ansiBold,
-	reset:      ansiReset,
-	italic:     ansiItalic,
+	Obfuscated: ansiObfuscated,
+	Bold:       ansiBold,
+	Reset:      ansiReset,
+	Italic:     ansiItalic,
 }
 
 var strMap = map[string]string{
-	"black":       black,
-	"dark-blue":   darkBlue,
-	"dark-green":  darkGreen,
-	"dark-aqua":   darkAqua,
-	"dark-red":    darkRed,
-	"dark-purple": darkPurple,
-	"orange":      orange,
-	"grey":        grey,
-	"dark-grey":   darkGrey,
-	"blue":        blue,
-	"green":       green,
-	"aqua":        aqua,
-	"red":         red,
-	"purple":      purple,
-	"yellow":      yellow,
-	"white":       white,
-	"dark-yellow": darkYellow,
-	"quartz":      quartz,
-	"iron":        iron,
-	"netherite":   netherite,
-	"obfuscated":  obfuscated,
-	"bold":        bold,
-	"b":           bold,
-	"redstone":    redstone,
-	"copper":      copper,
-	"gold":        gold,
-	"emerald":     emerald,
-	"italic":      italic,
-	"i":           italic,
-	"diamond":     diamond,
-	"lapis":       lapis,
-	"amethyst":    amethyst,
+	"black":       Black,
+	"dark-blue":   DarkBlue,
+	"dark-green":  DarkGreen,
+	"dark-aqua":   DarkAqua,
+	"dark-red":    DarkRed,
+	"dark-purple": DarkPurple,
+	"orange":      Orange,
+	"grey":        Grey,
+	"dark-grey":   DarkGrey,
+	"blue":        Blue,
+	"green":       Green,
+	"aqua":        Aqua,
+	"red":         Red,
+	"purple":      Purple,
+	"yellow":      Yellow,
+	"white":       White,
+	"dark-yellow": DarkYellow,
+	"quartz":      Quartz,
+	"iron":        Iron,
+	"netherite":   Netherite,
+	"obfuscated":  Obfuscated,
+	"bold":        Bold,
+	"b":           Bold,
+	"redstone":    Redstone,
+	"copper":      Copper,
+	"gold":        Gold,
+	"emerald":     Emerald,
+	"italic":      Italic,
+	"i":           Italic,
+	"diamond":     Diamond,
+	"lapis":       Lapis,
+	"amethyst":    Amethyst,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting
