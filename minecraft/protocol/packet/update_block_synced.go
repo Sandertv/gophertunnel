@@ -28,7 +28,7 @@ type UpdateBlockSynced struct {
 	// entity transitions from.
 	// Note that for both possible values for TransitionType, the EntityUniqueID should point to the falling
 	// block entity involved.
-	EntityUniqueID int64
+	EntityUniqueID uint64
 	// TransitionType is the type of the transition that happened. It is either BlockToEntityTransition, when
 	// a block placed becomes a falling entity, or EntityToBlockTransition, when a falling entity hits the
 	// ground and becomes a solid block again.
@@ -45,6 +45,6 @@ func (pk *UpdateBlockSynced) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.NewBlockRuntimeID)
 	io.Varuint32(&pk.Flags)
 	io.Varuint32(&pk.Layer)
-	io.Varint64(&pk.EntityUniqueID)
+	io.Varuint64(&pk.EntityUniqueID)
 	io.Varuint64(&pk.TransitionType)
 }

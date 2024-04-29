@@ -107,7 +107,7 @@ type PlayerAuthInput struct {
 	PlayMode uint32
 	// InteractionModel is a constant representing the interaction model the player is using. It is one of the
 	// constants that may be found above.
-	InteractionModel int32
+	InteractionModel uint32
 	// GazeDirection is the direction in which the player is gazing, when the PlayMode is PlayModeReality: In
 	// other words, when the player is playing in virtual reality.
 	GazeDirection mgl32.Vec3
@@ -146,7 +146,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.InputData)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
-	io.Varint32(&pk.InteractionModel)
+	io.Varuint32(&pk.InteractionModel)
 	if pk.PlayMode == PlayModeReality {
 		io.Vec3(&pk.GazeDirection)
 	}

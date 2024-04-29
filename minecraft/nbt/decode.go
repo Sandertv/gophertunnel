@@ -344,8 +344,8 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 				if err := d.unmarshalTag(v.Index(i), listType, ""); err != nil {
 					// An error occurred during the decoding of one of the elements of the TAG_List, meaning it
 					// either had an invalid type or the NBT was invalid.
-					if _, ok := err.(InvalidTypeError); ok {
-						return InvalidTypeError{Off: d.r.off, FieldType: sliceType.Elem(), Field: fmt.Sprintf("%v[%v]", tagName, i), TagType: listType}
+					if e, ok := err.(InvalidTypeError); ok {
+						return InvalidTypeError{Off: d.r.off, FieldType: sliceType.Elem(), Field: fmt.Sprintf("%v[%v].%v", tagName, i, e.Field), TagType: listType}
 					}
 					return err
 				}
