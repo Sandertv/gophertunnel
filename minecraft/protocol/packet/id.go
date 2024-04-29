@@ -130,8 +130,8 @@ const (
 	_
 	_
 	IDClientCacheStatus
-	IDMapCreateLockedCopy
 	IDOnScreenTextureAnimation
+	IDMapCreateLockedCopy
 	IDStructureTemplateDataRequest
 	IDStructureTemplateDataResponse
 	_
