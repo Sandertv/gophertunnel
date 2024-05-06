@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
@@ -19,7 +19,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
 	"log"
-	rand2 "math/rand"
+	"math/rand"
 	"net"
 	"os"
 	"strconv"
@@ -147,7 +147,7 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 
 	var chainData string
 	if d.TokenSource != nil {
@@ -340,8 +340,6 @@ var skinGeometry []byte
 
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
-	rand2.Seed(time.Now().Unix())
-
 	d.ServerAddress = address
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
@@ -351,7 +349,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.GameVersion = protocol.CurrentVersion
 	}
 	if d.ClientRandomID == 0 {
-		d.ClientRandomID = rand2.Int63()
+		d.ClientRandomID = rand.Int63()
 	}
 	if d.DeviceID == "" {
 		d.DeviceID = uuid.New().String()
