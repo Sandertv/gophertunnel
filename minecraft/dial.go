@@ -9,10 +9,10 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
-	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -286,7 +286,7 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			if !raknet.ErrConnectionClosed(err) {
+			if !errors.Is(err, net.ErrClosed) {
 				logger.Printf("error reading from dialer connection: %v\n", err)
 			}
 			return
