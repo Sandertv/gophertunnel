@@ -116,7 +116,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		cfg.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
 	if cfg.StatusProvider == nil {
-		cfg.StatusProvider = NewStatusProvider("Minecraft Server")
+		cfg.StatusProvider = NewStatusProvider("Minecraft Server", "Gophertunnel")
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
@@ -186,9 +186,9 @@ func (listener *Listener) Close() error {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	s := listener.status()
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Gophertunnel;%v;%v;%v;%v;",
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%s;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
+		listener.listener.ID(), listener.status().ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
 
