@@ -241,6 +241,12 @@ type StartGame struct {
 	ChatRestrictionLevel uint8
 	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
 	DisablePlayerInteractions bool
+	// ServerID is always empty in vanilla and its usage is currently unknown.
+	ServerID string
+	// WorldID is always empty in vanilla and its usage is currently unknown.
+	WorldID string
+	// ScenarioID is always empty in vanilla and its usage is currently unknown.
+	ScenarioID string
 	// UseBlockNetworkIDHashes is true if the client should use the hash of a block's name as its network ID rather than
 	// its index in the expected block palette. This is useful for servers that wish to support multiple protocol versions
 	// and custom blocks, but it will result in extra bytes being written for every block in a sub chunk palette.
@@ -312,6 +318,9 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.ForceExperimentalGameplay, io.Bool)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)
+	io.String(&pk.ServerID)
+	io.String(&pk.WorldID)
+	io.String(&pk.ScenarioID)
 	io.String(&pk.LevelID)
 	io.String(&pk.WorldName)
 	io.String(&pk.TemplateContentIdentity)

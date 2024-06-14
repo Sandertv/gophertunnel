@@ -20,6 +20,8 @@ const (
 	UseItemRetrieved
 	UseItemDyed
 	UseItemTraded
+	UseItemBrushingCompleted
+	UseItemOpenedVault
 )
 
 // CompletedUsingItem is sent by the server to tell the client that it should be done using the item it is

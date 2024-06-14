@@ -209,4 +209,5 @@ const (
 	IDPlayerToggleCrafterSlotRequest
 	IDSetPlayerInventoryOptions
 	IDSetHud
+	IDAwardAchievement
 )
