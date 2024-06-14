@@ -533,7 +533,7 @@ const (
 	SoundEventApplyEffectBadOmen
 	SoundEventApplyEffectRaidOmen
 	SoundEventApplyEffectTrialOmen
-	OminousItemSpawnerAboutToSpawnItem
+	SoundEventOminousItemSpawnerAboutToSpawnItem
 	SoundEventRecordCreator
 	SoundEventRecordCreatorMusicBox
 	SoundEventRecordPrecipice
