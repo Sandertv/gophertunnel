@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
@@ -20,7 +21,7 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 	if err := header.Read(buf); err != nil {
 		// We don't return this as an error as it's not in the hand of the user to control this. Instead,
 		// we return to reading a new packet.
-		return nil, fmt.Errorf("error reading packet header: %v", err)
+		return nil, fmt.Errorf("read packet header: %w", err)
 	}
 	if conn.packetFunc != nil {
 		// The packet func was set, so we call it.
@@ -34,19 +35,19 @@ type unknownPacketError struct {
 }
 
 func (err unknownPacketError) Error() string {
-	return fmt.Sprintf("unexpected packet with ID %v", err.id)
+	return fmt.Sprintf("unexpected packet (ID=%v)", err.id)
 }
 
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
 func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 	defer func() {
 		if recoveredErr := recover(); recoveredErr != nil {
-			err = fmt.Errorf("packet %v: %w", p.h.PacketID, recoveredErr.(error))
+			err = fmt.Errorf("decode packet %v: %w", p.h.PacketID, recoveredErr.(error))
 		}
 		if err == nil {
 			return
 		}
-		if _, ok := err.(unknownPacketError); ok || conn.disconnectOnInvalidPacket {
+		if ok := errors.As(err, &unknownPacketError{}); ok || conn.disconnectOnInvalidPacket {
 			_ = conn.Close()
 		}
 	}()
@@ -67,7 +68,7 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 	r := conn.proto.NewReader(p.payload, conn.shieldID.Load(), conn.readerLimits)
 	pk.Marshal(r)
 	if p.payload.Len() != 0 {
-		err = fmt.Errorf("%T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())
+		err = fmt.Errorf("decode packet %T: %v unread bytes left: 0x%x", pk, p.payload.Len(), p.payload.Bytes())
 	}
 	if conn.disconnectOnInvalidPacket && err != nil {
 		return nil, err

@@ -70,7 +70,7 @@ func (encrypt *encrypt) verify(data []byte) error {
 
 	// Finally we check if the original sum was equal to the sum we just produced.
 	if !bytes.Equal(sum, ourSum) {
-		return fmt.Errorf("invalid checksum of packet %v (%x): %x should be %x", encrypt.sendCounter-1, data, sum, ourSum)
+		return fmt.Errorf("invalid checksum of packet %v: expected %x, got %x", encrypt.sendCounter-1, ourSum, sum)
 	}
 	return nil
 }

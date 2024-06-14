@@ -27,6 +27,8 @@ type ServerStatusProvider interface {
 type ServerStatus struct {
 	// ServerName is the name or MOTD of the server, as shown in the server list.
 	ServerName string
+	// ServerName is the sub-name or sub-MOTD of the server, as shown in the friend list.
+	ServerSubName string
 	// PlayerCount is the current amount of players displayed in the list.
 	PlayerCount int
 	// MaxPlayers is the maximum amount of players in the server. If set to 0, MaxPlayers is set to
@@ -39,19 +41,22 @@ type ServerStatus struct {
 type ListenerStatusProvider struct {
 	// name is the name of the server, or the MOTD, that is displayed in the server list.
 	name string
+	// subName is the sub-name of the server, or the MOTD, that is displayed in the friend list.
+	subName string
 }
 
 // NewStatusProvider creates a ListenerStatusProvider that displays the server name passed.
-func NewStatusProvider(serverName string) ListenerStatusProvider {
-	return ListenerStatusProvider{name: serverName}
+func NewStatusProvider(serverName, serverSubName string) ListenerStatusProvider {
+	return ListenerStatusProvider{name: serverName, subName: serverSubName}
 }
 
 // ServerStatus ...
 func (l ListenerStatusProvider) ServerStatus(playerCount, maxPlayers int) ServerStatus {
 	return ServerStatus{
-		ServerName:  l.name,
-		PlayerCount: playerCount,
-		MaxPlayers:  maxPlayers,
+		ServerName:    l.name,
+		ServerSubName: l.subName,
+		PlayerCount:   playerCount,
+		MaxPlayers:    maxPlayers,
 	}
 }
 
@@ -118,26 +123,22 @@ func (f *ForeignStatusProvider) update() {
 func parsePongData(pong []byte) ServerStatus {
 	frag := splitPong(string(pong))
 	if len(frag) < 7 {
-		return ServerStatus{
-			ServerName: "Invalid pong data",
-		}
+		return ServerStatus{ServerName: "Invalid pong data"}
 	}
 	serverName := frag[1]
+	serverSubName := frag[6]
 	online, err := strconv.Atoi(frag[4])
 	if err != nil {
-		return ServerStatus{
-			ServerName: "Invalid player count",
-		}
+		return ServerStatus{ServerName: "Invalid player count"}
 	}
 	max, err := strconv.Atoi(frag[5])
 	if err != nil {
-		return ServerStatus{
-			ServerName: "Invalid max player count",
-		}
+		return ServerStatus{ServerName: "Invalid max player count"}
 	}
 	return ServerStatus{
-		ServerName:  serverName,
-		PlayerCount: online,
-		MaxPlayers:  max,
+		ServerName:    serverName,
+		ServerSubName: serverSubName,
+		PlayerCount:   online,
+		MaxPlayers:    max,
 	}
 }
