@@ -10,7 +10,7 @@ func ExampleListen() {
 	// Create a minecraft.Listener with a specific name to be displayed as MOTD in the server list.
 	name := "MOTD of this server"
 	cfg := minecraft.ListenConfig{
-		StatusProvider: minecraft.NewStatusProvider(name),
+		StatusProvider: minecraft.NewStatusProvider(name, "Gophertunnel"),
 	}
 
 	// Listen on the address with port 19132.

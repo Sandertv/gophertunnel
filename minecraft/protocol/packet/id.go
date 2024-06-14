@@ -130,8 +130,8 @@ const (
 	_
 	_
 	IDClientCacheStatus
-	IDMapCreateLockedCopy
 	IDOnScreenTextureAnimation
+	IDMapCreateLockedCopy
 	IDStructureTemplateDataRequest
 	IDStructureTemplateDataResponse
 	_
@@ -209,4 +209,5 @@ const (
 	IDPlayerToggleCrafterSlotRequest
 	IDSetPlayerInventoryOptions
 	IDSetHud
+	IDAwardAchievement
 )

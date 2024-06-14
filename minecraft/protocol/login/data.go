@@ -294,34 +294,34 @@ func (data ClientData) Validate() error {
 		return fmt.Errorf("ServerAddress must be resolveable as a UDP address, but got %v", data.ServerAddress)
 	}
 	if err := base64DecLength(data.SkinData, data.SkinImageHeight*data.SkinImageWidth*4); err != nil {
-		return fmt.Errorf("SkinData is invalid: %v", err)
+		return fmt.Errorf("SkinData is invalid: %w", err)
 	}
 	if err := base64DecLength(data.CapeData, data.CapeImageHeight*data.CapeImageWidth*4); err != nil {
-		return fmt.Errorf("CapeData is invalid: %v", err)
+		return fmt.Errorf("CapeData is invalid: %w", err)
 	}
 	for _, anim := range data.AnimatedImageData {
 		if err := base64DecLength(anim.Image, anim.ImageHeight*anim.ImageWidth*4); err != nil {
-			return fmt.Errorf("invalid animated image data: %v", err)
+			return fmt.Errorf("invalid animated image data: %w", err)
 		}
 		if anim.Type < 0 || anim.Type > 3 {
 			return fmt.Errorf("invalid animation type: %v", anim.Type)
 		}
 	}
 	if geomData, err := base64.StdEncoding.DecodeString(data.SkinGeometry); err != nil {
-		return fmt.Errorf("SkinGeometry was not a valid base64 string: %v", err)
+		return fmt.Errorf("SkinGeometry was not a valid base64 string: %w", err)
 	} else if len(geomData) != 0 {
 		m := make(map[string]any)
 		if err := json.Unmarshal(geomData, &m); err != nil {
-			return fmt.Errorf("SkinGeometry base64 decoded was not a valid JSON string: %v", err)
+			return fmt.Errorf("SkinGeometry base64 decoded was not a valid JSON string: %w", err)
 		}
 	}
 	b, err := base64.StdEncoding.DecodeString(data.SkinResourcePatch)
 	if err != nil {
-		return fmt.Errorf("SkinResourcePatch was not a valid base64 string: %v", err)
+		return fmt.Errorf("SkinResourcePatch was not a valid base64 string: %w", err)
 	}
 	m := make(map[string]any)
 	if err := json.Unmarshal(b, &m); err != nil {
-		return fmt.Errorf("SkinResourcePatch base64 decoded was not a valid JSON string: %v", err)
+		return fmt.Errorf("SkinResourcePatch base64 decoded was not a valid JSON string: %w", err)
 	}
 	if data.SkinID == "" {
 		return fmt.Errorf("SkinID must not be an empty string")
@@ -337,7 +337,7 @@ func (data ClientData) Validate() error {
 func base64DecLength(base64Data string, validLengths ...int) error {
 	data, err := base64.StdEncoding.DecodeString(base64Data)
 	if err != nil {
-		return fmt.Errorf("error decoding base64 data: %v", err)
+		return fmt.Errorf("decode base64 data: %w", err)
 	}
 	actualLength := len(data)
 	for _, length := range validLengths {
@@ -345,5 +345,5 @@ func base64DecLength(base64Data string, validLengths ...int) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("invalid size: got %v, but expected one of %v", actualLength, validLengths)
+	return fmt.Errorf("invalid size: got %v, expected one of %v", actualLength, validLengths)
 }

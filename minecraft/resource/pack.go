@@ -51,11 +51,11 @@ func ReadPath(path string) (*Pack, error) {
 func ReadURL(url string) (*Pack, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return nil, fmt.Errorf("error downloading resource pack: %v", err)
+		return nil, fmt.Errorf("download resource pack: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("error downloading resource pack: %v (%d)", resp.Status, resp.StatusCode)
+		return nil, fmt.Errorf("download resource pack: %v (%d)", resp.Status, resp.StatusCode)
 	}
 	pack, err := Read(resp.Body)
 	if err != nil {
@@ -97,15 +97,15 @@ func MustReadURL(url string) *Pack {
 func Read(r io.Reader) (*Pack, error) {
 	temp, err := createTempFile()
 	if err != nil {
-		return nil, fmt.Errorf("error creating temp zip archive: %v", err)
+		return nil, fmt.Errorf("create temp zip archive: %w", err)
 	}
 	_, _ = io.Copy(temp, r)
 	if err := temp.Close(); err != nil {
-		return nil, fmt.Errorf("error closing temp zip archive: %v", err)
+		return nil, fmt.Errorf("close temp zip archive: %w", err)
 	}
 	pack, parseErr := ReadPath(temp.Name())
 	if err := os.Remove(temp.Name()); err != nil {
-		return nil, fmt.Errorf("error removing temp zip archive: %v", err)
+		return nil, fmt.Errorf("remove temp zip archive: %w", err)
 	}
 	return pack, parseErr
 }
@@ -252,7 +252,7 @@ func (pack *Pack) String() string {
 func compile(path string) (*Pack, error) {
 	info, err := os.Stat(path)
 	if err != nil {
-		return nil, fmt.Errorf("error opening resource pack path: %v", err)
+		return nil, fmt.Errorf("open resource pack path: %w", err)
 	}
 	if info.IsDir() {
 		temp, err := createTempArchive(path)
@@ -272,14 +272,14 @@ func compile(path string) (*Pack, error) {
 	// First we read the manifest to ensure that it exists and is valid.
 	manifest, err := readManifest(path)
 	if err != nil {
-		return nil, fmt.Errorf("error reading manifest: %v", err)
+		return nil, fmt.Errorf("read manifest: %w", err)
 	}
 
 	// Then we read the entire content of the zip archive into a byte slice and compute the SHA256 checksum
 	// and a reader.
 	content, err := os.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("error reading resource pack file content: %v", err)
+		return nil, fmt.Errorf("read resource pack file content: %w", err)
 	}
 	checksum := sha256.Sum256(content)
 	contentReader := bytes.NewReader(content)
@@ -301,7 +301,7 @@ func createTempArchive(path string) (*os.File, error) {
 		}
 		relPath, err := filepath.Rel(path, filePath)
 		if err != nil {
-			return fmt.Errorf("error finding relative path: %v", err)
+			return fmt.Errorf("find relative path: %w", err)
 		}
 		// Make sure to replace backslashes with forward slashes as Go zip only allows that.
 		relPath = strings.Replace(relPath, `\`, "/", -1)
@@ -311,7 +311,7 @@ func createTempArchive(path string) (*os.File, error) {
 		}
 		s, err := os.Stat(filePath)
 		if err != nil {
-			return fmt.Errorf("error getting stat of file path %v: %w", filePath, err)
+			return fmt.Errorf("read stat of file path %v: %w", filePath, err)
 		}
 		if s.IsDir() {
 			// This is a directory: Go zip requires you add forward slashes at the end to create directories.
@@ -320,21 +320,21 @@ func createTempArchive(path string) (*os.File, error) {
 		}
 		f, err := writer.Create(relPath)
 		if err != nil {
-			return fmt.Errorf("error creating new zip file: %v", err)
+			return fmt.Errorf("create new zip file: %w", err)
 		}
 		file, err := os.Open(filePath)
 		if err != nil {
-			return fmt.Errorf("error opening resource pack file %v: %v", filePath, err)
+			return fmt.Errorf("open resource pack file %v: %w", filePath, err)
 		}
 		data, _ := io.ReadAll(file)
 		// Write the original content into the 'zip file' so that we write compressed data to the file.
 		if _, err := f.Write(data); err != nil {
-			return fmt.Errorf("error writing file data to zip: %v", err)
+			return fmt.Errorf("write file data to zip: %w", err)
 		}
 		_ = file.Close()
 		return nil
 	}); err != nil {
-		return nil, fmt.Errorf("error building zip archive: %v", err)
+		return nil, fmt.Errorf("build zip archive: %w", err)
 	}
 	_ = writer.Close()
 	return temp, nil
@@ -354,7 +354,7 @@ func createTempFile() (*os.File, error) {
 
 	temp, err := os.CreateTemp(dir, "temp_resource_pack-*.mcpack")
 	if err != nil {
-		return nil, fmt.Errorf("error creating temp resource pack file: %v", err)
+		return nil, fmt.Errorf("create temp resource pack file: %w", err)
 	}
 	return temp, nil
 }
@@ -374,11 +374,11 @@ func (reader packReader) find(fileName string) (io.ReadCloser, error) {
 		}
 		fileReader, err := file.Open()
 		if err != nil {
-			return nil, fmt.Errorf("error opening zip file %v: %v", file.Name, err)
+			return nil, fmt.Errorf("open zip file %v: %w", file.Name, err)
 		}
 		return fileReader, nil
 	}
-	return nil, fmt.Errorf("could not find '%v' in zip", fileName)
+	return nil, fmt.Errorf("'%v' not found in zip", fileName)
 }
 
 // readManifest reads the manifest from the resource pack located at the path passed. If not found in the root
@@ -386,7 +386,7 @@ func (reader packReader) find(fileName string) (io.ReadCloser, error) {
 func readManifest(path string) (*Manifest, error) {
 	r, err := zip.OpenReader(path)
 	if err != nil {
-		return nil, fmt.Errorf("error opening zip reader: %v", err)
+		return nil, fmt.Errorf("open zip reader: %w", err)
 	}
 	reader := packReader{ReadCloser: r}
 	defer func() {
@@ -396,7 +396,7 @@ func readManifest(path string) (*Manifest, error) {
 	// Try to find the manifest file in the zip.
 	manifestFile, err := reader.find("manifest.json")
 	if err != nil {
-		return nil, fmt.Errorf("error loading manifest: %v", err)
+		return nil, fmt.Errorf("load manifest: %w", err)
 	}
 	defer func() {
 		_ = manifestFile.Close()
@@ -405,11 +405,11 @@ func readManifest(path string) (*Manifest, error) {
 	// Read all data from the manifest file so that we can decode it into a Manifest struct.
 	allData, err := io.ReadAll(manifestFile)
 	if err != nil {
-		return nil, fmt.Errorf("error reading from manifest file: %v", err)
+		return nil, fmt.Errorf("read manifest file: %w", err)
 	}
 	manifest := &Manifest{}
 	if err := jsonc.Unmarshal(allData, manifest); err != nil {
-		return nil, fmt.Errorf("error decoding manifest JSON: %v (data: %v)", err, string(allData))
+		return nil, fmt.Errorf("decode manifest JSON: %w (data: %v)", err, string(allData))
 	}
 	manifest.Header.UUID = strings.ToLower(manifest.Header.UUID)
 
