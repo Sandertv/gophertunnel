@@ -118,22 +118,16 @@ func (f *ForeignStatusProvider) update() {
 func parsePongData(pong []byte) ServerStatus {
 	frag := splitPong(string(pong))
 	if len(frag) < 7 {
-		return ServerStatus{
-			ServerName: "Invalid pong data",
-		}
+		return ServerStatus{ServerName: "Invalid pong data"}
 	}
 	serverName := frag[1]
 	online, err := strconv.Atoi(frag[4])
 	if err != nil {
-		return ServerStatus{
-			ServerName: "Invalid player count",
-		}
+		return ServerStatus{ServerName: "Invalid player count"}
 	}
 	max, err := strconv.Atoi(frag[5])
 	if err != nil {
-		return ServerStatus{
-			ServerName: "Invalid max player count",
-		}
+		return ServerStatus{ServerName: "Invalid max player count"}
 	}
 	return ServerStatus{
 		ServerName:  serverName,

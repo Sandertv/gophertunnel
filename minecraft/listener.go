@@ -104,7 +104,7 @@ type Listener struct {
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
 	n, ok := networkByID(network)
 	if !ok {
-		return nil, fmt.Errorf("listen: no network under id: %v", network)
+		return nil, fmt.Errorf("listen: no network under id %v", network)
 	}
 
 	netListener, err := n.Listen(address)
@@ -276,14 +276,14 @@ func (listener *Listener) handleConn(conn *Conn) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !errors.Is(err, net.ErrClosed) {
-				listener.cfg.ErrorLog.Printf("error reading from listener connection: %v\n", err)
+				conn.log.Printf("listener conn: %v\n", err)
 			}
 			return
 		}
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				listener.cfg.ErrorLog.Printf("error: %v", err)
+				conn.log.Printf("listener conn: %v", err)
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {

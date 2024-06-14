@@ -144,7 +144,7 @@ func (pk *response) Unmarshal(r io.Reader) error {
 		}
 		num, err := strconv.ParseInt(string(numBytes), 10, 32)
 		if err != nil {
-			return fmt.Errorf("invalid response number in handshake query response: %v", err)
+			return fmt.Errorf("invalid response number in handshake query response: %w", err)
 		}
 		pk.ResponseNumber = int32(num)
 	case queryTypeInformation:

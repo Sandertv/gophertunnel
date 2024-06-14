@@ -169,7 +169,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 	n, ok := networkByID(network)
 	if !ok {
-		return nil, fmt.Errorf("listen: no network under id: %v", network)
+		return nil, fmt.Errorf("dial: no network under id %v", network)
 	}
 
 	var pong []byte
@@ -287,14 +287,14 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !errors.Is(err, net.ErrClosed) {
-				logger.Printf("error reading from dialer connection: %v\n", err)
+				logger.Printf("dialer conn: %v\n", err)
 			}
 			return
 		}
 		for _, data := range packets {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
-				logger.Printf("error: %v", err)
+				logger.Printf("dialer conn: %v", err)
 				return
 			}
 			if !readyToLoginBefore && conn.readyToLogin {
@@ -317,17 +317,17 @@ func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKe
 	// Obtain the Live token, and using that the XSTS token.
 	liveToken, err := src.Token()
 	if err != nil {
-		return "", fmt.Errorf("error obtaining Live Connect token: %v", err)
+		return "", fmt.Errorf("request Live Connect token: %w", err)
 	}
 	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
-		return "", fmt.Errorf("error obtaining XBOX Live token: %v", err)
+		return "", fmt.Errorf("request XBOX Live token: %w", err)
 	}
 
 	// Obtain the raw chain data using the
 	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
 	if err != nil {
-		return "", fmt.Errorf("error obtaining Minecraft auth chain: %v", err)
+		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
 	}
 	return chain, nil
 }

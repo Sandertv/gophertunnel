@@ -36,7 +36,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 	c := &http.Client{}
 	resp, err := c.Do(request)
 	if err != nil {
-		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, err)
+		return "", fmt.Errorf("POST %v: %w", minecraftAuthURL, err)
 	}
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, resp.Status)

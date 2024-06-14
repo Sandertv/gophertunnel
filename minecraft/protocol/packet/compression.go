@@ -96,7 +96,7 @@ func (flateCompression) Decompress(compressed []byte) ([]byte, error) {
 	// Guess an uncompressed size of 2*len(compressed).
 	decompressed := bytes.NewBuffer(make([]byte, 0, len(compressed)*2))
 	if _, err := io.Copy(decompressed, c); err != nil {
-		return nil, fmt.Errorf("decompress flate: %v", err)
+		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
 	return decompressed.Bytes(), nil
 }

@@ -87,7 +87,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 
 	resp, err := c.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", err)
+		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()
@@ -132,7 +132,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 
 	resp, err := c.Do(request)
 	if err != nil {
-		return nil, fmt.Errorf("POST %v: %v", "https://device.auth.xboxlive.com/device/authenticate", err)
+		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
 	defer func() {
 		_ = resp.Body.Close()

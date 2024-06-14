@@ -16,7 +16,7 @@ import (
 func Do(address string) (information map[string]string, err error) {
 	conn, err := net.Dial("udp", address)
 	if err != nil {
-		return nil, fmt.Errorf("error dialing UDP conn: %v", err)
+		return nil, fmt.Errorf("dial udp: %w", err)
 	}
 	// We set a deadline of five seconds: There is no point waiting even longer if the query isn't finished
 	// by then.
