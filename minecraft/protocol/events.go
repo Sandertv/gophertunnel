@@ -33,7 +33,6 @@ const (
 	EventTypeStriderRiddenInLavaInOverworld
 	EventTypeSneakCloseToSculkSensor
 	EventTypeCarefulRestoration
-	EventTypeItemUsed
 )
 
 // lookupEvent looks up an Event matching the event type passed. False is
@@ -88,8 +87,6 @@ func lookupEvent(eventType int32, x *Event) bool {
 		*x = &WaxedOrUnwaxedCopperEvent{}
 	case EventTypeSneakCloseToSculkSensor:
 		*x = &SneakCloseToSculkSensorEvent{}
-	case EventTypeItemUsed:
-		*x = &ItemUsedEvent{}
 	default:
 		return false
 	}
@@ -147,8 +144,6 @@ func lookupEventType(x Event, eventType *int32) bool {
 		*eventType = EventTypePlayerWaxedOrUnwaxedCopper
 	case *SneakCloseToSculkSensorEvent:
 		*eventType = EventTypeSneakCloseToSculkSensor
-	case *ItemUsedEvent:
-		*eventType = EventTypeItemUsed
 	default:
 		return false
 	}
@@ -572,18 +567,3 @@ type SneakCloseToSculkSensorEvent struct{}
 
 // Marshal ...
 func (u *SneakCloseToSculkSensorEvent) Marshal(r IO) {}
-
-type ItemUsedEvent struct {
-	ItemID    int16
-	ItemAux   int32
-	UseMethod int32
-	UseCount  int32
-}
-
-// Marshal ...
-func (i *ItemUsedEvent) Marshal(r IO) {
-	r.Int16(&i.ItemID)
-	r.Varint32(&i.ItemAux)
-	r.Varint32(&i.UseMethod)
-	r.Varint32(&i.UseCount)
-}

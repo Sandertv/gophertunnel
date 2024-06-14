@@ -149,7 +149,7 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 	}
 	var rawLength int32
 	if err := binary.Read(buf, binary.LittleEndian, &rawLength); err != nil {
-		return nil, fmt.Errorf("read raw token length: %w", err)
+		return nil, fmt.Errorf("error reading raw token length: %v", err)
 	}
 	return &request{Chain: chain, RawToken: string(buf.Next(int(rawLength)))}, nil
 }
@@ -269,17 +269,17 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 func decodeChain(buf *bytes.Buffer) (chain, error) {
 	var chainLength int32
 	if err := binary.Read(buf, binary.LittleEndian, &chainLength); err != nil {
-		return nil, fmt.Errorf("read chain length: %w", err)
+		return nil, fmt.Errorf("error reading chain length: %v", err)
 	}
 	chainData := buf.Next(int(chainLength))
 
 	request := &request{}
 	if err := json.Unmarshal(chainData, request); err != nil {
-		return nil, fmt.Errorf("decode chain JSON: %w", err)
+		return nil, fmt.Errorf("error decoding request chain JSON: %v", err)
 	}
 	// First check if the chain actually has any elements in it.
 	if len(request.Chain) == 0 {
-		return nil, fmt.Errorf("decode chain: no elements")
+		return nil, fmt.Errorf("connection request had no claims in the chain")
 	}
 	return request.Chain, nil
 }
@@ -318,15 +318,15 @@ type identityPublicKeyClaims struct {
 func ParsePublicKey(b64Data string, key *ecdsa.PublicKey) error {
 	data, err := base64.StdEncoding.DecodeString(b64Data)
 	if err != nil {
-		return fmt.Errorf("decode public key data: %w", err)
+		return fmt.Errorf("error base64 decoding public key data: %v", err)
 	}
 	publicKey, err := x509.ParsePKIXPublicKey(data)
 	if err != nil {
-		return fmt.Errorf("parse public key: %w", err)
+		return fmt.Errorf("error parsing public key: %v", err)
 	}
 	ecdsaKey, ok := publicKey.(*ecdsa.PublicKey)
 	if !ok {
-		return fmt.Errorf("expected ECDSA public key, got %v", key)
+		return fmt.Errorf("expected ECDSA public key, but got %v", key)
 	}
 	*key = *ecdsaKey
 	return nil

@@ -493,50 +493,6 @@ const (
 	SoundEventCrafterDisableSlot
 	SoundEventCopperBulbTurnOn
 	SoundEventCopperBulbTurnOff
-	SoundEventAmbientInAir
-	SoundEventBreezeWindChargeBurst
-	SoundEventImitateBreeze
-	SoundEventArmadilloBrush
-	SoundEventArmadilloScuteDrop
-	SoundEventEquipWolf
-	SoundEventUnequipWolf
-	SoundEventReflect
-	SoundEventVaultOpenShutter
-	SoundEventVaultCloseShutter
-	SoundEventVaultEjectItem
-	SoundEventVaultInsertItem
-	SoundEventVaultInsertItemFail
-	SoundEventVaultAmbient
-	SoundEventVaultActivate
-	SoundEventVaultDeactive
-	SoundEventHurtReduced
-	SoundEventWindChargeBurst
-	SoundEventImitateBogged
-	SoundEventWolfArmourCrack
-	SoundEventWolfArmourBreak
-	SoundEventWolfArmourRepair
-	SoundEventMaceSmashAir
-	SoundEventMaceSmashGround
-	SoundEventTrialSpawnerChargeActivate
-	SoundEventTrialSpawnerAmbientOminous
-	SoundEventOminiousItemSpawnerSpawnItem
-	SoundEventOminousBottleEndUse
-	SoundEventMaceHeavySmashGround
-	SoundEventOminousItemSpawnerSpawnItemBegin
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	SoundEventApplyEffectBadOmen
-	SoundEventApplyEffectRaidOmen
-	SoundEventApplyEffectTrialOmen
-	SoundEventOminousItemSpawnerAboutToSpawnItem
-	SoundEventRecordCreator
-	SoundEventRecordCreatorMusicBox
-	SoundEventRecordPrecipice
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,

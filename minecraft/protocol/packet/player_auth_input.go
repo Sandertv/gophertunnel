@@ -54,7 +54,6 @@ const (
 	InputFlagClientPredictedVehicle
 	InputFlagPaddlingLeft
 	InputFlagPaddlingRight
-	InputFlagBlockBreakingDelayEnabled
 )
 
 const (

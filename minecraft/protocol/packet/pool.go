@@ -250,7 +250,6 @@ func init() {
 		IDPlayerToggleCrafterSlotRequest: func() Packet { return &PlayerToggleCrafterSlotRequest{} },
 		IDSetPlayerInventoryOptions:      func() Packet { return &SetPlayerInventoryOptions{} },
 		IDSetHud:                         func() Packet { return &SetHud{} },
-		IDAwardAchievement:               func() Packet { return &AwardAchievement{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

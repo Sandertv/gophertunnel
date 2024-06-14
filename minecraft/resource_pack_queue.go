@@ -46,7 +46,7 @@ func (queue *resourcePackQueue) Request(packs []string) error {
 			}
 		}
 		if !found {
-			return fmt.Errorf("resource pack (UUID=%v) not found", packUUID)
+			return fmt.Errorf("could not find resource pack %v", packUUID)
 		}
 	}
 	return nil
