@@ -17,6 +17,8 @@ import (
 // WriterTokenSource. TokenSource automatically refreshes tokens.
 var TokenSource oauth2.TokenSource = &tokenSource{w: os.Stdout}
 
+var AppID = "0000000048183522"
+
 // WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
 // code are printed. WriterTokenSource automatically refreshes tokens.
@@ -100,7 +102,7 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 // enter.
 func StartDeviceAuth() (*deviceAuthConnect, error) {
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
-		"client_id":     {"0000000048183522"},
+		"client_id":     {AppID},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
 		"response_type": {"device_code"},
 	})
@@ -121,7 +123,7 @@ func StartDeviceAuth() (*deviceAuthConnect, error) {
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
 func PollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
-		"client_id":   {"0000000048183522"},
+		"client_id":   {AppID},
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
 		"device_code": {deviceCode},
 	})
@@ -152,7 +154,7 @@ func refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
 	// This function unfortunately needs to exist because golang.org/x/oauth2 does not pass the scope to this
 	// request, which Microsoft Connect enforces.
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
-		"client_id":     {"0000000048183522"},
+		"client_id":     {AppID},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
 		"grant_type":    {"refresh_token"},
 		"refresh_token": {t.RefreshToken},
