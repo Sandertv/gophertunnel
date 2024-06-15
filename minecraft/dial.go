@@ -357,6 +357,9 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
 	}
+	if d.PlayFabID == "" {
+		d.PlayFabID = uuid.New().String()
+	}
 	if d.AnimatedImageData == nil {
 		d.AnimatedImageData = make([]login.SkinAnimation, 0)
 	}
