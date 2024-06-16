@@ -114,7 +114,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 		"Properties": map[string]any{
 			"AuthMethod": "ProofOfPossession",
 			"Id":         "{" + uuid.New().String() + "}",
-			"DeviceType": "Android",
+			"DeviceType": DeviceType,
 			"Version":    "10",
 			"ProofKey": map[string]any{
 				"crv": "P-256",

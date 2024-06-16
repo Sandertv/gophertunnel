@@ -18,6 +18,7 @@ import (
 var TokenSource oauth2.TokenSource = &tokenSource{w: os.Stdout}
 
 var AppID = "0000000048183522"
+var DeviceType = "Android"
 
 // WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
