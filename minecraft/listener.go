@@ -4,6 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"errors"
 	"fmt"
 	"log"
 	"net"
@@ -111,7 +112,7 @@ type Listener struct {
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
 	n, ok := networkByID(network)
 	if !ok {
-		return nil, fmt.Errorf("listen: no network under id: %v", network)
+		return nil, fmt.Errorf("listen: no network under id %v", network)
 	}
 
 	netListener, err := n.Listen(address)
@@ -123,7 +124,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		cfg.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
 	}
 	if cfg.StatusProvider == nil {
-		cfg.StatusProvider = NewStatusProvider("Minecraft Server")
+		cfg.StatusProvider = NewStatusProvider("Minecraft Server", "Gophertunnel")
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
@@ -221,9 +222,9 @@ func (listener *Listener) QueryPlayers(players []string) {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	s := listener.status()
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;Gophertunnel;%v;%v;%v;%v;",
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%s;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
+		listener.listener.ID(), listener.status().ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 	)))
 }
 
@@ -321,8 +322,8 @@ func (listener *Listener) handleConn(conn *Conn) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			if !raknet.ErrConnectionClosed(err) {
-				listener.cfg.ErrorLog.Printf("error reading from listener connection: %v\n", err)
+			if !errors.Is(err, net.ErrClosed) {
+				conn.log.Printf("listener conn: %v\n", err)
 			}
 			return
 		}
@@ -352,7 +353,7 @@ func (listener *Listener) handleConn(conn *Conn) {
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				listener.cfg.ErrorLog.Printf("error: %v", err)
+				conn.log.Printf("listener conn: %v", err)
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {

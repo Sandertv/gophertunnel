@@ -76,8 +76,9 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 				return
 			}
 			if err := serverConn.WritePacket(pk); err != nil {
-				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
-					_ = listener.Disconnect(conn, disconnect.Error())
+				var disc minecraft.DisconnectError
+				if ok := errors.As(err, &disc); ok {
+					_ = listener.Disconnect(conn, disc.Error())
 				}
 				return
 			}
@@ -89,8 +90,9 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 		for {
 			pk, err := serverConn.ReadPacket()
 			if err != nil {
-				if disconnect, ok := errors.Unwrap(err).(minecraft.DisconnectError); ok {
-					_ = listener.Disconnect(conn, disconnect.Error())
+				var disc minecraft.DisconnectError
+				if ok := errors.As(err, &disc); ok {
+					_ = listener.Disconnect(conn, disc.Error())
 				}
 				return
 			}
@@ -113,30 +115,30 @@ func readConfig() config {
 	if _, err := os.Stat("config.toml"); os.IsNotExist(err) {
 		f, err := os.Create("config.toml")
 		if err != nil {
-			log.Fatalf("error creating config: %v", err)
+			log.Fatalf("create config: %v", err)
 		}
 		data, err := toml.Marshal(c)
 		if err != nil {
-			log.Fatalf("error encoding default config: %v", err)
+			log.Fatalf("encode default config: %v", err)
 		}
 		if _, err := f.Write(data); err != nil {
-			log.Fatalf("error writing encoded default config: %v", err)
+			log.Fatalf("write default config: %v", err)
 		}
 		_ = f.Close()
 	}
 	data, err := os.ReadFile("config.toml")
 	if err != nil {
-		log.Fatalf("error reading config: %v", err)
+		log.Fatalf("read config: %v", err)
 	}
 	if err := toml.Unmarshal(data, &c); err != nil {
-		log.Fatalf("error decoding config: %v", err)
+		log.Fatalf("decode config: %v", err)
 	}
 	if c.Connection.LocalAddress == "" {
 		c.Connection.LocalAddress = "0.0.0.0:19132"
 	}
 	data, _ = toml.Marshal(c)
 	if err := os.WriteFile("config.toml", data, 0644); err != nil {
-		log.Fatalf("error writing config file: %v", err)
+		log.Fatalf("write config: %v", err)
 	}
 	return c
 }

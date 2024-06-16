@@ -19,7 +19,7 @@ import (
 func Dump(data []byte, encoding Encoding) (string, error) {
 	var m map[string]any
 	if err := UnmarshalEncoding(data, &m, encoding); err != nil {
-		return "", fmt.Errorf("error decoding NBT: %v", err)
+		return "", fmt.Errorf("decode NBT: %w", err)
 	}
 	s := &dumpState{}
 	return s.encodeTagType(m) + "(" + s.encodeTagValue(m) + ")", nil

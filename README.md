@@ -6,7 +6,9 @@
 ![telescope gopher](https://raw.githubusercontent.com/Sandertv/gophertunnel/master/gophertunnel_telescope_coloured.png)
 
 ## Overview
-gophertunnel is composed of several packages that may be of use for creating Minecraft related tools. Gophertunnel requires at least Go 1.19. 
+
+gophertunnel is composed of several packages that may be of use for creating Minecraft related tools.
+As of version v1.38.0, Gophertunnel requires at least Go 1.22.
 A brief overview of all packages may be found [here](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel?tab=packages).
 
 ## Examples

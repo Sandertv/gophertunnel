@@ -5,22 +5,23 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"crypto/rand"
+	cryptorand "crypto/rand"
 	_ "embed"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
-	rand2 "math/rand"
 	"net"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 
+	"math/rand"
+
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
-	"github.com/sandertv/go-raknet"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -153,7 +154,7 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 
 	var chainData string
 	if d.TokenSource != nil {
@@ -175,7 +176,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 	n, ok := networkByID(network)
 	if !ok {
-		return nil, fmt.Errorf("listen: no network under id: %v", network)
+		return nil, fmt.Errorf("dial: no network under id %v", network)
 	}
 
 	var pong []byte
@@ -325,8 +326,8 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			if !raknet.ErrConnectionClosed(err) {
-				logger.Printf("error reading from dialer connection: %v\n", err)
+			if !errors.Is(err, net.ErrClosed) {
+				logger.Printf("dialer conn: %v\n", err)
 			}
 			return
 		}
@@ -352,11 +353,11 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 
 			continue
 		}
-		
+
 		for _, data := range packets {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
-				logger.Printf("error: %v", err)
+				logger.Printf("dialer conn: %v", err)
 				return
 			}
 			if !readyToLoginBefore && conn.readyToLogin {
@@ -379,17 +380,17 @@ func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKe
 	// Obtain the Live token, and using that the XSTS token.
 	liveToken, err := src.Token()
 	if err != nil {
-		return "", fmt.Errorf("error obtaining Live Connect token: %v", err)
+		return "", fmt.Errorf("request Live Connect token: %w", err)
 	}
 	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
-		return "", fmt.Errorf("error obtaining XBOX Live token: %v", err)
+		return "", fmt.Errorf("request XBOX Live token: %w", err)
 	}
 
 	// Obtain the raw chain data using the
 	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
 	if err != nil {
-		return "", fmt.Errorf("error obtaining Minecraft auth chain: %v", err)
+		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
 	}
 	return chain, nil
 }
@@ -402,8 +403,6 @@ var skinGeometry []byte
 
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
-	rand2.Seed(time.Now().Unix())
-
 	d.ServerAddress = address
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
@@ -413,13 +412,16 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.GameVersion = protocol.CurrentVersion
 	}
 	if d.ClientRandomID == 0 {
-		d.ClientRandomID = rand2.Int63()
+		d.ClientRandomID = rand.Int63()
 	}
 	if d.DeviceID == "" {
 		d.DeviceID = uuid.New().String()
 	}
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
+	}
+	if d.PlayFabID == "" {
+		d.PlayFabID = uuid.New().String()
 	}
 	if d.AnimatedImageData == nil {
 		d.AnimatedImageData = make([]login.SkinAnimation, 0)

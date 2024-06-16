@@ -57,6 +57,30 @@ func (x *PotionRecipe) Marshal(r IO) {
 }
 
 const (
+	RecipeUnlockContextNone = iota
+	RecipeUnlockContextAlwaysUnlocked
+	RecipeUnlockContextPlayerInWater
+	RecipeUnlockContextPlayerHasManyItems
+)
+
+// RecipeUnlockRequirement represents a requirement that must be met in order to unlock a recipe. This is used
+// for both shaped and shapeless recipes.
+type RecipeUnlockRequirement struct {
+	// Context is the context in which the recipe is unlocked. This is one of the constants above.
+	Context byte
+	// Ingredients are the ingredients required to unlock the recipe and only used if Context is set to none.
+	Ingredients []ItemDescriptorCount
+}
+
+// Marshal ...
+func (x *RecipeUnlockRequirement) Marshal(r IO) {
+	r.Uint8(&x.Context)
+	if x.Context == RecipeUnlockContextNone {
+		FuncSlice(r, &x.Ingredients, r.ItemDescriptorCount)
+	}
+}
+
+const (
 	RecipeShapeless int32 = iota
 	RecipeShaped
 	RecipeFurnace
@@ -164,6 +188,8 @@ type ShapelessRecipe struct {
 	Block string
 	// Priority ...
 	Priority int32
+	// UnlockRequirement is a requirement that must be met in order to unlock the recipe.
+	UnlockRequirement RecipeUnlockRequirement
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
@@ -208,6 +234,8 @@ type ShapedRecipe struct {
 	// AssumeSymmetry specifies if the recipe is symmetrical. If this is set to true, the recipe will be
 	// mirrored along the diagonal axis. This means that the recipe will be the same if rotated 180 degrees.
 	AssumeSymmetry bool
+	// UnlockRequirement is a requirement that must be met in order to unlock the recipe.
+	UnlockRequirement RecipeUnlockRequirement
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
@@ -440,6 +468,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
 	r.Bool(&recipe.AssumeSymmetry)
+	Single(r, &recipe.UnlockRequirement)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
@@ -451,5 +480,6 @@ func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
+	Single(r, &recipe.UnlockRequirement)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
