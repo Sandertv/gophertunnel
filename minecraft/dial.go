@@ -359,7 +359,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.LanguageCode = "en_GB"
 	}
 	if d.PlayFabID == "" {
-		id := make([]byte, 16)
+		id := make([]byte, 8)
 		_, _ = cryptorand.Read(id)
 		d.PlayFabID = hex.EncodeToString(id)
 	}
