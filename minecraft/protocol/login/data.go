@@ -2,6 +2,7 @@ package login
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/google/uuid"
@@ -143,9 +144,11 @@ type ClientData struct {
 	// SkinID is a unique ID produced for the skin, for example 'c18e65aa-7b21-4637-9b63-8ad63622ef01_Alex'
 	// for the default Alex skin.
 	SkinID string `json:"SkinId"`
-	// PlayFabID is the PlayFab ID produced for the player's skin. PlayFab is the company that hosts the
-	// Marketplace, skins and other related features from the game. This ID is the ID of the skin used to
-	// store the skin inside of PlayFab.
+	// PlayFabID is the PlayFab ID produced for the player's skin. PlayFab is
+	// the company that hosts the Marketplace, skins and other related features
+	// from the game. This ID is the ID of the skin used to store the skin
+	// inside of PlayFab. PlayFabID is a hex encoded string, usually consisting
+	// of 16 characters.
 	PlayFabID string `json:"PlayFabId"`
 	// SkinImageHeight and SkinImageWidth are the dimensions of the skin's image data.
 	SkinImageHeight, SkinImageWidth int
@@ -298,6 +301,9 @@ func (data ClientData) Validate() error {
 	}
 	if err := base64DecLength(data.CapeData, data.CapeImageHeight*data.CapeImageWidth*4); err != nil {
 		return fmt.Errorf("CapeData is invalid: %w", err)
+	}
+	if _, err := hex.DecodeString(data.PlayFabID); err != nil {
+		return fmt.Errorf("PlayFabID must be hex string, but got %v", data.PlayFabID)
 	}
 	for _, anim := range data.AnimatedImageData {
 		if err := base64DecLength(anim.Image, anim.ImageHeight*anim.ImageWidth*4); err != nil {
