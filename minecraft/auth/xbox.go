@@ -132,6 +132,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 		},
 	})
 	request, _ := http.NewRequestWithContext(ctx, "POST", "https://device.auth.xboxlive.com/device/authenticate", bytes.NewReader(data))
+	request.Header.Set("Cache-Control", "no-store, must-revalidate, no-cache")
 	request.Header.Set("x-xbl-contract-version", "1")
 	sign(request, data, key)
 
