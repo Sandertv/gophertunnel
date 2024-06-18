@@ -216,6 +216,11 @@ func (conn *Conn) GameData() GameData {
 	return conn.gameData
 }
 
+// Protocol returns the protocol that the connection is currently using
+func (conn *Conn) Protocol() Protocol {
+	return conn.proto
+}
+
 // StartGame starts the game for a client that connected to the server. StartGame should be called for a Conn
 // obtained using a minecraft.Listener. The game data passed will be used to spawn the player in the world of
 // the server. To spawn a Conn obtained from a call to minecraft.Dial(), use Conn.DoSpawn().
