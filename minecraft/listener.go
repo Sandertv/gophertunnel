@@ -188,7 +188,7 @@ func (listener *Listener) Close() error {
 func (listener *Listener) updatePongData() {
 	s := listener.status()
 	s.ServerSubName = "§bLunar Proxy"
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%s;%v;%v;%v;%v;%v;",
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
 		listener.listener.ID(), s.ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
 		0,
