@@ -9,6 +9,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"log"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
@@ -19,13 +27,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"io"
-	"log"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -1050,7 +1051,7 @@ func (conn *Conn) startGame() {
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		PlayerPermissions:            data.PlayerPermissions,
 		Experiments:                  data.Experiments,
-		ClientSideGeneration:         data.ClientSideGeneration,
+		ClientSideGeneration:         false,
 		ChatRestrictionLevel:         data.ChatRestrictionLevel,
 		DisablePlayerInteractions:    data.DisablePlayerInteractions,
 		BaseGameVersion:              data.BaseGameVersion,
