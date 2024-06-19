@@ -1051,7 +1051,7 @@ func (conn *Conn) startGame() {
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		PlayerPermissions:            data.PlayerPermissions,
 		Experiments:                  data.Experiments,
-		ClientSideGeneration:         false,
+		ClientSideGeneration:         data.ClientSideGeneration,
 		ChatRestrictionLevel:         data.ChatRestrictionLevel,
 		DisablePlayerInteractions:    data.DisablePlayerInteractions,
 		BaseGameVersion:              data.BaseGameVersion,
