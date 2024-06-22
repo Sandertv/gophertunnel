@@ -3,13 +3,14 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/microsoft"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/microsoft"
 )
 
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
@@ -143,7 +144,7 @@ func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 			Expiry:       time.Now().Add(time.Duration(poll.ExpiresIn) * time.Second),
 		}, nil
 	}
-	return nil, fmt.Errorf("non-empty unknown poll error: %v", poll.Error)
+	return nil, fmt.Errorf("%v: %v", poll.Error, poll.ErrorDescription)
 }
 
 // refreshToken refreshes the oauth2.Token passed and returns a new oauth2.Token. An error is returned if
@@ -181,15 +182,16 @@ type deviceAuthConnect struct {
 	DeviceCode      string `json:"device_code"`
 	VerificationURI string `json:"verification_uri"`
 	Interval        int    `json:"interval"`
-	ExpiresIn       int    `json:"expiresIn"`
+	ExpiresIn       int    `json:"expires_in"`
 }
 
 type deviceAuthPoll struct {
-	Error        string `json:"error"`
-	UserID       string `json:"user_id"`
-	TokenType    string `json:"token_type"`
-	Scope        string `json:"scope"`
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
+	Error            string `json:"error"`
+	ErrorDescription string `json:"error_description"`
+	UserID           string `json:"user_id"`
+	TokenType        string `json:"token_type"`
+	Scope            string `json:"scope"`
+	AccessToken      string `json:"access_token"`
+	RefreshToken     string `json:"refresh_token"`
+	ExpiresIn        int    `json:"expires_in"`
 }
