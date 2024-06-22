@@ -149,7 +149,7 @@ func PollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 			Expiry:       time.Now().Add(time.Duration(poll.ExpiresIn) * time.Second),
 		}, nil
 	}
-	return nil, fmt.Errorf("non-empty unknown poll error (%v): %v", poll.Error, poll.ErrorDescription)
+	return nil, fmt.Errorf("%v: %v", poll.Error, poll.ErrorDescription)
 }
 
 // refreshToken refreshes the oauth2.Token passed and returns a new oauth2.Token. An error is returned if
