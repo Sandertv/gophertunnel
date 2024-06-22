@@ -188,7 +188,7 @@ type deviceAuthConnect struct {
 	DeviceCode      string `json:"device_code"`
 	VerificationURI string `json:"verification_uri"`
 	Interval        int    `json:"interval"`
-	ExpiresIn       int    `json:"expiresIn"`
+	ExpiresIn       int    `json:"expires_in"`
 }
 
 type deviceAuthPoll struct {
