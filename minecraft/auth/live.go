@@ -129,9 +129,6 @@ func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
 	poll := new(deviceAuthPoll)
 	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
