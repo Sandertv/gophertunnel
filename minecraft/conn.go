@@ -1215,7 +1215,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
-	if conn.clientData.ServerAddress == "geo.hivebedrock.network" {
+	if conn.clientData.ServerAddress == "geo.hivebedrock.network:19132" {
 		pk.BaseGameVersion = "1.17.0" // temp fix for hive
 	}
 	conn.gameData = GameData{
