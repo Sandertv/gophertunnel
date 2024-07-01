@@ -65,9 +65,8 @@ type ListenConfig struct {
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
-	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
-	// Listener.AddResourcePack() to add a resource pack and Listener.RemoveResourcePack() to remove a resource pack
-	// after having called ListenConfig.Listen().
+	// Use Listener.AddResourcePack() to add a resource pack and Listener.RemoveResourcePack() to remove a resource pack
+	// after having called ListenConfig.Listen(). Note that these methods will not update resource packs for active connections.
 	ResourcePacks []*resource.Pack
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
@@ -90,6 +89,9 @@ type Listener struct {
 	cfg      ListenConfig
 	listener NetworkListener
 
+	packs   []*resource.Pack
+	packsMu sync.RWMutex
+
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount atomic.Int32
@@ -97,7 +99,6 @@ type Listener struct {
 	incoming chan *Conn
 	close    chan struct{}
 
-	mu  sync.RWMutex
 	key *ecdsa.PrivateKey
 }
 
@@ -131,6 +132,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
+		packs:    append([]*resource.Pack{}, cfg.ResourcePacks...),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
 		key:      key,
@@ -175,21 +177,23 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	return conn.Close()
 }
 
-// AddResourcePack adds a new resource pack to the listener's configuration.
+// AddResourcePack adds a new resource pack to the listener's resource packs.
+// Note: This methods will not update resource packs for active connections.
 func (listener *Listener) AddResourcePack(pack *resource.Pack) {
-	listener.mu.Lock()
-	defer listener.mu.Unlock()
-	listener.cfg.ResourcePacks = append(listener.cfg.ResourcePacks, pack)
+	listener.packsMu.Lock()
+	defer listener.packsMu.Unlock()
+	listener.packs = append(listener.packs, pack)
 }
 
 // RemoveResourcePack removes a resource pack from the listener's configuration by its UUID.
+// Note: This methods will not update resource packs for active connections.
 func (listener *Listener) RemoveResourcePack(uuid string) {
-	listener.mu.Lock()
-	defer listener.mu.Unlock()
-	for i, resourcePack := range listener.cfg.ResourcePacks {
+	listener.packsMu.Lock()
+	defer listener.packsMu.Unlock()
+	for i, resourcePack := range listener.packs {
 		if resourcePack.UUID() == uuid {
-			listener.cfg.ResourcePacks[i] = nil
-			listener.cfg.ResourcePacks = append(listener.cfg.ResourcePacks[:i], listener.cfg.ResourcePacks[i+1:]...)
+			listener.packs[i] = nil
+			listener.packs = append(listener.packs[:i], listener.packs[i+1:]...)
 			break
 		}
 	}
@@ -250,8 +254,8 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	listener.mu.RLock()
-	defer listener.mu.RUnlock()
+	listener.packsMu.RLock()
+	defer listener.packsMu.RUnlock()
 
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
@@ -260,7 +264,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
-	conn.resourcePacks = listener.cfg.ResourcePacks
+	conn.resourcePacks = listener.packs
 	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
