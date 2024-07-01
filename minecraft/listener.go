@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -65,7 +66,8 @@ type ListenConfig struct {
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
 	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
-	// Listener.AddResourcePack() to add a resource pack after having called Listener.Listen().
+	// Listener.AddResourcePack() to add a resource pack and Listener.RemoveResourcePack() to remove a resource pack
+	// after having called ListenConfig.Listen().
 	ResourcePacks []*resource.Pack
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
@@ -95,6 +97,7 @@ type Listener struct {
 	incoming chan *Conn
 	close    chan struct{}
 
+	mu  sync.RWMutex
 	key *ecdsa.PrivateKey
 }
 
@@ -172,6 +175,26 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	return conn.Close()
 }
 
+// AddResourcePack adds a new resource pack to the listener's configuration.
+func (listener *Listener) AddResourcePack(pack *resource.Pack) {
+	listener.mu.Lock()
+	defer listener.mu.Unlock()
+	listener.cfg.ResourcePacks = append(listener.cfg.ResourcePacks, pack)
+}
+
+// RemoveResourcePack removes a resource pack from the listener's configuration by its UUID.
+func (listener *Listener) RemoveResourcePack(uuid string) {
+	listener.mu.Lock()
+	defer listener.mu.Unlock()
+	for i, resourcePack := range listener.cfg.ResourcePacks {
+		if resourcePack.UUID() == uuid {
+			listener.cfg.ResourcePacks[i] = nil
+			listener.cfg.ResourcePacks = append(listener.cfg.ResourcePacks[:i], listener.cfg.ResourcePacks[i+1:]...)
+			break
+		}
+	}
+}
+
 // Addr returns the address of the underlying listener.
 func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
@@ -227,6 +250,9 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
+	listener.mu.RLock()
+	defer listener.mu.RUnlock()
+
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
