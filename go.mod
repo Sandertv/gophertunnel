@@ -12,7 +12,7 @@ require (
 	github.com/klauspost/compress v1.17.9
 	github.com/muhammadmuzzammil1998/jsonc v1.0.0
 	github.com/pelletier/go-toml v1.9.5
-	github.com/sandertv/go-raknet v1.14.0
+	github.com/sandertv/go-raknet v1.14.1
 	golang.org/x/net v0.26.0
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/text v0.16.0
