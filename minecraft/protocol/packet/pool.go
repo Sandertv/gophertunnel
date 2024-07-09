@@ -251,6 +251,7 @@ func init() {
 		IDSetPlayerInventoryOptions:      func() Packet { return &SetPlayerInventoryOptions{} },
 		IDSetHud:                         func() Packet { return &SetHud{} },
 		IDAwardAchievement:               func() Packet { return &AwardAchievement{} },
+		IDClientBoundCloseForm:           func() Packet { return &ClientBoundCloseForm{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
