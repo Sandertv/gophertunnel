@@ -210,4 +210,5 @@ const (
 	IDSetPlayerInventoryOptions
 	IDSetHud
 	IDAwardAchievement
+	IDClientBoundCloseForm
 )
