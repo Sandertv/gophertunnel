@@ -12,6 +12,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -132,7 +133,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
-		packs:    append([]*resource.Pack{}, cfg.ResourcePacks...),
+		packs:    slices.Clone(cfg.ResourcePacks),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
 		key:      key,
@@ -189,14 +190,10 @@ func (listener *Listener) AddResourcePack(pack *resource.Pack) {
 // Note: This methods will not update resource packs for active connections.
 func (listener *Listener) RemoveResourcePack(uuid string) {
 	listener.packsMu.Lock()
-	defer listener.packsMu.Unlock()
-	for i, resourcePack := range listener.packs {
-		if resourcePack.UUID() == uuid {
-			listener.packs[i] = nil
-			listener.packs = append(listener.packs[:i], listener.packs[i+1:]...)
-			break
-		}
-	}
+	listener.packs = slices.DeleteFunc(listener.packs, func(pack *resource.Pack) bool {
+		return pack.UUID() == uuid
+	})
+	listener.packsMu.Unlock()
 }
 
 // Addr returns the address of the underlying listener.
@@ -255,7 +252,8 @@ func (listener *Listener) listen() {
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
 	listener.packsMu.RLock()
-	defer listener.packsMu.RUnlock()
+	packs := slices.Clone(listener.packs)
+	listener.packsMu.RUnlock()
 
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
@@ -264,7 +262,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
-	conn.resourcePacks = listener.packs
+	conn.resourcePacks = packs
 	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
