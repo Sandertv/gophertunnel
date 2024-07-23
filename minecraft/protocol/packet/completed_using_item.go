@@ -5,23 +5,25 @@ import (
 )
 
 const (
-	UseItemEquipArmour = iota
-	UseItemEat
-	UseItemAttack
-	UseItemConsume
-	UseItemThrow
-	UseItemShoot
-	UseItemPlace
-	UseItemFillBottle
-	UseItemFillBucket
-	UseItemPourBucket
-	UseItemUseTool
-	UseItemInteract
-	UseItemRetrieved
-	UseItemDyed
-	UseItemTraded
-	UseItemBrushingCompleted
-	UseItemOpenedVault
+	UseItemUnknown           = -1
+	UseItemEquipArmor        = 0
+	UseItemEat               = 1
+	UseItemAttack            = 2
+	UseItemConsume           = 3
+	UseItemThrow             = 4
+	UseItemShoot             = 5
+	UseItemPlace             = 6
+	UseItemFillBottle        = 7
+	UseItemFillBucket        = 8
+	UseItemPourBucket        = 9
+	UseItemUseTool           = 10
+	UseItemInteract          = 11
+	UseItemRetrieved         = 12
+	UseItemDyed              = 13
+	UseItemTraded            = 14
+	UseItemBrushingCompleted = 15
+	UseItemOpenedVault       = 16
+	UseItemCount             = 17
 )
 
 // CompletedUsingItem is sent by the server to tell the client that it should be done using the item it is
