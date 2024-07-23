@@ -9,7 +9,7 @@ const (
 	BookActionAddPage
 	BookActionDeletePage
 	BookActionSwapPages
-	BookActionSign
+	BookActionFinalize
 )
 
 // BookEdit is sent by the client when it edits a book. It is sent each time a modification was made and the
