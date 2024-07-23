@@ -5,15 +5,15 @@ import (
 )
 
 const (
-	BossEventShow = iota
-	BossEventRegisterPlayer
-	BossEventHide
-	BossEventUnregisterPlayer
-	BossEventHealthPercentage
-	BossEventTitle
-	BossEventAppearanceProperties
-	BossEventTexture
-	BossEventRequest
+	BossEventAdd = iota
+	BossEventPlayerAdded
+	BossEventRemove
+	BossEventPlayerRemoved
+	BossEventUpdatePercent
+	BossEventUpdateName
+	BossEventUpdateProperties
+	BossEventUpdateStyle
+	BossEventQuery
 )
 
 const (
@@ -76,25 +76,25 @@ func (pk *BossEvent) Marshal(io protocol.IO) {
 	io.Varint64(&pk.BossEntityUniqueID)
 	io.Varuint32(&pk.EventType)
 	switch pk.EventType {
-	case BossEventShow:
+	case BossEventAdd:
 		io.String(&pk.BossBarTitle)
 		io.Float32(&pk.HealthPercentage)
 		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)
 		io.Varuint32(&pk.Overlay)
-	case BossEventRegisterPlayer, BossEventUnregisterPlayer, BossEventRequest:
+	case BossEventPlayerAdded, BossEventPlayerRemoved, BossEventQuery:
 		io.Varint64(&pk.PlayerUniqueID)
-	case BossEventHide:
+	case BossEventRemove:
 		// No extra payload for this boss event type.
-	case BossEventHealthPercentage:
+	case BossEventUpdatePercent:
 		io.Float32(&pk.HealthPercentage)
-	case BossEventTitle:
+	case BossEventUpdateName:
 		io.String(&pk.BossBarTitle)
-	case BossEventAppearanceProperties:
+	case BossEventUpdateProperties:
 		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)
 		io.Varuint32(&pk.Overlay)
-	case BossEventTexture:
+	case BossEventUpdateStyle:
 		io.Varuint32(&pk.Colour)
 		io.Varuint32(&pk.Overlay)
 	default:
