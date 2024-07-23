@@ -5,70 +5,64 @@ import (
 )
 
 const (
-	ActorEventJump = iota + 1
-	ActorEventHurt
-	ActorEventDeath
-	ActorEventStartAttacking
-	ActorEventStopAttacking
-	ActorEventTamingFailed
-	ActorEventTamingSucceeded
-	ActorEventShakeWetness
-	ActorEventUseItem
-	ActorEventEatGrass
-	ActorEventFishhookBubble
-	ActorEventFishhookFishPosition
-	ActorEventFishhookHookTime
-	ActorEventFishhookTease
-	ActorEventSquidFleeing
-	ActorEventZombieConverting
-	ActorEventPlayAmbient
-	ActorEventSpawnAlive
-	ActorEventStartOfferFlower
-	ActorEventStopOfferFlower
-	ActorEventLoveHearts
-	ActorEventVillagerAngry
-	ActorEventVillagerHappy
-	ActorEventWitchHatMagic
-	ActorEventFireworksExplode
-	ActorEventInLoveHearts
-	ActorEventSilverfishMergeAnimation
-	ActorEventGuardianAttackSound
-	ActorEventDrinkPotion
-	ActorEventThrowPotion
-	ActorEventCartWithPrimeTNT
-	ActorEventPrimeCreeper
-	ActorEventAirSupply
-	ActorEventAddPlayerLevels
-	ActorEventGuardianMiningFatigue
-	ActorEventAgentSwingArm
-	ActorEventDragonStartDeathAnim
-	ActorEventGroundDust
-	ActorEventShake
-)
-
-const (
-	ActorEventFeed = iota + 57
-	_
-	_
-	ActorEventBabyEat
-	ActorEventInstantDeath
-	ActorEventNotifyTrade
-	ActorEventLeashDestroyed
-	ActorEventCaravanUpdated
-	ActorEventTalismanActivate
-	ActorEventUpdateStructureFeature
-	ActorEventPlayerSpawnedMob
-	ActorEventPuke
-	ActorEventUpdateStackSize
-	ActorEventStartSwimming
-	ActorEventBalloonPop
-	ActorEventTreasureHunt
-	ActorEventSummonAgent
-	ActorEventFinishedChargingItem
-	ActorEventLandedOnGround
-	ActorEventActorGrowUp
-	ActorEventVibrationDetected
-	ActorEventDrinkMilk
+	ActorEventNone                     = 0
+	ActorEventJump                     = 1
+	ActorEventHurt                     = 2
+	ActorEventDeath                    = 3
+	ActorEventStartAttacking           = 4
+	ActorEventStopAttacking            = 5
+	ActorEventTamingFailed             = 6
+	ActorEventTamingSucceeded          = 7
+	ActorEventShakeWetness             = 8
+	ActorEventEatGrass                 = 10
+	ActorEventFishhookBubble           = 11
+	ActorEventFishhookFishPosition     = 12
+	ActorEventFishhookHookTime         = 13
+	ActorEventFishhookTease            = 14
+	ActorEventSquidFleeing             = 15
+	ActorEventZombieConverting         = 16
+	ActorEventPlayAmbient              = 17
+	ActorEventSpawnAlive               = 18
+	ActorEventStartOfferFlower         = 19
+	ActorEventStopOfferFlower          = 20
+	ActorEventLoveHearts               = 21
+	ActorEventVillagerAngry            = 22
+	ActorEventVillagerHappy            = 23
+	ActorEventWitchHatMagic            = 24
+	ActorEventFireworksExplode         = 25
+	ActorEventInLoveHearts             = 26
+	ActorEventSilverfishMergeAnimation = 27
+	ActorEventGuardianAttackSound      = 28
+	ActorEventDrinkPotion              = 29
+	ActorEventThrowPotion              = 30
+	ActorEventCartWithPrimeTNT         = 31
+	ActorEventPrimeCreeper             = 32
+	ActorEventAirSupply                = 33
+	ActorEventAddPlayerLevels          = 34
+	ActorEventGuardianMiningFatigue    = 35
+	ActorEventAgentSwingArm            = 36
+	ActorEventDragonStartDeathAnim     = 37
+	ActorEventGroundDust               = 38
+	ActorEventShake                    = 39
+	ActorEventFeed                     = 57
+	ActorEventBabyAge                  = 60
+	ActorEventInstantDeath             = 61
+	ActorEventNotifyTrade              = 62
+	ActorEventLeashDestroyed           = 63
+	ActorEventCaravanUpdated           = 64
+	ActorEventTalismanActivate         = 65
+	ActorEventUpdateStructureFeature   = 66
+	ActorEventPlayerSpawnedMob         = 67
+	ActorEventPuke                     = 68
+	ActorEventUpdateStackSize          = 69
+	ActorEventStartSwimming            = 70
+	ActorEventBalloonPop               = 71
+	ActorEventTreasureHunt             = 72
+	ActorEventSummonAgent              = 73
+	ActorEventFinishedChargingItem     = 74
+	ActorEventActorGrowUp              = 76
+	ActorEventVibrationDetected        = 77
+	ActorEventDrinkMilk                = 78
 )
 
 // ActorEvent is sent by the server when a particular event happens that has to do with an entity. Some of
