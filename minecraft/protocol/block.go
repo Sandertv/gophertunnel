@@ -35,7 +35,7 @@ type BlockChangeEntry struct {
 
 // Marshal encodes/decodes a BlockChangeEntry.
 func (x *BlockChangeEntry) Marshal(r IO) {
-	r.BlockPos(&x.BlockPos)
+	r.UBlockPos(&x.BlockPos)
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Varuint32(&x.Flags)
 	r.Varuint64(&x.SyncedUpdateEntityUniqueID)
