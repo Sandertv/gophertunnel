@@ -132,6 +132,7 @@ const (
 	EntityDataKeyPlayerLastDeathDimension
 	EntityDataKeyPlayerHasDied
 	EntityDataKeyCollisionBox
+	EntityDataKeyVisibleMobEffects
 )
 
 const (
