@@ -286,6 +286,7 @@ func init() {
 		IDMapInfoRequest:                  func() Packet { return &MapInfoRequest{} },
 		IDRequestChunkRadius:              func() Packet { return &RequestChunkRadius{} },
 		IDBossEvent:                       func() Packet { return &BossEvent{} },
+		IDShowCredits:                 	   func() Packet { return &ShowCredits{} },
 		IDCommandRequest:                  func() Packet { return &CommandRequest{} },
 		IDCommandBlockUpdate:              func() Packet { return &CommandBlockUpdate{} },
 		IDResourcePackChunkRequest:        func() Packet { return &ResourcePackChunkRequest{} },
