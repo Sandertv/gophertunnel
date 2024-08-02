@@ -94,7 +94,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 		_ = resp.Body.Close()
 	}()
 	if resp.StatusCode != 200 {
-		// Xbox returns a custom error code in the x-err header.
+		// Xbox Live returns a custom error code in the x-err header.
 		if errorCode := resp.Header.Get("x-err"); errorCode != "" {
 			return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", parseXboxErrorCode(errorCode))
 		}
