@@ -179,7 +179,7 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 }
 
 // AddResourcePack adds a new resource pack to the listener's resource packs.
-// Note: This methods will not update resource packs for active connections.
+// Note: This method will not update resource packs for active connections.
 func (listener *Listener) AddResourcePack(pack *resource.Pack) {
 	listener.packsMu.Lock()
 	defer listener.packsMu.Unlock()
@@ -187,7 +187,7 @@ func (listener *Listener) AddResourcePack(pack *resource.Pack) {
 }
 
 // RemoveResourcePack removes a resource pack from the listener's configuration by its UUID.
-// Note: This methods will not update resource packs for active connections.
+// Note: This method will not update resource packs for active connections.
 func (listener *Listener) RemoveResourcePack(uuid string) {
 	listener.packsMu.Lock()
 	listener.packs = slices.DeleteFunc(listener.packs, func(pack *resource.Pack) bool {
