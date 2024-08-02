@@ -126,7 +126,7 @@ func parsePongData(pong []byte) ServerStatus {
 		return ServerStatus{ServerName: "Invalid pong data"}
 	}
 	serverName := frag[1]
-	serverSubName := frag[6]
+	serverSubName := frag[7]
 	online, err := strconv.Atoi(frag[4])
 	if err != nil {
 		return ServerStatus{ServerName: "Invalid player count"}
