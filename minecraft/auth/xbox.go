@@ -217,7 +217,7 @@ func parseXboxErrorCode(code string) string {
 	case "2148916238":
 		return "The account date of birth is under 18 years and cannot proceed unless the account is added to a family by an adult."
 	default:
-		return ""
+		return fmt.Sprintf("unknown error code: %v", code)
 	}
 }
 
