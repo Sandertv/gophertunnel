@@ -21,6 +21,8 @@ type Compression interface {
 }
 
 var (
+	// NopCompression is an empty implementation that does not compress data.
+	NopCompression nopCompression
 	// FlateCompression is the implementation of the Flate compression
 	// algorithm. This was used by default until v1.19.30.
 	FlateCompression flateCompression
@@ -32,6 +34,8 @@ var (
 )
 
 type (
+	// nopCompression is an empty implementation that does not compress data.
+	nopCompression struct{}
 	// flateCompression is the implementation of the Flate compression algorithm. This was used by default until v1.19.30.
 	flateCompression struct{}
 	// snappyCompression is the implementation of the Snappy compression algorithm. This is used by default.
@@ -51,6 +55,21 @@ var (
 		},
 	}
 )
+
+// EncodeCompression ...
+func (nopCompression) EncodeCompression() uint16 {
+	return CompressionAlgorithmNone
+}
+
+// Compress ...
+func (nopCompression) Compress(decompressed []byte) ([]byte, error) {
+	return decompressed, nil
+}
+
+// Decompress ...
+func (nopCompression) Decompress(compressed []byte) ([]byte, error) {
+	return compressed, nil
+}
 
 // EncodeCompression ...
 func (flateCompression) EncodeCompression() uint16 {

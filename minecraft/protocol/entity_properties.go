@@ -10,7 +10,7 @@ type EntityProperties struct {
 }
 
 // Marshal ...
-func (e EntityProperties) Marshal(r IO) {
+func (e *EntityProperties) Marshal(r IO) {
 	Slice(r, &e.IntegerProperties)
 	Slice(r, &e.FloatProperties)
 }
@@ -24,7 +24,7 @@ type IntegerEntityProperty struct {
 }
 
 // Marshal ...
-func (i IntegerEntityProperty) Marshal(r IO) {
+func (i *IntegerEntityProperty) Marshal(r IO) {
 	r.Varuint32(&i.Index)
 	r.Varint32(&i.Value)
 }
@@ -38,7 +38,7 @@ type FloatEntityProperty struct {
 }
 
 // Marshal ...
-func (f FloatEntityProperty) Marshal(r IO) {
+func (f *FloatEntityProperty) Marshal(r IO) {
 	r.Varuint32(&f.Index)
 	r.Float32(&f.Value)
 }

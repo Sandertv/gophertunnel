@@ -94,9 +94,9 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 		_ = resp.Body.Close()
 	}()
 	if resp.StatusCode != 200 {
-		// Xbox returns a custom error code in the x-err header.
-		if xboxErr := parseXboxErrorCode(resp.Header.Get("x-err")); xboxErr != "" {
-			return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", xboxErr)
+		// Xbox Live returns a custom error code in the x-err header.
+		if errorCode := resp.Header.Get("x-err"); errorCode != "" {
+			return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", parseXboxErrorCode(errorCode))
 		}
 		return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", resp.Status)
 	}
@@ -218,7 +218,7 @@ func parseXboxErrorCode(code string) string {
 	case "2148916238":
 		return "The account date of birth is under 18 years and cannot proceed unless the account is added to a family by an adult."
 	default:
-		return ""
+		return fmt.Sprintf("unknown error code: %v", code)
 	}
 }
 
