@@ -12,6 +12,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"slices"
+	"sync"
 	"sync/atomic"
 	"time"
 )
@@ -64,8 +66,8 @@ type ListenConfig struct {
 
 	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
-	// This field should not be edited during runtime of the Listener to avoid race conditions. Use
-	// Listener.AddResourcePack() to add a resource pack after having called Listener.Listen().
+	// Use Listener.AddResourcePack() to add a resource pack and Listener.RemoveResourcePack() to remove a resource pack
+	// after having called ListenConfig.Listen(). Note that these methods will not update resource packs for active connections.
 	ResourcePacks []*resource.Pack
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
@@ -87,6 +89,9 @@ type ListenConfig struct {
 type Listener struct {
 	cfg      ListenConfig
 	listener NetworkListener
+
+	packs   []*resource.Pack
+	packsMu sync.RWMutex
 
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
@@ -128,6 +133,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
+		packs:    slices.Clone(cfg.ResourcePacks),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
 		key:      key,
@@ -170,6 +176,24 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 		Message:                 message,
 	})
 	return conn.Close()
+}
+
+// AddResourcePack adds a new resource pack to the listener's resource packs.
+// Note: This method will not update resource packs for active connections.
+func (listener *Listener) AddResourcePack(pack *resource.Pack) {
+	listener.packsMu.Lock()
+	defer listener.packsMu.Unlock()
+	listener.packs = append(listener.packs, pack)
+}
+
+// RemoveResourcePack removes a resource pack from the listener's configuration by its UUID.
+// Note: This method will not update resource packs for active connections.
+func (listener *Listener) RemoveResourcePack(uuid string) {
+	listener.packsMu.Lock()
+	listener.packs = slices.DeleteFunc(listener.packs, func(pack *resource.Pack) bool {
+		return pack.UUID() == uuid
+	})
+	listener.packsMu.Unlock()
 }
 
 // Addr returns the address of the underlying listener.
@@ -227,6 +251,10 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
+	listener.packsMu.RLock()
+	packs := slices.Clone(listener.packs)
+	listener.packsMu.RUnlock()
+
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
@@ -234,7 +262,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
-	conn.resourcePacks = listener.cfg.ResourcePacks
+	conn.resourcePacks = packs
 	conn.biomes = listener.cfg.Biomes
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
