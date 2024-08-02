@@ -29,6 +29,7 @@ const (
 	AbilityLayerTypeSpectator
 	AbilityLayerTypeCommands
 	AbilityLayerTypeEditor
+	AbilityLayerTypeLoadingScreen
 )
 
 const (

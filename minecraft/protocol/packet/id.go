@@ -211,4 +211,9 @@ const (
 	IDSetHud
 	IDAwardAchievement
 	IDClientBoundCloseForm
+	_
+	IDServerBoundLoadingScreen
+	IDJigsawStructureData
+	IDCurrentStructureFeature
+	IDServerBoundDiagnostics
 )

@@ -515,8 +515,8 @@ func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
 
 // StackRequestSlotInfo holds information on a specific slot client-side.
 type StackRequestSlotInfo struct {
-	// ContainerID is the ID of the container that the slot was in.
-	ContainerID byte
+	// Container is the FullContainerName that describes the container that the slot is in.
+	Container FullContainerName
 	// Slot is the index of the slot within the container with the ContainerID above.
 	Slot byte
 	// StackNetworkID is the unique stack ID that the client assumes to be present in this slot. The server
@@ -527,7 +527,7 @@ type StackRequestSlotInfo struct {
 
 // StackReqSlotInfo reads/writes a StackRequestSlotInfo x using IO r.
 func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
-	r.Uint8(&x.ContainerID)
+	Single(r, &x.Container)
 	r.Uint8(&x.Slot)
 	r.Varint32(&x.StackNetworkID)
 }

@@ -118,6 +118,20 @@ func (x *CameraInstructionFade) Marshal(r IO) {
 	OptionalFunc(r, &x.Colour, r.RGB)
 }
 
+// CameraInstructionTarget represents a camera instruction that targets a specific entity.
+type CameraInstructionTarget struct {
+	// CenterOffset is the offset from the center of the entity that the camera should target.
+	CenterOffset Optional[mgl32.Vec3]
+	// EntityUniqueID is the unique ID of the entity that the camera should target.
+	EntityUniqueID int64
+}
+
+// Marshal encodes/decodes a CameraInstructionTarget.
+func (x *CameraInstructionTarget) Marshal(r IO) {
+	OptionalFunc(r, &x.CenterOffset, r.Vec3)
+	r.Int64(&x.EntityUniqueID)
+}
+
 // CameraPreset represents a basic preset that can be extended upon by more complex instructions.
 type CameraPreset struct {
 	// Name is the name of the preset. Each preset must have their own unique name.
@@ -134,6 +148,10 @@ type CameraPreset struct {
 	RotX Optional[float32]
 	// RotY is the default yaw of the camera.
 	RotY Optional[float32]
+	// ViewOffset ...
+	ViewOffset Optional[mgl32.Vec2]
+	// Radius ...
+	Radius Optional[float32]
 	// AudioListener defines where the audio should be played from when using this preset. This is one of the constants
 	// above.
 	AudioListener Optional[byte]
@@ -150,6 +168,8 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.PosZ, r.Float32)
 	OptionalFunc(r, &x.RotX, r.Float32)
 	OptionalFunc(r, &x.RotY, r.Float32)
+	OptionalFunc(r, &x.ViewOffset, r.Vec2)
+	OptionalFunc(r, &x.Radius, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 }

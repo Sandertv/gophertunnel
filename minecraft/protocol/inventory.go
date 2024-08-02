@@ -120,6 +120,17 @@ const (
 	UseItemActionBreakBlock
 )
 
+const (
+	TriggerTypeUnknown = iota
+	TriggerTypePlayerInput
+	TriggerTypeSimulationTick
+)
+
+const (
+	ClientPredictionFailure = iota
+	ClientPredictionSuccess
+)
+
 // UseItemTransactionData represents an inventory transaction data object sent when the client uses an item on
 // a block.
 type UseItemTransactionData struct {
@@ -142,6 +153,11 @@ type UseItemTransactionData struct {
 	// ActionType is the type of the UseItem inventory transaction. It is one of the action types found above,
 	// and specifies the way the player interacted with the block.
 	ActionType uint32
+	// TriggerType is the type of the trigger that caused the inventory transaction. It is one of the trigger
+	// types found in the constants above. If TriggerType is TriggerTypePlayerInput, the transaction is from
+	// the initial input of the player. If it is TriggerTypeSimulationTick, the transaction is from a simulation
+	// tick when the player is holding down the input.
+	TriggerType uint32
 	// BlockPosition is the position of the block that was interacted with. This is only really a correct
 	// block position if ActionType is not UseItemActionClickAir.
 	BlockPosition BlockPos
@@ -163,6 +179,9 @@ type UseItemTransactionData struct {
 	// BlockRuntimeID is the runtime ID of the block that was clicked. It may be used by the server to verify
 	// that the player's world client-side is synchronised with the server's.
 	BlockRuntimeID uint32
+	// ClientPrediction is the client's prediction on the output of the transaction. It is one of the client
+	// prediction found in the constants above.
+	ClientPrediction byte
 }
 
 const (
@@ -219,6 +238,7 @@ type ReleaseItemTransactionData struct {
 // Marshal ...
 func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Varuint32(&data.ActionType)
+	r.Varuint32(&data.TriggerType)
 	r.UBlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
@@ -226,6 +246,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
+	r.Uint8(&data.ClientPrediction)
 }
 
 // Marshal ...

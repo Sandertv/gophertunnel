@@ -13,6 +13,9 @@ type StopSound struct {
 	// StopAll specifies if all sounds currently playing to the player should be stopped. If set to true, the
 	// SoundName field may be left empty.
 	StopAll bool
+	// StopMusic specifies if all music currently playing to the player should be stopped. If set to true, the
+	// SoundName field may be left empty.
+	StopMusic bool
 }
 
 // ID ...

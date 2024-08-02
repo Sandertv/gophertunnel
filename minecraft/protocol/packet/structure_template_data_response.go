@@ -8,7 +8,6 @@ import (
 const (
 	StructureTemplateResponseExport = iota + 1
 	StructureTemplateResponseQuery
-	StructureTemplateResponseImport
 )
 
 // StructureTemplateDataResponse is sent by the server to send data of a structure to the client in response
