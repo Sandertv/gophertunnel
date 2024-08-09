@@ -235,7 +235,7 @@ type CauldronUsedEvent struct {
 	// Colour ...
 	Colour uint32
 	// PotionID ...
-	ContentsType int32
+	PotionID int32
 	// FillLevel ...
 	FillLevel int32
 }
@@ -243,7 +243,7 @@ type CauldronUsedEvent struct {
 // Marshal ...
 func (c *CauldronUsedEvent) Marshal(r IO) {
 	r.Varuint32(&c.Colour)
-	r.Varint32(&c.ContentsType)
+	r.Varint32(&c.PotionID)
 	r.Varint32(&c.FillLevel)
 }
 
@@ -311,7 +311,7 @@ func (a *AgentCommandEvent) Marshal(r IO) {
 type SlashCommandExecutedEvent struct {
 	// SuccessCount ...
 	SuccessCount int32
-	// ErrorCount indicates the amount of OutputMessages present.
+	// MessageCount indicates the amount of OutputMessages present.
 	MessageCount int32
 	// CommandName ...
 	CommandName string
