@@ -411,7 +411,7 @@ func (ra *RaidUpdateEvent) Marshal(r IO) {
 	r.Bool(&ra.WonRaid)
 }
 
-// TargetBlockHitEvent ...
+// TargetBlockHitEvent is a event that is called when a target block is hit with a error.
 type TargetBlockHitEvent struct {
 	// RedstoneLevel ...
 	RedstoneLevel int32
@@ -422,7 +422,7 @@ func (t *TargetBlockHitEvent) Marshal(r IO) {
 	r.Varint32(&t.RedstoneLevel)
 }
 
-// PiglinBarterEvent ...
+// PiglinBarterEvent is called when a player drops gold ingots to a piglin to initiate a trade for an item.
 type PiglinBarterEvent struct {
 	// ItemID ...
 	ItemID int32
@@ -482,7 +482,7 @@ func (c *CodeBuilderScoreboardEvent) Marshal(r IO) {
 	r.Varint32(&c.Score)
 }
 
-// ItemUsedEvent ...
+// ItemUsedEvent is when a player right clicks a item.
 type ItemUsedEvent struct {
 	ItemID    int16
 	ItemAux   int32
