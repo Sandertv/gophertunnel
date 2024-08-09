@@ -141,7 +141,7 @@ func lookupEventType(x Event, eventType *int32) bool {
 // Event represents an object that holds data specific to an event.
 // The data it holds depends on the type.
 type Event interface {
-	// Marshal encodes/decodes a serialized event data object.
+	// Marshal encodes/decodes a serialised event data object.
 	Marshal(r IO)
 }
 
@@ -166,8 +166,8 @@ type EntityInteractEvent struct {
 	InteractionActorType int32
 	// EntityVariant ...
 	InteractionActorVariant int32
-	// EntityColor ...
-	InteractionActorColor uint8
+	// EntityColour ...
+	InteractionActorColour uint8
 }
 
 // Marshal ...
@@ -176,7 +176,7 @@ func (e *EntityInteractEvent) Marshal(r IO) {
 	r.Varint32(&e.InteractionType)
 	r.Varint32(&e.InteractionActorType)
 	r.Varint32(&e.InteractionActorVariant)
-	r.Uint8(&e.InteractionActorColor)
+	r.Uint8(&e.InteractionActorColour)
 }
 
 // PortalBuiltEvent is the event data sent when a portal is built.
@@ -232,8 +232,8 @@ func (m *MobKilledEvent) Marshal(r IO) {
 
 // CauldronUsedEvent is the event data sent when a cauldron is used.
 type CauldronUsedEvent struct {
-	// Color ...
-	Color uint32
+	// Colour ...
+	Colour uint32
 	// PotionID ...
 	ContentsType int32
 	// FillLevel ...
@@ -242,7 +242,7 @@ type CauldronUsedEvent struct {
 
 // Marshal ...
 func (c *CauldronUsedEvent) Marshal(r IO) {
-	r.Varuint32(&c.Color)
+	r.Varuint32(&c.Colour)
 	r.Varint32(&c.ContentsType)
 	r.Varint32(&c.FillLevel)
 }
@@ -333,15 +333,15 @@ type MobBornEvent struct {
 	EntityType int32
 	// Variant ...
 	Variant int32
-	// Color ...
-	Color uint8
+	// Colour ...
+	Colour uint8
 }
 
 // Marshal ...
 func (m *MobBornEvent) Marshal(r IO) {
 	r.Varint32(&m.EntityType)
 	r.Varint32(&m.Variant)
-	r.Uint8(&m.Color)
+	r.Uint8(&m.Colour)
 }
 
 // CauldronInteractEvent is the event data sent when a cauldron is interacted with.
@@ -435,14 +435,14 @@ func (p *PiglinBarterEvent) Marshal(r IO) {
 }
 
 const (
-	WaxNotOxidized   = uint16(0xa609)
+	WaxNotOxidised   = uint16(0xa609)
 	WaxExposed       = uint16(0xa809)
 	WaxWeathered     = uint16(0xaa09)
-	WaxOxidized      = uint16(0xac09)
-	UnWaxNotOxidized = uint16(0xae09)
+	WaxOxidised      = uint16(0xac09)
+	UnWaxNotOxidised = uint16(0xae09)
 	UnWaxExposed     = uint16(0xb009)
 	UnWaxWeathered   = uint16(0xb209)
-	UnWaxOxidized    = uint16(0xfa0a)
+	UnWaxOxidised    = uint16(0xfa0a)
 )
 
 // WaxedOrUnwaxedCopperEvent is an event sent by the server when a copper block is waxed or unwaxed.
