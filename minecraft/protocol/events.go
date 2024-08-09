@@ -315,8 +315,8 @@ type SlashCommandExecutedEvent struct {
 	MessageCount int32
 	// CommandName ...
 	CommandName string
-	// ErrorList is a list of messages joint with ;.
-	ErrorList string
+	// OutputMessages is a list of messages joint with ;.
+	OutputMessages string
 }
 
 // Marshal ...
