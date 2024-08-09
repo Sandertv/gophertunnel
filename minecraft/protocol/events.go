@@ -163,20 +163,20 @@ type EntityInteractEvent struct {
 	// InteractionType ...
 	InteractionType int32
 	// InteractionEntityType ...
-	InteractionActorType int32
+	InteractionEntityType int32
 	// EntityVariant ...
-	InteractionActorVariant int32
+	EntityVariant int32
 	// EntityColour ...
-	InteractionActorColour uint8
+	EntityColour uint8
 }
 
 // Marshal ...
 func (e *EntityInteractEvent) Marshal(r IO) {
 	r.Varint64(&e.InteractedEntityID)
 	r.Varint32(&e.InteractionType)
-	r.Varint32(&e.InteractionActorType)
-	r.Varint32(&e.InteractionActorVariant)
-	r.Uint8(&e.InteractionActorColour)
+	r.Varint32(&e.InteractionEntityType)
+	r.Varint32(&e.EntityVariant)
+	r.Uint8(&e.EntityColour)
 }
 
 // PortalBuiltEvent is the event data sent when a portal is built.
@@ -206,14 +206,14 @@ func (p *PortalUsedEvent) Marshal(r IO) {
 
 // MobKilledEvent is the event data sent when a mob is killed.
 type MobKilledEvent struct {
-	// InstigatorActorID ...
-	InstigatorActorID int64
-	// TargetActorID ...
-	TargetActorID int64
-	// InstigatorsChildActorType ...
-	InstigatorsChildActorType int32
-	// DamageSource ...
-	DamageSource int32
+	// KillerEntityUniqueID ...
+	KillerEntityUniqueID int64
+	// VictimEntityUniqueID ...
+	VictimEntityUniqueID int64
+	// KillerEntityType ...
+	KillerEntityType int32
+	// EntityDamageCause ...
+	EntityDamageCause int32
 	// VillagerTradeTier -1 if not a trading actor.
 	VillagerTradeTier int32
 	// VillagerDisplayName Empty if not a trading actor.
@@ -222,10 +222,10 @@ type MobKilledEvent struct {
 
 // Marshal ...
 func (m *MobKilledEvent) Marshal(r IO) {
-	r.Varint64(&m.InstigatorActorID)
-	r.Varint64(&m.TargetActorID)
-	r.Varint32(&m.InstigatorsChildActorType)
-	r.Varint32(&m.DamageSource)
+	r.Varint64(&m.KillerEntityUniqueID)
+	r.Varint64(&m.VictimEntityUniqueID)
+	r.Varint32(&m.KillerEntityType)
+	r.Varint32(&m.EntityDamageCause)
 	r.Varint32(&m.VillagerTradeTier)
 	r.String(&m.VillagerDisplayName)
 }
@@ -312,19 +312,19 @@ type SlashCommandExecutedEvent struct {
 	// SuccessCount ...
 	SuccessCount int32
 	// ErrorCount indicates the amount of OutputMessages present.
-	ErrorCount int32
+	MessageCount int32
 	// CommandName ...
 	CommandName string
 	// ErrorList is a list of messages joint with ;.
-	ErrorList string
+	OutputMessages string
 }
 
 // Marshal ...
 func (s *SlashCommandExecutedEvent) Marshal(r IO) {
 	r.Varint32(&s.SuccessCount)
-	r.Varint32(&s.ErrorCount)
+	r.Varint32(&s.MessageCount)
 	r.String(&s.CommandName)
-	r.String(&s.ErrorList)
+	r.String(&s.OutputMessages)
 }
 
 // MobBornEvent is the event data sent when a mob is born.
