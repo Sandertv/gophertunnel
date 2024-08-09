@@ -411,7 +411,7 @@ func (ra *RaidUpdateEvent) Marshal(r IO) {
 	r.Bool(&ra.WonRaid)
 }
 
-// TargetBlockHitEvent is a event that is called when a target block is hit with a error.
+// TargetBlockHitEvent is a event that is called when a target block is hit with a arrow.
 type TargetBlockHitEvent struct {
 	// RedstoneLevel ...
 	RedstoneLevel int32
