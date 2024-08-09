@@ -411,6 +411,7 @@ func (ra *RaidUpdateEvent) Marshal(r IO) {
 	r.Bool(&ra.WonRaid)
 }
 
+// TargetBlockHitEvent ...
 type TargetBlockHitEvent struct {
 	// RedstoneLevel ...
 	RedstoneLevel int32
@@ -421,6 +422,7 @@ func (t *TargetBlockHitEvent) Marshal(r IO) {
 	r.Varint32(&t.RedstoneLevel)
 }
 
+// PiglinBarterEvent ...
 type PiglinBarterEvent struct {
 	// ItemID ...
 	ItemID int32
@@ -480,6 +482,7 @@ func (c *CodeBuilderScoreboardEvent) Marshal(r IO) {
 	r.Varint32(&c.Score)
 }
 
+// ItemUsedEvent ...
 type ItemUsedEvent struct {
 	ItemID    int16
 	ItemAux   int32
