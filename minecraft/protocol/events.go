@@ -57,6 +57,8 @@ func lookupEvent(eventType int32, x *Event) bool {
 		*x = &BossKilledEvent{}
 	case EventTypeAgentCommand:
 		*x = &AgentCommandEvent{}
+	case EventTypePatternRemoved:
+		*x = &PatternRemovedEvent{}
 	case EventTypeSlashCommandExecuted:
 		*x = &SlashCommandExecutedEvent{}
 	case EventTypeFishBucketed:
@@ -126,6 +128,8 @@ func lookupEventType(x Event, eventType *int32) bool {
 		*eventType = EventTypeBossKilled
 	case *AgentCommandEvent:
 		*eventType = EventTypeAgentCommand
+	case *PatternRemovedEvent:
+		*eventType = EventTypePatternRemoved
 	case *SlashCommandExecutedEvent:
 		*eventType = EventTypeSlashCommandExecuted
 	case *FishBucketedEvent:
@@ -342,6 +346,12 @@ func (a *AgentCommandEvent) Marshal(r IO) {
 	r.String(&a.DataKey)
 	r.String(&a.Output)
 }
+
+// PatternRemovedEvent is the event data sent when a pattern is removed.
+type PatternRemovedEvent struct{}
+
+// Marshal ...
+func (p *PatternRemovedEvent) Marshal(r IO) {}
 
 // SlashCommandExecutedEvent is the event data sent when a slash command is executed.
 type SlashCommandExecutedEvent struct {
