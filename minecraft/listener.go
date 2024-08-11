@@ -101,6 +101,8 @@ type Listener struct {
 	close    chan struct{}
 
 	key *ecdsa.PrivateKey
+
+	disableEncryption bool
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -131,12 +133,13 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{
-		cfg:      cfg,
-		listener: netListener,
-		packs:    slices.Clone(cfg.ResourcePacks),
-		incoming: make(chan *Conn),
-		close:    make(chan struct{}),
-		key:      key,
+		cfg:               cfg,
+		listener:          netListener,
+		packs:             slices.Clone(cfg.ResourcePacks),
+		incoming:          make(chan *Conn),
+		close:             make(chan struct{}),
+		key:               key,
+		disableEncryption: n.Encrypted(),
 	}
 
 	// Actually start listening.
@@ -260,6 +263,8 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets(true)
+
+	conn.disableEncryption = listener.disableEncryption
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired

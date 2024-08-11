@@ -24,6 +24,10 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
+
+	// Encrypted returns a bool indicating whether an encryption has already been done on the Network side, and no
+	// encryption is needed on Conn side.
+	Encrypted() bool
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra
