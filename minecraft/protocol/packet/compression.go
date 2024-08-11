@@ -24,10 +24,10 @@ var (
 	// NopCompression is an empty implementation that does not compress data.
 	NopCompression nopCompression
 	// FlateCompression is the implementation of the Flate compression
-	// algorithm. This was used by default until v1.19.30.
+	// algorithm. This is used by default.
 	FlateCompression flateCompression
 	// SnappyCompression is the implementation of the Snappy compression
-	// algorithm. This is used by default.
+	// algorithm. Currently crashes devices without `avx2`
 	SnappyCompression snappyCompression
 
 	DefaultCompression Compression = FlateCompression
