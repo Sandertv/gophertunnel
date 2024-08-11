@@ -55,7 +55,7 @@ type ListenConfig struct {
 	AcceptedProtocols []Protocol
 	// Compression is the packet.Compression to use for packets sent over this Conn. If set to nil, the compression
 	// will default to packet.flateCompression.
-	Compression packet.Compression // TODO: Change this to snappy once Windows crashes are resolved.
+	Compression packet.Compression
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
 	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
 	// time.Duration, the lower the latency but the less efficient both network and cpu wise.
