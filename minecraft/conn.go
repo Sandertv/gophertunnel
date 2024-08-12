@@ -1063,6 +1063,7 @@ func (conn *Conn) startGame() {
 		CommandsEnabled:              true,
 		WorldName:                    data.WorldName,
 		LANBroadcastEnabled:          true,
+		XBLBroadcastMode:             data.GamePublishSetting,
 		PlayerMovementSettings:       data.PlayerMovementSettings,
 		WorldGameMode:                data.WorldGameMode,
 		Hardcore:                     data.Hardcore,
