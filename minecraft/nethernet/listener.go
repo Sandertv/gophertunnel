@@ -336,14 +336,13 @@ func (l *Listener) handleOffer(signal *Signal) error {
 		}
 
 		l.connections.Store(signal.ConnectionID, c)
-		go l.prepareConn(c)
+		go l.handleConn(c)
 
 		return nil
 	}
 }
 
-func (l *Listener) prepareConn(conn *Conn) {
-	// TODO: Cleanup
+func (l *Listener) handleConn(conn *Conn) {
 	select {
 	case <-l.ctx.Done():
 		// Quit the goroutine when the listener closes.

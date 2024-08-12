@@ -45,11 +45,6 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 	//case <-c.closed:
 	//	return n, net.ErrClosed
 	case pk := <-c.packets:
-		if len(pk) > 0 && pk[0] != 0xfe {
-			// WORKAROUND: Append batch header, may be this is specific to RakNet?
-			// ;-;
-			pk = append([]byte{0xfe}, pk...)
-		}
 		return copy(b, pk), nil
 	}
 }
@@ -59,11 +54,6 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 	//case <-c.closed:
 	//	return n, net.ErrClosed
 	default:
-		if len(b) > 0 && b[0] == 0xfe {
-			// WORKAROUND: Discard batch header, may be this is specific to RakNet?
-			b = b[1:]
-		}
-
 		// TODO: Clean up...
 		if len(b) > maxMessageSize {
 			segments := uint8(len(b) / maxMessageSize)
@@ -72,16 +62,17 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 			}
 
 			for i := 0; i < len(b); i += maxMessageSize {
+				segments--
+
 				end := i + maxMessageSize
 				if end > len(b) {
 					end = len(b)
 				}
-				chunk := b[i:end]
-				if err := c.reliable.Send(append([]byte{segments}, chunk...)); err != nil {
-					return n, fmt.Errorf("send segment #%d: %w", segments, err)
+				frag := b[i:end]
+				if err := c.reliable.Send(append([]byte{segments}, frag...)); err != nil {
+					return n, fmt.Errorf("write segment #%d: %w", segments, err)
 				}
-				n += len(chunk)
-				segments--
+				n += len(frag)
 			}
 
 			// TODO

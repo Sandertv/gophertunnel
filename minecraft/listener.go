@@ -102,7 +102,7 @@ type Listener struct {
 
 	key *ecdsa.PrivateKey
 
-	disableEncryption bool
+	disableEncryption, batched bool
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -140,6 +140,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		close:             make(chan struct{}),
 		key:               key,
 		disableEncryption: n.Encrypted(),
+		batched:           n.Batched(),
 	}
 
 	// Actually start listening.
@@ -259,7 +260,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	packs := slices.Clone(listener.packs)
 	listener.packsMu.RUnlock()
 
-	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
+	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true, listener.batched)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets(true)

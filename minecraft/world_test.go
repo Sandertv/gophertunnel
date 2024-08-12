@@ -234,6 +234,8 @@ func (n network) Listen(string) (NetworkListener, error) {
 
 func (network) Encrypted() bool { return true }
 
+func (network) Batched() bool { return false }
+
 // tokenSource is an implementation of xsapi.TokenSource that simply returns a *auth.XBLToken.
 type tokenSource struct{ x *auth.XBLToken }
 

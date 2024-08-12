@@ -28,6 +28,8 @@ type Network interface {
 	// Encrypted returns a bool indicating whether an encryption has already been done on the Network side, and no
 	// encryption is needed on Conn side.
 	Encrypted() bool
+	// Batched returns a bool indicating whether packets should be batched when received/sent.
+	Batched() bool
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra

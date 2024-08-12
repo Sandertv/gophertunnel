@@ -27,6 +27,9 @@ func (r RakNet) Listen(address string) (NetworkListener, error) {
 // Encrypted ...
 func (r RakNet) Encrypted() bool { return false }
 
+// Batched ...
+func (r RakNet) Batched() bool { return true }
+
 // init registers the RakNet network.
 func init() {
 	RegisterNetwork("raknet", RakNet{})
