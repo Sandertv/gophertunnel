@@ -61,7 +61,7 @@ const (
 	EntityDataKeySeatLockPassengerRotation
 	EntityDataKeySeatLockPassengerRotationDegrees
 	EntityDataKeySeatRotationOffset
-	EntityDataKeySeatRotationOffstDegrees
+	EntityDataKeySeatRotationOffsetDegrees
 	EntityDataKeyDataRadius
 	EntityDataKeyDataWaiting
 	EntityDataKeyDataParticle
