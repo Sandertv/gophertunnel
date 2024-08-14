@@ -8,7 +8,6 @@ const (
 	StructureTemplateRequestExportFromSave = iota + 1
 	StructureTemplateRequestExportFromLoad
 	StructureTemplateRequestQuerySavedStructure
-	StructureTemplateRequestImportFromSave
 )
 
 // StructureTemplateDataRequest is sent by the client to request data of a structure.

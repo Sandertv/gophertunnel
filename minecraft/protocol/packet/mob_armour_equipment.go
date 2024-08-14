@@ -21,6 +21,8 @@ type MobArmourEquipment struct {
 	Leggings protocol.ItemInstance
 	// Boots is the item worn as boots by the entity. Items not wearable as boots will not be rendered.
 	Boots protocol.ItemInstance
+	// Body is the item worn on the body of the entity. Items not wearable on the body will not be rendered.
+	Body protocol.ItemInstance
 }
 
 // ID ...
@@ -34,4 +36,5 @@ func (pk *MobArmourEquipment) Marshal(io protocol.IO) {
 	io.ItemInstance(&pk.Chestplate)
 	io.ItemInstance(&pk.Leggings)
 	io.ItemInstance(&pk.Boots)
+	io.ItemInstance(&pk.Body)
 }

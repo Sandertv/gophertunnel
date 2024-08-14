@@ -4,6 +4,14 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	PlayerArmourDamageFlagHelmet = 1 << (iota + 1)
+	PlayerArmourDamageFlagChestplate
+	PlayerArmourDamageFlagLeggings
+	PlayerArmourDamageFlagBoots
+	PlayerArmourDamageFlagBody
+)
+
 // PlayerArmourDamage is sent by the server to damage the armour of a player. It is a very efficient packet,
 // but generally it's much easier to just send a slot update for the damaged armour.
 type PlayerArmourDamage struct {
@@ -19,6 +27,8 @@ type PlayerArmourDamage struct {
 	LeggingsDamage int32
 	// BootsDamage is the amount of damage that should be dealt to the boots.
 	BootsDamage int32
+	// BodyDamage is the amount of damage that should be dealt to the body.
+	BodyDamage int32
 }
 
 // ID ...
@@ -28,24 +38,29 @@ func (pk *PlayerArmourDamage) ID() uint32 {
 
 func (pk *PlayerArmourDamage) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Bitset)
-	if pk.Bitset&0b0001 != 0 {
+	if pk.Bitset&PlayerArmourDamageFlagHelmet != 0 {
 		io.Varint32(&pk.HelmetDamage)
 	} else {
 		pk.HelmetDamage = 0
 	}
-	if pk.Bitset&0b0010 != 0 {
+	if pk.Bitset&PlayerArmourDamageFlagChestplate != 0 {
 		io.Varint32(&pk.ChestplateDamage)
 	} else {
 		pk.ChestplateDamage = 0
 	}
-	if pk.Bitset&0b0100 != 0 {
+	if pk.Bitset&PlayerArmourDamageFlagLeggings != 0 {
 		io.Varint32(&pk.LeggingsDamage)
 	} else {
 		pk.LeggingsDamage = 0
 	}
-	if pk.Bitset&0b1000 != 0 {
+	if pk.Bitset&PlayerArmourDamageFlagBoots != 0 {
 		io.Varint32(&pk.BootsDamage)
 	} else {
 		pk.BootsDamage = 0
+	}
+	if pk.Bitset&PlayerArmourDamageFlagBody != 0 {
+		io.Varint32(&pk.BodyDamage)
+	} else {
+		pk.BodyDamage = 0
 	}
 }
