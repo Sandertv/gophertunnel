@@ -233,17 +233,17 @@ func (x *ItemStackResponse) Marshal(r IO) {
 
 // StackResponseContainerInfo holds information on what slots in a container have what item stack in them.
 type StackResponseContainerInfo struct {
-	// ContainerID is the container ID of the container that the slots that follow are in. For the main
-	// inventory, this value seems to be 0x1b. For the cursor, this value seems to be 0x3a. For the crafting
-	// grid, this value seems to be 0x0d.
-	ContainerID byte
+	// Container is the FullContainerName that describes the container that the slots that follow are in. For
+	// the main inventory, the ContainerID seems to be 0x1b. Fur the cursor, this value seems to be 0x3a. For
+	// the crafting grid, this value seems to be 0x0d.
+	Container FullContainerName
 	// SlotInfo holds information on what item stack should be present in specific slots in the container.
 	SlotInfo []StackResponseSlotInfo
 }
 
 // Marshal encodes/decodes a StackResponseContainerInfo.
 func (x *StackResponseContainerInfo) Marshal(r IO) {
-	r.Uint8(&x.ContainerID)
+	Single(r, &x.Container)
 	Slice(r, &x.SlotInfo)
 }
 
