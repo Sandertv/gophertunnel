@@ -28,6 +28,11 @@ type ChangeDimension struct {
 	// PlayerActionDimensionChangeRequest if it dies in another dimension, indicating that it needs a
 	// DimensionChange packet with Respawn set to true.
 	Respawn bool
+	// LoadingScreenID is a unique ID for the loading screen that the player is currently in. The client will
+	// update the server on its state through the ServerBoundLoadingScreen packet, and it can be used to not
+	// send specific packets to the client if it is changing dimensions. This field should be unique for every
+	//ChangeDimension packet sent.
+	LoadingScreenID protocol.Optional[uint32]
 }
 
 // ID ...
@@ -39,4 +44,5 @@ func (pk *ChangeDimension) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Dimension)
 	io.Vec3(&pk.Position)
 	io.Bool(&pk.Respawn)
+	protocol.OptionalFunc(io, &pk.LoadingScreenID, io.Uint32)
 }

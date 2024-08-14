@@ -13,6 +13,8 @@ type StopSound struct {
 	// StopAll specifies if all sounds currently playing to the player should be stopped. If set to true, the
 	// SoundName field may be left empty.
 	StopAll bool
+	// StopMusicLegacy is currently unknown.
+	StopMusicLegacy bool
 }
 
 // ID ...
@@ -23,4 +25,5 @@ func (*StopSound) ID() uint32 {
 func (pk *StopSound) Marshal(io protocol.IO) {
 	io.String(&pk.SoundName)
 	io.Bool(&pk.StopAll)
+	io.Bool(&pk.StopMusicLegacy)
 }

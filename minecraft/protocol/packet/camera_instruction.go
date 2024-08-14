@@ -12,6 +12,10 @@ type CameraInstruction struct {
 	Clear protocol.Optional[bool]
 	// Fade is a camera instruction that fades the screen to a specified colour.
 	Fade protocol.Optional[protocol.CameraInstructionFade]
+	// Target is a camera instruction that targets a specific entity.
+	Target protocol.Optional[protocol.CameraInstructionTarget]
+	// RemoveTarget can be set to true to remove the current target entity.
+	RemoveTarget protocol.Optional[bool]
 }
 
 // ID ...
@@ -23,4 +27,6 @@ func (pk *CameraInstruction) Marshal(io protocol.IO) {
 	protocol.OptionalMarshaler(io, &pk.Set)
 	protocol.OptionalFunc(io, &pk.Clear, io.Bool)
 	protocol.OptionalMarshaler(io, &pk.Fade)
+	protocol.OptionalMarshaler(io, &pk.Target)
+	protocol.OptionalFunc(io, &pk.RemoveTarget, io.Bool)
 }

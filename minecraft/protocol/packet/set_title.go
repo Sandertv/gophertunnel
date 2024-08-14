@@ -39,6 +39,8 @@ type SetTitle struct {
 	XUID string
 	// PlatformOnlineID is either a uint64 or an empty string.
 	PlatformOnlineID string
+	// FilteredMessage is always set to empty and the usage is currently unknown.
+	FilteredMessage string
 }
 
 // ID ...
@@ -54,4 +56,5 @@ func (pk *SetTitle) Marshal(io protocol.IO) {
 	io.Varint32(&pk.FadeOutDuration)
 	io.String(&pk.XUID)
 	io.String(&pk.PlatformOnlineID)
+	io.String(&pk.FilteredMessage)
 }
