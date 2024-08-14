@@ -16,7 +16,7 @@ type ServerBoundLoadingScreen struct {
 	// Type is the type of the loading screen event. It is one of the constants that may be found above.
 	Type int32
 	// LoadingScreenID is the ID of the screen that was previously sent by the server in the ChangeDimension
-	// packet. The server should validate that the screen ID is correct.
+	// packet. The server should validate that the ID matches the last one it sent.
 	LoadingScreenID protocol.Optional[uint32]
 }
 

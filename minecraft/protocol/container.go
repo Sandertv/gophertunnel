@@ -108,6 +108,7 @@ const (
 	ContainerTypeCrafter
 )
 
+// FullContainerName contains information required to identify a container in a StackRequestSlotInfo.
 type FullContainerName struct {
 	// ContainerID is the ID of the container that the slot was in.
 	ContainerID byte

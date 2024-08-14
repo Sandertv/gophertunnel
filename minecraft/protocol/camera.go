@@ -148,12 +148,14 @@ type CameraPreset struct {
 	RotX Optional[float32]
 	// RotY is the default yaw of the camera.
 	RotY Optional[float32]
-	// ViewOffset ...
+	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
+	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
-	// Radius ...
+	// Radius is only used in a follow_orbit camera and controls how far away from the player the camera should
+	// be rendered.
 	Radius Optional[float32]
-	// AudioListener defines where the audio should be played from when using this preset. This is one of the constants
-	// above.
+	// AudioListener defines where the audio should be played from when using this preset. This is one of the
+	// constants above.
 	AudioListener Optional[byte]
 	// PlayerEffects is currently unknown.
 	PlayerEffects Optional[bool]

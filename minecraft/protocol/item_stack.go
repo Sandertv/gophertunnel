@@ -468,11 +468,15 @@ type CraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 }
 
 // Marshal ...
 func (a *CraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 }
 
 // AutoCraftRecipeStackRequestAction is sent by the client similarly to the CraftRecipeStackRequestAction. The
@@ -482,6 +486,8 @@ type AutoCraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field is just a duplicate of TimesCrafted.
+	NumberOfCrafts byte
 	// TimesCrafted is how many times the recipe was crafted.
 	TimesCrafted byte
 	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
@@ -492,6 +498,7 @@ type AutoCraftRecipeStackRequestAction struct {
 // Marshal ...
 func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 	r.Uint8(&a.TimesCrafted)
 	FuncSlice(r, &a.Ingredients, r.ItemDescriptorCount)
 }
@@ -502,11 +509,15 @@ type CraftCreativeStackRequestAction struct {
 	// CreativeItemNetworkID is the network ID of the creative item that is being created. This is one of the
 	// creative item network IDs sent in the CreativeContent packet.
 	CreativeItemNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 }
 
 // Marshal ...
 func (a *CraftCreativeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.CreativeItemNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 }
 
 // CraftRecipeOptionalStackRequestAction is sent when using an anvil. When this action is sent, the
@@ -517,6 +528,9 @@ type CraftRecipeOptionalStackRequestAction struct {
 	// one of the multi-recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 	// FilterStringIndex is the index of a filter string sent in a ItemStackRequest.
 	FilterStringIndex int32
 }
@@ -524,6 +538,7 @@ type CraftRecipeOptionalStackRequestAction struct {
 // Marshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
+	r.Uint8(&c.NumberOfCrafts)
 	r.Int32(&c.FilterStringIndex)
 }
 
@@ -534,6 +549,9 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 	// Cost is the cost of the recipe that was crafted.
 	Cost int32
 }
@@ -541,6 +559,7 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 // Marshal ...
 func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
+	r.Uint8(&c.NumberOfCrafts)
 	r.Varint32(&c.Cost)
 }
 
