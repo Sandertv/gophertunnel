@@ -122,11 +122,23 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		}
 
 		b := bytes.NewBuffer(data)
+		for b.Len() != 0 {
+			var length uint32
+			if err := protocol.Varuint32(b, &length); err != nil {
+				return nil, fmt.Errorf("decode batch: read packet length: %w", err)
+			}
+			packets = append(packets, b.Next(int(length)))
+		}
+		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
+			return nil, fmt.Errorf("decode batch: number of packets %v exceeds max=%v", len(packets), maximumInBatch)
+		}
+		return packets, nil
+		/*b := bytes.NewBuffer(data)
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
 			return nil, fmt.Errorf("decode single: read packet single: %w", err)
 		}
-		return [][]byte{b.Next(int(length))}, nil
+		return [][]byte{b.Next(int(length))}, nil*/
 	}
 }
 

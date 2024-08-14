@@ -66,7 +66,7 @@ func (l Login) WithXBLToken(x *auth.XBLToken) Login {
 
 func (l Login) Login() (*Identity, error) {
 	if l.Route == "" {
-		panic("playfab/login: must provide a method/route")
+		panic("playfab/login: must provide an identity provider/route to login")
 	}
 	return internal.Post[*Identity](l.Title, l.Route, l)
 }

@@ -16,7 +16,7 @@ type Signaling interface {
 	ReadSignal() (*Signal, error)
 	WriteSignal(signal *Signal) error
 
-	// Credentials will currently block until a credentials is received from the signaling service. This is usually
+	// Credentials will currently block until a credentials has received from the signaling service. This is usually
 	// present in WebSocket signaling connection. A nil *Credentials may be returned if no credentials or
 	// the implementation is not capable to do that.
 	Credentials() (*Credentials, error)

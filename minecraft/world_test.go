@@ -3,6 +3,7 @@ package minecraft
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
@@ -12,6 +13,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/signaling"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"log/slog"
 	"net"
 	"os"
 
@@ -27,8 +30,8 @@ import (
 	"testing"
 )
 
-// TestListen demonstrates a world displayed in the friend list.
-func TestWorld(t *testing.T) {
+// TestWorldListen demonstrates a world displayed in the friend list.
+func TestWorldListen(t *testing.T) {
 	discovery, err := franchise.Discover(protocol.CurrentVersion)
 	if err != nil {
 		t.Fatalf("discover: %s", err)
@@ -174,6 +177,10 @@ func TestWorld(t *testing.T) {
 		signaling: signalingConn,
 	})
 
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
+
 	l, err := Listen("nethernet", "")
 	if err != nil {
 		t.Fatal(err)
@@ -206,6 +213,111 @@ func TestWorld(t *testing.T) {
 	}
 }
 
+func TestWorldDial(t *testing.T) {
+	// TODO: Implement looking up sessions and find a network ID from the response.
+	// You need to fill in this field before running the test.
+	const remoteNetworkID = 0
+
+	discovery, err := franchise.Discover(protocol.CurrentVersion)
+	if err != nil {
+		t.Fatalf("discover: %s", err)
+	}
+	a := new(franchise.AuthorizationEnvironment)
+	if err := discovery.Environment(a, franchise.EnvironmentTypeProduction); err != nil {
+		t.Fatalf("decode environment: %s", err)
+	}
+
+	src := TokenSource(t, "franchise/internal/test/auth.tok", auth.TokenSource, func(old *oauth2.Token) (new *oauth2.Token, err error) {
+		return auth.RefreshTokenSource(old).Token()
+	})
+	playfabXBL, err := auth.RequestXBLToken(context.Background(), src, "http://playfab.xboxlive.com/")
+	if err != nil {
+		t.Fatalf("error requesting XBL token: %s", err)
+	}
+
+	identity, err := playfab.Login{
+		Title:         "20CA2",
+		CreateAccount: true,
+	}.WithXBLToken(playfabXBL).Login()
+	if err != nil {
+		t.Fatalf("error logging in to playfab: %s", err)
+	}
+
+	region, _ := language.English.Region()
+
+	conf := &franchise.TokenConfig{
+		Device: &franchise.DeviceConfig{
+			ApplicationType: franchise.ApplicationTypeMinecraftPE,
+			Capabilities:    []string{franchise.CapabilityRayTracing},
+			GameVersion:     protocol.CurrentVersion,
+			ID:              uuid.New(),
+			Memory:          strconv.FormatUint(rand.Uint64(), 10),
+			Platform:        franchise.PlatformWindows10,
+			PlayFabTitleID:  a.PlayFabTitleID,
+			StorePlatform:   franchise.StorePlatformUWPStore,
+			Type:            franchise.DeviceTypeWindows10,
+		},
+		User: &franchise.UserConfig{
+			Language:     language.English,
+			LanguageCode: language.AmericanEnglish,
+			RegionCode:   region.String(),
+			Token:        identity.SessionTicket,
+			TokenType:    franchise.TokenTypePlayFab,
+		},
+		Environment: a,
+	}
+
+	s := new(signaling.Environment)
+	if err := discovery.Environment(s, franchise.EnvironmentTypeProduction); err != nil {
+		t.Fatalf("decode environment: %s", err)
+	}
+	sd := signaling.Dialer{
+		NetworkID: rand.Uint64(),
+	}
+	signalingConn, err := sd.DialContext(context.Background(), tokenConfigSource(func() (*franchise.TokenConfig, error) {
+		return conf, nil
+	}), s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := signalingConn.Close(); err != nil {
+			t.Errorf("clean up: error closing: %s", err)
+		}
+	})
+
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelDebug,
+	})))
+
+	RegisterNetwork("nethernet", &network{
+		networkID: sd.NetworkID,
+		signaling: signalingConn,
+	})
+
+	conn, err := Dialer{
+		TokenSource: auth.RefreshTokenSource(src),
+	}.Dial("nethernet", strconv.FormatUint(remoteNetworkID, 10))
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() {
+		if err := conn.Close(); err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	if err := conn.DoSpawn(); err != nil {
+		t.Fatalf("error spawning in: %s", err)
+	}
+	_ = conn.WritePacket(&packet.Text{
+		TextType:   packet.TextTypeChat,
+		SourceName: conn.IdentityData().DisplayName,
+		Message:    "Successful",
+		XUID:       conn.IdentityData().XUID,
+	})
+}
+
 func TestDecodeOffer(t *testing.T) {
 	d := &sdp.SessionDescription{}
 	if err := d.UnmarshalString("v=0\r\no=- 8735254407289596231 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=extmap-allow-mixed\r\na=msid-semantic: WMS\r\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 0.0.0.0\r\na=ice-ufrag:gMX+\r\na=ice-pwd:4SN4mwDq5k9Q2LwCiMqxacaM\r\na=ice-options:trickle\r\na=fingerprint:sha-256 B2:35:F2:64:66:B3:73:B3:BB:8D:EE:AF:D8:96:6C:29:9C:A9:E8:94:B3:67:E1:B9:77:8C:18:19:EA:29:7D:12\r\na=setup:actpass\r\na=mid:0\r\na=sctp-port:5000\r\na=max-message-size:262144\r\n"); err != nil {
@@ -219,12 +331,17 @@ type network struct {
 	signaling nethernet.Signaling
 }
 
-func (network) DialContext(context.Context, string) (net.Conn, error) {
-	panic("not implemented (yet)")
+func (n network) DialContext(ctx context.Context, addr string) (net.Conn, error) {
+	networkID, err := strconv.ParseUint(addr, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("parse network ID: %w", err)
+	}
+	var d nethernet.Dialer
+	return d.DialContext(ctx, networkID, n.signaling)
 }
 
 func (network) PingContext(context.Context, string) ([]byte, error) {
-	panic("not implemented (yet)")
+	return nil, errors.New("not supported")
 }
 
 func (n network) Listen(string) (NetworkListener, error) {

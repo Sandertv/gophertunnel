@@ -1,7 +1,6 @@
 package nethernet
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,7 +12,6 @@ import (
 	"math/rand"
 	"net"
 	"strconv"
-	"strings"
 	"sync"
 )
 
@@ -95,6 +93,11 @@ func (l *Listener) startListening(cancel context.CancelCauseFunc) {
 			close(l.incoming)
 			return
 		}
+
+		// Um... It seems the game has a bug that doesn't even send an offer if joining worlds too many times.
+		// This is not a bug of this code because you may not join any worlds if the bug has occurred.
+		// Once the bug has occurred, you need to restart the game.
+		l.conf.Log.Debug(signal.String())
 		switch signal.Type {
 		case SignalTypeOffer:
 			err = l.handleOffer(signal)
@@ -126,39 +129,11 @@ func (l *Listener) startListening(cancel context.CancelCauseFunc) {
 func (l *Listener) handleOffer(signal *Signal) error {
 	d := &sdp.SessionDescription{}
 	if err := d.UnmarshalString(signal.Data); err != nil {
-		return wrapSignalError(fmt.Errorf("decode description: %w", err), ErrorCodeFailedToSetRemoteDescription)
+		return wrapSignalError(fmt.Errorf("decode offer: %w", err), ErrorCodeFailedToSetRemoteDescription)
 	}
-	if len(d.MediaDescriptions) != 1 {
-		return wrapSignalError(fmt.Errorf("unexpected number of media descriptions: %d, expected 1", len(d.MediaDescriptions)), ErrorCodeFailedToSetRemoteDescription)
-	}
-	m := d.MediaDescriptions[0]
-
-	ufrag, ok := m.Attribute("ice-ufrag")
-	if !ok {
-		return wrapSignalError(errors.New("missing ice-ufrag attribute"), ErrorCodeFailedToSetRemoteDescription)
-	}
-	pwd, ok := m.Attribute("ice-pwd")
-	if !ok {
-		return wrapSignalError(errors.New("missing ice-pwd attribute"), ErrorCodeFailedToSetRemoteDescription)
-	}
-
-	attr, ok := m.Attribute("fingerprint")
-	if !ok {
-		return wrapSignalError(errors.New("missing fingerprint attribute"), ErrorCodeFailedToSetRemoteDescription)
-	}
-	fingerprint := strings.Split(attr, " ")
-	if len(fingerprint) != 2 {
-		return wrapSignalError(fmt.Errorf("invalid fingerprint: %s", attr), ErrorCodeFailedToSetRemoteDescription)
-	}
-	fingerprintAlgorithm, fingerprintValue := fingerprint[0], fingerprint[1]
-
-	attr, ok = m.Attribute("max-message-size")
-	if !ok {
-		return wrapSignalError(errors.New("missing max-message-size attribute"), ErrorCodeFailedToSetRemoteDescription)
-	}
-	maxMessageSize, err := strconv.ParseUint(attr, 10, 32)
+	desc, err := parseDescription(d)
 	if err != nil {
-		return wrapSignalError(fmt.Errorf("parse max-message-size attribute as uint32: %w", err), ErrorCodeFailedToSetRemoteDescription)
+		return wrapSignalError(fmt.Errorf("parse offer: %w", err), ErrorCodeFailedToSetRemoteDescription)
 	}
 
 	credentials, err := l.signaling.Credentials()
@@ -282,12 +257,14 @@ func (l *Listener) handleOffer(signal *Signal) error {
 		if err != nil {
 			return wrapSignalError(fmt.Errorf("encode answer: %w", err), ErrorCodeFailedToCreateAnswer)
 		}
+
 		if err := l.signaling.WriteSignal(&Signal{
 			Type:         SignalTypeAnswer,
 			ConnectionID: signal.ConnectionID,
 			Data:         string(answer),
 			NetworkID:    signal.NetworkID,
 		}); err != nil {
+			// I don't think the error code will be signaled back to the remote connection, but just in case.
 			return wrapSignalError(fmt.Errorf("signal answer: %w", err), ErrorCodeSignalingFailedToSend)
 		}
 		for i, candidate := range candidates {
@@ -297,43 +274,12 @@ func (l *Listener) handleOffer(signal *Signal) error {
 				Data:         formatICECandidate(i, candidate, iceParams),
 				NetworkID:    signal.NetworkID,
 			}); err != nil {
+				// I don't think the error code will be signaled back to the remote connection, but just in case.
 				return wrapSignalError(fmt.Errorf("signal candidate: %w", err), ErrorCodeSignalingFailedToSend)
 			}
 		}
 
-		c := &Conn{
-			ice:  ice,
-			dtls: dtls,
-			sctp: sctp,
-
-			iceParams: webrtc.ICEParameters{
-				UsernameFragment: ufrag,
-				Password:         pwd,
-			},
-			dtlsParams: webrtc.DTLSParameters{
-				Fingerprints: []webrtc.DTLSFingerprint{
-					{
-						Algorithm: fingerprintAlgorithm,
-						Value:     fingerprintValue,
-					},
-				},
-			},
-			sctpCapabilities: webrtc.SCTPCapabilities{
-				MaxMessageSize: uint32(maxMessageSize),
-			},
-
-			api: l.conf.API, // This is mostly unused in server connections.
-
-			ready: make(chan struct{}),
-
-			packets: make(chan []byte),
-			buf:     bytes.NewBuffer(nil),
-
-			log: l.conf.Log,
-
-			id:        signal.ConnectionID,
-			networkID: signal.NetworkID,
-		}
+		c := newConn(ice, dtls, sctp, desc, l.conf.Log, signal.ConnectionID, signal.NetworkID)
 
 		l.connections.Store(signal.ConnectionID, c)
 		go l.handleConn(c)
@@ -347,9 +293,58 @@ func (l *Listener) handleConn(conn *Conn) {
 	case <-l.ctx.Done():
 		// Quit the goroutine when the listener closes.
 		return
-	case <-conn.ready:
-		// When it is ready, send them into Accept!
+	case <-conn.candidateReceived:
+		conn.log.Debug("received first candidate")
+		if err := l.startTransports(conn); err != nil {
+			conn.log.Error("error starting transports", internal.ErrAttr(err))
+			return
+		}
+		conn.handleTransports()
 		l.incoming <- conn
+	}
+}
+
+func (l *Listener) startTransports(conn *Conn) error {
+	conn.log.Debug("starting ICE transport as controlled")
+	iceRole := webrtc.ICERoleControlled
+	if err := conn.ice.Start(nil, conn.remote.ice, &iceRole); err != nil {
+		return fmt.Errorf("start ICE: %w", err)
+	}
+
+	conn.log.Debug("starting DTLS transport as server")
+	dtlsParams := conn.remote.dtls
+	dtlsParams.Role = webrtc.DTLSRoleServer
+	if err := conn.dtls.Start(dtlsParams); err != nil {
+		return fmt.Errorf("start DTLS: %w", err)
+	}
+
+	conn.log.Debug("starting SCTP transport")
+	var (
+		once     = new(sync.Once)
+		bothOpen = make(chan struct{}, 1)
+	)
+	conn.sctp.OnDataChannelOpened(func(channel *webrtc.DataChannel) {
+		switch channel.Label() {
+		case "ReliableDataChannel":
+			conn.reliable = channel
+		case "UnreliableDataChannel":
+			conn.unreliable = channel
+		}
+		if conn.reliable != nil && conn.unreliable != nil {
+			once.Do(func() {
+				close(bothOpen)
+			})
+		}
+	})
+	if err := conn.sctp.Start(conn.remote.sctp); err != nil {
+		return fmt.Errorf("start SCTP: %w", err)
+	}
+
+	select {
+	case <-l.ctx.Done():
+		return l.ctx.Err()
+	case <-bothOpen:
+		return nil
 	}
 }
 

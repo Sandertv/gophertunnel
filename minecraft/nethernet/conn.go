@@ -5,12 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/pion/ice/v3"
+	"github.com/pion/sdp/v3"
 	"github.com/pion/webrtc/v4"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet/internal"
 	"log/slog"
 	"net"
+	"strconv"
+	"strings"
 	"sync"
-	"sync/atomic"
 	"time"
 )
 
@@ -19,21 +21,20 @@ type Conn struct {
 	dtls *webrtc.DTLSTransport
 	sctp *webrtc.SCTPTransport
 
-	// Remote parameters for starting ICE, DTLS, and SCTP transport.
-	iceParams        webrtc.ICEParameters
-	dtlsParams       webrtc.DTLSParameters
-	sctpCapabilities webrtc.SCTPCapabilities
+	remote *description
 
-	candidatesReceived atomic.Uint32 // Total amount of candidates received.
-	api                *webrtc.API   // WebRTC API to create new data channels on SCTP transport.
+	closeCandidateReceived sync.Once     // A sync.Once that closes candidateReceived only once.
+	candidateReceived      chan struct{} // Notifies that a first candidate is received from the other end, and the Conn is ready to start its transports.
 
 	reliable, unreliable *webrtc.DataChannel // ReliableDataChannel and UnreliableDataChannel
-	ready                chan struct{}       // Notifies when reliable and unreliable are ready.
 
 	packets chan []byte
 
 	buf              *bytes.Buffer
 	promisedSegments uint8
+
+	once   sync.Once
+	closed chan struct{}
 
 	log *slog.Logger
 
@@ -42,8 +43,8 @@ type Conn struct {
 
 func (c *Conn) Read(b []byte) (n int, err error) {
 	select {
-	//case <-c.closed:
-	//	return n, net.ErrClosed
+	case <-c.closed:
+		return n, net.ErrClosed
 	case pk := <-c.packets:
 		return copy(b, pk), nil
 	}
@@ -51,8 +52,8 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 func (c *Conn) Write(b []byte) (n int, err error) {
 	select {
-	//case <-c.closed:
-	//	return n, net.ErrClosed
+	case <-c.closed:
+		return n, net.ErrClosed
 	default:
 		// TODO: Clean up...
 		if len(b) > maxMessageSize {
@@ -116,7 +117,7 @@ func (c *Conn) RemoteAddr() net.Addr {
 }
 
 func (c *Conn) Close() error {
-	errs := make([]error, 0, 5)
+	errs := make([]error, 0, 3)
 	if c.reliable != nil {
 		if err := c.reliable.Close(); err != nil {
 			errs = append(errs, err)
@@ -128,54 +129,49 @@ func (c *Conn) Close() error {
 		}
 	}
 
-	if err := c.sctp.Stop(); err != nil {
-		errs = append(errs, err)
-	}
-	if err := c.dtls.Stop(); err != nil {
-		errs = append(errs, err)
-	}
-	if err := c.ice.Stop(); err != nil {
-		errs = append(errs, err)
-	}
-
-	return errors.Join(errs...)
+	return errors.Join(append(errs, c.closeTransports())...)
 }
 
-func (c *Conn) startTransports() error {
-	c.log.Debug("starting ICE transport")
-	iceRole := webrtc.ICERoleControlled
-	if err := c.ice.Start(nil, c.iceParams, &iceRole); err != nil {
-		return fmt.Errorf("start ICE transport: %w", err)
-	}
-
-	c.log.Debug("starting DTLS transport")
-	c.dtlsParams.Role = webrtc.DTLSRoleServer
-	if err := c.dtls.Start(c.dtlsParams); err != nil {
-		return fmt.Errorf("start DTLS transport: %w", err)
-	}
-	c.log.Debug("starting SCTP transport")
-
-	var once sync.Once
-	c.sctp.OnDataChannelOpened(func(channel *webrtc.DataChannel) {
-		switch channel.Label() {
-		case "ReliableDataChannel":
-			c.reliable = channel
-		case "UnreliableDataChannel":
-			c.unreliable = channel
-		}
-		if c.reliable != nil && c.unreliable != nil {
-			once.Do(func() {
-				close(c.ready)
-			})
+func (c *Conn) handleTransports() {
+	c.reliable.OnMessage(func(msg webrtc.DataChannelMessage) {
+		if err := c.handleMessage(msg.Data); err != nil {
+			c.log.Error("error handling remote message", internal.ErrAttr(err))
 		}
 	})
-	if err := c.sctp.Start(c.sctpCapabilities); err != nil {
-		return fmt.Errorf("start SCTP transport: %w", err)
-	}
 
-	<-c.ready
-	c.reliable.OnMessage(c.handleRemoteMessage)
-	return nil
+	c.ice.OnConnectionStateChange(func(state webrtc.ICETransportState) {
+		switch state {
+		case webrtc.ICETransportStateClosed, webrtc.ICETransportStateDisconnected, webrtc.ICETransportStateFailed:
+			_ = c.closeTransports() // We need to make sure that all transports has been closed
+		default:
+		}
+	})
+	c.dtls.OnStateChange(func(state webrtc.DTLSTransportState) {
+		switch state {
+		case webrtc.DTLSTransportStateClosed, webrtc.DTLSTransportStateFailed:
+			_ = c.closeTransports() // We need to make sure that all transports has been closed
+		default:
+		}
+	})
+}
+
+func (c *Conn) closeTransports() (err error) {
+	c.once.Do(func() {
+		errs := make([]error, 0, 3)
+
+		if err := c.sctp.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := c.dtls.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		if err := c.ice.Stop(); err != nil {
+			errs = append(errs, err)
+		}
+		err = errors.Join(errs...)
+		close(c.closed)
+	})
+	return err
 }
 
 func (c *Conn) handleSignal(signal *Signal) error {
@@ -207,16 +203,94 @@ func (c *Conn) handleSignal(signal *Signal) error {
 			return fmt.Errorf("add remote candidate: %w", err)
 		}
 
-		if c.candidatesReceived.Add(1) == 1 {
-			c.log.Debug("received first candidate, starting transports")
-			go func() {
-				if err := c.startTransports(); err != nil {
-					c.log.Error("error starting transports", internal.ErrAttr(err))
-				}
-			}()
-		}
+		c.closeCandidateReceived.Do(func() {
+			close(c.candidateReceived)
+		})
 	}
 	return nil
 }
 
 const maxMessageSize = 10000
+
+func parseDescription(d *sdp.SessionDescription) (*description, error) {
+	if len(d.MediaDescriptions) != 1 {
+		return nil, fmt.Errorf("unexpected number of media descriptions: %d, expected 1", len(d.MediaDescriptions))
+	}
+	m := d.MediaDescriptions[0]
+
+	ufrag, ok := m.Attribute("ice-ufrag")
+	if !ok {
+		return nil, errors.New("missing ice-ufrag attribute")
+	}
+	pwd, ok := m.Attribute("ice-pwd")
+	if !ok {
+		return nil, errors.New("missing ice-pwd attribute")
+	}
+
+	attr, ok := m.Attribute("fingerprint")
+	if !ok {
+		return nil, errors.New("missing fingerprint attribute")
+	}
+	fingerprint := strings.Split(attr, " ")
+	if len(fingerprint) != 2 {
+		return nil, fmt.Errorf("invalid fingerprint: %s", attr)
+	}
+	fingerprintAlgorithm, fingerprintValue := fingerprint[0], fingerprint[1]
+
+	attr, ok = m.Attribute("max-message-size")
+	if !ok {
+		return nil, errors.New("missing max-message-size attribute")
+	}
+	maxMessageSize, err := strconv.ParseUint(attr, 10, 32)
+	if err != nil {
+		return nil, fmt.Errorf("parse max-message-size attribute as uint32: %w", err)
+	}
+
+	return &description{
+		ice: webrtc.ICEParameters{
+			UsernameFragment: ufrag,
+			Password:         pwd,
+		},
+		dtls: webrtc.DTLSParameters{
+			Fingerprints: []webrtc.DTLSFingerprint{
+				{
+					Algorithm: fingerprintAlgorithm,
+					Value:     fingerprintValue,
+				},
+			},
+		},
+		sctp: webrtc.SCTPCapabilities{
+			MaxMessageSize: uint32(maxMessageSize),
+		},
+	}, nil
+}
+
+type description struct {
+	ice  webrtc.ICEParameters
+	dtls webrtc.DTLSParameters
+	sctp webrtc.SCTPCapabilities
+}
+
+func newConn(ice *webrtc.ICETransport, dtls *webrtc.DTLSTransport, sctp *webrtc.SCTPTransport, d *description, log *slog.Logger, id, networkID uint64) *Conn {
+	return &Conn{
+		ice:  ice,
+		dtls: dtls,
+		sctp: sctp,
+
+		remote: d,
+
+		candidateReceived: make(chan struct{}, 1),
+
+		packets: make(chan []byte),
+		buf:     bytes.NewBuffer(nil),
+
+		closed: make(chan struct{}, 1),
+
+		log: log.With(slog.Group("connection",
+			slog.Uint64("id", id),
+			slog.Uint64("networkID", networkID))),
+
+		id:        id,
+		networkID: networkID,
+	}
+}
