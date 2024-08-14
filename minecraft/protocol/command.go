@@ -266,8 +266,7 @@ type CommandOrigin struct {
 	// depending on what part of the client actually called the command. The command may be issued by a
 	// websocket server, for example.
 	Origin uint32
-	// UUID is the UUID of the command called. This UUID is a bit odd as it is not specified by the server. It
-	// is not clear what exactly this UUID is meant to identify, but it is unique for each command called.
+	// UUID is a unique identifier for every instantiation of a command.
 	UUID uuid.UUID
 	// RequestID is an ID that identifies the request of the client. The server should send a CommandOrigin
 	// with the same request ID to ensure it can be matched with the request by the caller of the command.

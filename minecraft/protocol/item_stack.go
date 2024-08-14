@@ -139,7 +139,72 @@ func lookupStackRequestAction(id uint8, x *StackRequestAction) bool {
 const (
 	ItemStackResponseStatusOK = iota
 	ItemStackResponseStatusError
-	// There are lots more of these statuses for specific errors, but they don't seem to be very useful.
+	ItemStackResponseStatusInvalidRequestActionType
+	ItemStackResponseStatusActionRequestNotAllowed
+	ItemStackResponseStatusScreenHandlerEndRequestFailed
+	ItemStackResponseStatusItemRequestActionHandlerCommitFailed
+	ItemStackResponseStatusInvalidRequestCraftActionType
+	ItemStackResponseStatusInvalidCraftRequest
+	ItemStackResponseStatusInvalidCraftRequestScreen
+	ItemStackResponseStatusInvalidCraftResult
+	ItemStackResponseStatusInvalidCraftResultIndex
+	ItemStackResponseStatusInvalidCraftResultItem
+	ItemStackResponseStatusInvalidItemNetId
+	ItemStackResponseStatusMissingCreatedOutputContainer
+	ItemStackResponseStatusFailedToSetCreatedItemOutputSlot
+	ItemStackResponseStatusRequestAlreadyInProgress
+	ItemStackResponseStatusFailedToInitSparseContainer
+	ItemStackResponseStatusResultTransferFailed
+	ItemStackResponseStatusExpectedItemSlotNotFullyConsumed
+	ItemStackResponseStatusExpectedAnywhereItemNotFullyConsumed
+	ItemStackResponseStatusItemAlreadyConsumedFromSlot
+	ItemStackResponseStatusConsumedTooMuchFromSlot
+	ItemStackResponseStatusMismatchSlotExpectedConsumedItem
+	ItemStackResponseStatusMismatchSlotExpectedConsumedItemNetIdVariant
+	ItemStackResponseStatusFailedToMatchExpectedSlotConsumedItem
+	ItemStackResponseStatusFailedToMatchExpectedAllowedAnywhereConsumedItem
+	ItemStackResponseStatusConsumedItemOutOfAllowedSlotRange
+	ItemStackResponseStatusConsumedItemNotAllowed
+	ItemStackResponseStatusPlayerNotInCreativeMode
+	ItemStackResponseStatusInvalidExperimentalRecipeRequest
+	ItemStackResponseStatusFailedToCraftCreative
+	ItemStackResponseStatusFailedToGetLevelRecipe
+	ItemStackResponseStatusFailedToFindRecipeByNetId
+	ItemStackResponseStatusMismatchedCraftingSize
+	ItemStackResponseStatusMissingInputSparseContainer
+	ItemStackResponseStatusMismatchedRecipeForInputGridItems
+	ItemStackResponseStatusEmptyCraftResults
+	ItemStackResponseStatusFailedToEnchant
+	ItemStackResponseStatusMissingInputItem
+	ItemStackResponseStatusInsufficientPlayerLevelToEnchant
+	ItemStackResponseStatusMissingMaterialItem
+	ItemStackResponseStatusMissingActor
+	ItemStackResponseStatusUnknownPrimaryEffect
+	ItemStackResponseStatusPrimaryEffectOutOfRange
+	ItemStackResponseStatusPrimaryEffectUnavailable
+	ItemStackResponseStatusSecondaryEffectOutOfRange
+	ItemStackResponseStatusSecondaryEffectUnavailable
+	ItemStackResponseStatusDstContainerEqualToCreatedOutputContainer
+	ItemStackResponseStatusDstContainerAndSlotEqualToSrcContainerAndSlot
+	ItemStackResponseStatusFailedToValidateSrcSlot
+	ItemStackResponseStatusFailedToValidateDstSlot
+	ItemStackResponseStatusInvalidAdjustedAmount
+	ItemStackResponseStatusInvalidItemSetType
+	ItemStackResponseStatusInvalidTransferAmount
+	ItemStackResponseStatusCannotSwapItem
+	ItemStackResponseStatusCannotPlaceItem
+	ItemStackResponseStatusUnhandledItemSetType
+	ItemStackResponseStatusInvalidRemovedAmount
+	ItemStackResponseStatusInvalidRegion
+	ItemStackResponseStatusCannotDropItem
+	ItemStackResponseStatusCannotDestroyItem
+	ItemStackResponseStatusInvalidSourceContainer
+	ItemStackResponseStatusItemNotConsumed
+	ItemStackResponseStatusInvalidNumCrafts
+	ItemStackResponseStatusInvalidCraftResultStackSize
+	ItemStackResponseStatusCannotRemoveItem
+	ItemStackResponseStatusCannotConsumeItem
+	ItemStackResponseStatusScreenStackError
 )
 
 // ItemStackResponse is a response to an individual ItemStackRequest.
@@ -168,17 +233,17 @@ func (x *ItemStackResponse) Marshal(r IO) {
 
 // StackResponseContainerInfo holds information on what slots in a container have what item stack in them.
 type StackResponseContainerInfo struct {
-	// ContainerID is the container ID of the container that the slots that follow are in. For the main
-	// inventory, this value seems to be 0x1b. For the cursor, this value seems to be 0x3a. For the crafting
-	// grid, this value seems to be 0x0d.
-	ContainerID byte
+	// Container is the FullContainerName that describes the container that the slots that follow are in. For
+	// the main inventory, the ContainerID seems to be 0x1b. Fur the cursor, this value seems to be 0x3a. For
+	// the crafting grid, this value seems to be 0x0d.
+	Container FullContainerName
 	// SlotInfo holds information on what item stack should be present in specific slots in the container.
 	SlotInfo []StackResponseSlotInfo
 }
 
 // Marshal encodes/decodes a StackResponseContainerInfo.
 func (x *StackResponseContainerInfo) Marshal(r IO) {
-	r.Uint8(&x.ContainerID)
+	Single(r, &x.Container)
 	Slice(r, &x.SlotInfo)
 }
 
@@ -403,11 +468,15 @@ type CraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 }
 
 // Marshal ...
 func (a *CraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 }
 
 // AutoCraftRecipeStackRequestAction is sent by the client similarly to the CraftRecipeStackRequestAction. The
@@ -417,6 +486,8 @@ type AutoCraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field is just a duplicate of TimesCrafted.
+	NumberOfCrafts byte
 	// TimesCrafted is how many times the recipe was crafted.
 	TimesCrafted byte
 	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
@@ -427,6 +498,7 @@ type AutoCraftRecipeStackRequestAction struct {
 // Marshal ...
 func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 	r.Uint8(&a.TimesCrafted)
 	FuncSlice(r, &a.Ingredients, r.ItemDescriptorCount)
 }
@@ -437,11 +509,15 @@ type CraftCreativeStackRequestAction struct {
 	// CreativeItemNetworkID is the network ID of the creative item that is being created. This is one of the
 	// creative item network IDs sent in the CreativeContent packet.
 	CreativeItemNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 }
 
 // Marshal ...
 func (a *CraftCreativeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.CreativeItemNetworkID)
+	r.Uint8(&a.NumberOfCrafts)
 }
 
 // CraftRecipeOptionalStackRequestAction is sent when using an anvil. When this action is sent, the
@@ -452,6 +528,9 @@ type CraftRecipeOptionalStackRequestAction struct {
 	// one of the multi-recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 	// FilterStringIndex is the index of a filter string sent in a ItemStackRequest.
 	FilterStringIndex int32
 }
@@ -459,6 +538,7 @@ type CraftRecipeOptionalStackRequestAction struct {
 // Marshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
+	r.Uint8(&c.NumberOfCrafts)
 	r.Int32(&c.FilterStringIndex)
 }
 
@@ -469,6 +549,9 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
+	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
+	// has no effect.
+	NumberOfCrafts byte
 	// Cost is the cost of the recipe that was crafted.
 	Cost int32
 }
@@ -476,6 +559,7 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 // Marshal ...
 func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
+	r.Uint8(&c.NumberOfCrafts)
 	r.Varint32(&c.Cost)
 }
 
@@ -515,8 +599,8 @@ func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
 
 // StackRequestSlotInfo holds information on a specific slot client-side.
 type StackRequestSlotInfo struct {
-	// ContainerID is the ID of the container that the slot was in.
-	ContainerID byte
+	// Container is the FullContainerName that describes the container that the slot is in.
+	Container FullContainerName
 	// Slot is the index of the slot within the container with the ContainerID above.
 	Slot byte
 	// StackNetworkID is the unique stack ID that the client assumes to be present in this slot. The server
@@ -527,7 +611,7 @@ type StackRequestSlotInfo struct {
 
 // StackReqSlotInfo reads/writes a StackRequestSlotInfo x using IO r.
 func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
-	r.Uint8(&x.ContainerID)
+	Single(r, &x.Container)
 	r.Uint8(&x.Slot)
 	r.Varint32(&x.StackNetworkID)
 }

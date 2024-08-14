@@ -251,6 +251,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	}
 	Slice(r, &x.Actions)
 	r.Varuint32(&x.ActionType)
+	r.Varuint32(&x.TriggerType)
 	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
@@ -258,6 +259,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
+	r.Varuint32(&x.ClientPrediction)
 }
 
 // GameRule reads a GameRule x from the Reader.

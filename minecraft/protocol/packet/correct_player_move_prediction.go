@@ -25,6 +25,8 @@ type CorrectPlayerMovePrediction struct {
 	// Rotation is the rotation of the player at the tick written in the field below. It is only included if
 	// PredictionType is PredictionTypeVehicle.
 	Rotation mgl32.Vec2
+	// VehicleAngularVelocity is the angular velocity of the vehicle that the rider is riding.
+	VehicleAngularVelocity protocol.Optional[float32]
 	// OnGround specifies if the player was on the ground at the time of the tick below.
 	OnGround bool
 	// Tick is the tick of the movement which was corrected by this packet.
@@ -42,6 +44,7 @@ func (pk *CorrectPlayerMovePrediction) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Delta)
 	if pk.PredictionType == PredictionTypeVehicle {
 		io.Vec2(&pk.Rotation)
+		protocol.OptionalFunc(io, &pk.VehicleAngularVelocity, io.Float32)
 	}
 	io.Bool(&pk.OnGround)
 	io.Varuint64(&pk.Tick)
