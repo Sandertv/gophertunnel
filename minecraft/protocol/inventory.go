@@ -181,7 +181,7 @@ type UseItemTransactionData struct {
 	BlockRuntimeID uint32
 	// ClientPrediction is the client's prediction on the output of the transaction. It is one of the client
 	// prediction found in the constants above.
-	ClientPrediction byte
+	ClientPrediction uint32
 }
 
 const (
@@ -246,7 +246,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
-	r.Uint8(&data.ClientPrediction)
+	r.Varuint32(&data.ClientPrediction)
 }
 
 // Marshal ...
