@@ -72,6 +72,9 @@ type CameraInstructionSet struct {
 	Rotation Optional[mgl32.Vec2]
 	// Facing is a vector that the camera will always face towards during the duration of the instruction.
 	Facing Optional[mgl32.Vec3]
+	// ViewOffset is an offset based on a pivot point to the player, causing the camera to be shifted in a
+	// certain direction.
+	ViewOffset Optional[mgl32.Vec2]
 	// Default determines whether the camera is a default camera or not.
 	Default Optional[bool]
 }
@@ -83,6 +86,7 @@ func (x *CameraInstructionSet) Marshal(r IO) {
 	OptionalFunc(r, &x.Position, r.Vec3)
 	OptionalFunc(r, &x.Rotation, r.Vec2)
 	OptionalFunc(r, &x.Facing, r.Vec3)
+	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.Default, r.Bool)
 }
 
