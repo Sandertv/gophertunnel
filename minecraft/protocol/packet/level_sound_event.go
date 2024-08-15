@@ -491,12 +491,12 @@ const (
 	SoundEventDecoratedPotInsert
 	SoundEventDecoratedPotInsertFail
 	SoundEventCrafterDisableSlot
-	_
-	_
-	_
-	_
-	_
-	_
+	SoundEventTrialSpawnerOpenShutter
+	SoundEventTrialSpawnerEjectItem
+	SoundEventTrialSpawnerDetectPlayer
+	SoundEventTrialSpawnerSpawnMob
+	SoundEventTrialSpawnerCloseShutter
+	SoundEventTrialSpawnerAmbient
 	SoundEventCopperBulbTurnOn
 	SoundEventCopperBulbTurnOff
 	SoundEventAmbientInAir
@@ -537,6 +537,7 @@ const (
 	SoundEventRecordCreator
 	SoundEventRecordCreatorMusicBox
 	SoundEventRecordPrecipice
+	SoundEventVaultRejectRewardedPlayer
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
