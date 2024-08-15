@@ -5,7 +5,8 @@ import (
 )
 
 // ServerBoundDiagnostics is sent by the client to tell the server about the performance diagnostics
-// of the client. It is sent by the client roughly every 500ms or 10 in-game ticks.
+// of the client. It is sent by the client roughly every 500ms or 10 in-game ticks when the
+// "Creator > Enable Client Diagnostics" setting is enabled.
 type ServerBoundDiagnostics struct {
 	// AverageFramesPerSecond is the average amount of frames per second that the client has been
 	// running at.
