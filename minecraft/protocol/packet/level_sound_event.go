@@ -491,6 +491,12 @@ const (
 	SoundEventDecoratedPotInsert
 	SoundEventDecoratedPotInsertFail
 	SoundEventCrafterDisableSlot
+	_
+	_
+	_
+	_
+	_
+	_
 	SoundEventCopperBulbTurnOn
 	SoundEventCopperBulbTurnOff
 	SoundEventAmbientInAir
@@ -523,12 +529,6 @@ const (
 	SoundEventOminousBottleEndUse
 	SoundEventMaceHeavySmashGround
 	SoundEventOminousItemSpawnerSpawnItemBegin
-	_
-	_
-	_
-	_
-	_
-	_
 	_
 	SoundEventApplyEffectBadOmen
 	SoundEventApplyEffectRaidOmen
