@@ -25,6 +25,7 @@ require (
 )
 
 require (
+	github.com/andreburgaud/crypt2go v1.6.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/pion/datachannel v1.5.8 // indirect
 	github.com/pion/dtls/v2 v2.2.12 // indirect
