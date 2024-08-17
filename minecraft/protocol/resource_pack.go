@@ -23,6 +23,8 @@ type BehaviourPackInfo struct {
 	// HasScripts specifies if the behaviour packs has any scripts in it. A client will only download the
 	// behaviour pack if it supports scripts, which, up to 1.11, only includes Windows 10.
 	HasScripts bool
+	// AddonPack specifies if the texture pack is from an addon.
+	AddonPack bool
 }
 
 // Marshal encodes/decodes a BehaviourPackInfo.
@@ -34,6 +36,7 @@ func (x *BehaviourPackInfo) Marshal(r IO) {
 	r.String(&x.SubPackName)
 	r.String(&x.ContentIdentity)
 	r.Bool(&x.HasScripts)
+	r.Bool(&x.AddonPack)
 }
 
 // TexturePackInfo represents a texture pack's info sent over network. It holds information about the
@@ -60,6 +63,8 @@ type TexturePackInfo struct {
 	// HasScripts specifies if the texture packs has any scripts in it. A client will only download the
 	// behaviour pack if it supports scripts, which, up to 1.11, only includes Windows 10.
 	HasScripts bool
+	// AddonPack specifies if the texture pack is from an addon.
+	AddonPack bool
 	// RTXEnabled specifies if the texture pack uses the raytracing technology introduced in 1.16.200.
 	RTXEnabled bool
 }
@@ -73,6 +78,7 @@ func (x *TexturePackInfo) Marshal(r IO) {
 	r.String(&x.SubPackName)
 	r.String(&x.ContentIdentity)
 	r.Bool(&x.HasScripts)
+	r.Bool(&x.AddonPack)
 	r.Bool(&x.RTXEnabled)
 }
 

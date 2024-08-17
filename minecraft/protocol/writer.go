@@ -165,6 +165,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	}
 	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
+	w.Varuint32(&x.TriggerType)
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
@@ -172,6 +173,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
+	w.Varuint32(&x.ClientPrediction)
 }
 
 // GameRule writes a GameRule x to the Writer.
