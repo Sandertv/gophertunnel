@@ -6,8 +6,6 @@ import (
 )
 
 var (
-	// TODO: Change this to net.ErrClosed in 1.16.
-	errClosed         = errors.New("use of closed network connection")
 	errBufferTooSmall = errors.New("a message sent was larger than the buffer used to receive the message into")
 	errListenerClosed = errors.New("use of closed listener")
 )

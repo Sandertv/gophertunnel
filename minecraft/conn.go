@@ -173,7 +173,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 	}
 	_, _ = rand.Read(conn.salt)
 
-	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
+	conn.expectedIDs.Store([]uint32{packet.IDLogin, packet.IDRequestNetworkSettings})
 
 	if flushRate <= 0 {
 		return conn
@@ -458,7 +458,7 @@ func (conn *Conn) Flush() error {
 	if len(conn.bufferedSend) > 0 {
 		if err := conn.enc.Encode(conn.bufferedSend); err != nil && !errors.Is(err, net.ErrClosed) {
 			// Should never happen.
-			panic(fmt.Errorf("error encoding packet batch: %w", err))
+			return fmt.Errorf("error encoding packet batch: %v", err)
 		}
 		// First manually clear out conn.bufferedSend so that re-using the slice after resetting its length to
 		// 0 doesn't result in an 'invisible' memory leak.
@@ -492,6 +492,11 @@ func (conn *Conn) LocalAddr() net.Addr {
 // RemoteAddr returns the remote address of the underlying connection.
 func (conn *Conn) RemoteAddr() net.Addr {
 	return conn.conn.RemoteAddr()
+}
+
+// Protocol returns the protocol used by the connection.
+func (conn *Conn) Protocol() Protocol {
+	return conn.proto
 }
 
 // SetDeadline sets the read and write deadline of the connection. It is equivalent to calling SetReadDeadline
@@ -712,8 +717,13 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		return fmt.Errorf("send NetworkSettings: %w", err)
 	}
 	_ = conn.Flush()
-	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression()
+	compression := conn.compression
+	if pk.ClientProtocol >= 649 { // 1.20.60
+		// TODO: I hate this hack as much as the next person, but I don't see another other way out.
+		compression = packet.NewOnTheFlyCompression(compression)
+	}
+	conn.enc.EnableCompression(compression)
+	conn.dec.EnableCompression(compression)
 	return nil
 }
 
@@ -723,8 +733,13 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 	if !ok {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
-	conn.enc.EnableCompression(alg)
-	conn.dec.EnableCompression()
+	compression := alg
+	if conn.proto.ID() >= 649 { // 1.20.60
+		// TODO: I hate this hack as much as the next person, but I don't see another other way out.
+		compression = packet.NewOnTheFlyCompression(compression)
+	}
+	conn.enc.EnableCompression(compression)
+	conn.dec.EnableCompression(compression)
 	conn.readyToLogin = true
 	return nil
 }
@@ -732,6 +747,25 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 // handleLogin handles an incoming login packet. It verifies and decodes the login request found in the packet
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
+	found := false
+	for _, pro := range conn.acceptedProto {
+		if pro.ID() == pk.ClientProtocol {
+			conn.proto = pro
+			conn.pool = pro.Packets(true)
+			found = true
+			break
+		}
+	}
+	if !found {
+		status := packet.PlayStatusLoginFailedClient
+		if pk.ClientProtocol > protocol.CurrentProtocol {
+			// The server is outdated in this case, so we have to change the status we send.
+			status = packet.PlayStatusLoginFailedServer
+		}
+		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
+		return fmt.Errorf("%v connected with an incompatible protocol: expected protocol = %v, client protocol = %v", conn.identityData.DisplayName, protocol.CurrentProtocol, pk.ClientProtocol)
+	}
+
 	// The next expected packet is a response from the client to the handshake.
 	conn.expect(packet.IDClientToServerHandshake)
 	var (
@@ -835,8 +869,8 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
 
 	// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
-	conn.enc.EnableEncryption(keyBytes)
-	conn.dec.EnableEncryption(keyBytes)
+	conn.enc.EnableEncryption(conn.proto.Encryption(keyBytes))
+	conn.dec.EnableEncryption(conn.proto.Encryption(keyBytes))
 
 	// We write a ClientToServerHandshake packet (which has no payload) as a response.
 	_ = conn.WritePacket(&packet.ClientToServerHandshake{})
@@ -1420,9 +1454,8 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
-	conn.enc.EnableEncryption(keyBytes)
-	conn.dec.EnableEncryption(keyBytes)
-
+	conn.enc.EnableEncryption(conn.proto.Encryption(keyBytes))
+	conn.dec.EnableEncryption(conn.proto.Encryption(keyBytes))
 	return nil
 }
 
@@ -1437,5 +1470,5 @@ func (conn *Conn) closeErr(op string) error {
 	if msg := *conn.disconnectMessage.Load(); msg != "" {
 		return conn.wrap(DisconnectError(msg), op)
 	}
-	return conn.wrap(errClosed, op)
+	return conn.wrap(net.ErrClosed, op)
 }

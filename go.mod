@@ -19,7 +19,10 @@ require (
 )
 
 require (
-	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/df-mc/atomic v1.10.0 // indirect
 	golang.org/x/crypto v0.24.0 // indirect
+	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561 // indirect
 	golang.org/x/image v0.17.0 // indirect
 )
+
+replace github.com/sandertv/go-raknet => github.com/tedacmc/tedac-raknet v0.0.4
