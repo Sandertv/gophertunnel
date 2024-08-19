@@ -27,7 +27,7 @@ var (
 	// algorithm. This is used by default.
 	FlateCompression flateCompression
 	// SnappyCompression is the implementation of the Snappy compression
-	// algorithm. Currently crashes devices without `avx2`
+	// algorithm. Snappy currently crashes devices without `avx2`
 	SnappyCompression snappyCompression
 
 	DefaultCompression Compression = FlateCompression
