@@ -295,7 +295,6 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}, e chan error
 			if !errors.Is(err, net.ErrClosed) {
 				logger.Printf("dialer conn: %v\n", err)
 			}
-			e <- err
 			return
 		}
 		for _, data := range packets {
