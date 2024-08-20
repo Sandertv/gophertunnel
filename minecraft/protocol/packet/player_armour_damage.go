@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	PlayerArmourDamageFlagHelmet = 1 << (iota + 1)
+	PlayerArmourDamageFlagHelmet = 1 << iota
 	PlayerArmourDamageFlagChestplate
 	PlayerArmourDamageFlagLeggings
 	PlayerArmourDamageFlagBoots
