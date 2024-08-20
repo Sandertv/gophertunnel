@@ -1357,10 +1357,8 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.expect(packet.IDResourcePacksInfo)
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
-		_ = conn.Close()
 		return fmt.Errorf("client outdated")
 	case packet.PlayStatusLoginFailedServer:
-		_ = conn.Close()
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
@@ -1368,22 +1366,16 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.tryFinaliseClientConn()
 		return nil
 	case packet.PlayStatusLoginFailedInvalidTenant:
-		_ = conn.Close()
 		return fmt.Errorf("invalid edu edition game owner")
 	case packet.PlayStatusLoginFailedVanillaEdu:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join an edu edition game on vanilla")
 	case packet.PlayStatusLoginFailedEduVanilla:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join a vanilla game on edu edition")
 	case packet.PlayStatusLoginFailedServerFull:
-		_ = conn.Close()
 		return fmt.Errorf("server full")
 	case packet.PlayStatusLoginFailedEditorVanilla:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join a vanilla game on editor")
 	case packet.PlayStatusLoginFailedVanillaEditor:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join an editor game on vanilla")
 	default:
 		return fmt.Errorf("unknown play status %v", pk.Status)

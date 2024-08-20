@@ -219,8 +219,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		conn.identityData = identityData
 	}
 
-	l, c := make(chan struct{}), make(chan struct{})
-	go listenConn(conn, d.ErrorLog, l, c)
+	l, c, e := make(chan struct{}), make(chan struct{}), make(chan error, 1)
+	go listenConn(conn, d.ErrorLog, l, c, e)
 
 	conn.expect(packet.IDNetworkSettings, packet.IDPlayStatus)
 	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
@@ -233,6 +233,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, conn.closeErr("dial")
 	case <-ctx.Done():
 		return nil, conn.wrap(ctx.Err(), "dial")
+	case err := <-e:
+		return nil, conn.wrap(err, "dial")
 	case <-l:
 		// We've received our network settings, so we can now send our login request.
 		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
@@ -246,6 +248,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return nil, conn.closeErr("dial")
 		case <-ctx.Done():
 			return nil, conn.wrap(ctx.Err(), "dial")
+		case err := <-e:
+			return nil, conn.wrap(err, "dial")
 		case <-c:
 			// We've connected successfully. We return the connection and no error.
 			return conn, nil
@@ -279,7 +283,7 @@ func readChainIdentityData(chainData []byte) login.IdentityData {
 
 // listenConn listens on the connection until it is closed on another goroutine. The channel passed will
 // receive a value once the connection is logged in.
-func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
+func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}, e chan error) {
 	defer func() {
 		_ = conn.Close()
 	}()
@@ -291,12 +295,14 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}) {
 			if !errors.Is(err, net.ErrClosed) {
 				logger.Printf("dialer conn: %v\n", err)
 			}
+			e <- err
 			return
 		}
 		for _, data := range packets {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
 				logger.Printf("dialer conn: %v", err)
+				e <- err
 				return
 			}
 			if !readyToLoginBefore && conn.readyToLogin {
