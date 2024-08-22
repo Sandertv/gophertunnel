@@ -1,31 +1,32 @@
-package minecraft
+package minecraft_test
 
 import (
 	"context"
+	rand2 "crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
-	"github.com/kr/pretty"
-	"github.com/pion/sdp/v3"
+	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/signaling"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/room"
+	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"log/slog"
 	"net"
 	"os"
+	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/playfab"
 	"github.com/sandertv/gophertunnel/xsapi"
 	"github.com/sandertv/gophertunnel/xsapi/mpsd"
 	"golang.org/x/oauth2"
-	"golang.org/x/text/language"
 	"math/rand"
-	"strconv"
 	"strings"
 	"testing"
 )
@@ -34,115 +35,103 @@ import (
 func TestWorldListen(t *testing.T) {
 	discovery, err := franchise.Discover(protocol.CurrentVersion)
 	if err != nil {
-		t.Fatalf("discover: %s", err)
+		t.Fatalf("error retrieving discovery: %s", err)
 	}
 	a := new(franchise.AuthorizationEnvironment)
 	if err := discovery.Environment(a, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for authorization: %s", err)
 	}
-
-	src := TokenSource(t, "franchise/internal/test/auth.tok", auth.TokenSource, func(old *oauth2.Token) (new *oauth2.Token, err error) {
-		return auth.RefreshTokenSource(old).Token()
-	})
-	x, err := auth.RequestXBLToken(context.Background(), src, "http://xboxlive.com")
-	if err != nil {
-		t.Fatalf("error requesting XBL token: %s", err)
-	}
-	playfabXBL, err := auth.RequestXBLToken(context.Background(), src, "http://playfab.xboxlive.com/")
-	if err != nil {
-		t.Fatalf("error requesting XBL token: %s", err)
-	}
-
-	identity, err := playfab.Login{
-		Title:         "20CA2",
-		CreateAccount: true,
-	}.WithXBLToken(playfabXBL).Login()
-	if err != nil {
-		t.Fatalf("error logging in to playfab: %s", err)
-	}
-
-	region, _ := language.English.Region()
-
-	conf := &franchise.TokenConfig{
-		Device: &franchise.DeviceConfig{
-			ApplicationType: franchise.ApplicationTypeMinecraftPE,
-			Capabilities:    []string{franchise.CapabilityRayTracing},
-			GameVersion:     protocol.CurrentVersion,
-			ID:              uuid.New(),
-			Memory:          strconv.FormatUint(rand.Uint64(), 10),
-			Platform:        franchise.PlatformWindows10,
-			PlayFabTitleID:  a.PlayFabTitleID,
-			StorePlatform:   franchise.StorePlatformUWPStore,
-			Type:            franchise.DeviceTypeWindows10,
-		},
-		User: &franchise.UserConfig{
-			Language:     language.English,
-			LanguageCode: language.AmericanEnglish,
-			RegionCode:   region.String(),
-			Token:        identity.SessionTicket,
-			TokenType:    franchise.TokenTypePlayFab,
-		},
-		Environment: a,
-	}
-
 	s := new(signaling.Environment)
 	if err := discovery.Environment(s, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for signaling: %s", err)
 	}
-	sd := signaling.Dialer{
+
+	tok, err := readToken("franchise/internal/test/auth.tok", auth.TokenSource)
+	if err != nil {
+		t.Fatalf("error reading token: %s", err)
+	}
+	src := auth.RefreshTokenSource(tok)
+
+	refresh, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	prov := franchise.PlayFabXBLIdentityProvider{
+		Environment: a,
+		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+	}
+
+	d := signaling.Dialer{
 		NetworkID: rand.Uint64(),
 	}
-	signalingConn, err := sd.DialContext(context.Background(), tokenConfigSource(func() (*franchise.TokenConfig, error) {
-		return conf, nil
-	}), s)
+
+	dial, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	conn, err := d.DialContext(dial, prov, s)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error dialing signaling: %s", err)
 	}
 	t.Cleanup(func() {
-		if err := signalingConn.Close(); err != nil {
-			t.Errorf("clean up: error closing: %s", err)
+		if err := conn.Close(); err != nil {
+			t.Fatalf("error closing signaling: %s", err)
 		}
 	})
 
-	var (
-		displayClaims = x.AuthorizationToken.DisplayClaims.UserInfo[0]
-		name          = strings.ToUpper(uuid.NewString()) // The name of the session.
-	)
-	custom, err := json.Marshal(map[string]any{
-		"Joinability":             "joinable_by_friends",
-		"hostName":                displayClaims.GamerTag,
-		"ownerId":                 displayClaims.XUID,
-		"rakNetGUID":              "",
-		"version":                 "1.21.2",
-		"levelId":                 "lhhPZjgNAQA=",
-		"worldName":               name,
-		"worldType":               "Creative",
-		"protocol":                686,
-		"MemberCount":             1,
-		"MaxMemberCount":          8,
-		"BroadcastSetting":        3,
-		"LanGame":                 true,
-		"isEditorWorld":           false,
-		"TransportLayer":          2, // Zero means RakNet, and two means NetherNet.
-		"WebRTCNetworkId":         sd.NetworkID,
-		"OnlineCrossPlatformGame": true,
-		"CrossPlayDisabled":       false,
-		"TitleId":                 0,
-		"SupportedConnections": []map[string]any{
+	// A token source that refreshes a token used for generic Xbox Live services.
+	x := xal.RefreshTokenSourceContext(refresh, src, "http://xboxlive.com")
+	xt, err := x.Token()
+	if err != nil {
+		t.Fatalf("error refreshing xbox live token: %s", err)
+	}
+	claimer, ok := xt.(xsapi.DisplayClaimer)
+	if !ok {
+		t.Fatalf("xbox live token %T does not implement xsapi.DisplayClaimer", xt)
+	}
+	displayClaims := claimer.DisplayClaims()
+
+	// The name of the session being published. This seems always to be generated
+	// randomly, referenced as "GUID" of the session.
+	name := strings.ToUpper(uuid.NewString())
+
+	levelID := make([]byte, 8)
+	_, _ = rand2.Read(levelID)
+
+	custom, err := json.Marshal(room.Status{
+		Joinability: room.JoinabilityJoinableByFriends,
+		HostName:    displayClaims.GamerTag,
+		OwnerID:     displayClaims.XUID,
+		RakNetGUID:  "",
+		// This is displayed as the suffix of the world name.
+		Version:   protocol.CurrentVersion,
+		LevelID:   base64.StdEncoding.EncodeToString(levelID),
+		WorldName: "TestWorldListen: " + name,
+		WorldType: room.WorldTypeCreative,
+		// The game seems checking this field before joining a session, causes
+		// RequestNetworkSettings packet not being even sent to the remote host.
+		Protocol:                protocol.CurrentProtocol,
+		MemberCount:             1,
+		MaxMemberCount:          8,
+		BroadcastSetting:        room.BroadcastSettingFriendsOfFriends,
+		LanGame:                 true,
+		IsEditorWorld:           false,
+		TransportLayer:          2,
+		WebRTCNetworkID:         d.NetworkID,
+		OnlineCrossPlatformGame: true,
+		CrossPlayDisabled:       false,
+		TitleID:                 0,
+		SupportedConnections: []room.Connection{
 			{
-				"ConnectionType":  3,
-				"HostIpAddress":   "",
-				"HostPort":        0,
-				"NetherNetId":     sd.NetworkID,
-				"WebRTCNetworkId": sd.NetworkID,
-				"RakNetGUID":      "UNASSIGNED_RAKNET_GUID",
+				ConnectionType:  3, // WebSocketsWebRTCSignaling
+				HostIPAddress:   "",
+				HostPort:        0,
+				NetherNetID:     d.NetworkID,
+				WebRTCNetworkID: d.NetworkID,
+				RakNetGUID:      "UNASSIGNED_RAKNET_GUID",
 			},
 		},
 	})
 	if err != nil {
 		t.Fatalf("error encoding custom properties: %s", err)
 	}
-	pub := mpsd.PublishConfig{
+	cfg := mpsd.PublishConfig{
 		Description: &mpsd.SessionDescription{
 			Properties: &mpsd.SessionProperties{
 				System: &mpsd.SessionPropertiesSystem{
@@ -153,10 +142,11 @@ func TestWorldListen(t *testing.T) {
 			},
 		},
 	}
-	session, err := pub.PublishContext(context.Background(), &tokenSource{
-		x: x,
-	}, mpsd.SessionReference{
-		ServiceConfigID: uuid.MustParse("4fc10100-5f7a-4470-899b-280835760c07"),
+
+	publish, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	session, err := cfg.PublishContext(publish, x, mpsd.SessionReference{
+		ServiceConfigID: serviceConfigID,
 		TemplateName:    "MinecraftLobby",
 		Name:            name,
 	})
@@ -165,39 +155,40 @@ func TestWorldListen(t *testing.T) {
 	}
 	t.Cleanup(func() {
 		if err := session.Close(); err != nil {
-			t.Errorf("error closing session: %s", err)
+			t.Fatalf("error closing session: %s", err)
 		}
 	})
 
-	t.Logf("Network ID: %d", sd.NetworkID)
 	t.Logf("Session Name: %q", name)
-
-	RegisterNetwork("nethernet", &network{
-		networkID: sd.NetworkID,
-		signaling: signalingConn,
-	})
+	t.Logf("Network ID: %d", d.NetworkID)
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})))
 
-	l, err := Listen("nethernet", "")
+	minecraft.RegisterNetwork("nethernet", &nethernet.Network{
+		Signaling: conn,
+	})
+
+	l, err := minecraft.Listen("nethernet", nethernet.NetworkAddress(d.NetworkID))
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error listening: %s", err)
 	}
 	t.Cleanup(func() {
 		if err := l.Close(); err != nil {
-			t.Fatal(err)
+			t.Fatalf("error closing listener: %s", err)
 		}
 	})
 
 	for {
-		conn, err := l.Accept()
+		netConn, err := l.Accept()
 		if err != nil {
-			t.Fatal(err)
+			if !errors.Is(err, net.ErrClosed) {
+				t.Fatalf("error accepting conn: %s", err)
+			}
 		}
-		c := conn.(*Conn)
-		_ = c.StartGame(GameData{
+		c := netConn.(*minecraft.Conn)
+		if err := c.StartGame(minecraft.GameData{
 			WorldName:         "NetherNet",
 			WorldSeed:         0,
 			Difficulty:        0,
@@ -209,186 +200,120 @@ func TestWorldListen(t *testing.T) {
 			WorldGameMode:     1,
 			Time:              rand.Int63(),
 			PlayerPermissions: 2,
-		})
+			// Allow inviting player into the world.
+			GamePublishSetting: 3,
+		}); err != nil {
+			t.Fatalf("error starting game: %s", err)
+		}
 	}
 }
 
+var serviceConfigID = uuid.MustParse("4fc10100-5f7a-4470-899b-280835760c07")
+
+// TestWorldDial connects to a world. Before running the test, you need to capture the network ID of
+// the world to join, and fill in the constant below.
 func TestWorldDial(t *testing.T) {
 	// TODO: Implement looking up sessions and find a network ID from the response.
-	// You need to fill in this field before running the test.
-	const remoteNetworkID = 0
+	const remoteNetworkID = 9511338490860978050
 
 	discovery, err := franchise.Discover(protocol.CurrentVersion)
 	if err != nil {
-		t.Fatalf("discover: %s", err)
+		t.Fatalf("error retrieving discovery: %s", err)
 	}
 	a := new(franchise.AuthorizationEnvironment)
 	if err := discovery.Environment(a, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for authorization: %s", err)
 	}
-
-	src := TokenSource(t, "franchise/internal/test/auth.tok", auth.TokenSource, func(old *oauth2.Token) (new *oauth2.Token, err error) {
-		return auth.RefreshTokenSource(old).Token()
-	})
-	playfabXBL, err := auth.RequestXBLToken(context.Background(), src, "http://playfab.xboxlive.com/")
-	if err != nil {
-		t.Fatalf("error requesting XBL token: %s", err)
-	}
-
-	identity, err := playfab.Login{
-		Title:         "20CA2",
-		CreateAccount: true,
-	}.WithXBLToken(playfabXBL).Login()
-	if err != nil {
-		t.Fatalf("error logging in to playfab: %s", err)
-	}
-
-	region, _ := language.English.Region()
-
-	conf := &franchise.TokenConfig{
-		Device: &franchise.DeviceConfig{
-			ApplicationType: franchise.ApplicationTypeMinecraftPE,
-			Capabilities:    []string{franchise.CapabilityRayTracing},
-			GameVersion:     protocol.CurrentVersion,
-			ID:              uuid.New(),
-			Memory:          strconv.FormatUint(rand.Uint64(), 10),
-			Platform:        franchise.PlatformWindows10,
-			PlayFabTitleID:  a.PlayFabTitleID,
-			StorePlatform:   franchise.StorePlatformUWPStore,
-			Type:            franchise.DeviceTypeWindows10,
-		},
-		User: &franchise.UserConfig{
-			Language:     language.English,
-			LanguageCode: language.AmericanEnglish,
-			RegionCode:   region.String(),
-			Token:        identity.SessionTicket,
-			TokenType:    franchise.TokenTypePlayFab,
-		},
-		Environment: a,
-	}
-
 	s := new(signaling.Environment)
 	if err := discovery.Environment(s, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for signaling: %s", err)
 	}
-	sd := signaling.Dialer{
+
+	tok, err := readToken("franchise/internal/test/auth.tok", auth.TokenSource)
+	if err != nil {
+		t.Fatalf("error reading token: %s", err)
+	}
+	src := auth.RefreshTokenSource(tok)
+
+	refresh, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	prov := franchise.PlayFabXBLIdentityProvider{
+		Environment: a,
+		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+	}
+
+	d := signaling.Dialer{
 		NetworkID: rand.Uint64(),
 	}
-	signalingConn, err := sd.DialContext(context.Background(), tokenConfigSource(func() (*franchise.TokenConfig, error) {
-		return conf, nil
-	}), s)
+
+	dial, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	sig, err := d.DialContext(dial, prov, s)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error dialing signaling: %s", err)
 	}
 	t.Cleanup(func() {
-		if err := signalingConn.Close(); err != nil {
-			t.Errorf("clean up: error closing: %s", err)
+		if err := sig.Close(); err != nil {
+			t.Fatalf("error closing signaling: %s", err)
 		}
 	})
+
+	// TODO: Implement joining a session.
+	// A token source that refreshes a token used for generic Xbox Live services.
+	//x := xal.RefreshTokenSourceContext(refresh, src, "http://xboxlive.com")
+
+	t.Logf("Network ID: %d", d.NetworkID)
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})))
 
-	RegisterNetwork("nethernet", &network{
-		networkID: sd.NetworkID,
-		signaling: signalingConn,
+	minecraft.RegisterNetwork("nethernet", &nethernet.Network{
+		Signaling: sig,
 	})
 
-	conn, err := Dialer{
-		TokenSource: auth.RefreshTokenSource(src),
-	}.Dial("nethernet", strconv.FormatUint(remoteNetworkID, 10))
+	conn, err := minecraft.Dialer{
+		TokenSource: src,
+	}.DialTimeout("nethernet", nethernet.NetworkAddress(remoteNetworkID), time.Second*15)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error dialing: %s", err)
 	}
 	t.Cleanup(func() {
 		if err := conn.Close(); err != nil {
-			t.Fatal(err)
+			t.Fatalf("error closing session: %s", err)
 		}
 	})
 
 	if err := conn.DoSpawn(); err != nil {
-		t.Fatalf("error spawning in: %s", err)
+		t.Fatalf("error spawning: %s", err)
 	}
-	_ = conn.WritePacket(&packet.Text{
+	if err := conn.WritePacket(&packet.Text{
 		TextType:   packet.TextTypeChat,
 		SourceName: conn.IdentityData().DisplayName,
 		Message:    "Successful",
 		XUID:       conn.IdentityData().XUID,
-	})
-}
-
-func TestDecodeOffer(t *testing.T) {
-	d := &sdp.SessionDescription{}
-	if err := d.UnmarshalString("v=0\r\no=- 8735254407289596231 2 IN IP4 127.0.0.1\r\ns=-\r\nt=0 0\r\na=group:BUNDLE 0\r\na=extmap-allow-mixed\r\na=msid-semantic: WMS\r\nm=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\nc=IN IP4 0.0.0.0\r\na=ice-ufrag:gMX+\r\na=ice-pwd:4SN4mwDq5k9Q2LwCiMqxacaM\r\na=ice-options:trickle\r\na=fingerprint:sha-256 B2:35:F2:64:66:B3:73:B3:BB:8D:EE:AF:D8:96:6C:29:9C:A9:E8:94:B3:67:E1:B9:77:8C:18:19:EA:29:7D:12\r\na=setup:actpass\r\na=mid:0\r\na=sctp-port:5000\r\na=max-message-size:262144\r\n"); err != nil {
-		t.Fatal(err)
+	}); err != nil {
+		t.Fatalf("error writing packet: %s", err)
 	}
-	pretty.Println(d)
-}
 
-type network struct {
-	networkID uint64
-	signaling nethernet.Signaling
-}
-
-func (n network) DialContext(ctx context.Context, addr string) (net.Conn, error) {
-	networkID, err := strconv.ParseUint(addr, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("parse network ID: %w", err)
-	}
-	var d nethernet.Dialer
-	return d.DialContext(ctx, networkID, n.signaling)
-}
-
-func (network) PingContext(context.Context, string) ([]byte, error) {
-	return nil, errors.New("not supported")
-}
-
-func (n network) Listen(string) (NetworkListener, error) {
-	var c nethernet.ListenConfig
-	return c.Listen(n.networkID, n.signaling)
-}
-
-func (network) Encrypted() bool { return true }
-
-func (network) Batched() bool { return false }
-
-// tokenSource is an implementation of xsapi.TokenSource that simply returns a *auth.XBLToken.
-type tokenSource struct{ x *auth.XBLToken }
-
-func (t *tokenSource) Token() (xsapi.Token, error) {
-	return &token{t.x}, nil
-}
-
-type token struct {
-	*auth.XBLToken
-}
-
-func (t *token) DisplayClaims() xsapi.DisplayClaims {
-	return t.AuthorizationToken.DisplayClaims.UserInfo[0]
-}
-
-type tokenConfigSource func() (*franchise.TokenConfig, error)
-
-func (f tokenConfigSource) TokenConfig() (*franchise.TokenConfig, error) { return f() }
-
-func TokenSource(t *testing.T, path string, src oauth2.TokenSource, hooks ...RefreshTokenFunc) *oauth2.Token {
-	tok, err := readTokenSource(path, src)
-	if err != nil {
-		t.Fatalf("error reading token: %s", err)
-	}
-	for _, h := range hooks {
-		tok, err = h(tok)
-		if err != nil {
-			t.Fatalf("error refreshing token: %s", err)
+	// Try decoding deferred packets received from the connection.
+	go func() {
+		for {
+			pk, err := conn.ReadPacket()
+			if err != nil {
+				if !strings.Contains(err.Error(), "use of closed network connection") {
+					t.Errorf("error reading packet: %s", err)
+				}
+				return
+			}
+			_ = pk
 		}
-	}
-	return tok
+	}()
+
+	time.Sleep(time.Second * 15)
 }
 
-type RefreshTokenFunc func(old *oauth2.Token) (new *oauth2.Token, err error)
-
-func readTokenSource(path string, src oauth2.TokenSource) (t *oauth2.Token, err error) {
+func readToken(path string, src oauth2.TokenSource) (t *oauth2.Token, err error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t, err = src.Token()
 		if err != nil {

@@ -9,9 +9,9 @@ import (
 	"github.com/pion/webrtc/v4"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet/internal"
 	"log/slog"
-	"math/rand"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -42,10 +42,12 @@ func (conf ListenConfig) Listen(networkID uint64, signaling Signaling) (*Listene
 		networkID: networkID,
 
 		incoming: make(chan *Conn),
+
+		closed: make(chan struct{}),
 	}
 	var cancel context.CancelCauseFunc
 	l.ctx, cancel = context.WithCancelCause(context.Background())
-	go l.startListening(cancel)
+	go l.listen(cancel)
 	return l, nil
 }
 
@@ -59,11 +61,15 @@ type Listener struct {
 	connections sync.Map
 
 	incoming chan *Conn
-	once     sync.Once
+
+	closed chan struct{}
+	once   sync.Once
 }
 
 func (l *Listener) Accept() (net.Conn, error) {
 	select {
+	case <-l.closed:
+		return nil, net.ErrClosed
 	case <-l.ctx.Done():
 		return nil, context.Cause(l.ctx)
 	case conn := <-l.incoming:
@@ -71,26 +77,42 @@ func (l *Listener) Accept() (net.Conn, error) {
 	}
 }
 
-// Addr currently returns a dummy address.
-// TODO: Return something a valid address.
 func (l *Listener) Addr() net.Addr {
-	dummy, _ := net.ResolveUDPAddr("udp", ":19132")
-	return dummy
+	return &Addr{NetworkID: l.networkID}
 }
+
+type Addr struct {
+	ConnectionID uint64
+	NetworkID    uint64
+	Candidates   []webrtc.ICECandidate
+}
+
+func (addr *Addr) String() string {
+	b := &strings.Builder{}
+	b.WriteString(strconv.FormatUint(addr.NetworkID, 10))
+	b.WriteByte(' ')
+	if addr.ConnectionID == 0 {
+		b.WriteByte('(')
+		b.WriteString(strconv.FormatUint(addr.ConnectionID, 10))
+		b.WriteByte(')')
+	}
+	return b.String()
+}
+
+func (addr *Addr) Network() string { return "nethernet" }
 
 // ID returns the network ID of listener.
 func (l *Listener) ID() int64 { return int64(l.networkID) }
 
-// PongData is currently a stub.
-// TODO: Do something.
+// PongData is a stub.
 func (l *Listener) PongData([]byte) {}
 
-func (l *Listener) startListening(cancel context.CancelCauseFunc) {
+func (l *Listener) listen(cancel context.CancelCauseFunc) {
 	for {
-		signal, err := l.signaling.ReadSignal()
+		signal, err := l.signaling.ReadSignal(l.closed)
 		if err != nil {
-			cancel(err)
 			close(l.incoming)
+			cancel(err)
 			return
 		}
 
@@ -103,6 +125,8 @@ func (l *Listener) startListening(cancel context.CancelCauseFunc) {
 			err = l.handleOffer(signal)
 		case SignalTypeCandidate:
 			err = l.handleCandidate(signal)
+		case SignalTypeError:
+			err = l.handleError(signal)
 		default:
 			l.conf.Log.Debug("received signal for unknown type", "signal", signal)
 		}
@@ -161,7 +185,7 @@ func (l *Listener) handleOffer(signal *Signal) error {
 
 	var (
 		// Local candidates gathered by webrtc.ICEGatherer
-		candidates []*webrtc.ICECandidate
+		candidates []webrtc.ICECandidate
 		// Notifies that gathering for local candidates has finished.
 		gatherFinished = make(chan struct{})
 	)
@@ -170,7 +194,7 @@ func (l *Listener) handleOffer(signal *Signal) error {
 			close(gatherFinished)
 			return
 		}
-		candidates = append(candidates, candidate)
+		candidates = append(candidates, *candidate)
 	})
 	if err := gatherer.Gather(); err != nil {
 		return wrapSignalError(fmt.Errorf("gather local candidates: %w", err), ErrorCodeFailedToCreatePeerConnection)
@@ -201,59 +225,11 @@ func (l *Listener) handleOffer(signal *Signal) error {
 		sctpCapabilities := sctp.GetCapabilities()
 
 		// Encode an answer using the local parameters!
-		d = &sdp.SessionDescription{
-			Version: 0x0,
-			Origin: sdp.Origin{
-				Username:       "-",
-				SessionID:      rand.Uint64(),
-				SessionVersion: 0x2,
-				NetworkType:    "IN",
-				AddressType:    "IP4",
-				UnicastAddress: "127.0.0.1",
-			},
-			SessionName: "-",
-			TimeDescriptions: []sdp.TimeDescription{
-				{},
-			},
-			Attributes: []sdp.Attribute{
-				{Key: "group", Value: "BUNDLE 0"},
-				{Key: "extmap-allow-mixed", Value: ""},
-				{Key: "msid-semantic", Value: " WMS"},
-			},
-			MediaDescriptions: []*sdp.MediaDescription{
-				{
-					MediaName: sdp.MediaName{
-						Media: "application",
-						Port: sdp.RangedPort{
-							Value: 9,
-						},
-						Protos:  []string{"UDP", "DTLS", "SCTP"},
-						Formats: []string{"webrtc-datachannel"},
-					},
-					ConnectionInformation: &sdp.ConnectionInformation{
-						NetworkType: "IN",
-						AddressType: "IP4",
-						Address: &sdp.Address{
-							Address: "0.0.0.0",
-						},
-					},
-					Attributes: []sdp.Attribute{
-						{Key: "ice-ufrag", Value: iceParams.UsernameFragment},
-						{Key: "ice-pwd", Value: iceParams.Password},
-						{Key: "ice-options", Value: "trickle"},
-						{Key: "fingerprint", Value: fmt.Sprintf("%s %s",
-							dtlsParams.Fingerprints[0].Algorithm,
-							dtlsParams.Fingerprints[0].Value,
-						)},
-						{Key: "setup", Value: "active"},
-						{Key: "mid", Value: "0"},
-						{Key: "sctp-port", Value: "5000"},
-						{Key: "max-message-size", Value: strconv.FormatUint(uint64(sctpCapabilities.MaxMessageSize), 10)},
-					},
-				},
-			},
-		}
-		answer, err := d.Marshal()
+		answer, err := description{
+			ice:  iceParams,
+			dtls: dtlsParams,
+			sctp: sctpCapabilities,
+		}.encode()
 		if err != nil {
 			return wrapSignalError(fmt.Errorf("encode answer: %w", err), ErrorCodeFailedToCreateAnswer)
 		}
@@ -279,7 +255,7 @@ func (l *Listener) handleOffer(signal *Signal) error {
 			}
 		}
 
-		c := newConn(ice, dtls, sctp, desc, l.conf.Log, signal.ConnectionID, signal.NetworkID)
+		c := newConn(ice, dtls, sctp, desc, l.conf.Log, signal.ConnectionID, signal.NetworkID, l.networkID, candidates)
 
 		l.connections.Store(signal.ConnectionID, c)
 		go l.handleConn(c)
@@ -358,9 +334,19 @@ func (l *Listener) handleCandidate(signal *Signal) error {
 	return conn.(*Conn).handleSignal(signal)
 }
 
+// handleError handles an incoming Signal of SignalTypeError. It looks up for a connection that has the same ID, and
+// call the [Conn.handleSignal] method, which parses the data into error code and closes the connection as failed.
+func (l *Listener) handleError(signal *Signal) error {
+	conn, ok := l.connections.Load(signal.ConnectionID)
+	if !ok {
+		return fmt.Errorf("no connection found for ID %d", signal.ConnectionID)
+	}
+	return conn.(*Conn).handleSignal(signal)
+}
+
 func (l *Listener) Close() error {
 	l.once.Do(func() {
-
+		close(l.closed)
 	})
 	return nil
 }

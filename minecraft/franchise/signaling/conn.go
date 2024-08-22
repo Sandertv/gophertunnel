@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet"
+	"net"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 	"strconv"
@@ -34,8 +35,10 @@ func (c *Conn) WriteSignal(signal *nethernet.Signal) error {
 	})
 }
 
-func (c *Conn) ReadSignal() (*nethernet.Signal, error) {
+func (c *Conn) ReadSignal(cancel <-chan struct{}) (*nethernet.Signal, error) {
 	select {
+	case <-cancel:
+		return nil, net.ErrClosed
 	case s := <-c.signals:
 		return s, nil
 	case <-c.ctx.Done():

@@ -26,7 +26,7 @@ type Decoder struct {
 
 	checkPacketLimit bool
 
-	batched bool
+	header []byte
 }
 
 // packetReader is used to read packets immediately instead of copying them in a buffer first. This is a
@@ -37,15 +37,15 @@ type packetReader interface {
 
 // NewDecoder returns a new decoder decoding data from the io.Reader passed. One read call from the reader is
 // assumed to consume an entire packet.
-func NewDecoder(reader io.Reader, batched bool) *Decoder {
+func NewDecoder(reader io.Reader, header []byte) *Decoder {
 	if pr, ok := reader.(packetReader); ok {
-		return &Decoder{checkPacketLimit: true, pr: pr}
+		return &Decoder{checkPacketLimit: true, pr: pr, header: header}
 	}
 	return &Decoder{
 		r:                reader,
 		buf:              make([]byte, 1024*1024*3),
 		checkPacketLimit: true,
-		batched:          batched,
+		header:           header,
 	}
 }
 
@@ -70,8 +70,8 @@ func (decoder *Decoder) DisableBatchPacketLimit() {
 }
 
 const (
-	// batchHeader is the batchHeader of compressed 'batches' from Minecraft.
-	batchHeader = 0xfe
+	// header is the header of compressed 'batches' from Minecraft.
+	header = 0xfe
 	// maximumInBatch is the maximum amount of packets that may be found in a batch. If a compressed batch has
 	// more than this amount, decoding will fail.
 	maximumInBatch = 812
@@ -89,53 +89,24 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		data, err = decoder.pr.ReadPacket()
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read: %w", err)
+		return nil, fmt.Errorf("read batch: %w", err)
 	}
-	if decoder.batched {
-		if len(data) == 0 {
-			return nil, nil
-		}
-		if data[0] != batchHeader {
-			return nil, fmt.Errorf("decode batch: invalid batchHeader %x, expected %x", data[0], batchHeader)
-		}
-		data, err = decoder.decodePacket(data[1:])
-		if err != nil {
-			return nil, fmt.Errorf("decode batch: %w", err)
-		}
-
-		b := bytes.NewBuffer(data)
-		for b.Len() != 0 {
-			var length uint32
-			if err := protocol.Varuint32(b, &length); err != nil {
-				return nil, fmt.Errorf("decode batch: read packet length: %w", err)
-			}
-			packets = append(packets, b.Next(int(length)))
-		}
-		if len(packets) > maximumInBatch && decoder.checkPacketLimit {
-			return nil, fmt.Errorf("decode batch: number of packets %v exceeds max=%v", len(packets), maximumInBatch)
-		}
-		return packets, nil
-	} else {
-		data, err = decoder.decodePacket(data)
-		if err != nil {
-			return nil, fmt.Errorf("decode single: %w", err)
-		}
-
-		b := bytes.NewBuffer(data)
-		var length uint32
-		if err := protocol.Varuint32(b, &length); err != nil {
-			return nil, fmt.Errorf("decode single: read packet single: %w", err)
-		}
-		return [][]byte{b.Next(int(length))}, nil
+	if len(data) == 0 {
+		return nil, nil
 	}
-}
-
-func (decoder *Decoder) decodePacket(data []byte) (packet []byte, err error) {
+	h := len(decoder.header)
+	if len(data) < h {
+		return nil, io.ErrUnexpectedEOF
+	}
+	if bytes.Compare(data[:h], decoder.header) != 0 {
+		return nil, fmt.Errorf("decode batch: invalid header %x, expected %x", data[:h], decoder.header)
+	}
+	data = data[h:]
 	if decoder.encrypt != nil {
 		decoder.encrypt.decrypt(data)
 		if err := decoder.encrypt.verify(data); err != nil {
 			// The packet did not have a correct checksum.
-			return nil, fmt.Errorf("verify: %w", err)
+			return nil, fmt.Errorf("verify batch: %w", err)
 		}
 		data = data[:len(data)-8]
 	}
@@ -146,13 +117,25 @@ func (decoder *Decoder) decodePacket(data []byte) (packet []byte, err error) {
 		} else {
 			compression, ok := CompressionByID(uint16(data[0]))
 			if !ok {
-				return nil, fmt.Errorf("decompress: unknown compression algorithm %v", data[0])
+				return nil, fmt.Errorf("decompress batch: unknown compression algorithm %v", data[0])
 			}
 			data, err = compression.Decompress(data[1:])
 			if err != nil {
-				return nil, fmt.Errorf("decompress: %w", err)
+				return nil, fmt.Errorf("decompress batch: %w", err)
 			}
 		}
 	}
-	return data, nil
+
+	b := bytes.NewBuffer(data)
+	for b.Len() != 0 {
+		var length uint32
+		if err := protocol.Varuint32(b, &length); err != nil {
+			return nil, fmt.Errorf("decode batch: read packet length: %w", err)
+		}
+		packets = append(packets, b.Next(int(length)))
+	}
+	if len(packets) > maximumInBatch && decoder.checkPacketLimit {
+		return nil, fmt.Errorf("decode batch: number of packets %v exceeds max=%v", len(packets), maximumInBatch)
+	}
+	return packets, nil
 }

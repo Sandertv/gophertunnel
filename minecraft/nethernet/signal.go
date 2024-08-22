@@ -13,7 +13,7 @@ import (
 // I want to use one Signaling connection in both Listen and Dial, because it should work.
 
 type Signaling interface {
-	ReadSignal() (*Signal, error)
+	ReadSignal(cancel <-chan struct{}) (*Signal, error)
 	WriteSignal(signal *Signal) error
 
 	// Credentials will currently block until a credentials has received from the signaling service. This is usually
@@ -82,7 +82,7 @@ func (s *Signal) String() string {
 	return b.String()
 }
 
-func formatICECandidate(id int, candidate *webrtc.ICECandidate, iceParams webrtc.ICEParameters) string {
+func formatICECandidate(id int, candidate webrtc.ICECandidate, iceParams webrtc.ICEParameters) string {
 	b := &strings.Builder{}
 	b.WriteString("candidate:")
 	b.WriteString(candidate.Foundation)

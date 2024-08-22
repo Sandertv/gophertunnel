@@ -1,12 +1,12 @@
 package playfab
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/playfab/internal"
 	"github.com/sandertv/gophertunnel/playfab/title"
+	"github.com/sandertv/gophertunnel/xsapi"
 )
 
-type Login struct {
+type LoginConfig struct {
 	Title                 title.Title        `json:"TitleId,omitempty"`
 	CreateAccount         bool               `json:"CreateAccount,omitempty"`
 	CustomTags            map[string]any     `json:"CustomTags,omitempty"`
@@ -56,15 +56,15 @@ type ProfileConstraints struct {
 	ShowValuesToDate                  bool `json:"ShowValuesToDate,omitempty"`
 }
 
-func (l Login) WithXBLToken(x *auth.XBLToken) Login {
+func (l LoginConfig) WithXbox(t xsapi.Token) LoginConfig {
 	if l.Route == "" {
 		l.Route = "/Client/LoginWithXbox"
 	}
-	l.XboxToken = "XBL3.0 x=" + x.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash + ";" + x.AuthorizationToken.Token
+	l.XboxToken = t.String()
 	return l
 }
 
-func (l Login) Login() (*Identity, error) {
+func (l LoginConfig) Login() (*Identity, error) {
 	if l.Route == "" {
 		panic("playfab/login: must provide an identity provider/route to login")
 	}

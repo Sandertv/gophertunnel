@@ -102,7 +102,8 @@ type Listener struct {
 
 	key *ecdsa.PrivateKey
 
-	disableEncryption, batched bool
+	disableEncryption bool
+	batchHeader       []byte
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -140,7 +141,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		close:             make(chan struct{}),
 		key:               key,
 		disableEncryption: n.Encrypted(),
-		batched:           n.Batched(),
+		batchHeader:       n.BatchHeader(),
 	}
 
 	// Actually start listening.
@@ -213,10 +214,15 @@ func (listener *Listener) Close() error {
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
+	var port uint16
+	if addr, ok := listener.Addr().(*net.UDPAddr); ok {
+		port = uint16(addr.Port)
+	}
+
 	s := listener.status()
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
+		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port,
 		0,
 	)))
 }
@@ -260,7 +266,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	packs := slices.Clone(listener.packs)
 	listener.packsMu.RUnlock()
 
-	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true, listener.batched)
+	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true, listener.batchHeader)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets(true)

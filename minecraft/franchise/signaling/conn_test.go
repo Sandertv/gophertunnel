@@ -2,87 +2,62 @@ package signaling
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal/test"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/playfab"
-	"golang.org/x/oauth2"
-	"golang.org/x/text/language"
-	"math/rand"
-	"strconv"
+	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"testing"
+	"time"
 )
 
 func TestDial(t *testing.T) {
 	discovery, err := franchise.Discover(protocol.CurrentVersion)
 	if err != nil {
-		t.Fatalf("discover environments: %s", err)
+		t.Fatalf("error retrieving discovery: %s", err)
 	}
+
 	a := new(franchise.AuthorizationEnvironment)
 	if err := discovery.Environment(a, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for authorization: %s", err)
 	}
-
-	src := test.TokenSource(t, "../internal/test/auth.tok", auth.TokenSource, func(old *oauth2.Token) (new *oauth2.Token, err error) {
-		return auth.RefreshTokenSource(old).Token()
-	})
-	x, err := auth.RequestXBLToken(context.Background(), src, "http://playfab.xboxlive.com/")
-	if err != nil {
-		t.Fatalf("error requesting XBL token: %s", err)
-	}
-
-	identity, err := playfab.Login{
-		Title:         "20CA2",
-		CreateAccount: true,
-	}.WithXBLToken(x).Login()
-	if err != nil {
-		t.Fatalf("error logging in to playfab: %s", err)
-	}
-
-	region, _ := language.English.Region()
-
-	conf := &franchise.TokenConfig{
-		Device: &franchise.DeviceConfig{
-			ApplicationType: franchise.ApplicationTypeMinecraftPE,
-			Capabilities:    []string{franchise.CapabilityRayTracing},
-			GameVersion:     protocol.CurrentVersion,
-			ID:              uuid.New(),
-			Memory:          strconv.FormatUint(rand.Uint64(), 10),
-			Platform:        franchise.PlatformWindows10,
-			PlayFabTitleID:  a.PlayFabTitleID,
-			StorePlatform:   franchise.StorePlatformUWPStore,
-			Type:            franchise.DeviceTypeWindows10,
-		},
-		User: &franchise.UserConfig{
-			Language:     language.English,
-			LanguageCode: language.AmericanEnglish,
-			RegionCode:   region.String(),
-			Token:        identity.SessionTicket,
-			TokenType:    franchise.TokenTypePlayFab,
-		},
-		Environment: a,
-	}
-
 	s := new(Environment)
 	if err := discovery.Environment(s, franchise.EnvironmentTypeProduction); err != nil {
-		t.Fatalf("decode environment: %s", err)
+		t.Fatalf("error reading environment for signaling: %s", err)
 	}
-	var d Dialer
-	conn, err := d.DialContext(context.Background(), tokenConfigSource(func() (*franchise.TokenConfig, error) {
-		return conf, nil
-	}), s)
+
+	tok, err := test.ReadToken("../internal/test/auth.tok", auth.TokenSource)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("error reading token: %s", err)
+	}
+	src := auth.RefreshTokenSource(tok)
+
+	refresh, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	prov := franchise.PlayFabXBLIdentityProvider{
+		Environment: a,
+		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	var d Dialer
+	conn, err := d.DialContext(ctx, prov, s)
+	if err != nil {
+		t.Fatalf("error dialing: %s", err)
 	}
 	t.Cleanup(func() {
 		if err := conn.Close(); err != nil {
-			t.Errorf("clean up: error closing: %s", err)
+			t.Fatalf("error closing conn: %s", err)
 		}
 	})
+
+	credentials, err := conn.Credentials()
+	if err != nil {
+		t.Fatalf("error obtaining credentials: %s", err)
+	}
+	if credentials == nil {
+		t.Fatal("credentials is nil")
+	}
+	t.Logf("credentials obtained: %#v", credentials)
 }
-
-type tokenConfigSource func() (*franchise.TokenConfig, error)
-
-func (f tokenConfigSource) TokenConfig() (*franchise.TokenConfig, error) { return f() }

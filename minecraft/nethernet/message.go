@@ -5,29 +5,41 @@ import (
 	"io"
 )
 
-// TODO: Probably the structure of remote messages sent in both ReliableDataChannel and UnreliableDataChannel
-// are changed since whenever, and the specification might be outdated. We need to reverse that too.
+// message represents the structure of remote messages sent in ReliableDataChannel.
+type message struct {
+	segments uint8
+	data     []byte
+}
+
+func parseMessage(b []byte) (*message, error) {
+	if len(b) < 2 {
+		return nil, io.ErrUnexpectedEOF
+	}
+	return &message{
+		segments: b[0],
+		data:     b[1:],
+	}, nil
+}
 
 func (c *Conn) handleMessage(b []byte) error {
-	if len(b) < 2 {
-		return io.ErrUnexpectedEOF
+	msg, err := parseMessage(b)
+	if err != nil {
+		return fmt.Errorf("parse: %w", err)
 	}
-	segments := b[0]
-	data := b[1:]
 
-	if c.promisedSegments > 0 && c.promisedSegments-1 != segments {
-		return fmt.Errorf("invalid promised segments: expected %d, got %d", c.promisedSegments-1, segments)
+	if c.message.segments > 0 && c.message.segments-1 != msg.segments {
+		return fmt.Errorf("invalid promised segments: expected %d, got %d", c.message.segments-1, msg.segments)
 	}
-	c.promisedSegments = segments
+	c.message.segments = msg.segments
 
-	c.buf.Write(data)
+	c.message.data = append(c.message.data, msg.data...)
 
-	if c.promisedSegments > 0 {
+	if c.message.segments > 0 {
 		return nil
 	}
 
-	c.packets <- c.buf.Bytes()
-	c.buf.Reset()
+	c.packets <- c.message.data
+	c.message.data = nil
 
 	return nil
 }

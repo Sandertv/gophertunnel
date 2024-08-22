@@ -5,26 +5,9 @@ import (
 	"fmt"
 	"golang.org/x/oauth2"
 	"os"
-	"testing"
 )
 
-func TokenSource(t *testing.T, path string, src oauth2.TokenSource, hooks ...RefreshTokenFunc) *oauth2.Token {
-	tok, err := readTokenSource(path, src)
-	if err != nil {
-		t.Fatalf("error reading token: %s", err)
-	}
-	for _, h := range hooks {
-		tok, err = h(tok)
-		if err != nil {
-			t.Fatalf("error refreshing token: %s", err)
-		}
-	}
-	return tok
-}
-
-type RefreshTokenFunc func(old *oauth2.Token) (new *oauth2.Token, err error)
-
-func readTokenSource(path string, src oauth2.TokenSource) (t *oauth2.Token, err error) {
+func ReadToken(path string, src oauth2.TokenSource) (t *oauth2.Token, err error) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t, err = src.Token()
 		if err != nil {

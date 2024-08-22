@@ -149,10 +149,10 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits, batched bool) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool, batchHeader []byte) *Conn {
 	conn := &Conn{
-		enc:          packet.NewEncoder(netConn, batched),
-		dec:          packet.NewDecoder(netConn, batched),
+		enc:          packet.NewEncoder(netConn, batchHeader),
+		dec:          packet.NewDecoder(netConn, batchHeader),
 		salt:         make([]byte, 16),
 		packets:      make(chan *packetData, 8),
 		additional:   make(chan packet.Packet, 16),

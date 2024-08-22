@@ -16,13 +16,13 @@ type Encoder struct {
 
 	compression Compression
 	encrypt     *encrypt
-	batched     bool
+	header      []byte
 }
 
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
-func NewEncoder(w io.Writer, batched bool) *Encoder {
-	return &Encoder{w: w, batched: batched}
+func NewEncoder(w io.Writer, header []byte) *Encoder {
+	return &Encoder{w: w, header: header}
 }
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
@@ -45,65 +45,40 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	buf := internal.BufferPool.Get().(*bytes.Buffer)
 	defer func() {
 		// Reset the buffer, so we can return it to the buffer pool safely.
-		if encoder.batched {
-			buf.Reset()
-		}
+		buf.Reset()
 		internal.BufferPool.Put(buf)
 	}()
 
 	l := make([]byte, 5)
-	if encoder.batched {
-		for _, packet := range packets {
-			// Each packet is prefixed with a varuint32 specifying the length of the packet.
-			if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
-				return fmt.Errorf("encode batch: write packet length: %w", err)
-			}
-			if _, err := buf.Write(packet); err != nil {
-				return fmt.Errorf("encode batch: write packet payload: %w", err)
-			}
+	for _, packet := range packets {
+		// Each packet is prefixed with a varuint32 specifying the length of the packet.
+		if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
+			return fmt.Errorf("encode batch: write packet length: %w", err)
 		}
-		if err := encoder.encodePacket(buf.Bytes()); err != nil {
-			return fmt.Errorf("encode batch: %w", err)
-		}
-	} else {
-		// Encode packets individually
-		for _, packet := range packets {
-			if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
-				return fmt.Errorf("encode single: write packet length: %w", err)
-			}
-			if _, err := buf.Write(packet); err != nil {
-				return fmt.Errorf("encode single: write packet payload: %w", err)
-			}
-
-			if err := encoder.encodePacket(buf.Bytes()); err != nil {
-				return fmt.Errorf("encode single: %w", err)
-			}
-			buf.Reset()
+		if _, err := buf.Write(packet); err != nil {
+			return fmt.Errorf("encode batch: write packet payload: %w", err)
 		}
 	}
-	return nil
-}
 
-func (encoder *Encoder) encodePacket(data []byte) error {
-	var prepend []byte
-	if encoder.batched {
-		prepend = []byte{batchHeader}
-	}
+	data := buf.Bytes()
+	prepend := encoder.header
 	if encoder.compression != nil {
 		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
 		var err error
 		data, err = encoder.compression.Compress(data)
 		if err != nil {
-			return fmt.Errorf("compress: %w", err)
+			return fmt.Errorf("compress batch: %w", err)
 		}
 	}
 
 	data = append(prepend, data...)
 	if encoder.encrypt != nil {
+		// If the encryption session is not nil, encryption is enabled, meaning we should encrypt the
+		// compressed data of this packet.
 		data = encoder.encrypt.encrypt(data)
 	}
 	if _, err := encoder.w.Write(data); err != nil {
-		return fmt.Errorf("write: %w", err)
+		return fmt.Errorf("write batch: %w", err)
 	}
 	return nil
 }

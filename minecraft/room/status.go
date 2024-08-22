@@ -29,6 +29,7 @@ type Connection struct {
 	HostPort        uint16 `json:"HostPort"`
 	NetherNetID     uint64 `json:"NetherNetId"`
 	WebRTCNetworkID uint64 `json:"WebRTCNetworkId"`
+	RakNetGUID      string `json:"RakNetGUID"`
 }
 
 const (

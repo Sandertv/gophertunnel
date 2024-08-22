@@ -19,14 +19,14 @@ type Dialer struct {
 	Log                     *slog.Logger
 }
 
-func (d Dialer) DialContext(ctx context.Context, networkID uint64, signaling Signaling) (*Conn, error) {
-	if d.NetworkID == 0 {
-		d.NetworkID = rand.Uint64()
+func (dialer Dialer) DialContext(ctx context.Context, networkID uint64, signaling Signaling) (*Conn, error) {
+	if dialer.NetworkID == 0 {
+		dialer.NetworkID = rand.Uint64()
 	}
-	if d.ConnectionID == 0 {
-		d.ConnectionID = rand.Uint64()
+	if dialer.ConnectionID == 0 {
+		dialer.ConnectionID = rand.Uint64()
 	}
-	if d.API == nil {
+	if dialer.API == nil {
 		var (
 			setting webrtc.SettingEngine
 			factory = logging.NewDefaultLoggerFactory()
@@ -34,14 +34,14 @@ func (d Dialer) DialContext(ctx context.Context, networkID uint64, signaling Sig
 		factory.DefaultLogLevel = logging.LogLevelDebug
 		setting.LoggerFactory = factory
 
-		d.API = webrtc.NewAPI(webrtc.WithSettingEngine(setting))
+		dialer.API = webrtc.NewAPI(webrtc.WithSettingEngine(setting))
 	}
-	if d.Log == nil {
-		d.Log = slog.Default()
+	if dialer.Log == nil {
+		dialer.Log = slog.Default()
 	}
 	credentials, err := signaling.Credentials()
 	if err != nil {
-		return nil, wrapSignalError(fmt.Errorf("obtain credentials: %w", err), ErrorCodeFailedToCreatePeerConnection)
+		return nil, fmt.Errorf("obtain credentials: %w", err)
 	}
 	var gatherOptions webrtc.ICEGatherOptions
 	if credentials != nil && len(credentials.ICEServers) > 0 {
@@ -55,13 +55,13 @@ func (d Dialer) DialContext(ctx context.Context, networkID uint64, signaling Sig
 			}
 		}
 	}
-	gatherer, err := d.API.NewICEGatherer(gatherOptions)
+	gatherer, err := dialer.API.NewICEGatherer(gatherOptions)
 	if err != nil {
-		return nil, wrapSignalError(fmt.Errorf("create ICE gatherer: %w", err), ErrorCodeFailedToCreatePeerConnection)
+		return nil, fmt.Errorf("create ICE gatherer: %w", err)
 	}
 
 	var (
-		candidates     []*webrtc.ICECandidate
+		candidates     []webrtc.ICECandidate
 		gatherFinished = make(chan struct{})
 	)
 	gatherer.OnLocalCandidate(func(candidate *webrtc.ICECandidate) {
@@ -69,139 +69,103 @@ func (d Dialer) DialContext(ctx context.Context, networkID uint64, signaling Sig
 			close(gatherFinished)
 			return
 		}
-		candidates = append(candidates, candidate)
+		candidates = append(candidates, *candidate)
 	})
 	if err := gatherer.Gather(); err != nil {
-		return nil, wrapSignalError(fmt.Errorf("gather local candidates: %w", err), ErrorCodeFailedToCreatePeerConnection)
+		return nil, fmt.Errorf("gather local candidates: %w", err)
 	}
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
 	case <-gatherFinished:
-		ice := d.API.NewICETransport(gatherer)
-		dtls, err := d.API.NewDTLSTransport(ice, nil)
+		ice := dialer.API.NewICETransport(gatherer)
+		dtls, err := dialer.API.NewDTLSTransport(ice, nil)
 		if err != nil {
-			return nil, wrapSignalError(fmt.Errorf("create DTLS transport: %w", err), ErrorCodeFailedToCreatePeerConnection)
+			return nil, fmt.Errorf("create DTLS transport: %w", err)
 		}
-		sctp := d.API.NewSCTPTransport(dtls)
+		sctp := dialer.API.NewSCTPTransport(dtls)
 
 		iceParams, err := ice.GetLocalParameters()
 		if err != nil {
-			return nil, wrapSignalError(fmt.Errorf("obtain local ICE parameters: %w", err), ErrorCodeFailedToCreatePeerConnection)
+			return nil, fmt.Errorf("obtain local ICE parameters: %w", err)
 		}
 		dtlsParams, err := dtls.GetLocalParameters()
 		if err != nil {
-			return nil, wrapSignalError(fmt.Errorf("obtain local DTLS parameters: %w", err), ErrorCodeFailedToCreateAnswer)
+			return nil, fmt.Errorf("obtain local DTLS parameters: %w", err)
 		}
 		if len(dtlsParams.Fingerprints) == 0 {
-			return nil, wrapSignalError(errors.New("local DTLS parameters has no fingerprints"), ErrorCodeFailedToCreateAnswer)
+			return nil, errors.New("local DTLS parameters has no fingerprints")
 		}
 		sctpCapabilities := sctp.GetCapabilities()
 
-		// Encode an offer using the local parameters!
-		description := &sdp.SessionDescription{
-			Version: 0x0,
-			Origin: sdp.Origin{
-				Username:       "-",
-				SessionID:      rand.Uint64(),
-				SessionVersion: 0x2,
-				NetworkType:    "IN",
-				AddressType:    "IP4",
-				UnicastAddress: "127.0.0.1",
-			},
-			SessionName: "-",
-			TimeDescriptions: []sdp.TimeDescription{
-				{},
-			},
-			Attributes: []sdp.Attribute{
-				{Key: "group", Value: "BUNDLE 0"},
-				{Key: "extmap-allow-mixed", Value: ""},
-				{Key: "msid-semantic", Value: " WMS"},
-			},
-			MediaDescriptions: []*sdp.MediaDescription{
-				{
-					MediaName: sdp.MediaName{
-						Media:   "application",
-						Port:    sdp.RangedPort{Value: 9},
-						Protos:  []string{"UDP", "DTLS", "SCTP"},
-						Formats: []string{"webrtc-datachannel"},
-					},
-					ConnectionInformation: &sdp.ConnectionInformation{
-						NetworkType: "IN",
-						AddressType: "IP4",
-						Address:     &sdp.Address{Address: "0.0.0.0"},
-					},
-					Attributes: []sdp.Attribute{
-						{Key: "ice-ufrag", Value: iceParams.UsernameFragment},
-						{Key: "ice-pwd", Value: iceParams.Password},
-						{Key: "ice-options", Value: "trickle"},
-						{Key: "fingerprint", Value: fmt.Sprintf("%s %s",
-							dtlsParams.Fingerprints[0].Algorithm,
-							dtlsParams.Fingerprints[0].Value,
-						)},
-						{Key: "setup", Value: "actpass"},
-						{Key: "mid", Value: "0"},
-						{Key: "sctp-port", Value: "5000"},
-						{Key: "max-message-size", Value: strconv.FormatUint(uint64(sctpCapabilities.MaxMessageSize), 10)},
-					},
-				},
-			},
-		}
+		dtlsParams.Role = webrtc.DTLSRoleServer
 
-		offer, err := description.Marshal()
+		// Encode an offer using the local parameters!
+		offer, err := description{
+			ice:  iceParams,
+			dtls: dtlsParams,
+			sctp: sctpCapabilities,
+		}.encode()
 		if err != nil {
-			return nil, wrapSignalError(fmt.Errorf("encode offer: %w", err), ErrorCodeFailedToCreateAnswer)
+			return nil, fmt.Errorf("encode offer: %w", err)
 		}
 		if err := signaling.WriteSignal(&Signal{
 			Type:         SignalTypeOffer,
 			Data:         string(offer),
-			ConnectionID: d.ConnectionID,
+			ConnectionID: dialer.ConnectionID,
 			NetworkID:    networkID,
 		}); err != nil {
-			// I don't think the error code will be signaled back to the remote connection, but just in case.
-			return nil, wrapSignalError(fmt.Errorf("signal offer: %w", err), ErrorCodeSignalingFailedToSend)
+			return nil, fmt.Errorf("signal offer: %w", err)
 		}
 		for i, candidate := range candidates {
 			if err := signaling.WriteSignal(&Signal{
 				Type:         SignalTypeCandidate,
 				Data:         formatICECandidate(i, candidate, iceParams),
-				ConnectionID: d.ConnectionID,
+				ConnectionID: dialer.ConnectionID,
 				NetworkID:    networkID,
 			}); err != nil {
-				// I don't think the error code will be signaled back to the remote connection, but just in case.
-				return nil, wrapSignalError(fmt.Errorf("signal candidate: %w", err), ErrorCodeSignalingFailedToSend)
+				return nil, fmt.Errorf("signal candidate: %w", err)
 			}
 		}
 
 		signals := make(chan *Signal)
-		go d.notifySignals(ctx, d.ConnectionID, networkID, signaling, signals)
+		go dialer.notifySignals(ctx, dialer.ConnectionID, networkID, signaling, signals)
 
 		select {
 		case <-ctx.Done():
+			if errors.Is(err, context.DeadlineExceeded) {
+				dialer.signalError(signaling, networkID, ErrorCodeNegotiationTimeoutWaitingForResponse)
+			}
 			return nil, ctx.Err()
 		case signal := <-signals:
 			if signal.Type != SignalTypeAnswer {
+				dialer.signalError(signaling, networkID, ErrorCodeIncomingConnectionIgnored)
 				return nil, fmt.Errorf("received signal for non-answer: %s", signal.String())
 			}
 
-			description = &sdp.SessionDescription{}
-			if err := description.UnmarshalString(signal.Data); err != nil {
+			d := &sdp.SessionDescription{}
+			if err := d.UnmarshalString(signal.Data); err != nil {
+				dialer.signalError(signaling, networkID, ErrorCodeFailedToSetRemoteDescription)
 				return nil, fmt.Errorf("decode answer: %w", err)
 			}
-			desc, err := parseDescription(description)
+			desc, err := parseDescription(d)
 			if err != nil {
+				dialer.signalError(signaling, networkID, ErrorCodeFailedToSetRemoteDescription)
 				return nil, fmt.Errorf("parse offer: %w", err)
 			}
 
-			c := newConn(ice, dtls, sctp, desc, d.Log, d.ConnectionID, networkID)
-			go d.handleConn(ctx, c, signals)
+			c := newConn(ice, dtls, sctp, desc, dialer.Log, dialer.ConnectionID, networkID, dialer.NetworkID, candidates)
+			go dialer.handleConn(ctx, c, signals)
 
 			select {
 			case <-ctx.Done():
+				if errors.Is(err, context.DeadlineExceeded) {
+					dialer.signalError(signaling, networkID, ErrorCodeInactivityTimeout)
+				}
 				return nil, ctx.Err()
 			case <-c.candidateReceived:
 				c.log.Debug("received first candidate")
-				if err := d.startTransports(c); err != nil {
+				if err := dialer.startTransports(c); err != nil {
 					return nil, fmt.Errorf("start transports: %w", err)
 				}
 				c.handleTransports()
@@ -211,7 +175,16 @@ func (d Dialer) DialContext(ctx context.Context, networkID uint64, signaling Sig
 	}
 }
 
-func (d Dialer) startTransports(conn *Conn) error {
+func (dialer Dialer) signalError(signaling Signaling, networkID uint64, code int) {
+	_ = signaling.WriteSignal(&Signal{
+		Type:         SignalTypeError,
+		Data:         strconv.Itoa(code),
+		ConnectionID: dialer.ConnectionID,
+		NetworkID:    networkID,
+	})
+}
+
+func (dialer Dialer) startTransports(conn *Conn) error {
 	conn.log.Debug("starting ICE transport as controller")
 	iceRole := webrtc.ICERoleControlling
 	if err := conn.ice.Start(nil, conn.remote.ice, &iceRole); err != nil {
@@ -230,13 +203,13 @@ func (d Dialer) startTransports(conn *Conn) error {
 		return fmt.Errorf("start SCTP: %w", err)
 	}
 	var err error
-	conn.reliable, err = d.API.NewDataChannel(conn.sctp, &webrtc.DataChannelParameters{
+	conn.reliable, err = dialer.API.NewDataChannel(conn.sctp, &webrtc.DataChannelParameters{
 		Label: "ReliableDataChannel",
 	})
 	if err != nil {
 		return fmt.Errorf("create ReliableDataChannel: %w", err)
 	}
-	conn.unreliable, err = d.API.NewDataChannel(conn.sctp, &webrtc.DataChannelParameters{
+	conn.unreliable, err = dialer.API.NewDataChannel(conn.sctp, &webrtc.DataChannelParameters{
 		Label:   "UnreliableDataChannel",
 		Ordered: false,
 	})
@@ -246,13 +219,14 @@ func (d Dialer) startTransports(conn *Conn) error {
 	return nil
 }
 
-func (d Dialer) handleConn(ctx context.Context, conn *Conn, signals <-chan *Signal) {
+func (dialer Dialer) handleConn(ctx context.Context, conn *Conn, signals <-chan *Signal) {
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case signal := <-signals:
-			if signal.Type == SignalTypeCandidate {
+			switch signal.Type {
+			case SignalTypeCandidate, SignalTypeError:
 				if err := conn.handleSignal(signal); err != nil {
 					conn.log.Error("error handling signal", internal.ErrAttr(err))
 				}
@@ -261,18 +235,15 @@ func (d Dialer) handleConn(ctx context.Context, conn *Conn, signals <-chan *Sign
 	}
 }
 
-func (d Dialer) notifySignals(ctx context.Context, id, networkID uint64, signaling Signaling, c chan<- *Signal) {
+func (dialer Dialer) notifySignals(ctx context.Context, id, networkID uint64, signaling Signaling, c chan<- *Signal) {
 	for {
-		if ctx.Err() != nil {
-			return
-		}
-		signal, err := signaling.ReadSignal()
+		signal, err := signaling.ReadSignal(ctx.Done())
 		if err != nil {
-			d.Log.Error("error reading signal", internal.ErrAttr(err))
+			dialer.Log.Error("error reading signal", internal.ErrAttr(err))
 			return
 		}
 		if signal.ConnectionID != id || signal.NetworkID != networkID {
-			d.Log.Error("unexpected connection ID or network ID", slog.Group("signal", signal))
+			dialer.Log.Error("unexpected connection ID or network ID", slog.Group("signal", signal))
 			continue
 		}
 		c <- signal

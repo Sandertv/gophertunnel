@@ -57,3 +57,7 @@ type token struct {
 func (t *token) DisplayClaims() xsapi.DisplayClaims {
 	return t.AuthorizationToken.DisplayClaims.UserInfo[0]
 }
+
+func (t *token) String() string {
+	return fmt.Sprintf("XBL3.0 x=%s;%s", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token)
+}

@@ -19,7 +19,7 @@ type Dialer struct {
 	Log       *slog.Logger
 }
 
-func (d Dialer) DialContext(ctx context.Context, src franchise.TokenConfigSource, env *Environment) (*Conn, error) {
+func (d Dialer) DialContext(ctx context.Context, src franchise.IdentityProvider, env *Environment) (*Conn, error) {
 	if d.Options == nil {
 		d.Options = &websocket.DialOptions{}
 	}

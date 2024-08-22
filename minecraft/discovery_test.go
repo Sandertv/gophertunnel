@@ -1,6 +1,6 @@
 package minecraft
 
-import (
+/*import (
 	"bytes"
 	"context"
 	"crypto/aes"
@@ -439,3 +439,4 @@ func decryptECB(src []byte) ([]byte, error) {
 	}
 	return dst, nil
 }
+*/

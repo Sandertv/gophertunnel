@@ -6,6 +6,7 @@ import (
 
 type Token interface {
 	SetAuthHeader(req *http.Request)
+	String() string
 }
 
 type TokenSource interface {

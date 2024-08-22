@@ -7,9 +7,11 @@ import (
 	"fmt"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/text/language"
 	"net/http"
 	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -81,7 +83,7 @@ type AuthorizationEnvironment struct {
 
 func (*AuthorizationEnvironment) EnvironmentName() string { return "auth" }
 
-type TokenConfigSource interface {
+type IdentityProvider interface {
 	TokenConfig() (*TokenConfig, error)
 }
 
@@ -90,6 +92,20 @@ type TokenConfig struct {
 	User   *UserConfig   `json:"user,omitempty"`
 
 	Environment *AuthorizationEnvironment `json:"-"`
+}
+
+func defaultDeviceConfig(env *AuthorizationEnvironment) *DeviceConfig {
+	return &DeviceConfig{
+		ApplicationType: ApplicationTypeMinecraftPE,
+		Capabilities:    nil, // TODO: Should this be an empty slice?
+		GameVersion:     protocol.CurrentVersion,
+		ID:              uuid.New(),
+		Memory:          strconv.FormatUint(16*(1<<30), 10),
+		Platform:        PlatformWindows10,
+		PlayFabTitleID:  env.PlayFabTitleID,
+		StorePlatform:   StorePlatformUWPStore,
+		Type:            DeviceTypeWindows10,
+	}
 }
 
 type DeviceConfig struct {
