@@ -153,7 +153,7 @@ func (c *Conn) handleTransports() {
 	})
 
 	c.reliable.OnClose(func() {
-		c.Close()
+		_ = c.Close()
 	})
 
 	c.unreliable.OnClose(func() {
@@ -290,7 +290,7 @@ type description struct {
 
 func (desc description) encode() ([]byte, error) {
 	d := &sdp.SessionDescription{
-		Version: 0x0,
+		Version: 0x2,
 		Origin: sdp.Origin{
 			Username:       "-",
 			SessionID:      rand.Uint64(),
