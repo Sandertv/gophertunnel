@@ -16,7 +16,7 @@ type NetherNet struct {
 
 func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
 	if n.Signaling == nil {
-		return nil, errors.New("minecraft/nethernet: Network.DialContext: Signaling is nil")
+		return nil, errors.New("minecraft: NetherNet.DialContext: Signaling is nil")
 	}
 	networkID, err := strconv.ParseUint(address, 10, 64)
 	if err != nil {
@@ -27,12 +27,12 @@ func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, e
 }
 
 func (n NetherNet) PingContext(context.Context, string) ([]byte, error) {
-	return nil, errors.New("minecraft/nethernet: Network.PingContext: not supported")
+	return nil, errors.New("minecraft: NetherNet.PingContext: not supported")
 }
 
 func (n NetherNet) Listen(address string) (NetworkListener, error) {
 	if n.Signaling == nil {
-		return nil, errors.New("minecraft/nethernet: Network.Listen: Signaling is nil")
+		return nil, errors.New("minecraft: NetherNet.Listen: Signaling is nil")
 	}
 	networkID, err := strconv.ParseUint(address, 10, 64)
 	if err != nil {
