@@ -3,6 +3,7 @@ package rta
 import (
 	"context"
 	"github.com/sandertv/gophertunnel/xsapi"
+	"github.com/sandertv/gophertunnel/xsapi/internal"
 	"log/slog"
 	"net/http"
 	"nhooyr.io/websocket"
@@ -43,35 +44,21 @@ func (d Dialer) DialContext(ctx context.Context, src xsapi.TokenSource) (*Conn, 
 	if d.Options.HTTPClient == nil {
 		d.Options.HTTPClient = &http.Client{}
 	}
-	var (
-		hasTransport bool
-		base         = d.Options.HTTPClient.Transport
-	)
-	if base != nil {
-		_, hasTransport = base.(*xsapi.Transport)
-	}
-	if !hasTransport {
-		d.Options.HTTPClient.Transport = &xsapi.Transport{
-			Source: src,
-			Base:   base,
-		}
-	}
+	internal.SetTransport(d.Options.HTTPClient, src)
 
 	c, _, err := websocket.Dial(ctx, connectURL, d.Options)
 	if err != nil {
 		return nil, err
 	}
-	background, cancel := context.WithCancelCause(context.Background())
 	conn := &Conn{
 		conn:          c,
 		log:           d.ErrorLog,
-		ctx:           background,
 		subscriptions: make(map[uint32]*Subscription),
 	}
 	for i := 0; i < cap(conn.expected); i++ {
 		conn.expected[i] = make(map[uint32]chan<- *handshake)
 	}
-	go conn.read(cancel)
+	go conn.read()
 	return conn, nil
 }
 

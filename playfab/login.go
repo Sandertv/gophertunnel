@@ -3,7 +3,6 @@ package playfab
 import (
 	"github.com/sandertv/gophertunnel/playfab/internal"
 	"github.com/sandertv/gophertunnel/playfab/title"
-	"github.com/sandertv/gophertunnel/xsapi"
 )
 
 type LoginConfig struct {
@@ -13,9 +12,10 @@ type LoginConfig struct {
 	EncryptedRequest      []byte             `json:"EncryptedRequest,omitempty"`
 	InfoRequestParameters *RequestParameters `json:"InfoRequestParameters,omitempty"`
 	PlayerSecret          string             `json:"PlayerSecret,omitempty"`
-	XboxToken             string             `json:"XboxToken,omitempty"`
+}
 
-	Route string `json:"-"`
+type IdentityProvider interface {
+	Login(config LoginConfig) (*Identity, error)
 }
 
 type RequestParameters struct {
@@ -56,17 +56,6 @@ type ProfileConstraints struct {
 	ShowValuesToDate                  bool `json:"ShowValuesToDate,omitempty"`
 }
 
-func (l LoginConfig) WithXbox(t xsapi.Token) LoginConfig {
-	if l.Route == "" {
-		l.Route = "/Client/LoginWithXbox"
-	}
-	l.XboxToken = t.String()
-	return l
-}
-
-func (l LoginConfig) Login() (*Identity, error) {
-	if l.Route == "" {
-		panic("playfab/login: must provide an identity provider/route to login")
-	}
-	return internal.Post[*Identity](l.Title, l.Route, l)
+func (l LoginConfig) login(path string, r any) (*Identity, error) {
+	return internal.Post[*Identity](l.Title, path, r)
 }

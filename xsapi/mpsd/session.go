@@ -3,21 +3,51 @@ package mpsd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/sandertv/gophertunnel/xsapi/rta"
-	"log/slog"
+	"net/http"
+	"strconv"
+	"sync/atomic"
 )
 
 type Session struct {
 	ref  SessionReference
 	conf PublishConfig
-	rta  *rta.Conn
-	sub  *rta.Subscription
-	log  *slog.Logger
+
+	rta *rta.Conn
+
+	sub *rta.Subscription
+
+	h atomic.Pointer[Handler]
+}
+
+func (s *Session) Commitment() (*Commitment, error) {
+	req, err := http.NewRequest(http.MethodGet, s.ref.URL().String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("make request: %w", err)
+	}
+	req.Header.Set("X-Xbl-Contract-Version", strconv.Itoa(contractVersion))
+
+	resp, err := s.conf.Client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var c *Commitment
+		if err := json.NewDecoder(resp.Body).Decode(&c); err != nil {
+			return nil, fmt.Errorf("decode response body: %w", err)
+		}
+		return c, nil
+	default:
+		return nil, fmt.Errorf("%s %s: %s", req.Method, req.URL, resp.Status)
+	}
 }
 
 func (s *Session) Close() error {
 	if err := s.rta.Unsubscribe(context.Background(), s.sub); err != nil {
-		s.log.Error("error unsubscribing with RTA", "err", err)
+		s.conf.Logger.Error("error unsubscribing with RTA", "err", err)
 	}
 	_, err := s.CommitContext(context.Background(), &SessionDescription{
 		Members: map[string]*MemberDescription{

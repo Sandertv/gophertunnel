@@ -6,6 +6,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal/test"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/playfab"
 	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"testing"
 	"time"
@@ -32,11 +33,11 @@ func TestDial(t *testing.T) {
 	}
 	src := auth.RefreshTokenSource(tok)
 
-	refresh, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	prov := franchise.PlayFabXBLIdentityProvider{
+	prov := franchise.PlayFabIdentityProvider{
 		Environment: a,
-		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+		IdentityProvider: playfab.XBLIdentityProvider{
+			TokenSource: xal.RefreshTokenSource(src, "http://playfab.xboxlive.com/"),
+		},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/sandertv/gophertunnel/xsapi/internal"
 	"log/slog"
+	"net"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
 	"sync"
@@ -33,7 +34,9 @@ type Conn struct {
 	subscriptionsMu sync.RWMutex
 
 	log *slog.Logger
-	ctx context.Context
+
+	once   sync.Once
+	closed chan struct{}
 }
 
 // Subscribe attempts to subscribe with the specific resource URI, with the context
@@ -71,8 +74,8 @@ func (c *Conn) Subscribe(ctx context.Context, resourceURI string) (*Subscription
 		}
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case <-c.ctx.Done():
-		return nil, context.Cause(c.ctx)
+	case <-c.closed:
+		return nil, net.ErrClosed
 	}
 }
 
@@ -91,8 +94,8 @@ func (c *Conn) Unsubscribe(ctx context.Context, sub *Subscription) error {
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
-	case <-c.ctx.Done():
-		return context.Cause(c.ctx)
+	case <-c.closed:
+		return net.ErrClosed
 	}
 }
 
@@ -138,14 +141,11 @@ func (c *Conn) write(typ uint32, payload []any) error {
 
 // read goes as a background goroutine of Conn, reading a JSON array from the websocket
 // connection and decoding a header needed to indicate which message should be handled.
-//
-// read cancels the parent context of Conn with cause from context.CancelCauseFunc, if an
-// unrecoverable error has occurred while reading a JSON array from the websocket connection.
-func (c *Conn) read(cause context.CancelCauseFunc) {
+func (c *Conn) read() {
 	for {
 		var payload []json.RawMessage
 		if err := wsjson.Read(context.Background(), c.conn, &payload); err != nil {
-			cause(err)
+			_ = c.Close()
 			return
 		}
 		typ, err := readHeader(payload)
@@ -158,7 +158,13 @@ func (c *Conn) read(cause context.CancelCauseFunc) {
 }
 
 // Close closes the websocket connection with websocket.StatusNormalClosure.
-func (c *Conn) Close() error { return c.conn.Close(websocket.StatusNormalClosure, "") }
+func (c *Conn) Close() (err error) {
+	c.once.Do(func() {
+		close(c.closed)
+		err = c.conn.Close(websocket.StatusNormalClosure, "")
+	})
+	return err
+}
 
 // handleMessage handles a message received in read with the type.
 func (c *Conn) handleMessage(typ uint32, payload []json.RawMessage) {

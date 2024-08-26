@@ -1,19 +1,20 @@
-package nethernet
+package minecraft
 
 import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/nethernet"
 	"net"
 	"strconv"
 )
 
-type Network struct {
-	Signaling Signaling
+// NetherNet is an implementation of NetherNet network. Unlike RakNet, it needs to be registered manually with a Signaling.
+type NetherNet struct {
+	Signaling nethernet.Signaling
 }
 
-func (n Network) DialContext(ctx context.Context, address string) (net.Conn, error) {
+func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
 	if n.Signaling == nil {
 		return nil, errors.New("minecraft/nethernet: Network.DialContext: Signaling is nil")
 	}
@@ -21,15 +22,15 @@ func (n Network) DialContext(ctx context.Context, address string) (net.Conn, err
 	if err != nil {
 		return nil, fmt.Errorf("parse network ID: %w", err)
 	}
-	var d Dialer
+	var d nethernet.Dialer
 	return d.DialContext(ctx, networkID, n.Signaling)
 }
 
-func (n Network) PingContext(context.Context, string) ([]byte, error) {
+func (n NetherNet) PingContext(context.Context, string) ([]byte, error) {
 	return nil, errors.New("minecraft/nethernet: Network.PingContext: not supported")
 }
 
-func (n Network) Listen(address string) (minecraft.NetworkListener, error) {
+func (n NetherNet) Listen(address string) (NetworkListener, error) {
 	if n.Signaling == nil {
 		return nil, errors.New("minecraft/nethernet: Network.Listen: Signaling is nil")
 	}
@@ -37,14 +38,10 @@ func (n Network) Listen(address string) (minecraft.NetworkListener, error) {
 	if err != nil {
 		return nil, fmt.Errorf("parse network ID: %w", err)
 	}
-	var cfg ListenConfig
+	var cfg nethernet.ListenConfig
 	return cfg.Listen(networkID, n.Signaling)
 }
 
-func (Network) Encrypted() bool { return true }
+func (NetherNet) Encrypted() bool { return true }
 
-func (Network) BatchHeader() []byte { return nil }
-
-func NetworkAddress(networkID uint64) string {
-	return strconv.FormatUint(networkID, 10)
-}
+func (NetherNet) BatchHeader() []byte { return nil }

@@ -1,10 +1,8 @@
 package nethernet
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"github.com/pion/logging"
 	"github.com/pion/sdp/v3"
 	"github.com/pion/webrtc/v4"
 	"github.com/sandertv/gophertunnel/minecraft/nethernet/internal"
@@ -14,8 +12,6 @@ import (
 	"strings"
 	"sync"
 )
-
-// TODO: Under in construction!
 
 type ListenConfig struct {
 	Log *slog.Logger
@@ -27,14 +23,7 @@ func (conf ListenConfig) Listen(networkID uint64, signaling Signaling) (*Listene
 		conf.Log = slog.Default()
 	}
 	if conf.API == nil {
-		var (
-			setting webrtc.SettingEngine
-			factory = logging.NewDefaultLoggerFactory()
-		)
-		factory.DefaultLogLevel = logging.LogLevelDebug
-		setting.LoggerFactory = factory
-
-		conf.API = webrtc.NewAPI(webrtc.WithSettingEngine(setting))
+		conf.API = webrtc.NewAPI()
 	}
 	l := &Listener{
 		conf:      conf,
@@ -45,16 +34,13 @@ func (conf ListenConfig) Listen(networkID uint64, signaling Signaling) (*Listene
 
 		closed: make(chan struct{}),
 	}
-	var cancel context.CancelCauseFunc
-	l.ctx, cancel = context.WithCancelCause(context.Background())
-	go l.listen(cancel)
+	go l.listen()
 	return l, nil
 }
 
 type Listener struct {
 	conf ListenConfig
 
-	ctx       context.Context
 	signaling Signaling
 	networkID uint64
 
@@ -70,8 +56,6 @@ func (l *Listener) Accept() (net.Conn, error) {
 	select {
 	case <-l.closed:
 		return nil, net.ErrClosed
-	case <-l.ctx.Done():
-		return nil, context.Cause(l.ctx)
 	case conn := <-l.incoming:
 		return conn, nil
 	}
@@ -91,7 +75,7 @@ func (addr *Addr) String() string {
 	b := &strings.Builder{}
 	b.WriteString(strconv.FormatUint(addr.NetworkID, 10))
 	b.WriteByte(' ')
-	if addr.ConnectionID == 0 {
+	if addr.ConnectionID != 0 {
 		b.WriteByte('(')
 		b.WriteString(strconv.FormatUint(addr.ConnectionID, 10))
 		b.WriteByte(')')
@@ -107,12 +91,14 @@ func (l *Listener) ID() int64 { return int64(l.networkID) }
 // PongData is a stub.
 func (l *Listener) PongData([]byte) {}
 
-func (l *Listener) listen(cancel context.CancelCauseFunc) {
+func (l *Listener) listen() {
 	for {
 		signal, err := l.signaling.ReadSignal(l.closed)
 		if err != nil {
-			close(l.incoming)
-			cancel(err)
+			if !errors.Is(err, net.ErrClosed) {
+				l.conf.Log.Error("error reading signal", internal.ErrAttr(err))
+			}
+			_ = l.Close()
 			return
 		}
 
@@ -201,7 +187,7 @@ func (l *Listener) handleOffer(signal *Signal) error {
 	}
 
 	select {
-	case <-l.ctx.Done():
+	case <-l.closed:
 		return nil
 	case <-gatherFinished:
 		ice := l.conf.API.NewICETransport(gatherer)
@@ -255,7 +241,7 @@ func (l *Listener) handleOffer(signal *Signal) error {
 			}
 		}
 
-		c := newConn(ice, dtls, sctp, desc, l.conf.Log, signal.ConnectionID, signal.NetworkID, l.networkID, candidates)
+		c := newConn(ice, dtls, sctp, desc, l.conf.Log, signal.ConnectionID, signal.NetworkID, l.networkID, candidates, l)
 
 		l.connections.Store(signal.ConnectionID, c)
 		go l.handleConn(c)
@@ -264,15 +250,21 @@ func (l *Listener) handleOffer(signal *Signal) error {
 	}
 }
 
+func (l *Listener) handleClose(conn *Conn) {
+	l.connections.Delete(conn.id)
+}
+
 func (l *Listener) handleConn(conn *Conn) {
 	select {
-	case <-l.ctx.Done():
+	case <-l.closed:
 		// Quit the goroutine when the listener closes.
 		return
 	case <-conn.candidateReceived:
 		conn.log.Debug("received first candidate")
 		if err := l.startTransports(conn); err != nil {
-			conn.log.Error("error starting transports", internal.ErrAttr(err))
+			if !errors.Is(err, net.ErrClosed) {
+				conn.log.Error("error starting transports", internal.ErrAttr(err))
+			}
 			return
 		}
 		conn.handleTransports()
@@ -317,8 +309,8 @@ func (l *Listener) startTransports(conn *Conn) error {
 	}
 
 	select {
-	case <-l.ctx.Done():
-		return l.ctx.Err()
+	case <-l.closed:
+		return net.ErrClosed
 	case <-bothOpen:
 		return nil
 	}
@@ -347,6 +339,7 @@ func (l *Listener) handleError(signal *Signal) error {
 func (l *Listener) Close() error {
 	l.once.Do(func() {
 		close(l.closed)
+		close(l.incoming)
 	})
 	return nil
 }

@@ -235,7 +235,7 @@ type PlayerProfile struct {
 	LinkedAccounts                []LinkedPlatformAccount        `json:"LinkedAccounts,omitempty"`
 	Locations                     []Location                     `json:"Locations,omitempty"`
 	Memberships                   []Membership                   `json:"Memberships,omitempty"`
-	Origination                   IdentityProvider               `json:"Origination,omitempty"`
+	Origination                   string                         `json:"Origination,omitempty"`
 	PlayerID                      string                         `json:"PlayerId,omitempty"`
 	PublisherID                   string                         `json:"PublisherId,omitempty"`
 	PushNotificationRegistrations []PushNotificationRegistration `json:"PushNotificationRegistrations,omitempty"`
@@ -267,37 +267,35 @@ const (
 )
 
 type LinkedPlatformAccount struct {
-	Email          string           `json:"Email,omitempty"`
-	Platform       IdentityProvider `json:"Platform,omitempty"`
-	PlatformUserID string           `json:"PlatformUserId,omitempty"`
-	Username       string           `json:"Username,omitempty"`
+	Email          string `json:"Email,omitempty"`
+	Platform       string `json:"Platform,omitempty"`
+	PlatformUserID string `json:"PlatformUserId,omitempty"`
+	Username       string `json:"Username,omitempty"`
 }
 
-type IdentityProvider string
-
 const (
-	IdentityProviderAndroidDevice         IdentityProvider = "AndroidDevice"
-	IdentityProviderApple                 IdentityProvider = "Apple"
-	IdentityProviderCustom                IdentityProvider = "Custom"
-	IdentityProviderCustomServer          IdentityProvider = "CustomServer"
-	IdentityProviderFacebook              IdentityProvider = "Facebook"
-	IdentityProviderFacebookInstantGames  IdentityProvider = "FacebookInstantGames"
-	IdentityProviderGameCenter            IdentityProvider = "GameCenter"
-	IdentityProviderGameServer            IdentityProvider = "GameServer"
-	IdentityProviderGooglePlay            IdentityProvider = "GooglePlay"
-	IdentityProviderGooglePlayGames       IdentityProvider = "GooglePlayerGames"
-	IdentityProviderIOSDevice             IdentityProvider = "IOSDevice"
-	IdentityProviderKongregate            IdentityProvider = "Kongregate"
-	IdentityProviderNintendoSwitch        IdentityProvider = "NintendoSwitch"
-	IdentityProviderNintendoSwitchAccount IdentityProvider = "NintendoSwitchAccount"
-	IdentityProviderOpenIDConnect         IdentityProvider = "OpenIdConnect"
-	IdentityProviderPSN                   IdentityProvider = "PSN"
-	IdentityProviderPlayFab               IdentityProvider = "PlayFab"
-	IdentityProviderSteam                 IdentityProvider = "Steam"
-	IdentityProviderTwitch                IdentityProvider = "Twitch"
-	IdentityProviderUnknown               IdentityProvider = "Unknown"
-	IdentityProviderWindowsHello          IdentityProvider = "WindowsHello"
-	IdentityProviderXboxLive              IdentityProvider = "XBoxLive"
+	IdentityProviderAndroidDevice         = "AndroidDevice"
+	IdentityProviderApple                 = "Apple"
+	IdentityProviderCustom                = "Custom"
+	IdentityProviderCustomServer          = "CustomServer"
+	IdentityProviderFacebook              = "Facebook"
+	IdentityProviderFacebookInstantGames  = "FacebookInstantGames"
+	IdentityProviderGameCenter            = "GameCenter"
+	IdentityProviderGameServer            = "GameServer"
+	IdentityProviderGooglePlay            = "GooglePlay"
+	IdentityProviderGooglePlayGames       = "GooglePlayerGames"
+	IdentityProviderIOSDevice             = "IOSDevice"
+	IdentityProviderKongregate            = "Kongregate"
+	IdentityProviderNintendoSwitch        = "NintendoSwitch"
+	IdentityProviderNintendoSwitchAccount = "NintendoSwitchAccount"
+	IdentityProviderOpenIDConnect         = "OpenIdConnect"
+	IdentityProviderPSN                   = "PSN"
+	IdentityProviderPlayFab               = "PlayFab"
+	IdentityProviderSteam                 = "Steam"
+	IdentityProviderTwitch                = "Twitch"
+	IdentityProviderUnknown               = "Unknown"
+	IdentityProviderWindowsHello          = "WindowsHello"
+	IdentityProviderXboxLive              = "XBoxLive"
 )
 
 type Location struct {

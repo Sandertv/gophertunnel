@@ -5,24 +5,25 @@ import (
 	"fmt"
 	"github.com/sandertv/gophertunnel/playfab"
 	"github.com/sandertv/gophertunnel/playfab/title"
-	"github.com/sandertv/gophertunnel/xsapi"
 	"golang.org/x/text/language"
 )
 
-type PlayFabXBLIdentityProvider struct {
-	Environment *AuthorizationEnvironment
-	TokenSource xsapi.TokenSource
+type PlayFabIdentityProvider struct {
+	Environment      *AuthorizationEnvironment
+	IdentityProvider playfab.IdentityProvider
+
+	LoginConfig playfab.LoginConfig
 
 	DeviceConfig *DeviceConfig
 	UserConfig   *UserConfig
 }
 
-func (i PlayFabXBLIdentityProvider) TokenConfig() (*TokenConfig, error) {
+func (i PlayFabIdentityProvider) TokenConfig() (*TokenConfig, error) {
 	if i.Environment == nil {
-		return nil, errors.New("minecraft/franchise: PlayFabXBLIdentityProvider: Environment is nil")
+		return nil, errors.New("minecraft/franchise: PlayFabIdentityProvider: Environment is nil")
 	}
-	if i.TokenSource == nil {
-		return nil, errors.New("minecraft/franchise: PlayFabXBLIdentityProvider: TokenSource is nil")
+	if i.IdentityProvider == nil {
+		return nil, errors.New("minecraft/franchise: PlayFabIdentityProvider: IdentityProvider is nil")
 	}
 	if i.DeviceConfig == nil {
 		i.DeviceConfig = defaultDeviceConfig(i.Environment)
@@ -37,16 +38,11 @@ func (i PlayFabXBLIdentityProvider) TokenConfig() (*TokenConfig, error) {
 		}
 	}
 
-	x, err := i.TokenSource.Token()
-	if err != nil {
-		return nil, fmt.Errorf("request xbox live token: %w", err)
+	config := i.LoginConfig
+	if config.Title == "" {
+		config.Title = title.Title(i.Environment.PlayFabTitleID)
 	}
-
-	cfg := playfab.LoginConfig{
-		Title:         title.Title(i.Environment.PlayFabTitleID),
-		CreateAccount: true,
-	}.WithXbox(x)
-	identity, err := cfg.Login()
+	identity, err := i.IdentityProvider.Login(config)
 	if err != nil {
 		return nil, fmt.Errorf("login: %w", err)
 	}

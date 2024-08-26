@@ -19,15 +19,12 @@ type Dialer struct {
 	Log       *slog.Logger
 }
 
-func (d Dialer) DialContext(ctx context.Context, src franchise.IdentityProvider, env *Environment) (*Conn, error) {
+func (d Dialer) DialContext(ctx context.Context, i franchise.IdentityProvider, env *Environment) (*Conn, error) {
 	if d.Options == nil {
 		d.Options = &websocket.DialOptions{}
 	}
 	if d.Options.HTTPClient == nil {
 		d.Options.HTTPClient = &http.Client{}
-	}
-	if d.Options.HTTPHeader == nil {
-		d.Options.HTTPHeader = make(http.Header) // TODO(lactyy): Move to *franchise.Transport
 	}
 	if d.NetworkID == 0 {
 		d.NetworkID = rand.Uint64()
@@ -35,27 +32,20 @@ func (d Dialer) DialContext(ctx context.Context, src franchise.IdentityProvider,
 	if d.Log == nil {
 		d.Log = slog.Default()
 	}
-	/*var hasTransport bool
-	if base := d.Options.HTTPClient.Transport; base != nil {
+
+	var (
+		hasTransport bool
+		base         = d.Options.HTTPClient.Transport
+	)
+	if base != nil {
 		_, hasTransport = base.(*franchise.Transport)
 	}
 	if !hasTransport {
 		d.Options.HTTPClient.Transport = &franchise.Transport{
-			Source: src,
-			Base:   d.Options.HTTPClient.Transport,
+			IdentityProvider: i,
+			Base:             base,
 		}
-	}*/
-
-	// TODO(lactyy): Move to *franchise.Transport
-	conf, err := src.TokenConfig()
-	if err != nil {
-		return nil, fmt.Errorf("request token config: %w", err)
 	}
-	t, err := conf.Token()
-	if err != nil {
-		return nil, fmt.Errorf("request token: %w", err)
-	}
-	d.Options.HTTPHeader.Set("Authorization", t.AuthorizationHeader)
 
 	u, err := url.Parse(env.ServiceURI)
 	if err != nil {
@@ -68,21 +58,22 @@ func (d Dialer) DialContext(ctx context.Context, src franchise.IdentityProvider,
 	}
 
 	conn := &Conn{
-		conn:    c,
-		d:       d,
-		signals: make(chan *nethernet.Signal),
-		ready:   make(chan struct{}),
-	}
-	var cancel context.CancelCauseFunc
-	conn.ctx, cancel = context.WithCancelCause(context.Background())
+		conn: c,
+		d:    d,
 
-	go conn.read(cancel)
+		credentialsReceived: make(chan struct{}),
+
+		closed: make(chan struct{}),
+
+		signals: make(chan *nethernet.Signal),
+	}
+	go conn.read()
 	go conn.ping()
 
 	select {
 	case <-ctx.Done():
 		return nil, ctx.Err()
-	case <-conn.ready:
+	case <-conn.credentialsReceived:
 		return conn, nil
 	}
 }

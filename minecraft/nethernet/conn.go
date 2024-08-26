@@ -28,6 +28,8 @@ type Conn struct {
 	candidates        []webrtc.ICECandidate
 	candidatesMu      sync.Mutex
 
+	handler handler
+
 	localCandidates []webrtc.ICECandidate
 	localNetworkID  uint64
 
@@ -68,7 +70,6 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 	case <-c.closed:
 		return n, net.ErrClosed
 	default:
-		// TODO: Clean up...
 		segments := uint8(len(b) / maxMessageSize)
 		if len(b)%maxMessageSize != 0 {
 			segments++ // If there's a remainder, we need an additional segment.
@@ -89,11 +90,6 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 				return n, fmt.Errorf("write segment #%d: %w", segments, err)
 			}
 			n += len(frag)
-		}
-
-		// TODO
-		if segments != 0 {
-			panic("minecraft/nethernet: Conn: segments != 0")
 		}
 		return n, nil
 	}
@@ -133,6 +129,8 @@ func (c *Conn) RemoteAddr() net.Addr {
 func (c *Conn) Close() (err error) {
 	c.once.Do(func() {
 		close(c.closed)
+
+		c.handler.handleClose(c)
 
 		errs := make([]error, 0, 5)
 		errs = append(errs, c.reliable.Close())
@@ -350,7 +348,11 @@ func (desc description) setupAttribute() sdp.Attribute {
 	return attr
 }
 
-func newConn(ice *webrtc.ICETransport, dtls *webrtc.DTLSTransport, sctp *webrtc.SCTPTransport, d *description, log *slog.Logger, id, networkID, localNetworkID uint64, candidates []webrtc.ICECandidate) *Conn {
+func newConn(ice *webrtc.ICETransport, dtls *webrtc.DTLSTransport, sctp *webrtc.SCTPTransport, d *description, log *slog.Logger, id, networkID, localNetworkID uint64, candidates []webrtc.ICECandidate, h handler) *Conn {
+	if h == nil {
+		h = nopHandler{}
+	}
+
 	return &Conn{
 		ice:  ice,
 		dtls: dtls,
@@ -359,6 +361,8 @@ func newConn(ice *webrtc.ICETransport, dtls *webrtc.DTLSTransport, sctp *webrtc.
 		remote: d,
 
 		candidateReceived: make(chan struct{}, 1),
+
+		handler: h,
 
 		localNetworkID:  localNetworkID,
 		localCandidates: candidates,
@@ -377,3 +381,11 @@ func newConn(ice *webrtc.ICETransport, dtls *webrtc.DTLSTransport, sctp *webrtc.
 		networkID: networkID,
 	}
 }
+
+type handler interface {
+	handleClose(conn *Conn)
+}
+
+type nopHandler struct{}
+
+func (nopHandler) handleClose(*Conn) {}

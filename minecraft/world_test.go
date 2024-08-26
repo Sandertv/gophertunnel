@@ -1,4 +1,4 @@
-package minecraft_test
+package minecraft
 
 import (
 	"context"
@@ -9,17 +9,16 @@ import (
 	"fmt"
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/signaling"
-	"github.com/sandertv/gophertunnel/minecraft/nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/room"
+	"github.com/sandertv/gophertunnel/playfab"
 	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"log/slog"
-	"net"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
@@ -52,11 +51,11 @@ func TestWorldListen(t *testing.T) {
 	}
 	src := auth.RefreshTokenSource(tok)
 
-	refresh, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	prov := franchise.PlayFabXBLIdentityProvider{
+	prov := franchise.PlayFabIdentityProvider{
 		Environment: a,
-		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+		IdentityProvider: playfab.XBLIdentityProvider{
+			TokenSource: xal.RefreshTokenSource(src, "http://playfab.xboxlive.com/"),
+		},
 	}
 
 	d := signaling.Dialer{
@@ -76,7 +75,7 @@ func TestWorldListen(t *testing.T) {
 	})
 
 	// A token source that refreshes a token used for generic Xbox Live services.
-	x := xal.RefreshTokenSourceContext(refresh, src, "http://xboxlive.com")
+	x := xal.RefreshTokenSource(src, "http://xboxlive.com")
 	xt, err := x.Token()
 	if err != nil {
 		t.Fatalf("error refreshing xbox live token: %s", err)
@@ -166,11 +165,11 @@ func TestWorldListen(t *testing.T) {
 		Level: slog.LevelDebug,
 	})))
 
-	minecraft.RegisterNetwork("nethernet", &nethernet.Network{
+	RegisterNetwork("nethernet", &NetherNet{
 		Signaling: conn,
 	})
 
-	l, err := minecraft.Listen("nethernet", nethernet.NetworkAddress(d.NetworkID))
+	l, err := Listen("nethernet", strconv.FormatUint(d.NetworkID, 10))
 	if err != nil {
 		t.Fatalf("error listening: %s", err)
 	}
@@ -183,12 +182,10 @@ func TestWorldListen(t *testing.T) {
 	for {
 		netConn, err := l.Accept()
 		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				t.Fatalf("error accepting conn: %s", err)
-			}
+			return
 		}
-		c := netConn.(*minecraft.Conn)
-		if err := c.StartGame(minecraft.GameData{
+		c := netConn.(*Conn)
+		if err := c.StartGame(GameData{
 			WorldName:         "NetherNet",
 			WorldSeed:         0,
 			Difficulty:        0,
@@ -205,17 +202,153 @@ func TestWorldListen(t *testing.T) {
 		}); err != nil {
 			t.Fatalf("error starting game: %s", err)
 		}
+
+		go func() {
+			defer func() {
+				if err := c.Close(); err != nil {
+					t.Errorf("error closing connection: %s", err)
+				}
+			}()
+			for {
+				pk, err := c.ReadPacket()
+				if err != nil {
+					if !errors.Is(err, errClosed) {
+						t.Errorf("error reading packet: %s", err)
+					}
+					return
+				}
+				switch pk := pk.(type) {
+				case *packet.Text:
+					if pk.Message == "Close" {
+						if err := l.Disconnect(c, "Connection closed"); err != nil {
+							t.Errorf("error closing connection: %s", err)
+						}
+						if err := l.Close(); err != nil {
+							t.Errorf("error closing listener: %s", err)
+						}
+					}
+				}
+			}
+		}()
 	}
 }
 
 var serviceConfigID = uuid.MustParse("4fc10100-5f7a-4470-899b-280835760c07")
 
-// TestWorldDial connects to a world. Before running the test, you need to capture the network ID of
-// the world to join, and fill in the constant below.
+// TestWorldDial connects to a world. It retrieves the sessions available, and join the first session returned
+// from the response.
 func TestWorldDial(t *testing.T) {
-	// TODO: Implement looking up sessions and find a network ID from the response.
-	const remoteNetworkID = 9511338490860978050
+	tok, err := readToken("franchise/internal/test/auth.tok", auth.TokenSource)
+	if err != nil {
+		t.Fatalf("error reading token: %s", err)
+	}
+	src := auth.RefreshTokenSource(tok)
 
+	// A token source that refreshes a token used for generic Xbox Live services.
+	x := xal.RefreshTokenSource(src, "http://xboxlive.com")
+
+	handles, err := mpsd.QueryConfig{
+		SocialGroup: "people",
+	}.Query(x, serviceConfigID)
+	if err != nil {
+		t.Fatalf("error querying handles: %s", err)
+	} else if len(handles) == 0 {
+		t.Fatalf("no handles found")
+	}
+	// Join the first session we've got.
+	handle := handles[0]
+
+	t.Logf("Joining session: URL: %s, owner XUID: %s", handle.URL().JoinPath("session"), handle.OwnerXUID)
+
+	var status room.Status
+	if err := json.Unmarshal(handle.CustomProperties, &status); err != nil {
+		t.Fatalf("error decoding custom properties from handle: %s", err)
+	}
+
+	var networkID uint64
+	for _, connection := range status.SupportedConnections {
+		if connection.ConnectionType == 3 {
+			if connection.WebRTCNetworkID != 0 {
+				networkID = connection.WebRTCNetworkID
+				break
+			}
+			if connection.NetherNetID != 0 {
+				networkID = connection.NetherNetID
+				break
+			}
+		}
+	}
+	if networkID == 0 {
+		t.Fatal("no remote network ID found in custom properties")
+	}
+
+	join, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	var cfg mpsd.JoinConfig
+	session, err := cfg.JoinContext(join, x, handle)
+	if err != nil {
+		t.Fatalf("error joining session: %s", err)
+	}
+	t.Cleanup(func() {
+		if err := session.Close(); err != nil {
+			t.Fatalf("error leaving session: %s", err)
+		}
+	})
+
+	conn := testWorldDial(t, networkID, src)
+
+	// Try decoding deferred packets received from the connection.
+	for {
+		pk, err := conn.ReadPacket()
+		if err != nil {
+			if !errors.Is(err, errClosed) {
+				t.Errorf("error reading packet: %s", err)
+			}
+			return
+		}
+		switch pk := pk.(type) {
+		case *packet.Text:
+			if pk.TextType == packet.TextTypeChat && pk.XUID == handle.OwnerXUID && pk.Message == "Close" {
+				if err := conn.Close(); err != nil {
+					t.Errorf("error closing connection: %s", err)
+				}
+			}
+		}
+	}
+}
+
+func TestWorldDialByNetworkID(t *testing.T) {
+	const networkID = 0 // Fill in this constant before running the test.
+
+	tok, err := readToken("franchise/internal/test/auth.tok", auth.TokenSource)
+	if err != nil {
+		t.Fatalf("error reading token: %s", err)
+	}
+	src := auth.RefreshTokenSource(tok)
+
+	conn := testWorldDial(t, networkID, src)
+
+	// Try decoding deferred packets received from the connection.
+	for {
+		pk, err := conn.ReadPacket()
+		if err != nil {
+			if !errors.Is(err, errClosed) {
+				t.Errorf("error reading packet: %s", err)
+			}
+			return
+		}
+		switch pk := pk.(type) {
+		case *packet.Text:
+			if pk.TextType == packet.TextTypeChat && pk.Message == "Close" {
+				if err := conn.Close(); err != nil {
+					t.Errorf("error closing connection: %s", err)
+				}
+			}
+		}
+	}
+}
+
+func testWorldDial(t *testing.T, networkID uint64, src oauth2.TokenSource) *Conn {
 	discovery, err := franchise.Discover(protocol.CurrentVersion)
 	if err != nil {
 		t.Fatalf("error retrieving discovery: %s", err)
@@ -229,17 +362,11 @@ func TestWorldDial(t *testing.T) {
 		t.Fatalf("error reading environment for signaling: %s", err)
 	}
 
-	tok, err := readToken("franchise/internal/test/auth.tok", auth.TokenSource)
-	if err != nil {
-		t.Fatalf("error reading token: %s", err)
-	}
-	src := auth.RefreshTokenSource(tok)
-
-	refresh, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	prov := franchise.PlayFabXBLIdentityProvider{
+	i := franchise.PlayFabIdentityProvider{
 		Environment: a,
-		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+		IdentityProvider: playfab.XBLIdentityProvider{
+			TokenSource: xal.RefreshTokenSource(src, "http://playfab.xboxlive.com/"),
+		},
 	}
 
 	d := signaling.Dialer{
@@ -248,7 +375,7 @@ func TestWorldDial(t *testing.T) {
 
 	dial, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
-	sig, err := d.DialContext(dial, prov, s)
+	sig, err := d.DialContext(dial, i, s)
 	if err != nil {
 		t.Fatalf("error dialing signaling: %s", err)
 	}
@@ -258,29 +385,25 @@ func TestWorldDial(t *testing.T) {
 		}
 	})
 
-	// TODO: Implement joining a session.
-	// A token source that refreshes a token used for generic Xbox Live services.
-	//x := xal.RefreshTokenSourceContext(refresh, src, "http://xboxlive.com")
-
 	t.Logf("Network ID: %d", d.NetworkID)
 
 	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
 		Level: slog.LevelDebug,
 	})))
 
-	minecraft.RegisterNetwork("nethernet", &nethernet.Network{
+	RegisterNetwork("nethernet", &NetherNet{
 		Signaling: sig,
 	})
 
-	conn, err := minecraft.Dialer{
+	conn, err := Dialer{
 		TokenSource: src,
-	}.DialTimeout("nethernet", nethernet.NetworkAddress(remoteNetworkID), time.Second*15)
+	}.DialTimeout("nethernet", strconv.FormatUint(networkID, 10), time.Second*15)
 	if err != nil {
 		t.Fatalf("error dialing: %s", err)
 	}
 	t.Cleanup(func() {
 		if err := conn.Close(); err != nil {
-			t.Fatalf("error closing session: %s", err)
+			t.Fatalf("error closing connection: %s", err)
 		}
 	})
 
@@ -296,21 +419,7 @@ func TestWorldDial(t *testing.T) {
 		t.Fatalf("error writing packet: %s", err)
 	}
 
-	// Try decoding deferred packets received from the connection.
-	go func() {
-		for {
-			pk, err := conn.ReadPacket()
-			if err != nil {
-				if !strings.Contains(err.Error(), "use of closed network connection") {
-					t.Errorf("error reading packet: %s", err)
-				}
-				return
-			}
-			_ = pk
-		}
-	}()
-
-	time.Sleep(time.Second * 15)
+	return conn
 }
 
 func readToken(path string, src oauth2.TokenSource) (t *oauth2.Token, err error) {

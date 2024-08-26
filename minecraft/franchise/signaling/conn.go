@@ -16,13 +16,13 @@ import (
 
 type Conn struct {
 	conn *websocket.Conn
-	ctx  context.Context
 	d    Dialer
 
-	credentials atomic.Pointer[nethernet.Credentials]
-	ready       chan struct{}
+	credentials         atomic.Pointer[nethernet.Credentials]
+	credentialsReceived chan struct{}
 
-	once sync.Once
+	once   sync.Once
+	closed chan struct{}
 
 	signals chan *nethernet.Signal
 }
@@ -38,19 +38,19 @@ func (c *Conn) WriteSignal(signal *nethernet.Signal) error {
 func (c *Conn) ReadSignal(cancel <-chan struct{}) (*nethernet.Signal, error) {
 	select {
 	case <-cancel:
+		return nil, nethernet.ErrSignalingCanceled
+	case <-c.closed:
 		return nil, net.ErrClosed
 	case s := <-c.signals:
 		return s, nil
-	case <-c.ctx.Done():
-		return nil, context.Cause(c.ctx)
 	}
 }
 
 func (c *Conn) Credentials() (*nethernet.Credentials, error) {
 	select {
-	case <-c.ctx.Done():
-		return nil, context.Cause(c.ctx)
-	case <-c.ready:
+	case <-c.closed:
+		return nil, net.ErrClosed
+	default:
 		return c.credentials.Load(), nil
 	}
 }
@@ -67,17 +67,17 @@ func (c *Conn) ping() {
 			}); err != nil {
 				c.d.Log.Error("error writing ping", internal.ErrAttr(err))
 			}
-		case <-c.ctx.Done():
+		case <-c.closed:
 			return
 		}
 	}
 }
 
-func (c *Conn) read(cancel context.CancelCauseFunc) {
+func (c *Conn) read() {
 	for {
 		var message Message
 		if err := wsjson.Read(context.Background(), c.conn, &message); err != nil {
-			cancel(err)
+			_ = c.Close()
 			return
 		}
 		switch message.Type {
@@ -91,8 +91,11 @@ func (c *Conn) read(cancel context.CancelCauseFunc) {
 				c.d.Log.Error("error decoding credentials", internal.ErrAttr(err))
 				continue
 			}
+			previous := c.credentials.Load()
 			c.credentials.Store(&credentials)
-			close(c.ready)
+			if previous == nil {
+				close(c.credentialsReceived)
+			}
 		case MessageTypeSignal:
 			s := &nethernet.Signal{}
 			if err := s.UnmarshalText([]byte(message.Data)); err != nil {
@@ -118,6 +121,8 @@ func (c *Conn) write(m Message) error {
 
 func (c *Conn) Close() (err error) {
 	c.once.Do(func() {
+		close(c.closed)
+		close(c.signals)
 		err = c.conn.Close(websocket.StatusNormalClosure, "")
 	})
 	return err

@@ -1,10 +1,10 @@
 package franchise
 
 import (
-	"context"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal/test"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/playfab"
 	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"testing"
 )
@@ -25,11 +25,11 @@ func TestToken(t *testing.T) {
 	}
 	src := auth.RefreshTokenSource(tok)
 
-	refresh, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	prov := PlayFabXBLIdentityProvider{
+	prov := PlayFabIdentityProvider{
 		Environment: a,
-		TokenSource: xal.RefreshTokenSourceContext(refresh, src, "http://playfab.xboxlive.com/"),
+		IdentityProvider: playfab.XBLIdentityProvider{
+			TokenSource: xal.RefreshTokenSource(src, "http://playfab.xboxlive.com/"),
+		},
 	}
 
 	conf, err := prov.TokenConfig()

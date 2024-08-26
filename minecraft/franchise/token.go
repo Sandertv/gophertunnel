@@ -23,6 +23,10 @@ type Token struct {
 	TreatmentContext    string                   `json:"treatmentContext"`
 }
 
+func (t *Token) SetAuthHeader(req *http.Request) {
+	req.Header.Set("Authorization", t.AuthorizationHeader)
+}
+
 const (
 	ConfigurationMinecraft  = "minecraft"
 	ConfigurationValidation = "validation"

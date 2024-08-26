@@ -14,15 +14,15 @@ import (
 )
 
 func (s *Session) CommitContext(ctx context.Context, d *SessionDescription) (*Commitment, error) {
-	return s.conf.commit(ctx, s.ref, d)
+	return s.conf.commit(ctx, s.ref.URL(), d)
 }
 
-func (conf PublishConfig) commit(ctx context.Context, ref SessionReference, d *SessionDescription) (*Commitment, error) {
+func (conf PublishConfig) commit(ctx context.Context, u *url.URL, d *SessionDescription) (*Commitment, error) {
 	buf := &bytes.Buffer{}
 	if err := json.NewEncoder(buf).Encode(d); err != nil {
 		return nil, fmt.Errorf("encode request body: %w", err)
 	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodPut, ref.URL().String(), buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, u.String(), buf)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}

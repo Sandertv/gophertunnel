@@ -10,15 +10,10 @@ import (
 )
 
 func RefreshTokenSource(underlying oauth2.TokenSource, relyingParty string) xsapi.TokenSource {
-	return RefreshTokenSourceContext(context.Background(), underlying, relyingParty)
-}
-
-func RefreshTokenSourceContext(ctx context.Context, underlying oauth2.TokenSource, relyingParty string) xsapi.TokenSource {
 	return &refreshTokenSource{
 		underlying: underlying,
 
 		relyingParty: relyingParty,
-		ctx:          ctx,
 	}
 }
 
@@ -26,7 +21,6 @@ type refreshTokenSource struct {
 	underlying oauth2.TokenSource
 
 	relyingParty string
-	ctx          context.Context
 
 	t  *oauth2.Token
 	x  *auth.XBLToken
@@ -42,7 +36,7 @@ func (r *refreshTokenSource) Token() (_ xsapi.Token, err error) {
 		if err != nil {
 			return nil, fmt.Errorf("request underlying token: %w", err)
 		}
-		r.x, err = auth.RequestXBLToken(r.ctx, r.t, r.relyingParty)
+		r.x, err = auth.RequestXBLToken(context.Background(), r.t, r.relyingParty)
 		if err != nil {
 			return nil, fmt.Errorf("request xbox live token: %w", err)
 		}

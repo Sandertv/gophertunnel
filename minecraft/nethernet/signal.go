@@ -2,15 +2,14 @@ package nethernet
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/pion/webrtc/v4"
 	"strconv"
 	"strings"
 )
 
-// TODO: Improve documentations written in my poor English ;-;
-// TODO: We need an implementation of Signaling that is usable under multiple goroutines.
-// I want to use one Signaling connection in both Listen and Dial, because it should work.
+var ErrSignalingCanceled = errors.New("minecraft/nethernet: canceled")
 
 type Signaling interface {
 	ReadSignal(cancel <-chan struct{}) (*Signal, error)
