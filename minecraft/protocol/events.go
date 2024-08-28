@@ -587,7 +587,7 @@ type ItemUsedEvent struct {
 // Marshal ...
 func (i *ItemUsedEvent) Marshal(r IO) {
 	r.Int16(&i.ItemID)
-	r.Varint32(&i.ItemAux)
-	r.Varint32(&i.UseMethod)
-	r.Varint32(&i.UseCount)
+	r.Int32(&i.ItemAux)
+	r.Int32(&i.UseMethod)
+	r.Int32(&i.UseCount)
 }
