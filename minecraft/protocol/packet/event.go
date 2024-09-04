@@ -9,7 +9,7 @@ import (
 type Event struct {
 	// EntityRuntimeID is the runtime ID of the player. The runtime ID is unique for each world session, and
 	// entities are generally identified in packets using this runtime ID.
-	EntityRuntimeID uint64
+	EntityRuntimeID int64
 	// UsePlayerID ...
 	// TODO: Figure out what UsePlayerID is for.
 	UsePlayerID byte
@@ -23,7 +23,7 @@ func (*Event) ID() uint32 {
 }
 
 func (pk *Event) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.Varint64(&pk.EntityRuntimeID)
 	io.EventType(&pk.Event)
 	io.Uint8(&pk.UsePlayerID)
 	pk.Event.Marshal(io)
