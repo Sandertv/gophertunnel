@@ -225,6 +225,12 @@ func (listener *Listener) updatePongData() {
 		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port,
 		0,
 	)))
+
+	if status, ok := listener.listener.(interface {
+		ServerStatus(status ServerStatus)
+	}); ok {
+		status.ServerStatus(s)
+	}
 }
 
 // listen starts listening for incoming connections and packets. When a player is fully connected, it submits

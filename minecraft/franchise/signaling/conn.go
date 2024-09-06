@@ -3,8 +3,8 @@ package signaling
 import (
 	"context"
 	"encoding/json"
+	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
-	"github.com/sandertv/gophertunnel/minecraft/nethernet"
 	"net"
 	"nhooyr.io/websocket"
 	"nhooyr.io/websocket/wsjson"
@@ -24,10 +24,12 @@ type Conn struct {
 	once   sync.Once
 	closed chan struct{}
 
-	signals chan *nethernet.Signal
+	notifyCount uint32
+	notifiers   map[uint32]nethernet.Notifier
+	notifiersMu sync.Mutex
 }
 
-func (c *Conn) WriteSignal(signal *nethernet.Signal) error {
+func (c *Conn) Signal(signal *nethernet.Signal) error {
 	return c.write(Message{
 		Type: MessageTypeSignal,
 		To:   json.Number(strconv.FormatUint(signal.NetworkID, 10)),
@@ -35,15 +37,27 @@ func (c *Conn) WriteSignal(signal *nethernet.Signal) error {
 	})
 }
 
-func (c *Conn) ReadSignal(cancel <-chan struct{}) (*nethernet.Signal, error) {
+func (c *Conn) Notify(cancel <-chan struct{}, n nethernet.Notifier) {
+	c.notifiersMu.Lock()
+	i := c.notifyCount
+	c.notifiers[i] = n
+	c.notifyCount++
+	c.notifiersMu.Unlock()
+
+	go c.notify(cancel, n, i)
+}
+
+func (c *Conn) notify(cancel <-chan struct{}, n nethernet.Notifier, i uint32) {
 	select {
-	case <-cancel:
-		return nil, nethernet.ErrSignalingCanceled
 	case <-c.closed:
-		return nil, net.ErrClosed
-	case s := <-c.signals:
-		return s, nil
+		n.NotifyError(net.ErrClosed)
+	case <-cancel:
+		n.NotifyError(nethernet.ErrSignalingCanceled)
 	}
+
+	c.notifiersMu.Lock()
+	delete(c.notifiers, i)
+	c.notifiersMu.Unlock()
 }
 
 func (c *Conn) Credentials() (*nethernet.Credentials, error) {
@@ -97,18 +111,23 @@ func (c *Conn) read() {
 				close(c.credentialsReceived)
 			}
 		case MessageTypeSignal:
-			s := &nethernet.Signal{}
-			if err := s.UnmarshalText([]byte(message.Data)); err != nil {
+			signal := &nethernet.Signal{}
+			if err := signal.UnmarshalText([]byte(message.Data)); err != nil {
 				c.d.Log.Error("error decoding signal", internal.ErrAttr(err))
 				continue
 			}
 			var err error
-			s.NetworkID, err = strconv.ParseUint(message.From, 10, 64)
+			signal.NetworkID, err = strconv.ParseUint(message.From, 10, 64)
 			if err != nil {
 				c.d.Log.Error("error parsing network ID of signal", internal.ErrAttr(err))
 				continue
 			}
-			c.signals <- s
+
+			c.notifiersMu.Lock()
+			for _, n := range c.notifiers {
+				n.NotifySignal(signal)
+			}
+			c.notifiersMu.Unlock()
 		default:
 			c.d.Log.Warn("received message for unknown type", "message", message)
 		}
@@ -122,7 +141,6 @@ func (c *Conn) write(m Message) error {
 func (c *Conn) Close() (err error) {
 	c.once.Do(func() {
 		close(c.closed)
-		close(c.signals)
 		err = c.conn.Close(websocket.StatusNormalClosure, "")
 	})
 	return err

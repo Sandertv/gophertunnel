@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/nethernet"
+	"github.com/df-mc/go-nethernet"
 	"net"
 	"strconv"
 )

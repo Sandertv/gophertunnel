@@ -2,12 +2,12 @@ package signaling
 
 import (
 	"context"
+	"github.com/df-mc/go-playfab"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"github.com/sandertv/gophertunnel/minecraft/auth/xal"
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal/test"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/playfab"
-	"github.com/sandertv/gophertunnel/xsapi/xal"
 	"testing"
 	"time"
 )

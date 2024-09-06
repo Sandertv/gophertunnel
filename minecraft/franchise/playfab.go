@@ -3,8 +3,8 @@ package franchise
 import (
 	"errors"
 	"fmt"
-	"github.com/sandertv/gophertunnel/playfab"
-	"github.com/sandertv/gophertunnel/playfab/title"
+	"github.com/df-mc/go-playfab"
+	"github.com/df-mc/go-playfab/title"
 	"golang.org/x/text/language"
 )
 

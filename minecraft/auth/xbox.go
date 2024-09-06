@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/df-mc/go-xsapi"
 	"net/http"
 	"time"
 
@@ -31,12 +32,29 @@ type XBLToken struct {
 		}
 		Token string
 	}
+
+	// key is the private key used to sign requests.
+	key *ecdsa.PrivateKey
+}
+
+func (t XBLToken) String() string {
+	return fmt.Sprintf("XBL3.0 x=%s;%s", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token)
+}
+
+func (t XBLToken) DisplayClaims() xsapi.DisplayClaims {
+	return t.AuthorizationToken.DisplayClaims.UserInfo[0]
 }
 
 // SetAuthHeader returns a string that may be used for the 'Authorization' header used for Minecraft
 // related endpoints that need an XBOX Live authenticated caller.
 func (t XBLToken) SetAuthHeader(r *http.Request) {
 	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
+
+	if b, ok := r.Body.(interface {
+		Bytes() []byte
+	}); ok {
+		sign(r, b.Bytes(), t.key)
+	}
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
@@ -100,7 +118,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 		}
 		return nil, fmt.Errorf("POST %v: %v", "https://sisu.xboxlive.com/authorize", resp.Status)
 	}
-	info := new(XBLToken)
+	info := &XBLToken{key: key}
 	return info, json.NewDecoder(resp.Body).Decode(info)
 }
 
@@ -163,7 +181,7 @@ func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	hash.Write(buf.Bytes())
 
 	// HTTP method, generally POST + 0 byte.
-	hash.Write([]byte("POST"))
+	hash.Write([]byte(request.Method))
 	hash.Write([]byte{0})
 	// Request uri path + raw query + 0 byte.
 	hash.Write([]byte(request.URL.Path + request.URL.RawQuery))
@@ -220,4 +238,3 @@ func parseXboxErrorCode(code string) string {
 		return fmt.Sprintf("unknown error code: %v", code)
 	}
 }
-

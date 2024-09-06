@@ -3,8 +3,8 @@ package signaling
 import (
 	"context"
 	"fmt"
+	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/franchise"
-	"github.com/sandertv/gophertunnel/minecraft/nethernet"
 	"log/slog"
 	"math/rand"
 	"net/http"
@@ -65,7 +65,7 @@ func (d Dialer) DialContext(ctx context.Context, i franchise.IdentityProvider, e
 
 		closed: make(chan struct{}),
 
-		signals: make(chan *nethernet.Signal),
+		notifiers: make(map[uint32]nethernet.Notifier),
 	}
 	go conn.read()
 	go conn.ping()

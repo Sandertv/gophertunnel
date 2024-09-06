@@ -3,8 +3,8 @@ package xal
 import (
 	"context"
 	"fmt"
+	"github.com/df-mc/go-xsapi"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"github.com/sandertv/gophertunnel/xsapi"
 	"golang.org/x/oauth2"
 	"sync"
 )
