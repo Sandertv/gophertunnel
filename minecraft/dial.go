@@ -219,7 +219,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		conn.identityData = identityData
 	}
 
-	l, c, e := make(chan struct{}), make(chan struct{}), make(chan error, 1)
+	l, c, e := make(chan struct{}), make(chan struct{}),  make(chan error, 1)
 	go listenConn(conn, d.ErrorLog, l, c, e)
 
 	conn.expect(packet.IDNetworkSettings, packet.IDPlayStatus)
@@ -301,7 +301,11 @@ func listenConn(conn *Conn, logger *log.Logger, l, c chan struct{}, e chan error
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
 				logger.Printf("dialer conn: %v", err)
-				e <- err
+				select {
+				case e <- err:
+				default:
+					// If the error channel is full, we don't block
+				}
 				return
 			}
 			if !readyToLoginBefore && conn.readyToLogin {
