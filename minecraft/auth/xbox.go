@@ -33,22 +33,28 @@ type XBLToken struct {
 		Token string
 	}
 
-	// key is the private key used to sign requests.
+	// key is the private key used as 'ProofKey' for authorization.
+	// It is used for signing requests in [XBLToken.SetAuthHeader].
 	key *ecdsa.PrivateKey
 }
 
+// String returns a string that may be used for the 'Authorization' header used for Minecraft
+// related endpoints that need an XBOX Live authenticated caller.
 func (t XBLToken) String() string {
 	return fmt.Sprintf("XBL3.0 x=%s;%s", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token)
 }
 
+// DisplayClaims returns a [xsapi.DisplayClaims] from the token. It can be used by the XSAPI
+// package to include display claims in requests that require them.
 func (t XBLToken) DisplayClaims() xsapi.DisplayClaims {
 	return t.AuthorizationToken.DisplayClaims.UserInfo[0]
 }
 
-// SetAuthHeader returns a string that may be used for the 'Authorization' header used for Minecraft
-// related endpoints that need an XBOX Live authenticated caller.
+// SetAuthHeader sets an 'Authorization' header to the request using [XBLToken.String]. It also
+// signs the request with a 'Signature' header using the private key if [http.Request.Body] implements
+// the Bytes() method to return its bytes to sign (typically [bytes.Buffer] or similar).
 func (t XBLToken) SetAuthHeader(r *http.Request) {
-	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
+	r.Header.Set("Authorization", t.String())
 
 	if b, ok := r.Body.(interface {
 		Bytes() []byte

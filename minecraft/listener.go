@@ -140,7 +140,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		incoming:          make(chan *Conn),
 		close:             make(chan struct{}),
 		key:               key,
-		disableEncryption: n.Encrypted(),
+		disableEncryption: n.DisableEncryption(),
 		batchHeader:       n.BatchHeader(),
 	}
 
@@ -213,6 +213,8 @@ func (listener *Listener) Close() error {
 
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
+// If NetworkListener of the listener supports updating the server status directly with ServerStatus(ServerStatus)
+// method, it will directly call the method after updating its pong data.
 func (listener *Listener) updatePongData() {
 	var port uint16
 	if addr, ok := listener.Addr().(*net.UDPAddr); ok {

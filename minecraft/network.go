@@ -24,11 +24,11 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
-
-	// Encrypted returns a bool indicating whether an encryption has already been done on the Network side, and no
-	// encryption is needed on Conn side.
-	Encrypted() bool
-	// BatchHeader returns the header of compressed 'batches' from Minecraft, used for encoding/decoding packets.
+	// DisableEncryption indicates that encryption performed on Conn should be disabled.
+	// For security reasons, most implementations should return false.
+	DisableEncryption() bool
+	// BatchHeader returns the header of compressed 'batches' from Minecraft. It is used
+	// for encoding/decoding packets in Conn.
 	BatchHeader() []byte
 }
 

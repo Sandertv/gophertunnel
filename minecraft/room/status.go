@@ -18,7 +18,7 @@ type Status struct {
 	Protocol                int32        `json:"protocol"`
 	MemberCount             int          `json:"MemberCount"`
 	MaxMemberCount          int          `json:"MaxMemberCount"`
-	BroadcastSetting        uint32       `json:"BroadcastSetting"`
+	BroadcastSetting        int32        `json:"BroadcastSetting"`
 	LanGame                 bool         `json:"LanGame"`
 	IsEditorWorld           bool         `json:"isEditorWorld"`
 	TransportLayer          int32        `json:"TransportLayer"`
@@ -35,7 +35,7 @@ type Connection struct {
 	HostPort        uint16 `json:"HostPort"`
 	NetherNetID     uint64 `json:"NetherNetId"`
 	WebRTCNetworkID uint64 `json:"WebRTCNetworkId"`
-	RakNetGUID      string `json:"RakNetGUID"`
+	RakNetGUID      string `json:"RakNetGUID,omitempty"`
 }
 
 const (
@@ -48,7 +48,7 @@ const (
 )
 
 const (
-	BroadcastSettingInviteOnly uint32 = iota + 1
+	BroadcastSettingInviteOnly int32 = iota + 1
 	BroadcastSettingFriendsOnly
 	BroadcastSettingFriendsOfFriends
 )
@@ -61,6 +61,7 @@ const (
 
 const (
 	ConnectionTypeWebSocketsWebRTCSignaling uint32 = 3
+	ConnectionTypeUPNP                      uint32 = 6
 )
 
 type StatusProvider interface {
@@ -91,7 +92,6 @@ func DefaultStatus() Status {
 		Protocol:                protocol.CurrentProtocol,
 		BroadcastSetting:        BroadcastSettingFriendsOfFriends,
 		LanGame:                 true,
-		TransportLayer:          TransportLayerNetherNet,
 		OnlineCrossPlatformGame: true,
 		CrossPlayDisabled:       false,
 		TitleID:                 0,

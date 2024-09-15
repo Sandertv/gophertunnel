@@ -12,107 +12,105 @@ import (
 	"sync"
 )
 
-var serviceConfigID = uuid.MustParse("4fc10100-5f7a-4470-899b-280835760c07")
+// XBLAnnouncer announces a Status through the Multiplayer Session Directory (MPSD) of Xbox Live.
+type XBLAnnouncer struct {
+	// TokenSource provides the [xsapi.Token] required to publish a session when the Session is nil.
+	TokenSource xsapi.TokenSource
 
-func NewSessionAnnouncer(s *mpsd.Session) *SessionAnnouncer {
-	return &SessionAnnouncer{
-		s: s,
-	}
-}
+	// SessionReference specifies the internal ID of the session being published when the Session is nil.
+	SessionReference mpsd.SessionReference
 
-type SessionPublishConfig struct {
+	// PublishConfig specifies custom configuration for publishing a session when the Session is nil.
 	PublishConfig mpsd.PublishConfig
-	Reference     mpsd.SessionReference
+
+	// Session is the session where the Status will be committed. If nil, a [mpsd.Session] will be published
+	// using the PublishConfig.
+	Session *mpsd.Session
+
+	// custom properties are encoded from Status for comparison in announcements.
+	custom []byte
+
+	// Mutex ensures atomic read/write access to the fields.
+	sync.Mutex
 }
 
-func (conf SessionPublishConfig) New(src xsapi.TokenSource) *SessionAnnouncer {
-	return &SessionAnnouncer{
-		p:   conf,
-		src: src,
-	}
-}
-
-func (conf SessionPublishConfig) publish(ctx context.Context, src xsapi.TokenSource) (*mpsd.Session, error) {
-	if conf.Reference.ServiceConfigID == uuid.Nil {
-		conf.Reference.ServiceConfigID = serviceConfigID
-	}
-	if conf.Reference.TemplateName == "" {
-		conf.Reference.TemplateName = "MinecraftLobby"
-	}
-	if conf.Reference.Name == "" {
-		conf.Reference.Name = strings.ToUpper(uuid.NewString())
-	}
-
-	s, err := conf.PublishConfig.PublishContext(ctx, src, conf.Reference)
-	if err != nil {
-		return nil, err
-	}
-
-	return s, nil
-}
-
-type SessionAnnouncer struct {
-	p SessionPublishConfig
-
-	src xsapi.TokenSource
-
-	s           *mpsd.Session
-	description *mpsd.SessionDescription
-	mu          sync.Mutex
-}
-
-func (a *SessionAnnouncer) Announce(ctx context.Context, status Status) error {
-	a.mu.Lock()
-	defer a.mu.Unlock()
+// Announce commits or publishes a [mpsd.Session] with the given Status. The status will be encoded as custom properties
+// of the session description. The [context.Context] may be used to control the deadline or cancellation of announcement.
+//
+// If the Status has not changed since the last announcement, the method will return immediately.
+func (a *XBLAnnouncer) Announce(ctx context.Context, status Status) error {
+	a.Lock()
+	defer a.Unlock()
 
 	custom, err := json.Marshal(status)
 	if err != nil {
-		return fmt.Errorf("encode status: %w", err)
+		return fmt.Errorf("encode: %w", err)
 	}
-	a.updateDescription(status)
-	if bytes.Compare(a.description.Properties.Custom, custom) == 0 {
-		return nil // Avoid committing same properties
+	if bytes.Compare(custom, a.custom) == 0 {
+		return nil
+	} else {
+		a.custom = custom
 	}
-	a.description.Properties.Custom = custom
 
-	if a.s == nil {
-		a.p.PublishConfig.Description = a.description
-		s, err := a.p.publish(ctx, a.src)
+	if a.Session == nil {
+		if a.PublishConfig.Description == nil {
+			a.PublishConfig.Description = a.description(status)
+		}
+		a.PublishConfig.Description.Properties.Custom = custom
+
+		if a.SessionReference.ServiceConfigID == uuid.Nil {
+			a.SessionReference.ServiceConfigID = uuid.MustParse("4fc10100-5f7a-4470-899b-280835760c07")
+		}
+		if a.SessionReference.TemplateName == "" {
+			a.SessionReference.TemplateName = "MinecraftLobby"
+		}
+		if a.SessionReference.Name == "" {
+			a.SessionReference.Name = strings.ToUpper(uuid.NewString())
+		}
+
+		a.Session, err = a.PublishConfig.PublishContext(ctx, a.TokenSource, a.SessionReference)
 		if err != nil {
 			return fmt.Errorf("publish: %w", err)
 		}
-		a.s = s
 		return nil
 	}
-
-	commit, err := a.s.Commit(ctx, a.description)
-	if err == nil {
-		a.description = commit.SessionDescription
-	}
+	_, err = a.Session.Commit(ctx, a.description(status))
 	return err
 }
 
-func (a *SessionAnnouncer) Close() error {
-	return a.s.Close()
+// description returns a [mpsd.SessionDescription] to be committed or published on the Session.
+// It uses custom properties encoded from the Status in [XBLAnnouncer.Announce].
+func (a *XBLAnnouncer) description(status Status) *mpsd.SessionDescription {
+	read, join := a.restrictions(status.BroadcastSetting)
+	return &mpsd.SessionDescription{
+		Properties: &mpsd.SessionProperties{
+			System: &mpsd.SessionPropertiesSystem{
+				ReadRestriction: read,
+				JoinRestriction: join,
+			},
+			Custom: a.custom,
+		},
+	}
 }
 
-func (a *SessionAnnouncer) updateDescription(status Status) {
-	if a.description == nil {
-		a.description = &mpsd.SessionDescription{}
-	}
-	if a.description.Properties == nil {
-		a.description.Properties = &mpsd.SessionProperties{}
-	}
-	if a.description.Properties.System == nil {
-		a.description.Properties.System = &mpsd.SessionPropertiesSystem{}
-	}
-
-	switch status.BroadcastSetting {
+// restrictions determines the read and join restrictions for the session based on [Status.BroadcastSetting].
+func (a *XBLAnnouncer) restrictions(setting int32) (read, join string) {
+	switch setting {
 	case BroadcastSettingFriendsOfFriends, BroadcastSettingFriendsOnly:
-		a.description.Properties.System.JoinRestriction = mpsd.SessionRestrictionFollowed
-		a.description.Properties.System.ReadRestriction = mpsd.SessionRestrictionFollowed
+		return mpsd.SessionRestrictionFollowed, mpsd.SessionRestrictionFollowed
 	case BroadcastSettingInviteOnly:
-		a.description.Properties.System.JoinRestriction = mpsd.SessionRestrictionLocal
-		a.description.Properties.System.ReadRestriction = mpsd.SessionRestrictionLocal
+		return mpsd.SessionRestrictionLocal, mpsd.SessionRestrictionFollowed
+	default:
+		return mpsd.SessionRestrictionFollowed, mpsd.SessionRestrictionFollowed
 	}
+}
+
+func (a *XBLAnnouncer) Close() (err error) {
+	a.Lock()
+	defer a.Unlock()
+
+	if a.Session != nil {
+		return a.Session.Close()
+	}
+	return nil
 }

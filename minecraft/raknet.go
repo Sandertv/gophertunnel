@@ -25,7 +25,7 @@ func (r RakNet) Listen(address string) (NetworkListener, error) {
 }
 
 // Encrypted ...
-func (r RakNet) Encrypted() bool { return false }
+func (r RakNet) DisableEncryption() bool { return false }
 
 // BatchHeader ...
 func (r RakNet) BatchHeader() []byte { return []byte{0xfe} }

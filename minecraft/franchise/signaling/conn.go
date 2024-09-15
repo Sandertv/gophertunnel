@@ -3,17 +3,25 @@ package signaling
 import (
 	"context"
 	"encoding/json"
+	"github.com/coder/websocket"
+	"github.com/coder/websocket/wsjson"
 	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
+	"log/slog"
 	"net"
-	"nhooyr.io/websocket"
-	"nhooyr.io/websocket/wsjson"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
 )
 
+// Conn implements a [nethernet.Signaling] over a WebSocket connection.
+//
+// A Conn may be established using the methods of Dialer with either
+// a [franchise.IdentityProvider] and an [Environment] or an [oauth2.TokenSource]
+// for authorization.
+//
+// A Conn can be utilized with [nethernet.ListenConfig.Listen] or [nethernet.Dialer.DialContext].
 type Conn struct {
 	conn *websocket.Conn
 	d    Dialer
@@ -29,30 +37,36 @@ type Conn struct {
 	notifiersMu sync.Mutex
 }
 
+// Signal sends a [nethernet.Signal] to a network.
 func (c *Conn) Signal(signal *nethernet.Signal) error {
 	return c.write(Message{
 		Type: MessageTypeSignal,
-		To:   json.Number(strconv.FormatUint(signal.NetworkID, 10)),
+		To:   signal.NetworkID,
 		Data: signal.String(),
 	})
 }
 
-func (c *Conn) Notify(cancel <-chan struct{}, n nethernet.Notifier) {
+// Notify registers a [nethernet.Notifier] to receive notifications of signals and errors.
+// The [context.Context] may be used to stop receiving notifications.
+func (c *Conn) Notify(ctx context.Context, n nethernet.Notifier) {
 	c.notifiersMu.Lock()
 	i := c.notifyCount
 	c.notifiers[i] = n
 	c.notifyCount++
 	c.notifiersMu.Unlock()
 
-	go c.notify(cancel, n, i)
+	go c.notify(ctx, n, i)
 }
 
-func (c *Conn) notify(cancel <-chan struct{}, n nethernet.Notifier, i uint32) {
+// notify goes as a background goroutine of [Conn.Notify], which notifies an error based on the
+// [context.Context] or the Conn. The [nethernet.Notifier] is removed if the context is done or
+// the Conn is closed.
+func (c *Conn) notify(ctx context.Context, n nethernet.Notifier, i uint32) {
 	select {
 	case <-c.closed:
 		n.NotifyError(net.ErrClosed)
-	case <-cancel:
-		n.NotifyError(nethernet.ErrSignalingCanceled)
+	case <-ctx.Done():
+		n.NotifyError(ctx.Err())
 	}
 
 	c.notifiersMu.Lock()
@@ -60,44 +74,68 @@ func (c *Conn) notify(cancel <-chan struct{}, n nethernet.Notifier, i uint32) {
 	c.notifiersMu.Unlock()
 }
 
-func (c *Conn) Credentials() (*nethernet.Credentials, error) {
+// Credentials blocks until a [nethernet.Credentials] is received by the Conn.
+// The [context.Context] may be used to return immediately when it has been canceled or
+// exceeded a deadline. An error may be returned from [context.Context] or if the Conn has been closed.
+
+// Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
+// is done. It returns a [nethernet.Credentials] or an error if the Conn is closed or the [context.Context]
+// is canceled or exceeded a deadline.
+func (c *Conn) Credentials(ctx context.Context) (*nethernet.Credentials, error) {
 	select {
 	case <-c.closed:
 		return nil, net.ErrClosed
+	case <-ctx.Done():
+		return nil, ctx.Err()
 	default:
 		return c.credentials.Load(), nil
 	}
 }
 
-func (c *Conn) ping() {
-	ticker := time.NewTicker(time.Second * 15)
-	defer ticker.Stop()
-
-	for {
-		select {
-		case <-ticker.C:
-			if err := c.write(Message{
-				Type: MessageTypeRequestPing,
-			}); err != nil {
-				c.d.Log.Error("error writing ping", internal.ErrAttr(err))
-			}
-		case <-c.closed:
-			return
-		}
-	}
+// Close closes the Conn and unregisters any notifiers. It ensures that the Conn is closed only once.
+func (c *Conn) Close() (err error) {
+	c.once.Do(func() {
+		close(c.closed)
+		err = c.conn.Close(websocket.StatusNormalClosure, "")
+	})
+	return err
 }
 
+// read continuously reads messages from the WebSocket connection and handles them.
+// It also sends a Message of MessageTypePing at 15 seconds intervals to keep the
+// Conn alive. It goes as a background goroutine of the Conn and handles different
+// types of messages: credentials, signals, and errors. It closes the Conn if it
+// encounters an error or when the Conn is closed.
 func (c *Conn) read() {
+	go func() {
+		ticker := time.NewTicker(time.Second * 15)
+		defer ticker.Stop()
+
+		for {
+			select {
+			case <-c.closed:
+				return
+			case <-ticker.C:
+				if err := c.write(Message{
+					Type: MessageTypePing,
+				}); err != nil {
+					c.d.Log.Error("error writing ping", internal.ErrAttr(err))
+					return
+				}
+			}
+		}
+	}()
+	defer c.Close()
+
 	for {
 		var message Message
 		if err := wsjson.Read(context.Background(), c.conn, &message); err != nil {
-			_ = c.Close()
 			return
 		}
 		switch message.Type {
 		case MessageTypeCredentials:
 			if message.From != "Server" {
-				c.d.Log.Warn("received credentials from non-Server", "message", message)
+				c.d.Log.Warn("received credentials from non-Server", slog.Any("message", message))
 				continue
 			}
 			var credentials nethernet.Credentials
@@ -105,9 +143,9 @@ func (c *Conn) read() {
 				c.d.Log.Error("error decoding credentials", internal.ErrAttr(err))
 				continue
 			}
-			previous := c.credentials.Load()
+			notifyCredentials := c.credentials.Load() == nil
 			c.credentials.Store(&credentials)
-			if previous == nil {
+			if notifyCredentials {
 				close(c.credentialsReceived)
 			}
 		case MessageTypeSignal:
@@ -128,20 +166,27 @@ func (c *Conn) read() {
 				n.NotifySignal(signal)
 			}
 			c.notifiersMu.Unlock()
+		case MessageTypeError:
+			var err Error
+			if err2 := json.Unmarshal([]byte(message.Data), &err); err2 != nil {
+				c.d.Log.Error("error decoding error", internal.ErrAttr(err2))
+				continue
+			}
+
+			c.notifiersMu.Lock()
+			for _, n := range c.notifiers {
+				n.NotifyError(&err)
+			}
+			c.notifiersMu.Unlock()
 		default:
-			c.d.Log.Warn("received message for unknown type", "message", message)
+			c.d.Log.Warn("received message for unknown type", slog.Any("message", message))
 		}
 	}
 }
 
-func (c *Conn) write(m Message) error {
-	return wsjson.Write(context.Background(), c.conn, m)
-}
-
-func (c *Conn) Close() (err error) {
-	c.once.Do(func() {
-		close(c.closed)
-		err = c.conn.Close(websocket.StatusNormalClosure, "")
-	})
-	return err
+// write encodes the given Message and sends it over the WebSocket connection. It uses a background context
+// to avoid issues with context cancellation affecting the connection. An error may be returned if the message
+// could not be sent.
+func (c *Conn) write(message Message) error {
+	return wsjson.Write(context.Background(), c.conn, message)
 }

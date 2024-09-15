@@ -3,6 +3,7 @@ module github.com/sandertv/gophertunnel
 go 1.23.0
 
 require (
+	github.com/coder/websocket v1.8.12
 	github.com/df-mc/go-nethernet v0.0.0-20240902102242-528de5c8686f
 	github.com/df-mc/go-playfab v0.0.0-20240902102459-2f8b5cd02173
 	github.com/df-mc/go-xsapi v0.0.0-20240902102602-e7c4bffb955f
@@ -17,12 +18,9 @@ require (
 	golang.org/x/net v0.27.0
 	golang.org/x/oauth2 v0.21.0
 	golang.org/x/text v0.17.0
-	nhooyr.io/websocket v1.8.11
 )
 
 require (
-	github.com/andreburgaud/crypt2go v1.8.0 // indirect
-	github.com/coder/websocket v1.8.12 // indirect
 	github.com/pion/datachannel v1.5.9 // indirect
 	github.com/pion/dtls/v3 v3.0.2 // indirect
 	github.com/pion/ice/v4 v4.0.1 // indirect
@@ -46,8 +44,8 @@ require (
 )
 
 replace (
-	github.com/df-mc/go-nethernet => github.com/lactyy/go-nethernet v0.0.0-20240902104417-681fd9263f4a
-	github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20240906070923-01f9987eafb6
-	github.com/df-mc/go-xsapi => github.com/lactyy/go-xsapi v0.0.0-20240902120723-5a844e61607e
+	github.com/df-mc/go-nethernet => github.com/lactyy/go-nethernet v0.0.0-20240911083526-16e64f38dc39
+	github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20240911042657-037f6afe426f
+	github.com/df-mc/go-xsapi => github.com/lactyy/go-xsapi v0.0.0-20240911052022-1b9dffef64ab
 	github.com/pion/sctp => github.com/lactyy/sctp v0.0.0-20240822210319-2eae0bcbc9f3
 )
