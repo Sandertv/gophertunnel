@@ -11,6 +11,8 @@ type Transfer struct {
 	Address string
 	// Port is the UDP port of the new server.
 	Port uint16
+	// ReloadWorld currently has an unknown usage.
+	ReloadWorld bool
 }
 
 // ID ...
@@ -21,4 +23,5 @@ func (*Transfer) ID() uint32 {
 func (pk *Transfer) Marshal(io protocol.IO) {
 	io.String(&pk.Address)
 	io.Uint16(&pk.Port)
+	io.Bool(&pk.ReloadWorld)
 }

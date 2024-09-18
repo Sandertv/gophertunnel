@@ -15,6 +15,8 @@ type Emote struct {
 	// EntityRuntimeID is the entity that sent the emote. When a player sends this packet, it has this field
 	// set as its own entity runtime ID.
 	EntityRuntimeID uint64
+	// EmoteLength is the number of ticks that the emote lasts for.
+	EmoteLength uint32
 	// EmoteID is the ID of the emote to send.
 	EmoteID string
 	// XUID is the Xbox User ID of the player that sent the emote. It is only set when the emote is used by a player that
@@ -36,6 +38,7 @@ func (*Emote) ID() uint32 {
 func (pk *Emote) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.EntityRuntimeID)
 	io.String(&pk.EmoteID)
+	io.Varuint32(&pk.EmoteLength)
 	io.String(&pk.XUID)
 	io.String(&pk.PlatformID)
 	io.Uint8(&pk.Flags)
