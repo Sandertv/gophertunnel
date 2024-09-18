@@ -256,6 +256,8 @@ func init() {
 		IDJigsawStructureData:            func() Packet { return &JigsawStructureData{} },
 		IDCurrentStructureFeature:        func() Packet { return &CurrentStructureFeature{} },
 		IDServerBoundDiagnostics:         func() Packet { return &ServerBoundDiagnostics{} },
+		IDCameraAimAssist:                func() Packet { return &CameraAimAssist{} },
+		IDContainerRegistryCleanup:       func() Packet { return &ContainerRegistryCleanup{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

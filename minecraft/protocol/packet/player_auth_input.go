@@ -55,6 +55,10 @@ const (
 	InputFlagPaddlingLeft
 	InputFlagPaddlingRight
 	InputFlagBlockBreakingDelayEnabled
+	InputFlagHorizontalCollision
+	InputFlagVerticalCollision
+	InputFlagDownLeft
+	InputFlagDownRight
 )
 
 const (

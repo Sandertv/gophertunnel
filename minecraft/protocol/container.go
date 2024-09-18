@@ -112,12 +112,12 @@ const (
 type FullContainerName struct {
 	// ContainerID is the ID of the container that the slot was in.
 	ContainerID byte
-	// DynamicContainerID is the ID of the container if it is dynamic. If the container is not dynamic, this field is
-	// set to 0.
-	DynamicContainerID uint32
+	// DynamicContainerID is the ID of the container if it is dynamic. If the container is not dynamic, this
+	// field should be left empty. A non-optional value of 0 is assumed to be non-empty.
+	DynamicContainerID Optional[uint32]
 }
 
 func (x *FullContainerName) Marshal(r IO) {
 	r.Uint8(&x.ContainerID)
-	r.Uint32(&x.DynamicContainerID)
+	OptionalFunc(r, &x.DynamicContainerID, r.Uint32)
 }
