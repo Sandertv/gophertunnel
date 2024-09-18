@@ -12,6 +12,11 @@ import (
 // NetherNet is an implementation of NetherNet network. Unlike RakNet, it needs to be registered manually with a Signaling.
 type NetherNet struct {
 	Signaling nethernet.Signaling
+
+	// Dialer specifies options for establishing a connection with DialContext.
+	Dialer nethernet.Dialer
+	// ListenConfig specifies options for listening for connections with Listen.
+	ListenConfig nethernet.ListenConfig
 }
 
 // DialContext ...
@@ -23,8 +28,7 @@ func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, e
 	if err != nil {
 		return nil, fmt.Errorf("parse network ID: %w", err)
 	}
-	var d nethernet.Dialer
-	return d.DialContext(ctx, networkID, n.Signaling)
+	return n.Dialer.DialContext(ctx, networkID, n.Signaling)
 }
 
 // PingContext ...
@@ -33,16 +37,11 @@ func (n NetherNet) PingContext(context.Context, string) ([]byte, error) {
 }
 
 // Listen ...
-func (n NetherNet) Listen(address string) (NetworkListener, error) {
+func (n NetherNet) Listen(string) (NetworkListener, error) {
 	if n.Signaling == nil {
 		return nil, errors.New("minecraft: NetherNet.Listen: Signaling is nil")
 	}
-	networkID, err := strconv.ParseUint(address, 10, 64)
-	if err != nil {
-		return nil, fmt.Errorf("parse network ID: %w", err)
-	}
-	var cfg nethernet.ListenConfig
-	return cfg.Listen(networkID, n.Signaling)
+	return n.ListenConfig.Listen(n.Signaling)
 }
 
 // DisableEncryption ...

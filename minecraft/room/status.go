@@ -22,7 +22,6 @@ type Status struct {
 	LanGame                 bool         `json:"LanGame"`
 	IsEditorWorld           bool         `json:"isEditorWorld"`
 	TransportLayer          int32        `json:"TransportLayer"`
-	WebRTCNetworkID         uint64       `json:"WebRTCNetworkId"`
 	OnlineCrossPlatformGame bool         `json:"OnlineCrossPlatformGame"`
 	CrossPlayDisabled       bool         `json:"CrossPlayDisabled"`
 	TitleID                 int64        `json:"TitleId"`
@@ -30,12 +29,11 @@ type Status struct {
 }
 
 type Connection struct {
-	ConnectionType  uint32 `json:"ConnectionType"`
-	HostIPAddress   string `json:"HostIpAddress"`
-	HostPort        uint16 `json:"HostPort"`
-	NetherNetID     uint64 `json:"NetherNetId"`
-	WebRTCNetworkID uint64 `json:"WebRTCNetworkId"`
-	RakNetGUID      string `json:"RakNetGUID,omitempty"`
+	ConnectionType uint32 `json:"ConnectionType"`
+	HostIPAddress  string `json:"HostIpAddress"`
+	HostPort       uint16 `json:"HostPort"`
+	NetherNetID    uint64 `json:"NetherNetId"`
+	RakNetGUID     string `json:"RakNetGUID,omitempty"`
 }
 
 const (
@@ -101,9 +99,6 @@ func DefaultStatus() Status {
 func NetherNetID(status Status) (uint64, bool) {
 	for _, c := range status.SupportedConnections {
 		if c.ConnectionType == ConnectionTypeWebSocketsWebRTCSignaling {
-			if c.WebRTCNetworkID != 0 {
-				return c.WebRTCNetworkID, true
-			}
 			if c.NetherNetID != 0 {
 				return c.NetherNetID, true
 			}

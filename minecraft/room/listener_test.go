@@ -13,7 +13,6 @@ import (
 	"math/rand"
 	"net"
 	"os"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -61,7 +60,7 @@ func TestListen(t *testing.T) {
 		},
 	})
 
-	l, err := minecraft.Listen("room", strconv.FormatUint(d.NetworkID, 10))
+	l, err := minecraft.Listen("room", "")
 	if err != nil {
 		t.Fatalf("error listening: %s", err)
 	}
@@ -91,6 +90,8 @@ func TestListen(t *testing.T) {
 		}); err != nil {
 			t.Errorf("error starting game: %s", err)
 		}
+
+		t.Log(conn.ClientData().ServerAddress)
 
 		// Try reading and decoding deferred packets.
 		go func() {

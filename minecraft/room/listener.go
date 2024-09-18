@@ -95,13 +95,9 @@ func (l *Listener) ServerStatus(server minecraft.ServerStatus) {
 			if status.TransportLayer == 0 {
 				status.TransportLayer = TransportLayerNetherNet
 			}
-			if status.WebRTCNetworkID == 0 {
-				status.WebRTCNetworkID = addr.NetworkID
-			}
 			status.SupportedConnections = append(status.SupportedConnections, Connection{
-				ConnectionType:  ConnectionTypeWebSocketsWebRTCSignaling,
-				NetherNetID:     addr.NetworkID,
-				WebRTCNetworkID: addr.NetworkID,
+				ConnectionType: ConnectionTypeWebSocketsWebRTCSignaling,
+				NetherNetID:    addr.NetworkID,
 			})
 		case *net.UDPAddr:
 			if status.TransportLayer == 0 {

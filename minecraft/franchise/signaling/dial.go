@@ -27,9 +27,9 @@ type Dialer struct {
 	// will be overridden with a [franchise.Transport] for authorization.
 	Options *websocket.DialOptions
 
-	// NetworkID specifies a unique ID for the network. If set to zero, a random
-	// value will be automatically set from [rand.Uint64]. It is included in the URI
-	// for establishing a WebSocket connection.
+	// NetworkID specifies a unique ID for the network. If zero, a random value will
+	// be automatically set from [rand.Uint64]. It is included in the URI for establishing
+	// a WebSocket connection.
 	NetworkID uint64
 
 	// Log is used to logging messages at various levels. If nil, the default

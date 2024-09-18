@@ -46,37 +46,30 @@ func (c *Conn) Signal(signal *nethernet.Signal) error {
 	})
 }
 
-// Notify registers a [nethernet.Notifier] to receive notifications of signals and errors.
-// The [context.Context] may be used to stop receiving notifications.
-func (c *Conn) Notify(ctx context.Context, n nethernet.Notifier) {
+// Notify registers a [nethernet.Notifier] to receive notifications of signals and errors. It returns
+// a function to stop receiving notifications on the [nethernet.Notifier].
+func (c *Conn) Notify(n nethernet.Notifier) (stop func()) {
 	c.notifiersMu.Lock()
 	i := c.notifyCount
 	c.notifiers[i] = n
 	c.notifyCount++
 	c.notifiersMu.Unlock()
 
-	go c.notify(ctx, n, i)
+	return c.stopFunc(i, n)
 }
 
-// notify goes as a background goroutine of [Conn.Notify], which notifies an error based on the
-// [context.Context] or the Conn. The [nethernet.Notifier] is removed if the context is done or
-// the Conn is closed.
-func (c *Conn) notify(ctx context.Context, n nethernet.Notifier, i uint32) {
-	select {
-	case <-c.closed:
-		n.NotifyError(net.ErrClosed)
-	case <-ctx.Done():
-		n.NotifyError(ctx.Err())
+// stopFunc returns a function to be returned by [Conn.Notify], which stops receiving notifications
+// on the Notifier by unregistering them on the Conn with notifying [nethernet.ErrSignalingStopped]
+// as an error through [nethernet.Notifier.NotifyError].
+func (c *Conn) stopFunc(i uint32, n nethernet.Notifier) func() {
+	return func() {
+		n.NotifyError(nethernet.ErrSignalingStopped)
+
+		c.notifiersMu.Lock()
+		delete(c.notifiers, i)
+		c.notifiersMu.Unlock()
 	}
-
-	c.notifiersMu.Lock()
-	delete(c.notifiers, i)
-	c.notifiersMu.Unlock()
 }
-
-// Credentials blocks until a [nethernet.Credentials] is received by the Conn.
-// The [context.Context] may be used to return immediately when it has been canceled or
-// exceeded a deadline. An error may be returned from [context.Context] or if the Conn has been closed.
 
 // Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
 // is done. It returns a [nethernet.Credentials] or an error if the Conn is closed or the [context.Context]
@@ -92,9 +85,24 @@ func (c *Conn) Credentials(ctx context.Context) (*nethernet.Credentials, error) 
 	}
 }
 
+// NetworkID returns the network ID of the Conn. It may be specified from [Dialer.NetworkID], otherwise a random
+// value will be automatically set from [rand.Uint64] in set up during [Dialer.DialContext]. It is utilized by
+// [nethernet.Listener] and [nethernet.Dialer] to obtain its local network ID to listen.
+func (c *Conn) NetworkID() uint64 {
+	return c.d.NetworkID
+}
+
 // Close closes the Conn and unregisters any notifiers. It ensures that the Conn is closed only once.
+// It unregisters all notifiers registered on the Conn with notifying [nethernet.ErrSignalingStopped].
 func (c *Conn) Close() (err error) {
 	c.once.Do(func() {
+		c.notifiersMu.Lock()
+		for _, n := range c.notifiers {
+			n.NotifyError(nethernet.ErrSignalingStopped)
+		}
+		clear(c.notifiers)
+		c.notifiersMu.Unlock()
+
 		close(c.closed)
 		err = c.conn.Close(websocket.StatusNormalClosure, "")
 	})

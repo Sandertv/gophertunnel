@@ -33,7 +33,7 @@ type XBLToken struct {
 		Token string
 	}
 
-	// key is the private key used as 'ProofKey' for authorization.
+	// key is the private key used as 'ProofKey' for authentication.
 	// It is used for signing requests in [XBLToken.SetAuthHeader].
 	key *ecdsa.PrivateKey
 }
