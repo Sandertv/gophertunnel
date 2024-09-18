@@ -152,9 +152,15 @@ type CameraPreset struct {
 	RotX Optional[float32]
 	// RotY is the default yaw of the camera.
 	RotY Optional[float32]
+	// RotationSpeed is the speed at which the camera should rotate.
+	RotationSpeed Optional[float32]
+	// SnapToTarget determines whether the camera should snap to the target entity or not.
+	SnapToTarget Optional[bool]
 	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
 	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
+	// EntityOffset controls the offset from the entity that the camera should be rendered at.
+	EntityOffset Optional[mgl32.Vec3]
 	// Radius is only used in a follow_orbit camera and controls how far away from the player the camera should
 	// be rendered.
 	Radius Optional[float32]
@@ -174,7 +180,10 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.PosZ, r.Float32)
 	OptionalFunc(r, &x.RotX, r.Float32)
 	OptionalFunc(r, &x.RotY, r.Float32)
+	OptionalFunc(r, &x.RotationSpeed, r.Float32)
+	OptionalFunc(r, &x.SnapToTarget, r.Bool)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
+	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)

@@ -39,6 +39,12 @@ func (x *AttributeValue) Marshal(r IO) {
 // holds a default value, maximum and minimum value, name and its current value.
 type Attribute struct {
 	AttributeValue
+	// DefaultMin is the default minimum value of the attribute. It's not clear why this field must be sent to
+	// the client, but it is required regardless.
+	DefaultMin float32
+	// DefaultMax is the default maximum value of the attribute. It's not clear why this field must be sent to
+	// the client, but it is required regardless.
+	DefaultMax float32
 	// Default is the default value of the attribute. It's not clear why this field must be sent to the
 	// client, but it is required regardless.
 	Default float32
@@ -51,6 +57,8 @@ func (x *Attribute) Marshal(r IO) {
 	r.Float32(&x.Min)
 	r.Float32(&x.Max)
 	r.Float32(&x.Value)
+	r.Float32(&x.DefaultMin)
+	r.Float32(&x.DefaultMax)
 	r.Float32(&x.Default)
 	r.String(&x.Name)
 	Slice(r, &x.Modifiers)
