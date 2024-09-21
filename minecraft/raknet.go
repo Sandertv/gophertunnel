@@ -24,6 +24,12 @@ func (r RakNet) Listen(address string) (NetworkListener, error) {
 	return raknet.Listen(address)
 }
 
+// Encrypted ...
+func (r RakNet) DisableEncryption() bool { return false }
+
+// BatchHeader ...
+func (r RakNet) BatchHeader() []byte { return []byte{0xfe} }
+
 // init registers the RakNet network.
 func init() {
 	RegisterNetwork("raknet", RakNet{})

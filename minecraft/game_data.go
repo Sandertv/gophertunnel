@@ -65,6 +65,9 @@ type GameData struct {
 	// WorldGameMode is the game mode that a player gets when it first spawns in the world. It is shown in the
 	// settings and is used if the PlayerGameMode is set to 5.
 	WorldGameMode int32
+	// GamePublishSetting specifies the multiplayer setting of the game. It is a value from 0-4, with 0 being
+	// no multiplayer enabled, 1 being invited only, 2 being friends only, 3 being friends of friends, and 4 being public.
+	GamePublishSetting int32
 	// Hardcore is if the world is in hardcore mode. In hardcore mode, the player cannot respawn after dying.
 	Hardcore bool
 	// GameRules defines game rules currently active with their respective values. The value of these game

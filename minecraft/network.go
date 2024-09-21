@@ -24,6 +24,12 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
+	// DisableEncryption indicates that encryption performed on Conn should be disabled.
+	// For security reasons, most implementations should return false.
+	DisableEncryption() bool
+	// BatchHeader returns the header of compressed 'batches' from Minecraft. It is used
+	// for encoding/decoding packets in Conn.
+	BatchHeader() []byte
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra

@@ -13,6 +13,14 @@ const (
 )
 
 const (
+	XBLBroadcastModeNoMultiPlay = iota
+	XBLBroadcastModeInviteOnly
+	XBLBroadcastModeFriendsOnly
+	XBLBroadcastModeFriendsOfFriends
+	XBLBroadcastModePublic
+)
+
+const (
 	ChatRestrictionLevelNone     = 0
 	ChatRestrictionLevelDropped  = 1
 	ChatRestrictionLevelDisabled = 2

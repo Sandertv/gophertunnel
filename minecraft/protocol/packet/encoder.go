@@ -16,12 +16,13 @@ type Encoder struct {
 
 	compression Compression
 	encrypt     *encrypt
+	header      []byte
 }
 
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
-func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
+func NewEncoder(w io.Writer, header []byte) *Encoder {
+	return &Encoder{w: w, header: header}
 }
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
@@ -60,7 +61,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
-	prepend := []byte{header}
+	prepend := encoder.header
 	if encoder.compression != nil {
 		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
 		var err error
