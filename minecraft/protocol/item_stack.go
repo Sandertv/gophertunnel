@@ -528,9 +528,6 @@ type CraftRecipeOptionalStackRequestAction struct {
 	// one of the multi-recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
-	// NumberOfCrafts is how many times the recipe was crafted. This field appears to be boilerplate and
-	// has no effect.
-	NumberOfCrafts byte
 	// FilterStringIndex is the index of a filter string sent in a ItemStackRequest.
 	FilterStringIndex int32
 }
@@ -538,7 +535,6 @@ type CraftRecipeOptionalStackRequestAction struct {
 // Marshal ...
 func (c *CraftRecipeOptionalStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&c.RecipeNetworkID)
-	r.Uint8(&c.NumberOfCrafts)
 	r.Int32(&c.FilterStringIndex)
 }
 
