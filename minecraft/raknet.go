@@ -29,5 +29,5 @@ func (r RakNet) Listen(address string) (NetworkListener, error) {
 
 // init registers the RakNet network.
 func init() {
-	RegisterNetwork("raknet", func(l *slog.Logger) Network { return RakNet{} })
+	RegisterNetwork("raknet", func(l *slog.Logger) Network { return RakNet{l: l} })
 }
