@@ -31,8 +31,8 @@ import (
 // Dialer allows specifying specific settings for connection to a Minecraft server.
 // The zero value of Dialer is used for the package level Dial function.
 type Dialer struct {
-	// ErrorLog is a log.Logger that errors that occur during packet handling of servers are written to. By
-	// default, ErrorLog is set to one equal to the global logger.
+	// ErrorLog is a log.Logger that errors that occur during packet handling of
+	// servers are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
 
 	// ClientData is the client data used to login to the server with. It includes fields such as the skin,

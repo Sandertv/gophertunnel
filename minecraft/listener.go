@@ -20,8 +20,8 @@ import (
 
 // ListenConfig holds settings that may be edited to change behaviour of a Listener.
 type ListenConfig struct {
-	// ErrorLog is a log.Logger that errors that occur during packet handling of clients are written to. By
-	// default, ErrorLog is set to one equal to the global logger.
+	// ErrorLog is a log.Logger that errors that occur during packet handling of
+	// clients are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
 
 	// AuthenticationDisabled specifies if authentication of players that join is disabled. If set to true, no
