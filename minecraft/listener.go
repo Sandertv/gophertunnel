@@ -6,12 +6,12 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
-	"log"
+	"log/slog"
 	"net"
-	"os"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -22,7 +22,7 @@ import (
 type ListenConfig struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of clients are written to. By
 	// default, ErrorLog is set to one equal to the global logger.
-	ErrorLog *log.Logger
+	ErrorLog *slog.Logger
 
 	// AuthenticationDisabled specifies if authentication of players that join is disabled. If set to true, no
 	// verification will be done to ensure that the player connecting is authenticated using their XBOX Live
@@ -107,19 +107,10 @@ type Listener struct {
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
-	n, ok := networkByID(network)
-	if !ok {
-		return nil, fmt.Errorf("listen: no network under id %v", network)
-	}
-
-	netListener, err := n.Listen(address)
-	if err != nil {
-		return nil, err
-	}
-
 	if cfg.ErrorLog == nil {
-		cfg.ErrorLog = log.New(os.Stderr, "", log.LstdFlags)
+		cfg.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
+	cfg.ErrorLog = cfg.ErrorLog.With("src", "listener")
 	if cfg.StatusProvider == nil {
 		cfg.StatusProvider = NewStatusProvider("Minecraft Server", "Gophertunnel")
 	}
@@ -128,6 +119,16 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	if cfg.FlushRate == 0 {
 		cfg.FlushRate = time.Second / 20
+	}
+
+	n, ok := networkByID(network, cfg.ErrorLog)
+	if !ok {
+		return nil, fmt.Errorf("listen: no network under id %v", network)
+	}
+
+	netListener, err := n.Listen(address)
+	if err != nil {
+		return nil, err
 	}
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
 	listener := &Listener{
@@ -162,7 +163,7 @@ func Listen(network, address string) (*Listener, error) {
 func (listener *Listener) Accept() (net.Conn, error) {
 	conn, ok := <-listener.incoming
 	if !ok {
-		return nil, &net.OpError{Op: "accept", Net: "minecraft", Addr: listener.Addr(), Err: errListenerClosed}
+		return nil, &net.OpError{Op: "accept", Net: "minecraft", Addr: listener.Addr(), Err: net.ErrClosed}
 	}
 	return conn, nil
 }
@@ -212,8 +213,7 @@ func (listener *Listener) updatePongData() {
 	s := listener.status()
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port,
-		0,
+		listener.listener.ID(), s.ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port, 0,
 	)))
 }
 
@@ -305,14 +305,14 @@ func (listener *Listener) handleConn(conn *Conn) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			if !errors.Is(err, net.ErrClosed) {
-				conn.log.Printf("listener conn: %v\n", err)
+				conn.log.Error(err.Error())
 			}
 			return
 		}
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				conn.log.Printf("listener conn: %v", err)
+				conn.log.Error(err.Error())
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {
