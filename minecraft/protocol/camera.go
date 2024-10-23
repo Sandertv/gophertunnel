@@ -191,9 +191,13 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.RotY, r.Float32)
 	OptionalFunc(r, &x.RotationSpeed, r.Float32)
 	OptionalFunc(r, &x.SnapToTarget, r.Bool)
+	OptionalFunc(r, &x.HorizontalRotationLimit, r.Vec2)
+	OptionalFunc(r, &x.VerticalRotationLimit, r.Vec2)
+	OptionalFunc(r, &x.ContinueTargeting, r.Bool)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
+	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
 }
