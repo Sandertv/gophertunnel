@@ -768,13 +768,12 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		if pack.DownloadURL() != "" {
-			pk.PackURLs = append(pk.PackURLs, protocol.PackURL{
-				UUIDVersion: fmt.Sprintf("%s_%s", pack.UUID(), pack.Version()),
-				URL:         pack.DownloadURL(),
-			})
+		texturePack := protocol.TexturePackInfo{
+			UUID:        pack.UUID(),
+			Version:     pack.Version(),
+			Size:        uint64(pack.Len()),
+			DownloadURL: pack.DownloadURL(),
 		}
-		texturePack := protocol.TexturePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
 		if pack.Encrypted() {
 			texturePack.ContentKey = pack.ContentKey()
 			texturePack.ContentIdentity = pack.Manifest().Header.UUID

@@ -156,6 +156,12 @@ type CameraPreset struct {
 	RotationSpeed Optional[float32]
 	// SnapToTarget determines whether the camera should snap to the target entity or not.
 	SnapToTarget Optional[bool]
+	// HorizontalRotationLimit is the horizontal rotation limit of the camera.
+	HorizontalRotationLimit Optional[mgl32.Vec2]
+	// VerticalRotationLimit is the vertical rotation limit of the camera.
+	VerticalRotationLimit Optional[mgl32.Vec2]
+	// ContinueTargeting determines whether the camera should continue targeting the entity or not.
+	ContinueTargeting Optional[bool]
 	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
 	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
@@ -169,6 +175,9 @@ type CameraPreset struct {
 	AudioListener Optional[byte]
 	// PlayerEffects is currently unknown.
 	PlayerEffects Optional[bool]
+	// AlignTargetAndCameraForward determines whether the camera should align the target and the camera forward
+	// or not.
+	AlignTargetAndCameraForward Optional[bool]
 }
 
 // Marshal encodes/decodes a CameraPreset.
