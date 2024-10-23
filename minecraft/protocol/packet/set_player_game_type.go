@@ -20,7 +20,7 @@ type SetPlayerGameType struct {
 	// GameType is the new game type of the player. It is one of the constants that can be found above. Some
 	// of these game types require additional flags to be set in an AdventureSettings packet for the game mode
 	// to obtain its full functionality.
-	GameType int64
+	GameType int32
 }
 
 // ID ...
@@ -29,5 +29,5 @@ func (*SetPlayerGameType) ID() uint32 {
 }
 
 func (pk *SetPlayerGameType) Marshal(io protocol.IO) {
-	io.Varint64(&pk.GameType)
+	io.Varint32(&pk.GameType)
 }
