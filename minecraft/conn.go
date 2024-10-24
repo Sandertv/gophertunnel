@@ -9,14 +9,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net"
 	"regexp"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-jose/go-jose/v3/jwt"
@@ -28,6 +21,13 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
+	"io"
+	"log/slog"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -56,7 +56,7 @@ type Conn struct {
 	close chan struct{}
 
 	conn        net.Conn
-	log         *log.Logger
+	log         *slog.Logger
 	authEnabled bool
 
 	proto         Protocol
@@ -150,7 +150,7 @@ type Conn struct {
 // Minecraft packets to that net.Conn.
 // newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
 // key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
+func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
 	conn := &Conn{
 		enc:          packet.NewEncoder(netConn),
 		dec:          packet.NewDecoder(netConn),
@@ -161,7 +161,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *log.Logger, proto Pro
 		spawn:        make(chan struct{}),
 		conn:         netConn,
 		privateKey:   key,
-		log:          log,
+		log:          log.With("raddr", netConn.RemoteAddr().String()),
 		hdr:          &packet.Header{},
 		proto:        proto,
 		readerLimits: limits,
@@ -362,7 +362,7 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	if data, ok := conn.takeDeferredPacket(); ok {
 		pk, err := data.decode(conn)
 		if err != nil {
-			conn.log.Println(err)
+			conn.log.Error("read packet: " + err.Error())
 			return conn.ReadPacket()
 		}
 		if len(pk) == 0 {
@@ -382,7 +382,7 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	case data := <-conn.packets:
 		pk, err := data.decode(conn)
 		if err != nil {
-			conn.log.Println(err)
+			conn.log.Error("read packet: " + err.Error())
 			return conn.ReadPacket()
 		}
 		if len(pk) == 0 {
@@ -770,13 +770,12 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
-		if pack.DownloadURL() != "" {
-			pk.PackURLs = append(pk.PackURLs, protocol.PackURL{
-				UUIDVersion: fmt.Sprintf("%s_%s", pack.UUID(), pack.Version()),
-				URL:         pack.DownloadURL(),
-			})
+		texturePack := protocol.TexturePackInfo{
+			UUID:        pack.UUID(),
+			Version:     pack.Version(),
+			Size:        uint64(pack.Len()),
+			DownloadURL: pack.DownloadURL(),
 		}
-		texturePack := protocol.TexturePackInfo{UUID: pack.UUID(), Version: pack.Version(), Size: uint64(pack.Len())}
 		if pack.Encrypted() {
 			texturePack.ContentKey = pack.ContentKey()
 			texturePack.ContentIdentity = pack.Manifest().Header.UUID
@@ -859,7 +858,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 
 	for index, pack := range pk.TexturePacks {
 		if _, ok := conn.packQueue.downloadingPacks[pack.UUID]; ok {
-			conn.log.Printf("handle ResourcePacksInfo: duplicate texture pack (UUID=%v)\n", pack.UUID)
+			conn.log.Warn("handle ResourcePacksInfo: duplicate texture pack", "UUID", pack.UUID)
 			conn.packQueue.packAmount--
 			continue
 		}
@@ -903,9 +902,9 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 	for _, pack := range pk.TexturePacks {
 		for i, behaviourPack := range pk.BehaviourPacks {
 			if pack.UUID == behaviourPack.UUID {
-				// We had a behaviour pack with the same UUID as the texture pack, so we drop the texture
+				// We had a behaviour pack with the same UUID as the texture pack, so we drop the behaviour
 				// pack and log it.
-				conn.log.Printf("handle ResourcePackStack: dropping behaviour pack (UUID=%v) due to a texture pack with the same UUID\n", pack.UUID)
+				conn.log.Warn("handle ResourcePackStack: dropping behaviour pack due to a texture pack with the same UUID", "UUID", pack.UUID)
 				pk.BehaviourPacks = append(pk.BehaviourPacks[:i], pk.BehaviourPacks[i+1:]...)
 			}
 		}
@@ -1072,12 +1071,12 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	if !ok {
 		// We either already downloaded the pack or we got sent an invalid UUID, that did not match any pack
 		// sent in the ResourcePacksInfo packet.
-		return fmt.Errorf("unknown pack (UUID=%v)", id)
+		return fmt.Errorf("handle ResourcePackDataInfo: unknown pack (UUID=%v)", id)
 	}
 	if pack.size != pk.Size {
 		// Size mismatch: The ResourcePacksInfo packet had a size for the pack that did not match with the
 		// size sent here.
-		conn.log.Printf("pack (UUID=%v) had a different size in ResourcePacksInfo than in ResourcePackDataInfo\n", id)
+		conn.log.Warn("handle ResourcePackDataInfo: pack had a different size in ResourcePacksInfo than in ResourcePackDataInfo", "UUID", id)
 		pack.size = pk.Size
 	}
 
@@ -1113,13 +1112,13 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		defer conn.packMu.Unlock()
 
 		if pack.buf.Len() != int(pack.size) {
-			conn.log.Printf("incorrect resource pack size (UUID=%v): expected %v, got %v\n", id, pack.size, pack.buf.Len())
+			conn.log.Error(fmt.Sprintf("download resource pack: incorrect resource pack size: expected %v, got %v", pack.size, pack.buf.Len()), "UUID", id)
 			return
 		}
 		// First parse the resource pack from the total byte buffer we obtained.
 		newPack, err := resource.Read(pack.buf)
 		if err != nil {
-			conn.log.Printf("invalid full resource pack data (UUID=%v): %v\n", id, err)
+			conn.log.Error("download resource pack: invalid full resource pack data: "+err.Error(), "UUID", id)
 			return
 		}
 		conn.packQueue.packAmount--
@@ -1403,5 +1402,5 @@ func (conn *Conn) closeErr(op string) error {
 	if msg := *conn.disconnectMessage.Load(); msg != "" {
 		return conn.wrap(DisconnectError(msg), op)
 	}
-	return conn.wrap(errClosed, op)
+	return conn.wrap(net.ErrClosed, op)
 }

@@ -42,6 +42,7 @@ const (
 	PlayerActionStartFlying
 	PlayerActionStopFlying
 	PlayerActionClientAckServerData
+	PlayerActionStartUsingItem
 )
 
 const (
