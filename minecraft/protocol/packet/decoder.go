@@ -71,7 +71,7 @@ const (
 	header = 0xfe
 	// maximumInBatch is the maximum amount of packets that may be found in a batch. If a compressed batch has
 	// more than this amount, decoding will fail.
-	maximumInBatch = 812
+	maximumInBatch = 1600
 )
 
 // Decode decodes one 'packet' from the io.Reader passed in NewDecoder(), producing a slice of packets that it

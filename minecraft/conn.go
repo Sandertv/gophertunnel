@@ -9,6 +9,8 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"regexp"
+
 	"github.com/go-jose/go-jose/v3"
 	"github.com/go-jose/go-jose/v3/jwt"
 	"github.com/google/uuid"
@@ -1198,6 +1200,9 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
+	if matched, _ := regexp.MatchString(`.*\.hivebedrock\.network.*`, conn.clientData.ServerAddress); matched {
+		pk.BaseGameVersion = "1.17.0" // temp fix for hive
+	}
 	conn.gameData = GameData{
 		Difficulty:                   pk.Difficulty,
 		WorldName:                    pk.WorldName,
@@ -1315,10 +1320,8 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.expect(packet.IDResourcePacksInfo)
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
-		_ = conn.Close()
 		return fmt.Errorf("client outdated")
 	case packet.PlayStatusLoginFailedServer:
-		_ = conn.Close()
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
@@ -1326,22 +1329,16 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.tryFinaliseClientConn()
 		return nil
 	case packet.PlayStatusLoginFailedInvalidTenant:
-		_ = conn.Close()
 		return fmt.Errorf("invalid edu edition game owner")
 	case packet.PlayStatusLoginFailedVanillaEdu:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join an edu edition game on vanilla")
 	case packet.PlayStatusLoginFailedEduVanilla:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join a vanilla game on edu edition")
 	case packet.PlayStatusLoginFailedServerFull:
-		_ = conn.Close()
 		return fmt.Errorf("server full")
 	case packet.PlayStatusLoginFailedEditorVanilla:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join a vanilla game on editor")
 	case packet.PlayStatusLoginFailedVanillaEditor:
-		_ = conn.Close()
 		return fmt.Errorf("cannot join an editor game on vanilla")
 	default:
 		return fmt.Errorf("unknown play status %v", pk.Status)
