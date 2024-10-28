@@ -3,13 +3,13 @@ package minecraft
 import (
 	"context"
 	"github.com/sandertv/go-raknet"
-	"log/slog"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"log/slog"
 	"net"
 )
 
-// RakNet is an implementation of a RakNet v10 Network.
-type RakNet struct{
+// RakNet is an implementation of a RakNet v11 Network.
+type RakNet struct {
 	l *slog.Logger
 }
 
