@@ -12,11 +12,10 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"net/http"
-	"time"
-
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
+	"net/http"
+	"time"
 )
 
 // XBLToken holds info on the authorization token used for authenticating with XBOX Live.
@@ -220,4 +219,3 @@ func parseXboxErrorCode(code string) string {
 		return fmt.Sprintf("unknown error code: %v", code)
 	}
 }
-

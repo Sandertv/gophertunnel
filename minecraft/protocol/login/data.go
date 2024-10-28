@@ -289,6 +289,10 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
 func (data ClientData) Validate() error {
+	if data.GameVersion != protocol.CurrentVersion {
+		// We shouldn't validate the client data if the client may not be on the latest version.
+		return nil
+	}
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}

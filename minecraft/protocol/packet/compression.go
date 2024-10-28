@@ -7,6 +7,7 @@ import (
 	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
+	"math"
 	"sync"
 )
 
@@ -33,6 +34,10 @@ var (
 	DefaultCompression Compression = FlateCompression
 )
 
+func NewOnTheFlyCompression(underlyingCompression Compression) Compression {
+	return onTheFlyCompression{underlyingCompression}
+}
+
 type (
 	// nopCompression is an empty implementation that does not compress data.
 	nopCompression struct{}
@@ -40,14 +45,16 @@ type (
 	flateCompression struct{}
 	// snappyCompression is the implementation of the Snappy compression algorithm.
 	snappyCompression struct{}
+	// onTheFlyCompression is the implementation of the both compression algorithms. This is used by default for decoding.
+	onTheFlyCompression struct{ c Compression }
 )
 
-// flateDecompressPool is a sync.Pool for io.ReadCloser flate readers. These are
-// pooled for connections.
 var (
+	// flateDecompressPool is a sync.Pool for io.ReadCloser flate readers. These are pooled for connections.
 	flateDecompressPool = sync.Pool{
 		New: func() any { return flate.NewReader(bytes.NewReader(nil)) },
 	}
+	// flateCompressPool is a sync.Pool for io.ReadCloser flate writers. These are pooled for connections.
 	flateCompressPool = sync.Pool{
 		New: func() any {
 			w, _ := flate.NewWriter(io.Discard, 6)
@@ -146,6 +153,38 @@ func (snappyCompression) Decompress(compressed []byte) ([]byte, error) {
 	return decompressed, nil
 }
 
+// EncodeCompression ...
+func (onTheFlyCompression) EncodeCompression() uint16 {
+	return math.MaxUint16
+}
+
+// Compress ...
+func (c onTheFlyCompression) Compress(decompressed []byte) ([]byte, error) {
+	prepend := []byte{byte(c.c.EncodeCompression())}
+	compressed, err := c.c.Compress(decompressed)
+	if err != nil {
+		return nil, err
+	}
+	return append(prepend, compressed...), nil
+}
+
+// Decompress ...
+func (onTheFlyCompression) Decompress(compressed []byte) ([]byte, error) {
+	var compression Compression
+	if compressed[0] != 0xff {
+		var ok bool
+		compression, ok = CompressionByID(uint16(compressed[0]))
+		if !ok {
+			return nil, fmt.Errorf("error decompressing packet: unknown compression algorithm %v", compressed[0])
+		}
+	}
+	compressed = compressed[1:]
+	if compression != nil {
+		return compression.Decompress(compressed)
+	}
+	return compressed, nil
+}
+
 // init registers all valid compressions with the protocol.
 func init() {
 	RegisterCompression(flateCompression{})
@@ -167,4 +206,21 @@ func CompressionByID(id uint16) (Compression, bool) {
 		c = DefaultCompression
 	}
 	return c, ok
+}
+
+type CompressionError struct {
+	// Op is the operation which caused the error.
+	Op string
+	// Err is the error that occurred during the operation.
+	// The Error method panics if the error is nil.
+	Err error
+}
+
+func (e *CompressionError) Unwrap() error { return e.Err }
+
+func (e *CompressionError) Error() string {
+	if e == nil {
+		return "<nil>"
+	}
+	return e.Op + ": " + e.Err.Error()
 }

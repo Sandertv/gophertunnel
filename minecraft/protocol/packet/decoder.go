@@ -2,8 +2,6 @@ package packet
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
 	"fmt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
@@ -21,8 +19,8 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
-	decompress bool
-	encrypt    *encrypt
+	compression Compression
+	encryption  Encryption
 
 	checkPacketLimit bool
 }
@@ -48,16 +46,13 @@ func NewDecoder(reader io.Reader) *Decoder {
 
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
-func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
-	block, _ := aes.NewCipher(keyBytes[:])
-	first12 := append([]byte(nil), keyBytes[:12]...)
-	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
-	decoder.encrypt = newEncrypt(keyBytes[:], stream)
+func (decoder *Decoder) EnableEncryption(encryption Encryption) {
+	decoder.encryption = encryption
 }
 
 // EnableCompression enables compression for the Decoder.
-func (decoder *Decoder) EnableCompression() {
-	decoder.decompress = true
+func (decoder *Decoder) EnableCompression(compression Compression) {
+	decoder.compression = compression
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -86,7 +81,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		data, err = decoder.pr.ReadPacket()
 	}
 	if err != nil {
-		return nil, fmt.Errorf("read batch: %w", err)
+		return nil, &CompressionError{Op: "read batch", Err: err}
 	}
 	if len(data) == 0 {
 		return nil, nil
@@ -95,27 +90,19 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		return nil, fmt.Errorf("decode batch: invalid header %x, expected %x", data[0], header)
 	}
 	data = data[1:]
-	if decoder.encrypt != nil {
-		decoder.encrypt.decrypt(data)
-		if err := decoder.encrypt.verify(data); err != nil {
+	if decoder.encryption != nil {
+		decoder.encryption.Decrypt(data)
+		if err := decoder.encryption.Verify(data); err != nil {
 			// The packet did not have a correct checksum.
-			return nil, fmt.Errorf("verify batch: %w", err)
+			return nil, &CompressionError{Op: "verify batch", Err: err}
 		}
 		data = data[:len(data)-8]
 	}
 
-	if decoder.decompress {
-		if data[0] == 0xff {
-			data = data[1:]
-		} else {
-			compression, ok := CompressionByID(uint16(data[0]))
-			if !ok {
-				return nil, fmt.Errorf("decompress batch: unknown compression algorithm %v", data[0])
-			}
-			data, err = compression.Decompress(data[1:])
-			if err != nil {
-				return nil, fmt.Errorf("decompress batch: %w", err)
-			}
+	if decoder.compression != nil {
+		data, err = decoder.compression.Decompress(data)
+		if err != nil {
+			return nil, &CompressionError{Op: "decompress batch", Err: err}
 		}
 	}
 
@@ -123,7 +110,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	for b.Len() != 0 {
 		var length uint32
 		if err := protocol.Varuint32(b, &length); err != nil {
-			return nil, fmt.Errorf("decode batch: read packet length: %w", err)
+			return nil, &CompressionError{Op: "decode batch: read packet length", Err: err}
 		}
 		packets = append(packets, b.Next(int(length)))
 	}

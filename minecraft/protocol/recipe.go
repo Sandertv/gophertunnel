@@ -96,10 +96,7 @@ const (
 // Recipe represents a recipe that may be sent in a CraftingData packet to let the client know what recipes
 // are available server-side.
 type Recipe interface {
-	// Marshal encodes the recipe data to its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised recipe from Reader r into the recipe instance.
-	Unmarshal(r *Reader)
+	Marshaler
 }
 
 // lookupRecipe looks up the Recipe for a recipe type. False is returned if not
@@ -321,113 +318,54 @@ type SmithingTrimRecipe struct {
 }
 
 // Marshal ...
-func (recipe *ShapelessRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, recipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessRecipe) Marshal(r IO) {
 	marshalShapeless(r, recipe)
 }
 
 // Marshal ...
-func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
+func (recipe *ShulkerBoxRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
-func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessChemistryRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
-func (recipe *ShapedRecipe) Marshal(w *Writer) {
-	marshalShaped(w, recipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapedRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedRecipe) Marshal(r IO) {
 	marshalShaped(r, recipe)
 }
 
 // Marshal ...
-func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
-	marshalShaped(w, &recipe.ShapedRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedChemistryRecipe) Marshal(r IO) {
 	marshalShaped(r, &recipe.ShapedRecipe)
 }
 
 // Marshal ...
-func (recipe *FurnaceRecipe) Marshal(w *Writer) {
-	w.Varint32(&recipe.InputType.NetworkID)
-	w.Item(&recipe.Output)
-	w.String(&recipe.Block)
-}
-
-// Unmarshal ...
-func (recipe *FurnaceRecipe) Unmarshal(r *Reader) {
+func (recipe *FurnaceRecipe) Marshal(r IO) {
 	r.Varint32(&recipe.InputType.NetworkID)
 	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
 }
 
 // Marshal ...
-func (recipe *FurnaceDataRecipe) Marshal(w *Writer) {
-	w.Varint32(&recipe.InputType.NetworkID)
+func (recipe *FurnaceDataRecipe) Marshal(r IO) {
+	r.Varint32(&recipe.InputType.NetworkID)
 	aux := int32(recipe.InputType.MetadataValue)
-	w.Varint32(&aux)
-	w.Item(&recipe.Output)
-	w.String(&recipe.Block)
-}
-
-// Unmarshal ...
-func (recipe *FurnaceDataRecipe) Unmarshal(r *Reader) {
-	var dataValue int32
-	r.Varint32(&recipe.InputType.NetworkID)
-	r.Varint32(&dataValue)
-	recipe.InputType.MetadataValue = uint32(dataValue)
+	r.Varint32(&aux)
 	r.Item(&recipe.Output)
 	r.String(&recipe.Block)
 }
 
 // Marshal ...
-func (recipe *MultiRecipe) Marshal(w *Writer) {
-	w.UUID(&recipe.UUID)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *MultiRecipe) Unmarshal(r *Reader) {
+func (recipe *MultiRecipe) Marshal(r IO) {
 	r.UUID(&recipe.UUID)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // Marshal ...
-func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.Item(&recipe.Result)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTransformRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
@@ -438,17 +376,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (recipe *SmithingTrimRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTrimRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)

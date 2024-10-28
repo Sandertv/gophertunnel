@@ -33,6 +33,19 @@ func NewReader(r interface {
 	return &Reader{r: r, shieldID: shieldID, limitsEnabled: enableLimits}
 }
 
+type Reads interface {
+	Reads() bool
+	LimitsEnabled() bool
+}
+
+func (r *Reader) Reads() bool {
+	return true
+}
+
+func (r *Reader) LimitsEnabled() bool {
+	return r.limitsEnabled
+}
+
 // Uint8 reads a uint8 from the underlying buffer.
 func (r *Reader) Uint8(x *uint8) {
 	var err error
@@ -499,7 +512,7 @@ func (r *Reader) Recipe(x *Recipe) {
 		r.UnknownEnumOption(recipeType, "crafting data recipe type")
 		return
 	}
-	(*x).Unmarshal(r)
+	(*x).Marshal(r)
 }
 
 // EventType reads an Event's type from the reader.
