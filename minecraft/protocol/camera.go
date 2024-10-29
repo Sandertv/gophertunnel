@@ -75,6 +75,8 @@ type CameraInstructionSet struct {
 	// ViewOffset is an offset based on a pivot point to the player, causing the camera to be shifted in a
 	// certain direction.
 	ViewOffset Optional[mgl32.Vec2]
+	// EntityOffset is an offset from the entity that the camera should be rendered at.
+	EntityOffset Optional[mgl32.Vec3]
 	// Default determines whether the camera is a default camera or not.
 	Default Optional[bool]
 }
@@ -87,6 +89,7 @@ func (x *CameraInstructionSet) Marshal(r IO) {
 	OptionalFunc(r, &x.Rotation, r.Vec2)
 	OptionalFunc(r, &x.Facing, r.Vec3)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
+	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Default, r.Bool)
 }
 
