@@ -28,6 +28,9 @@ type TexturePackInfo struct {
 	AddonPack bool
 	// RTXEnabled specifies if the texture pack uses the raytracing technology introduced in 1.16.200.
 	RTXEnabled bool
+	// DownloadURL is a URL that the client can use to download the pack instead of the server sending it in
+	// chunks, which it will continue to do if this field is left empty.
+	DownloadURL string
 }
 
 // Marshal encodes/decodes a TexturePackInfo.
@@ -41,6 +44,7 @@ func (x *TexturePackInfo) Marshal(r IO) {
 	r.Bool(&x.HasScripts)
 	r.Bool(&x.AddonPack)
 	r.Bool(&x.RTXEnabled)
+	r.String(&x.DownloadURL)
 }
 
 // StackResourcePack represents a resource pack sent on the stack of the client. When sent, the client will

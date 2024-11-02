@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"context"
+	"log/slog"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"net"
 )
@@ -45,15 +46,18 @@ type NetworkListener interface {
 
 // networks holds a map of id => Network to be used for looking up the network by an ID. It is registered to when calling
 // RegisterNetwork.
-var networks = map[string]Network{}
+var networks = map[string]func(l *slog.Logger) Network{}
 
 // RegisterNetwork registers a network so that it can be used for Gophertunnel.
-func RegisterNetwork(id string, n Network) {
+func RegisterNetwork(id string, n func(l *slog.Logger) Network) {
 	networks[id] = n
 }
 
 // networkByID returns the network with the ID passed. If no network is found, the second return value will be false.
-func networkByID(id string) (Network, bool) {
+func networkByID(id string, l *slog.Logger) (Network, bool) {
 	n, ok := networks[id]
-	return n, ok
+	if ok {
+		return n(l), true
+	}
+	return nil, false
 }

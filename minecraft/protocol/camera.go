@@ -75,6 +75,8 @@ type CameraInstructionSet struct {
 	// ViewOffset is an offset based on a pivot point to the player, causing the camera to be shifted in a
 	// certain direction.
 	ViewOffset Optional[mgl32.Vec2]
+	// EntityOffset is an offset from the entity that the camera should be rendered at.
+	EntityOffset Optional[mgl32.Vec3]
 	// Default determines whether the camera is a default camera or not.
 	Default Optional[bool]
 }
@@ -87,6 +89,7 @@ func (x *CameraInstructionSet) Marshal(r IO) {
 	OptionalFunc(r, &x.Rotation, r.Vec2)
 	OptionalFunc(r, &x.Facing, r.Vec3)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
+	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Default, r.Bool)
 }
 
@@ -156,6 +159,12 @@ type CameraPreset struct {
 	RotationSpeed Optional[float32]
 	// SnapToTarget determines whether the camera should snap to the target entity or not.
 	SnapToTarget Optional[bool]
+	// HorizontalRotationLimit is the horizontal rotation limit of the camera.
+	HorizontalRotationLimit Optional[mgl32.Vec2]
+	// VerticalRotationLimit is the vertical rotation limit of the camera.
+	VerticalRotationLimit Optional[mgl32.Vec2]
+	// ContinueTargeting determines whether the camera should continue targeting the entity or not.
+	ContinueTargeting Optional[bool]
 	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
 	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
@@ -169,6 +178,9 @@ type CameraPreset struct {
 	AudioListener Optional[byte]
 	// PlayerEffects is currently unknown.
 	PlayerEffects Optional[bool]
+	// AlignTargetAndCameraForward determines whether the camera should align the target and the camera forward
+	// or not.
+	AlignTargetAndCameraForward Optional[bool]
 }
 
 // Marshal encodes/decodes a CameraPreset.
@@ -182,9 +194,13 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.RotY, r.Float32)
 	OptionalFunc(r, &x.RotationSpeed, r.Float32)
 	OptionalFunc(r, &x.SnapToTarget, r.Bool)
+	OptionalFunc(r, &x.HorizontalRotationLimit, r.Vec2)
+	OptionalFunc(r, &x.VerticalRotationLimit, r.Vec2)
+	OptionalFunc(r, &x.ContinueTargeting, r.Bool)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
+	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
 }
