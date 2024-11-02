@@ -8,7 +8,7 @@ import (
 	"net"
 )
 
-// RakNet is an implementation of a RakNet v11 Network.
+// RakNet is an implementation of a RakNet v10 Network.
 type RakNet struct {
 	l *slog.Logger
 }
