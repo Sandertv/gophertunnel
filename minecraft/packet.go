@@ -40,18 +40,6 @@ func (err unknownPacketError) Error() string {
 
 // decode decodes the packet payload held in the packetData and returns the packet.Packet decoded.
 func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
-	defer func() {
-		if recoveredErr := recover(); recoveredErr != nil {
-			err = fmt.Errorf("decode packet %v: %w", p.h.PacketID, recoveredErr.(error))
-		}
-		if err == nil {
-			return
-		}
-		if ok := errors.As(err, &unknownPacketError{}); ok || conn.disconnectOnInvalidPacket {
-			_ = conn.Close()
-		}
-	}()
-
 	// Attempt to fetch the packet with the right packet ID from the pool.
 	pkFunc, ok := conn.pool[p.h.PacketID]
 	var pk packet.Packet
@@ -59,11 +47,21 @@ func (p *packetData) decode(conn *Conn) (pks []packet.Packet, err error) {
 		// No packet with the ID. This may be a custom packet of some sorts.
 		pk = &packet.Unknown{PacketID: p.h.PacketID}
 		if conn.disconnectOnUnknownPacket {
+			_ = conn.Close()
 			return nil, unknownPacketError{id: p.h.PacketID}
 		}
 	} else {
 		pk = pkFunc()
 	}
+
+	defer func() {
+		if recoveredErr := recover(); recoveredErr != nil {
+			err = fmt.Errorf("decode packet %T: %w", pk, recoveredErr.(error))
+		}
+		if err != nil && !errors.Is(err, unknownPacketError{}) && conn.disconnectOnInvalidPacket {
+			_ = conn.Close()
+		}
+	}()
 
 	r := conn.proto.NewReader(p.payload, conn.shieldID.Load(), conn.readerLimits)
 	pk.Marshal(r)
