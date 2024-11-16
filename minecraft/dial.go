@@ -157,6 +157,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.ErrorLog == nil {
 		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
+	if d.RequestClient == nil {
+		d.RequestClient = http.DefaultClient
+	}
 	d.ErrorLog = d.ErrorLog.With("src", "dialer")
 	if d.Protocol == nil {
 		d.Protocol = DefaultProtocol
