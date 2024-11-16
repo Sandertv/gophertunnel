@@ -567,11 +567,14 @@ func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
 type CraftLoomRecipeStackRequestAction struct {
 	// Pattern is the pattern identifier for the loom recipe.
 	Pattern string
+	// TimesCrafted is how many times the recipe was crafted.
+	TimesCrafted byte
 }
 
 // Marshal ...
 func (c *CraftLoomRecipeStackRequestAction) Marshal(r IO) {
 	r.String(&c.Pattern)
+	r.Uint8(&c.TimesCrafted)
 }
 
 // CraftNonImplementedStackRequestAction is an action sent for inventory actions that aren't yet implemented
