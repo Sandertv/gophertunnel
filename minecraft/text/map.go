@@ -34,6 +34,7 @@ const (
 	Diamond    = "§s"
 	Lapis      = "§t"
 	Amethyst   = "§u"
+	Resin      = "§v"
 )
 
 const (
@@ -64,6 +65,7 @@ const (
 	ansiDiamond    = "\x1b[38;5;122m"
 	ansiLapis      = "\x1b[38;5;4m"
 	ansiAmethyst   = "\x1b[38;5;171m"
+	ansiResin      = "\x1b[38;5;172m"
 
 	ansiObfuscated = ""
 	ansiBold       = "\x1b[1m"
@@ -99,6 +101,7 @@ var m = map[string]string{
 	Diamond:    ansiDiamond,
 	Lapis:      ansiLapis,
 	Amethyst:   ansiAmethyst,
+	Resin:      ansiResin,
 
 	Obfuscated: ansiObfuscated,
 	Bold:       ansiBold,
@@ -139,6 +142,7 @@ var strMap = map[string]string{
 	"diamond":     Diamond,
 	"lapis":       Lapis,
 	"amethyst":    Amethyst,
+	"resin":       Resin,
 }
 
 // minecraftReplacer and ansiReplacer are used to translate ANSI formatting codes to Minecraft formatting

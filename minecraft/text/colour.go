@@ -8,7 +8,7 @@ import (
 )
 
 // cleaner represents the regex used to clean Minecraft formatting codes from a string.
-var cleaner = regexp.MustCompile("§[0-9a-u]")
+var cleaner = regexp.MustCompile("§[0-9a-v]")
 
 // Clean removes all Minecraft formatting codes from the string passed.
 func Clean(s string) string {
