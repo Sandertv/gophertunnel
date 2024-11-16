@@ -333,6 +333,12 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
 func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey, c *http.Client) (string, error) {
+	if c == nil {
+		c = &http.Client{}
+	}
+	if c.Transport == nil {
+		c.Transport = &http.Transport{}
+	}
 	// Obtain the Live token, and using that the XSTS token.
 	liveToken, err := src.Token()
 	if err != nil {

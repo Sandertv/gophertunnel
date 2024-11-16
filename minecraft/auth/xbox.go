@@ -44,14 +44,17 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	if c == nil {
-		c = &http.Client{}
+
+	transport := c.Transport
+	if transport == nil {
+		transport = http.DefaultTransport
 	}
-	c.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
+
+	if t, ok := transport.(*http.Transport); ok {
+		t.TLSClientConfig = &tls.Config{
 			Renegotiation:      tls.RenegotiateOnceAsClient,
 			InsecureSkipVerify: true,
-		},
+		}
 	}
 
 	defer c.CloseIdleConnections()
