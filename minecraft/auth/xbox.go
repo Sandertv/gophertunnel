@@ -40,18 +40,20 @@ func (t XBLToken) SetAuthHeader(r *http.Request) {
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
-func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string, c *http.Client) (*XBLToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	c := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Renegotiation:      tls.RenegotiateOnceAsClient,
-				InsecureSkipVerify: true,
-			},
+	if c == nil {
+		c = &http.Client{}
+	}
+	c.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient,
+			InsecureSkipVerify: true,
 		},
 	}
+
 	defer c.CloseIdleConnections()
 
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
@@ -221,4 +223,3 @@ func parseXboxErrorCode(code string) string {
 		return fmt.Sprintf("unknown error code: %v", code)
 	}
 }
-

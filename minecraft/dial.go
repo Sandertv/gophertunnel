@@ -15,6 +15,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -98,6 +99,10 @@ type Dialer struct {
 	// the client when an XUID is present without logging in.
 	// For getting this to work with BDS, authentication should be disabled.
 	KeepXBLIdentityData bool
+
+	// RequestClient is the HTTP client used to make requests to the Microsoft authentication servers. If nil,
+	// http.DefaultClient is used. This can be used to provide a timeout or proxy settings to the client.
+	RequestClient *http.Client
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -163,7 +168,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 	var chainData string
 	if d.TokenSource != nil {
-		chainData, err = authChain(ctx, d.TokenSource, key)
+		chainData, err = authChain(ctx, d.TokenSource, key, d.RequestClient)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -327,19 +332,19 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
-func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
+func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey, c *http.Client) (string, error) {
 	// Obtain the Live token, and using that the XSTS token.
 	liveToken, err := src.Token()
 	if err != nil {
 		return "", fmt.Errorf("request Live Connect token: %w", err)
 	}
-	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
+	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/", c)
 	if err != nil {
 		return "", fmt.Errorf("request XBOX Live token: %w", err)
 	}
 
 	// Obtain the raw chain data using the
-	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
+	chain, err := auth.RequestMinecraftChain(ctx, xsts, key, c)
 	if err != nil {
 		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
 	}
