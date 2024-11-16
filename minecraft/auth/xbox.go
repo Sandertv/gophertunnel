@@ -45,6 +45,9 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
 
+	if c == nil {
+		c = http.DefaultClient
+	}
 	transport := c.Transport
 	if transport == nil {
 		transport = http.DefaultTransport

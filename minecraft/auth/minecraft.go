@@ -20,6 +20,10 @@ const minecraftAuthURL = `https://multiplayer.minecraft.net/authentication`
 // ECDSA private key of the client. This key will later be used to initialise encryption, and must be saved
 // for when packets need to be decrypted/encrypted.
 func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.PrivateKey, c *http.Client) (string, error) {
+	if c == nil {
+		c = &http.Client{}
+	}
+
 	data, _ := x509.MarshalPKIXPublicKey(&key.PublicKey)
 
 	// The body of the requests holds a JSON object with one key in it, the 'identityPublicKey', which holds
