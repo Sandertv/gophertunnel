@@ -9,6 +9,7 @@ const (
 	DeviceIOS
 	DeviceOSX
 	DeviceFireOS
+	// Deprecated: DeviceGearVR is deprecated as of 1.21.50.
 	DeviceGearVR
 	DeviceHololens
 	DeviceWin10

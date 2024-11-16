@@ -6,6 +6,11 @@ import (
 )
 
 const (
+	AimAssistTargetModeAngle = iota
+	AimAssistTargetModeDistance
+)
+
+const (
 	AudioListenerCamera = iota
 	AudioListenerPlayer
 )
@@ -165,6 +170,8 @@ type CameraPreset struct {
 	VerticalRotationLimit Optional[mgl32.Vec2]
 	// ContinueTargeting determines whether the camera should continue targeting the entity or not.
 	ContinueTargeting Optional[bool]
+	// BlockListeningRadius ...
+	BlockListeningRadius Optional[float32]
 	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
 	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
@@ -181,6 +188,8 @@ type CameraPreset struct {
 	// AlignTargetAndCameraForward determines whether the camera should align the target and the camera forward
 	// or not.
 	AlignTargetAndCameraForward Optional[bool]
+	// AimAssist ...
+	AimAssist Optional[CameraPresetAimAssist]
 }
 
 // Marshal encodes/decodes a CameraPreset.
@@ -203,4 +212,99 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
+}
+
+type CameraPresetAimAssist struct {
+	PresetID   Optional[string]
+	TargetMode Optional[int32]
+	Angle      Optional[mgl32.Vec2]
+	Distance   Optional[float32]
+}
+
+// Marshal encodes/decodes a CameraPresetAimAssist.
+func (x *CameraPresetAimAssist) Marshal(r IO) {
+	OptionalFunc(r, &x.PresetID, r.String)
+	OptionalFunc(r, &x.TargetMode, r.Int32)
+	OptionalFunc(r, &x.Angle, r.Vec2)
+	OptionalFunc(r, &x.Distance, r.Float32)
+}
+
+type CameraAimAssistCategories struct {
+	Identifier string
+	Categories []CameraAimAssistCategory
+}
+
+// Marshal encodes/decodes a CameraAimAssistCategories.
+func (x *CameraAimAssistCategories) Marshal(r IO) {
+	r.String(&x.Identifier)
+	Slice(r, &x.Categories)
+}
+
+type CameraAimAssistCategory struct {
+	Name       string
+	Priorities CameraAimAssistPriorities
+}
+
+// Marshal encodes/decodes a CameraAimAssistCategory.
+func (x *CameraAimAssistCategory) Marshal(r IO) {
+	r.String(&x.Name)
+	Single(r, &x.Priorities)
+}
+
+type CameraAimAssistPriorities struct {
+	Entities      []CameraAimAssistPriority
+	Blocks        []CameraAimAssistPriority
+	EntityDefault Optional[int32]
+	BlockDefault  Optional[int32]
+}
+
+// Marshal encodes/decodes a CameraAimAssistPriorities.
+func (x *CameraAimAssistPriorities) Marshal(r IO) {
+	Slice(r, &x.Entities)
+	Slice(r, &x.Blocks)
+	OptionalFunc(r, &x.EntityDefault, r.Int32)
+	OptionalFunc(r, &x.BlockDefault, r.Int32)
+}
+
+type CameraAimAssistPriority struct {
+	ID       string
+	Priority int32
+}
+
+// Marshal encodes/decodes a CameraAimAssistPriority.
+func (x *CameraAimAssistPriority) Marshal(r IO) {
+	r.String(&x.ID)
+	r.Int32(&x.Priority)
+}
+
+type CameraAimAssistPreset struct {
+	Identifier          string
+	Categories          string
+	BlockExclusions     []string
+	LiquidTargets       []string
+	ItemSettings        []CameraAimAssistItemSettings
+	DefaultItemSettings Optional[string]
+	HandSettings        Optional[string]
+}
+
+// Marshal encodes/decodes a CameraAimAssistPreset.
+func (x *CameraAimAssistPreset) Marshal(r IO) {
+	r.String(&x.Identifier)
+	r.String(&x.Categories)
+	FuncSlice(r, &x.BlockExclusions, r.String)
+	FuncSlice(r, &x.LiquidTargets, r.String)
+	Slice(r, &x.ItemSettings)
+	OptionalFunc(r, &x.DefaultItemSettings, r.String)
+	OptionalFunc(r, &x.HandSettings, r.String)
+}
+
+type CameraAimAssistItemSettings struct {
+	ItemID   string
+	Category string
+}
+
+// Marshal encodes/decodes a CameraAimAssistItemSettings.
+func (x *CameraAimAssistItemSettings) Marshal(r IO) {
+	r.String(&x.ItemID)
+	r.String(&x.Category)
 }
