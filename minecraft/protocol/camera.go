@@ -206,6 +206,7 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.HorizontalRotationLimit, r.Vec2)
 	OptionalFunc(r, &x.VerticalRotationLimit, r.Vec2)
 	OptionalFunc(r, &x.ContinueTargeting, r.Bool)
+	OptionalFunc(r, &x.BlockListeningRadius, r.Float32)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
