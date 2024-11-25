@@ -178,19 +178,19 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
 
-	if pk.InputData.Test(InputFlagPerformItemInteraction) {
+	if pk.InputData.Load(InputFlagPerformItemInteraction) {
 		io.PlayerInventoryAction(&pk.ItemInteractionData)
 	}
 
-	if pk.InputData.Test(InputFlagPerformItemStackRequest) {
+	if pk.InputData.Load(InputFlagPerformItemStackRequest) {
 		protocol.Single(io, &pk.ItemStackRequest)
 	}
 
-	if pk.InputData.Test(InputFlagPerformBlockActions) {
+	if pk.InputData.Load(InputFlagPerformBlockActions) {
 		protocol.SliceVarint32Length(io, &pk.BlockActions)
 	}
 
-	if pk.InputData.Test(InputFlagClientPredictedVehicle) {
+	if pk.InputData.Load(InputFlagClientPredictedVehicle) {
 		io.Vec2(&pk.VehicleRotation)
 		io.Varint64(&pk.ClientPredictedVehicle)
 	}
