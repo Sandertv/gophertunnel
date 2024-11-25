@@ -33,9 +33,9 @@ func (b Bitset) Unset(i int) {
 	b.int.SetBit(b.int, i, 0)
 }
 
-// Test checks if a bit at a specific index in the Bitset is set. If the index is higher than the size of the
+// Load returns if a bit at a specific index in the Bitset is set. If the index is higher than the size of the
 // Bitset, a panic will occur.
-func (b Bitset) Test(i int) bool {
+func (b Bitset) Load(i int) bool {
 	if i >= b.size {
 		panic("index out of bounds")
 	}
