@@ -5,8 +5,10 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const PlayerAuthInputBitsetSize = 65
+
 const (
-	InputFlagAscend = 1 << iota
+	InputFlagAscend = iota
 	InputFlagDescend
 	InputFlagNorthJump
 	InputFlagJumpDown
@@ -59,10 +61,18 @@ const (
 	InputFlagVerticalCollision
 	InputFlagDownLeft
 	InputFlagDownRight
+	InputFlagStartUsingItem
 	InputFlagCameraRelativeMovementEnabled
 	InputFlagRotControlledByMoveDirection
 	InputFlagStartSpinAttack
 	InputFlagStopSpinAttack
+	InputFlagIsHotbarTouchOnly
+	InputFlagJumpReleasedRaw
+	InputFlagJumpPressedRaw
+	InputFlagJumpCurrentRaw
+	InputFlagSneakReleasedRaw
+	InputFlagSneakPressedRaw
+	InputFlagSneakCurrentRaw
 )
 
 const (
@@ -107,7 +117,7 @@ type PlayerAuthInput struct {
 	HeadYaw float32
 	// InputData is a combination of bit flags that together specify the way the player moved last tick. It
 	// is a combination of the flags above.
-	InputData uint64
+	InputData protocol.Bitset
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.
 	InputMode uint32
@@ -140,7 +150,12 @@ type PlayerAuthInput struct {
 	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination
 	// of X/Z values which are created using an analogue input.
 	AnalogueMoveVector mgl32.Vec2
-	CameraOrientation  mgl32.Vec3
+	// CameraOrientation is the vector that represents the camera's forward direction which can be used to
+	// transform movement to be camera relative.
+	CameraOrientation mgl32.Vec3
+	// RawMoveVector is the value of MoveVector before it is affected by input permissions, sneaking/fly
+	// speeds and isn't normalised for analogue inputs.
+	RawMoveVector mgl32.Vec2
 }
 
 // ID ...
@@ -154,7 +169,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	io.Varuint64(&pk.InputData)
+	io.Bitset(&pk.InputData, PlayerAuthInputBitsetSize)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
 	io.Varuint32(&pk.InteractionModel)
@@ -163,23 +178,24 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
 
-	if pk.InputData&InputFlagPerformItemInteraction != 0 {
+	if pk.InputData.Load(InputFlagPerformItemInteraction) {
 		io.PlayerInventoryAction(&pk.ItemInteractionData)
 	}
 
-	if pk.InputData&InputFlagPerformItemStackRequest != 0 {
+	if pk.InputData.Load(InputFlagPerformItemStackRequest) {
 		protocol.Single(io, &pk.ItemStackRequest)
 	}
 
-	if pk.InputData&InputFlagPerformBlockActions != 0 {
+	if pk.InputData.Load(InputFlagPerformBlockActions) {
 		protocol.SliceVarint32Length(io, &pk.BlockActions)
 	}
 
-	if pk.InputData&InputFlagClientPredictedVehicle != 0 {
+	if pk.InputData.Load(InputFlagClientPredictedVehicle) {
 		io.Vec2(&pk.VehicleRotation)
 		io.Varint64(&pk.ClientPredictedVehicle)
 	}
 
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
+	io.Vec2(&pk.RawMoveVector)
 }

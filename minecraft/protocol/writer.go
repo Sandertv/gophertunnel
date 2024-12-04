@@ -8,6 +8,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
+	"math/big"
 	"reflect"
 	"sort"
 	"unsafe"
@@ -470,6 +471,22 @@ func (w *Writer) CompressedBiomeDefinitions(x *map[string]any) {
 	length := uint32(len(compressed))
 	w.Varuint32(&length)
 	w.Bytes(&compressed)
+}
+
+var varintMaxByteValue = big.NewInt(0x80)
+
+func (w *Writer) Bitset(x *Bitset, size int) {
+	if x.size != size {
+		w.panicf("bitset size mismatch: expected %v, got %v", size, x.size)
+	}
+	u := new(big.Int)
+	u.Set(x.int)
+
+	for u.Cmp(varintMaxByteValue) >= 0 {
+		_ = w.w.WriteByte(byte(u.Bits()[0]) | 0x80)
+		u.Rsh(u, 7)
+	}
+	_ = w.w.WriteByte(byte(u.Bits()[0]))
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
