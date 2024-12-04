@@ -193,7 +193,7 @@ func (listener *Listener) AddResourcePack(pack *resource.Pack) {
 func (listener *Listener) RemoveResourcePack(uuid string) {
 	listener.packsMu.Lock()
 	listener.packs = slices.DeleteFunc(listener.packs, func(pack *resource.Pack) bool {
-		return pack.UUID() == uuid
+		return pack.UUID().String() == uuid
 	})
 	listener.packsMu.Unlock()
 }

@@ -39,7 +39,8 @@ type SetTitle struct {
 	XUID string
 	// PlatformOnlineID is either a uint64 or an empty string.
 	PlatformOnlineID string
-	// FilteredMessage is always set to empty and the usage is currently unknown.
+	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
+	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
 	FilteredMessage string
 }
 

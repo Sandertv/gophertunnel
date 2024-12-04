@@ -260,6 +260,7 @@ func init() {
 		IDContainerRegistryCleanup:       func() Packet { return &ContainerRegistryCleanup{} },
 		IDMovementEffect:                 func() Packet { return &MovementEffect{} },
 		IDSetMovementAuthority:           func() Packet { return &SetMovementAuthority{} },
+		IDCameraAimAssistPresets:         func() Packet { return &CameraAimAssistPresets{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

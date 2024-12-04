@@ -58,6 +58,7 @@ type IO interface {
 	GameRule(x *GameRule)
 	AbilityValue(x *any)
 	CompressedBiomeDefinitions(x *map[string]any)
+	Bitset(x *Bitset, size int)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)
