@@ -252,7 +252,7 @@ func (x *CameraAimAssistCategoryGroup) Marshal(r IO) {
 	Slice(r, &x.Categories)
 }
 
-// CameraAssistCategory is an aim assist category that defines priorities for specific blocks and entities.
+// CameraAimAssistCategory is an aim assist category that defines priorities for specific blocks and entities.
 type CameraAimAssistCategory struct {
 	// Name is the name of the category which can be used by a CameraAimAssistPreset.
 	Name string
