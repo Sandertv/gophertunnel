@@ -168,10 +168,10 @@ type CameraPreset struct {
 	HorizontalRotationLimit Optional[mgl32.Vec2]
 	// VerticalRotationLimit is the vertical rotation limit of the camera.
 	VerticalRotationLimit Optional[mgl32.Vec2]
-	// ContinueTargeting determines whether the camera should continue targeting the entity or not.
+	// ContinueTargeting determines whether the camera should continue targeting when using aim assist.
 	ContinueTargeting Optional[bool]
-	// BlockListeningRadius ...
-	BlockListeningRadius Optional[float32]
+	// TrackingRadius is the radius around the camera that the aim assist should track targets.
+	TrackingRadius Optional[float32]
 	// ViewOffset is only used in a follow_orbit camera and controls an offset based on a pivot point to the
 	// player, causing it to be shifted in a certain direction.
 	ViewOffset Optional[mgl32.Vec2]
@@ -206,7 +206,7 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.HorizontalRotationLimit, r.Vec2)
 	OptionalFunc(r, &x.VerticalRotationLimit, r.Vec2)
 	OptionalFunc(r, &x.ContinueTargeting, r.Bool)
-	OptionalFunc(r, &x.BlockListeningRadius, r.Float32)
+	OptionalFunc(r, &x.TrackingRadius, r.Float32)
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
