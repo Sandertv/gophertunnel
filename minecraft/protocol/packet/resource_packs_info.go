@@ -18,7 +18,7 @@ type ResourcePacksInfo struct {
 	// HasScripts specifies if any of the resource packs contain scripts in them. If set to true, only clients
 	// that support scripts will be able to download them.
 	HasScripts bool
-	// WorldTemplateUUID is teh UUID of the template that has been used to generate the world. Templates can
+	// WorldTemplateUUID is the UUID of the template that has been used to generate the world. Templates can
 	// be downloaded from the marketplace or installed via '.mctemplate' files. If the world was not generated
 	// from a template, this field is empty.
 	WorldTemplateUUID uuid.UUID
