@@ -188,7 +188,7 @@ type CameraPreset struct {
 	// AlignTargetAndCameraForward determines whether the camera should align the target and the camera forward
 	// or not.
 	AlignTargetAndCameraForward Optional[bool]
-	// AimAssist ...
+	// AimAssist defines the aim assist to use when using this preset.
 	AimAssist Optional[CameraPresetAimAssist]
 }
 
@@ -215,34 +215,49 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
 }
 
+// CameraPresetAimAssist represents a preset for aim assist settings.
 type CameraPresetAimAssist struct {
-	PresetID   Optional[string]
+	// Preset is the ID of the preset that has previously been defined in the CameraAimAssistPresets packet.
+	Preset Optional[string]
+	// TargetMode is the mode that the camera should use for detecting targets. This is one of the constants
+	// above.
 	TargetMode Optional[int32]
-	Angle      Optional[mgl32.Vec2]
-	Distance   Optional[float32]
+	// Angle is the maximum angle around the playes's cursor that the aim assist should check for a target,
+	// if TargetMode is set to protocol.AimAssistTargetModeAngle.
+	Angle Optional[mgl32.Vec2]
+	// Distance is the maximum distance from the player's cursor should check for a target, if TargetMode is
+	// set to protocol.AimAssistTargetModeDistance.
+	Distance Optional[float32]
 }
 
 // Marshal encodes/decodes a CameraPresetAimAssist.
 func (x *CameraPresetAimAssist) Marshal(r IO) {
-	OptionalFunc(r, &x.PresetID, r.String)
+	OptionalFunc(r, &x.Preset, r.String)
 	OptionalFunc(r, &x.TargetMode, r.Int32)
 	OptionalFunc(r, &x.Angle, r.Vec2)
 	OptionalFunc(r, &x.Distance, r.Float32)
 }
 
-type CameraAimAssistCategories struct {
+// CameraAimAssistCategoryGroup is a group of categories which can be used by a CameraAimAssistPreset.
+type CameraAimAssistCategoryGroup struct {
+	// Identifier is the unique identifier of the group.
 	Identifier string
+	// Categories is a list of categories within this group.
 	Categories []CameraAimAssistCategory
 }
 
-// Marshal encodes/decodes a CameraAimAssistCategories.
-func (x *CameraAimAssistCategories) Marshal(r IO) {
+// Marshal encodes/decodes a CameraAimAssistCategoryGroup.
+func (x *CameraAimAssistCategoryGroup) Marshal(r IO) {
 	r.String(&x.Identifier)
 	Slice(r, &x.Categories)
 }
 
+// CameraAssistCategory is an aim assist category that defines priorities for specific blocks and entities.
 type CameraAimAssistCategory struct {
-	Name       string
+	// Name is the name of the category which can be used by a CameraAimAssistPreset.
+	Name string
+	// Priorities represents the block and entity specific priorities as well as the default priorities for
+	// this category.
 	Priorities CameraAimAssistPriorities
 }
 
@@ -252,11 +267,17 @@ func (x *CameraAimAssistCategory) Marshal(r IO) {
 	Single(r, &x.Priorities)
 }
 
+// CameraAimAssistPriorities represents the block and entity specific priorities for targetting. The aim
+// assist will select the block or entity with the highest priority within the specified thresholds.
 type CameraAimAssistPriorities struct {
-	Entities      []CameraAimAssistPriority
-	Blocks        []CameraAimAssistPriority
+	// Entities is a list of priorities for specific entity identifiers.
+	Entities []CameraAimAssistPriority
+	// Blocks is a list of priorities for specific block identifiers.
+	Blocks []CameraAimAssistPriority
+	// EntityDefault is the default priority for entities.
 	EntityDefault Optional[int32]
-	BlockDefault  Optional[int32]
+	// BlockDefault is the default priority for blocks.
+	BlockDefault Optional[int32]
 }
 
 // Marshal encodes/decodes a CameraAimAssistPriorities.
@@ -267,31 +288,46 @@ func (x *CameraAimAssistPriorities) Marshal(r IO) {
 	OptionalFunc(r, &x.BlockDefault, r.Int32)
 }
 
+// CameraAimAssistPriority represents a non-default priority for a specific target.
 type CameraAimAssistPriority struct {
-	ID       string
+	// Identifier is the identifier of a target to define the priority for.
+	Identifier string
+	// Priority is the priority for this specific target.
 	Priority int32
 }
 
 // Marshal encodes/decodes a CameraAimAssistPriority.
 func (x *CameraAimAssistPriority) Marshal(r IO) {
-	r.String(&x.ID)
+	r.String(&x.Identifier)
 	r.Int32(&x.Priority)
 }
 
+// CameraAimAssistPreset defines a base preset that can be extended upon when sending an aim assist.
 type CameraAimAssistPreset struct {
-	Identifier          string
-	Categories          string
-	BlockExclusions     []string
-	LiquidTargets       []string
-	ItemSettings        []CameraAimAssistItemSettings
+	// Identifier represents the identifier of this preset.
+	Identifier string
+	// CategoryGroup is the name of a CameraAimAssistCategoryGroup to use for the preset.
+	CategoryGroup string
+	// BlockExclusions is a list of block identifiers that should be ignored by the aim assist.
+	BlockExclusions []string
+	// LiquidTargets is a list of entity identifiers that should be targetted when inside of a liquid.
+	LiquidTargets []string
+	// ItemSettings is a list of settings for specific item identifiers. If an item is not listed here, it
+	// will fallback to DefaultItemSettings or HandSettings if no item is held.
+	ItemSettings []CameraAimAssistItemSettings
+	// DefaultItemSettings is the identifier of a category to use when the player is not holding an item
+	// listed in ItemSettings. This must be the identifier of a category within the
+	// CameraAimAssistCategoryGroup references by CategoryGroup.
 	DefaultItemSettings Optional[string]
-	HandSettings        Optional[string]
+	// HandSettings is the identifier of a category to use when the player is not holding an item. This must
+	// be the identifier of a category within the CameraAimAssistCategoryGroup references by CategoryGroup.
+	HandSettings Optional[string]
 }
 
 // Marshal encodes/decodes a CameraAimAssistPreset.
 func (x *CameraAimAssistPreset) Marshal(r IO) {
 	r.String(&x.Identifier)
-	r.String(&x.Categories)
+	r.String(&x.CategoryGroup)
 	FuncSlice(r, &x.BlockExclusions, r.String)
 	FuncSlice(r, &x.LiquidTargets, r.String)
 	Slice(r, &x.ItemSettings)
@@ -299,13 +335,18 @@ func (x *CameraAimAssistPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.HandSettings, r.String)
 }
 
+// CameraAimAssistItemSettings defines settings for how specific items should behave when using aim assist.
 type CameraAimAssistItemSettings struct {
-	ItemID   string
+	// Item is the identifier of the item to apply the settings to.
+	Item string
+	// Category is the identifier of a category to use which has been defined by a CameraAimAssistCategory.
+	// Only categories defined in the CameraAimAssistCategoryGroup used by the CameraAimAssistPreset can be
+	// used here.
 	Category string
 }
 
 // Marshal encodes/decodes a CameraAimAssistItemSettings.
 func (x *CameraAimAssistItemSettings) Marshal(r IO) {
-	r.String(&x.ItemID)
+	r.String(&x.Item)
 	r.String(&x.Category)
 }
