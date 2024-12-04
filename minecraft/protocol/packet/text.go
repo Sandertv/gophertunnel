@@ -46,7 +46,8 @@ type Text struct {
 	// Nintendo Switch). It is otherwise an empty string, and is used to decide which players are able to
 	// chat with each other.
 	PlatformChatID string
-	// FilteredMessage is always set to empty and the usage is currently unknown.
+	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
+	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
 	FilteredMessage string
 }
 

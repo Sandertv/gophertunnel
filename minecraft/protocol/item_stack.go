@@ -259,6 +259,9 @@ type StackResponseSlotInfo struct {
 	StackNetworkID int32
 	// CustomName is the custom name of the item stack. It is used in relation to text filtering.
 	CustomName string
+	// FilteredCustomName is a filtered version of CustomName with all the profanity removed. The client will
+	// use this over CustomName if this field is not empty and they have the "Filter Profanity" setting enabled.
+	FilteredCustomName string
 	// DurabilityCorrection is the current durability of the item stack. This durability will be shown
 	// client-side after the response is sent to the client.
 	DurabilityCorrection int32
@@ -274,6 +277,7 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
 	r.String(&x.CustomName)
+	r.String(&x.FilteredCustomName)
 	r.Varint32(&x.DurabilityCorrection)
 }
 

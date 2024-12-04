@@ -16,7 +16,8 @@ type Disconnect struct {
 	// Message is an optional message to show when disconnected. This message is only written if the
 	// HideDisconnectionScreen field is set to true.
 	Message string
-	// FilteredMessage is always set to empty and the usage is currently unknown.
+	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
+	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
 	FilteredMessage string
 }
 

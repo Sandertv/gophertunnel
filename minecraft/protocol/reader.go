@@ -10,6 +10,8 @@ import (
 	"image/color"
 	"io"
 	"math"
+	"math/big"
+	"math/bits"
 	"unsafe"
 )
 
@@ -589,6 +591,26 @@ func (r *Reader) CompressedBiomeDefinitions(x *map[string]any) {
 	}
 }
 
+func (r *Reader) Bitset(x *Bitset, size int) {
+	*x = NewBitset(size)
+	for i := 0; i < size; i += 7 {
+		b, err := r.r.ReadByte()
+		if err != nil {
+			r.panic(err)
+		} else if i+bits.Len8(b) > size {
+			r.panic(errBitsetOverflow)
+		}
+
+		bi := big.NewInt(int64(b & 0x7f))
+		x.int.Or(x.int, bi.Lsh(bi, uint(i)))
+		if b&0x80 == 0 {
+			return
+		}
+	}
+
+	r.panic(errBitsetOverflow)
+}
+
 // LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
 func (r *Reader) LimitUint32(value uint32, max uint32) {
 	if max == math.MaxUint32 {
@@ -628,6 +650,7 @@ func (r *Reader) InvalidValue(value any, forField, reason string) {
 // errVarIntOverflow is an error set if one of the Varint methods encounters a varint that does not terminate
 // after 5 or 10 bytes, depending on the data type read into.
 var errVarIntOverflow = errors.New("varint overflows integer")
+var errBitsetOverflow = errors.New("bitset overflows size")
 
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
 func (r *Reader) Varint64(x *int64) {

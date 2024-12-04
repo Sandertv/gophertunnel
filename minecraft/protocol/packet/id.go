@@ -220,4 +220,5 @@ const (
 	IDContainerRegistryCleanup
 	IDMovementEffect
 	IDSetMovementAuthority
+	IDCameraAimAssistPresets
 )

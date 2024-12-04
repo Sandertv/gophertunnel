@@ -1,5 +1,7 @@
 package resource
 
+import "github.com/google/uuid"
+
 // Documentation on this may be found here:
 // https://learn.microsoft.com/en-us/minecraft/creator/reference/content/addonsreference/examples/addonmanifest
 
@@ -30,8 +32,8 @@ type Header struct {
 	Name string `json:"name"`
 	// Description is a short description of the pack. It will appear in the game below the name of the pack.
 	Description string `json:"description"`
-	// UUID is a unique identifier identifier this pack from any other pack.
-	UUID string `json:"uuid"`
+	// UUID is a unique identifier this pack from any other pack.
+	UUID uuid.UUID `json:"uuid"`
 	// Version is the version of the pack, which can be used to identify changes in the pack.
 	Version [3]int `json:"version"`
 	// MinimumGameVersion is the minimum version of the game that this resource pack was written for.
@@ -65,9 +67,10 @@ type Dependency struct {
 }
 
 // Capability is a particular feature that the pack utilises of that isn't necessarily enabled by default.
-//   experimental_custom_ui: Allows HTML files in the pack to be used for custom UI, and scripts in the pack
-//                           to call and manipulate custom UI.
-//   chemistry:              Allows the pack to add, change or replace Chemistry functionality.
+//
+//	experimental_custom_ui: Allows HTML files in the pack to be used for custom UI, and scripts in the pack
+//	                        to call and manipulate custom UI.
+//	chemistry:              Allows the pack to add, change or replace Chemistry functionality.
 type Capability string
 
 // Metadata contains additional information about the pack that is otherwise optional.
