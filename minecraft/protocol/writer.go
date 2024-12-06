@@ -482,6 +482,11 @@ func (w *Writer) Bitset(x *Bitset, size int) {
 	u := new(big.Int)
 	u.Set(x.int)
 
+	if len(u.Bits()) == 0 {
+		_ = w.w.WriteByte(0)
+		return
+	}
+
 	for u.Cmp(varintMaxByteValue) >= 0 {
 		_ = w.w.WriteByte(byte(u.Bits()[0]) | 0x80)
 		u.Rsh(u, 7)
