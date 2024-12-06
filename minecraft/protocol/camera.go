@@ -213,6 +213,7 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
+	OptionalMarshaler(r, &x.AimAssist)
 }
 
 // CameraPresetAimAssist represents a preset for aim assist settings.
