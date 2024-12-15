@@ -317,7 +317,7 @@ func init() {
 		IDLecternUpdate:                   func() Packet { return &LecternUpdate{} },
 		IDClientCacheStatus:               func() Packet { return &ClientCacheStatus{} },
 		IDMapCreateLockedCopy:             func() Packet { return &MapCreateLockedCopy{} },
-		IDStructureTemplateDataExportRequest:  func() Packet { return &StructureTemplateDataRequest{} },
+		IDStructureTemplateDataRequest:    func() Packet { return &StructureTemplateDataRequest{} },
 		IDStructureTemplateDataResponse:   func() Packet { return &StructureTemplateDataResponse{} },
 		IDClientCacheBlobStatus:           func() Packet { return &ClientCacheBlobStatus{} },
 		IDEmote:                           func() Packet { return &Emote{} },
