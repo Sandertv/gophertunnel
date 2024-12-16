@@ -263,7 +263,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
 	chain := struct{ Chain []string }{}
 	if err := json.Unmarshal(chainData, &chain); err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err)
+		return login.IdentityData{}, fmt.Errorf("read chain: read json: %w", err)
 	}
 	data := chain.Chain[1]
 	claims := struct {
@@ -271,13 +271,13 @@ func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
 	}{}
 	tok, err := jwt.ParseSigned(data)
 	if err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err)
+		return login.IdentityData{}, fmt.Errorf("read chain: parse jwt: %w", err)
 	}
 	if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err) 
+		return login.IdentityData{}, fmt.Errorf("read chain: read claims: %w", err) 
 	}
 	if claims.ExtraData.Identity == "" {
-		return login.IdentityData{}, fmt.Errorf("chain data contained no data")
+		return login.IdentityData{}, fmt.Errorf("read chain: no extra data found")
 	}
 	return claims.ExtraData, nil
 }
