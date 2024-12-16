@@ -166,7 +166,11 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
-		d.IdentityData = readChainIdentityData([]byte(chainData))
+		identityData, err := readChainIdentityData([]byte(chainData))
+		if err != nil {
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+		}
+		d.IdentityData = identityData
 	}
 
 	n, ok := networkByID(network, d.ErrorLog)
@@ -256,10 +260,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 // readChainIdentityData reads a login.IdentityData from the Mojang chain
 // obtained through authentication.
-func readChainIdentityData(chainData []byte) login.IdentityData {
+func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
 	chain := struct{ Chain []string }{}
 	if err := json.Unmarshal(chainData, &chain); err != nil {
-		panic("invalid chain data from authentication: " + err.Error())
+		return login.IdentityData{}, fmt.Errorf("read chain: read json: %w", err)
 	}
 	data := chain.Chain[1]
 	claims := struct {
@@ -267,15 +271,15 @@ func readChainIdentityData(chainData []byte) login.IdentityData {
 	}{}
 	tok, err := jwt.ParseSigned(data)
 	if err != nil {
-		panic("invalid chain data from authentication: " + err.Error())
+		return login.IdentityData{}, fmt.Errorf("read chain: parse jwt: %w", err)
 	}
 	if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		panic("invalid chain data from authentication: " + err.Error())
+		return login.IdentityData{}, fmt.Errorf("read chain: read claims: %w", err) 
 	}
 	if claims.ExtraData.Identity == "" {
-		panic("chain data contained no data")
+		return login.IdentityData{}, fmt.Errorf("read chain: no extra data found")
 	}
-	return claims.ExtraData
+	return claims.ExtraData, nil
 }
 
 // listenConn listens on the connection until it is closed on another goroutine. The channel passed will
