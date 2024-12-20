@@ -649,7 +649,7 @@ func (r *Reader) InvalidValue(value any, forField, reason string) {
 
 // errVarIntOverflow is an error set if one of the Varint methods encounters a varint that does not terminate
 // after 5 or 10 bytes, depending on the data type read into.
-var errVarIntOverflow = errors.New("varint overflows integer")
+// var errVarIntOverflow = errors.New("varint overflows integer")
 var errBitsetOverflow = errors.New("bitset overflows size")
 
 // Varint64 reads up to 10 bytes from the underlying buffer into an int64.
