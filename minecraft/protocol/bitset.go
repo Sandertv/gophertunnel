@@ -41,3 +41,8 @@ func (b Bitset) Load(i int) bool {
 	}
 	return b.int.Bit(i) == 1
 }
+
+// Size returns the size of the Bitset.
+func (b Bitset) Size() int {
+	return b.size
+}
