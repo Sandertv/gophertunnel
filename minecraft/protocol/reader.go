@@ -624,24 +624,11 @@ func (r *Reader) Bitset(x *Bitset, size int) {
 	r.panic(errBitsetOverflow)
 }
 
-// LimitUint32 checks if the value passed is lower than the limit passed. If not, the Reader panics.
-func (r *Reader) LimitUint32(value uint32, max uint32) {
-	if max == math.MaxUint32 {
-		// Account for 0-1 overflowing into max.
-		max = 0
-	}
-	if value > max {
-		r.panicf("uint32 %v exceeds maximum of %v", value, max)
-	}
-}
-
-// LimitInt32 checks if the value passed is lower than the limit passed and higher than the minimum. If not,
-// the Reader panics.
-func (r *Reader) LimitInt32(value int32, min, max int32) {
-	if value < min {
-		r.panicf("int32 %v exceeds minimum of %v", value, min)
-	} else if value > max {
-		r.panicf("int32 %v exceeds maximum of %v", value, max)
+// SliceLimit checks if the value passed is lower than the limit passed. If
+// not, the Reader panics.
+func (r *Reader) SliceLimit(value uint32, max uint32) {
+	if value > max && r.limitsEnabled {
+		r.panicf("slice length was too long: length of %v (max %v)", value, max)
 	}
 }
 
