@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 

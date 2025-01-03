@@ -1,5 +1,5 @@
 {
-  "geometry" : {
-    "default" : "geometry.humanoid.custom"
+  "geometry": {
+    "default": "geometry.humanoid.custom"
   }
 }

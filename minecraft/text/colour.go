@@ -2,9 +2,10 @@ package text
 
 import (
 	"fmt"
-	"golang.org/x/net/html"
 	"regexp"
 	"strings"
+
+	"golang.org/x/net/html"
 )
 
 // cleaner represents the regex used to clean Minecraft formatting codes from a string.

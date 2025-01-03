@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/muhammadmuzzammil1998/jsonc"
 )
 
 // Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds

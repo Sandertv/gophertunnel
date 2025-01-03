@@ -1,11 +1,12 @@
 package minecraft
 
 import (
-	"github.com/sandertv/go-raknet"
 	"net"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/sandertv/go-raknet"
 )
 
 // ServerStatusProvider represents a type that is able to provide the visual status of a server, in specific

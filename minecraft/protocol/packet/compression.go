@@ -3,12 +3,13 @@ package packet
 import (
 	"bytes"
 	"fmt"
-	"github.com/golang/snappy"
-	"github.com/klauspost/compress/flate"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
 	"math"
 	"sync"
+
+	"github.com/golang/snappy"
+	"github.com/klauspost/compress/flate"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
 // Compression represents a compression algorithm that can compress and decompress data.

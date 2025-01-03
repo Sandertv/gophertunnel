@@ -2,10 +2,11 @@ package minecraft
 
 import (
 	"context"
-	"github.com/sandertv/go-raknet"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"log/slog"
 	"net"
+
+	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // RakNet is an implementation of a RakNet v10 Network.

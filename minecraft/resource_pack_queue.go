@@ -3,6 +3,7 @@ package minecraft
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 )

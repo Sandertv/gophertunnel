@@ -1,8 +1,9 @@
 package packet
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"image/color"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (

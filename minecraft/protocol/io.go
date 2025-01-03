@@ -1,11 +1,11 @@
 package protocol
 
 import (
-	"fmt"
+	"image/color"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
-	"image/color"
 )
 
 // IO represents a packet IO direction. Implementations of this interface are Reader and Writer. Reader reads

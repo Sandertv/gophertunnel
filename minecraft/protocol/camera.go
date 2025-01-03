@@ -1,8 +1,9 @@
 package protocol
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"image/color"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 const (

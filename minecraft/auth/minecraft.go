@@ -6,10 +6,11 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // minecraftAuthURL is the URL that an authentication request is made to to get an encoded JWT claim chain.

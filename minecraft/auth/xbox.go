@@ -12,10 +12,11 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"golang.org/x/oauth2"
 	"net/http"
 	"time"
+
+	"github.com/google/uuid"
+	"golang.org/x/oauth2"
 )
 
 // XBLToken holds info on the authorization token used for authenticating with XBOX Live.

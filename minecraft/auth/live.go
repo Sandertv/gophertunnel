@@ -3,13 +3,14 @@ package auth
 import (
 	"encoding/json"
 	"fmt"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/microsoft"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/microsoft"
 )
 
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using

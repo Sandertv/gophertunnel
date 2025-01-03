@@ -3,8 +3,9 @@ package minecraft
 import (
 	"context"
 	"log/slog"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"net"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // Network represents an implementation of a supported network layers, such as RakNet.
