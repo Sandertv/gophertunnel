@@ -37,7 +37,7 @@ type IdentityData struct {
 // checkUsername is used to check if a username is valid according to the Microsoft specification: "You can
 // use up to 15 characters: Aa-Zz, 0-9, and single spaces. It cannot start with a number and cannot start or
 // end with a space."
-var checkUsername = regexp.MustCompile("[A-Za-z0-9 ]").MatchString
+var checkUsername = regexp.MustCompile("[A-Za-z0-9 \\p{L}]").MatchString
 
 // Validate validates the identity data. It returns an error if any data contained in the IdentityData is
 // invalid.
