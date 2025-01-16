@@ -19,8 +19,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/go-jose/go-jose/v3/jwt"
+	"github.com/go-jose/go-jose/v4"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
@@ -272,21 +272,21 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
 	chain := struct{ Chain []string }{}
 	if err := json.Unmarshal(chainData, &chain); err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err)
+		return login.IdentityData{}, fmt.Errorf("read chain: read json: %w", err)
 	}
 	data := chain.Chain[1]
 	claims := struct {
 		ExtraData login.IdentityData `json:"extraData"`
 	}{}
-	tok, err := jwt.ParseSigned(data)
+	tok, err := jwt.ParseSigned(data, []jose.SignatureAlgorithm{jose.ES384})
 	if err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err)
+		return login.IdentityData{}, fmt.Errorf("read chain: parse jwt: %w", err)
 	}
 	if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return login.IdentityData{}, fmt.Errorf("invalid chain data from authentication: %w", err) 
+		return login.IdentityData{}, fmt.Errorf("read chain: read claims: %w", err)
 	}
 	if claims.ExtraData.Identity == "" {
-		return login.IdentityData{}, fmt.Errorf("chain data contained no data")
+		return login.IdentityData{}, fmt.Errorf("read chain: no extra data found")
 	}
 	return claims.ExtraData, nil
 }
