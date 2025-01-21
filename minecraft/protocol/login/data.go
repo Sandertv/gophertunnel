@@ -34,10 +34,14 @@ type IdentityData struct {
 	TitleID string `json:"titleId,omitempty"`
 }
 
-// checkUsername is used to check if a username is valid according to the Microsoft specification: "You can
+// checkOfflineUsername is used to check if a username is valid for normal Minecraft client,
+// it validates usernames only for unauthenticated clients.
+var checkOfflineUsername = regexp.MustCompile("[ \\p{L}]").MatchString
+
+// checkOnlineUsername is used to check if a username is valid according to the Microsoft specification: "You can
 // use up to 15 characters: Aa-Zz, 0-9, and single spaces. It cannot start with a number and cannot start or
 // end with a space."
-var checkUsername = regexp.MustCompile("[A-Za-z0-9 ]").MatchString
+var checkOnlineUsername = regexp.MustCompile("[A-Za-z0-9 ]").MatchString
 
 // Validate validates the identity data. It returns an error if any data contained in the IdentityData is
 // invalid.
@@ -57,8 +61,14 @@ func (data IdentityData) Validate() error {
 	if data.DisplayName[0] >= '0' && data.DisplayName[0] <= '9' {
 		return fmt.Errorf("DisplayName may not have a number as first character, but got %v", data.DisplayName)
 	}
-	if !checkUsername(data.DisplayName) {
-		return fmt.Errorf("DisplayName must only contain numbers, letters and spaces, but got %v", data.DisplayName)
+	if data.XUID != "" {
+		if !checkOnlineUsername(data.DisplayName) {
+			return fmt.Errorf("DisplayName for authorized client must only contain numbers, Latin letters and spaces, but got %v", data.DisplayName)
+		}
+	} else {
+		if !checkOfflineUsername(data.DisplayName) {
+			return fmt.Errorf("DisplayName for unauthorized client must only contain numbers, letters and spaces, but got %v", data.DisplayName)
+		}
 	}
 	// We check here if the name contains at least 2 spaces after each other, which is not allowed. The name
 	// is only allowed to have single spaces.
