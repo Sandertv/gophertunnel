@@ -12,6 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"math/rand"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -20,13 +27,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"golang.org/x/oauth2"
-	"log/slog"
-	"math/rand"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // Dialer allows specifying specific settings for connection to a Minecraft server.
@@ -45,12 +45,13 @@ type Dialer struct {
 	// object provided here is used, or a default one if left empty.
 	IdentityData login.IdentityData
 
-	// TokenSource is the source for Microsoft Live Connect tokens. If set to a non-nil oauth2.TokenSource,
-	// this field is used to obtain tokens which in turn are used to authenticate to XBOX Live.
-	// The minecraft/auth package provides an oauth2.TokenSource implementation (auth.tokenSource) to use
-	// device auth to login.
-	// If TokenSource is nil, the connection will not use authentication.
-	TokenSource oauth2.TokenSource
+	// MultiplayerToken is the end of the XBL token (without XBL3.0 x=)
+	// If MultiplayerToken is nil, the connection will not use authentication.
+	MultiplayerToken *string
+
+	// Skip ping means that gophertunnel will not ping the server to see if it is online
+	// This could cause longer wait times if the server is down
+	SkipPing bool
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
@@ -162,8 +163,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 	var chainData string
-	if d.TokenSource != nil {
-		chainData, err = authChain(ctx, d.TokenSource, key)
+	if d.MultiplayerToken != nil {
+		chainData, err = authChain(ctx, *d.MultiplayerToken, key)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -179,10 +180,15 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
 	}
 
-	var pong []byte
 	var netConn net.Conn
-	if pong, err = n.PingContext(ctx, address); err == nil {
-		netConn, err = n.DialContext(ctx, addressWithPongPort(pong, address))
+	if !d.SkipPing {
+		var pong []byte
+		pong, err = n.PingContext(ctx, address)
+		if err == nil {
+			netConn, err = n.DialContext(ctx, addressWithPongPort(pong, address))
+		} else {
+			netConn, err = n.DialContext(ctx, address)
+		}
 	} else {
 		netConn, err = n.DialContext(ctx, address)
 	}
@@ -204,7 +210,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
-	if d.TokenSource == nil {
+	if d.MultiplayerToken == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
@@ -331,19 +337,12 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
-func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
-	// Obtain the Live token, and using that the XSTS token.
-	liveToken, err := src.Token()
-	if err != nil {
-		return "", fmt.Errorf("request Live Connect token: %w", err)
-	}
-	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
-	if err != nil {
-		return "", fmt.Errorf("request XBOX Live token: %w", err)
-	}
+func authChain(ctx context.Context, token string, key *ecdsa.PrivateKey) (string, error) {
+	// Just forward token to object
+	xblToken := auth.NewXBLToken(token)
 
 	// Obtain the raw chain data using the
-	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
+	chain, err := auth.RequestMinecraftChain(ctx, xblToken, key)
 	if err != nil {
 		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
 	}
