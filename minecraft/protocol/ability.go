@@ -20,6 +20,7 @@ const (
 	AbilityWorldBuilder
 	AbilityNoClip
 	AbilityPrivilegedBuilder
+	AbilityVerticalFlySpeed
 	AbilityCount
 )
 
@@ -33,8 +34,9 @@ const (
 )
 
 const (
-	AbilityBaseFlySpeed  = 0.05
-	AbilityBaseWalkSpeed = 0.1
+	AbilityBaseFlySpeed         = 0.05
+	AbilityBaseWalkSpeed        = 0.1
+	AbilityBaseVerticalFlySpeed = 1.0
 )
 
 // AbilityData represents various data about the abilities of a player, such as ability layers or permissions.
@@ -70,10 +72,12 @@ type AbilityLayer struct {
 	// Values is a set of values that are associated with the enabled abilities, representing the values of the
 	// abilities.
 	Values uint32
-	// FlySpeed is the default fly speed of the layer.
+	// FlySpeed is the default horizontal fly speed of the layer.
 	FlySpeed float32
 	// WalkSpeed is the default walk speed of the layer.
 	WalkSpeed float32
+	// VerticalFlySpeed is the default vertical fly speed of the layer.
+	VerticalFlySpeed float32
 }
 
 // Marshal encodes/decodes an AbilityLayer.
@@ -83,4 +87,5 @@ func (x *AbilityLayer) Marshal(r IO) {
 	r.Uint32(&x.Values)
 	r.Float32(&x.FlySpeed)
 	r.Float32(&x.WalkSpeed)
+	r.Float32(&x.VerticalFlySpeed)
 }
