@@ -74,10 +74,10 @@ type AbilityLayer struct {
 	Values uint32
 	// FlySpeed is the default horizontal fly speed of the layer.
 	FlySpeed float32
-	// WalkSpeed is the default walk speed of the layer.
-	WalkSpeed float32
 	// VerticalFlySpeed is the default vertical fly speed of the layer.
 	VerticalFlySpeed float32
+	// WalkSpeed is the default walk speed of the layer.
+	WalkSpeed float32
 }
 
 // Marshal encodes/decodes an AbilityLayer.
@@ -86,6 +86,6 @@ func (x *AbilityLayer) Marshal(r IO) {
 	r.Uint32(&x.Abilities)
 	r.Uint32(&x.Values)
 	r.Float32(&x.FlySpeed)
-	r.Float32(&x.WalkSpeed)
 	r.Float32(&x.VerticalFlySpeed)
+	r.Float32(&x.WalkSpeed)
 }
