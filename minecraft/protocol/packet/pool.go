@@ -202,7 +202,7 @@ func init() {
 		IDCameraShake:                       func() Packet { return &CameraShake{} },
 		IDPlayerFog:                         func() Packet { return &PlayerFog{} },
 		IDCorrectPlayerMovePrediction:       func() Packet { return &CorrectPlayerMovePrediction{} },
-		IDItemComponent:                     func() Packet { return &ItemComponent{} },
+		IDItemRegistry:                      func() Packet { return &ItemRegistry{} },
 		IDFilterText:                        func() Packet { return &FilterText{} },
 		IDClientBoundDebugRenderer:          func() Packet { return &ClientBoundDebugRenderer{} },
 		IDSyncActorProperty:                 func() Packet { return &SyncActorProperty{} },
@@ -261,6 +261,8 @@ func init() {
 		IDMovementEffect:                 func() Packet { return &MovementEffect{} },
 		IDSetMovementAuthority:           func() Packet { return &SetMovementAuthority{} },
 		IDCameraAimAssistPresets:         func() Packet { return &CameraAimAssistPresets{} },
+		IDClientCameraAimAssist:          func() Packet { return &ClientCameraAimAssist{} },
+		IDClientMovementPredictionSync:   func() Packet { return &ClientMovementPredictionSync{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -348,6 +350,7 @@ func init() {
 		IDSetPlayerInventoryOptions:       func() Packet { return &SetPlayerInventoryOptions{} },
 		IDServerBoundLoadingScreen:        func() Packet { return &ServerBoundLoadingScreen{} },
 		IDServerBoundDiagnostics:          func() Packet { return &ServerBoundDiagnostics{} },
+		IDClientMovementPredictionSync:    func() Packet { return &ClientMovementPredictionSync{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

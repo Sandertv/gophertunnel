@@ -180,6 +180,10 @@ type CameraPreset struct {
 	// Radius is only used in a follow_orbit camera and controls how far away from the player the camera should
 	// be rendered.
 	Radius Optional[float32]
+	// MinYawLimit is the minimum yaw limit of the camera.
+	MinYawLimit Optional[float32]
+	// MaxYawLimit is the maximum yaw limit of the camera.
+	MaxYawLimit Optional[float32]
 	// AudioListener defines where the audio should be played from when using this preset. This is one of the
 	// constants above.
 	AudioListener Optional[byte]
@@ -210,6 +214,8 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Radius, r.Float32)
+	OptionalFunc(r, &x.MinYawLimit, r.Float32)
+	OptionalFunc(r, &x.MaxYawLimit, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
