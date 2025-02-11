@@ -52,8 +52,13 @@ func (data IdentityData) Validate() error {
 	if id, err := uuid.Parse(data.Identity); err != nil || id == uuid.Nil {
 		return fmt.Errorf("UUID must be parseable as a valid UUID, but got %v", data.Identity)
 	}
-	if len(data.DisplayName) == 0 || len(data.DisplayName) > 15 {
-		return fmt.Errorf("DisplayName must not be empty or longer than 15 characters, but got %v characters", len(data.DisplayName))
+	nameLimit := 15
+	if data.XUID == "" {
+		// Non-authenticated clients can have up to 16 characters in their name.
+		nameLimit = 16
+	}
+	if len(data.DisplayName) == 0 || len(data.DisplayName) > nameLimit {
+		return fmt.Errorf("DisplayName must not be empty or longer than %d characters, but got %v characters", nameLimit, len(data.DisplayName))
 	}
 	if data.DisplayName[0] == ' ' || data.DisplayName[len(data.DisplayName)-1] == ' ' {
 		return fmt.Errorf("DisplayName may not have a space as first/last character, but got %v", data.DisplayName)
