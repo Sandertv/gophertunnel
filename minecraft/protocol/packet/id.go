@@ -162,7 +162,7 @@ const (
 	IDCameraShake
 	IDPlayerFog
 	IDCorrectPlayerMovePrediction
-	IDItemComponent
+	IDItemRegistry
 	IDFilterText
 	IDClientBoundDebugRenderer
 	IDSyncActorProperty
@@ -221,4 +221,6 @@ const (
 	IDMovementEffect
 	IDSetMovementAuthority
 	IDCameraAimAssistPresets
+	IDClientCameraAimAssist
+	IDClientMovementPredictionSync
 )

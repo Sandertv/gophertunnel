@@ -28,6 +28,10 @@ type StructureBlockUpdate struct {
 	// StructureName is the name of the structure that was set in the structure block's UI. This is the name
 	// used to export the structure to a file.
 	StructureName string
+	// FilteredStructureName is a filtered version of StructureName with all the profanity removed. The client
+	// will use this over StructureName if this field is not empty and they have the "Filter Profanity"
+	// setting enabled.
+	FilteredStructureName string
 	// DataField is the name of a function to run, usually used during natural generation. A description can
 	// be found here: https://minecraft.wiki/w/Structure_Block#Data.
 	DataField string
@@ -62,6 +66,7 @@ func (*StructureBlockUpdate) ID() uint32 {
 func (pk *StructureBlockUpdate) Marshal(io protocol.IO) {
 	io.UBlockPos(&pk.Position)
 	io.String(&pk.StructureName)
+	io.String(&pk.FilteredStructureName)
 	io.String(&pk.DataField)
 	io.Bool(&pk.IncludePlayers)
 	io.Bool(&pk.ShowBoundingBox)

@@ -1,7 +1,11 @@
 package protocol
 
-import (
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
+import "github.com/sandertv/gophertunnel/minecraft/nbt"
+
+const (
+	ItemEntryVersionLegacy = iota
+	ItemEntryVersionDataDriven
+	ItemEntryVersionNone
 )
 
 // ItemInstance represents a unique instance of an item stack. These instances carry a specific network ID
@@ -55,6 +59,11 @@ type ItemEntry struct {
 	RuntimeID int16
 	// ComponentBased specifies if the item was created using components, meaning the item is a custom item.
 	ComponentBased bool
+	// Version is the version of the item entry which is used by the client to determine how to handle the
+	// item entry. It is one of the constants above.
+	Version int32
+	// Data is a map containing the components and properties of the item, if the item is component based.
+	Data map[string]any
 }
 
 // Marshal encodes/decodes an ItemEntry.
@@ -62,20 +71,7 @@ func (x *ItemEntry) Marshal(r IO) {
 	r.String(&x.Name)
 	r.Int16(&x.RuntimeID)
 	r.Bool(&x.ComponentBased)
-}
-
-// ItemComponentEntry is sent in the ItemComponent item table. It holds a name and all of the components and
-// properties associated to the item.
-type ItemComponentEntry struct {
-	// Name is the name of the item, which is a name like 'minecraft:stick'.
-	Name string
-	// Data is a map containing the components and properties of the item.
-	Data map[string]any
-}
-
-// Marshal encodes/decodes an ItemComponentEntry.
-func (x *ItemComponentEntry) Marshal(r IO) {
-	r.String(&x.Name)
+	r.Varint32(&x.Version)
 	r.NBT(&x.Data, nbt.NetworkLittleEndian)
 }
 
