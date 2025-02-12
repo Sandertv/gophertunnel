@@ -682,6 +682,8 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 		return conn.handleResourcePackStack(pk)
 	case *packet.StartGame:
 		return conn.handleStartGame(pk)
+	case *packet.ItemRegistry:
+		return conn.handleItemRegistry(pk)
 	case *packet.ChunkRadiusUpdated:
 		return conn.handleChunkRadiusUpdated(pk)
 	}
@@ -1021,7 +1023,6 @@ func (conn *Conn) startGame() {
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
 		Blocks:                       data.CustomBlocks,
-		Items:                        data.Items,
 		AchievementsDisabled:         true,
 		Generator:                    1,
 		EducationFeaturesEnabled:     true,
@@ -1043,6 +1044,7 @@ func (conn *Conn) startGame() {
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 	})
+	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
@@ -1225,7 +1227,6 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Time:                         pk.Time,
 		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
 		CustomBlocks:                 pk.Blocks,
-		Items:                        pk.Items,
 		PlayerMovementSettings:       pk.PlayerMovementSettings,
 		WorldGameMode:                pk.WorldGameMode,
 		Hardcore:                     pk.Hardcore,
@@ -1237,6 +1238,14 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		Experiments:                  pk.Experiments,
 		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
 	}
+	conn.expect(packet.IDItemRegistry)
+	return nil
+}
+
+// handleItemRegistry handles an incoming ItemRegistry packet. It contains the item definitions that the client
+// should use, including the shield ID which is necessary for reading and writing items in the future.
+func (conn *Conn) handleItemRegistry(pk *packet.ItemRegistry) error {
+	conn.gameData.Items = pk.Items
 	for _, item := range pk.Items {
 		if item.Name == "minecraft:shield" {
 			conn.shieldID.Store(int32(item.RuntimeID))

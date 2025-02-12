@@ -49,6 +49,10 @@ type BossEvent struct {
 	// a different title if the BossEntityUniqueID matches the client's entity
 	// unique ID.
 	BossBarTitle string
+	// FilteredBossBarTitle is a filtered version of BossBarTitle with all the
+	// profanity removed. The client will use this over BossBarTitle if this
+	// field is not empty and they have the "Filter Profanity" setting enabled.
+	FilteredBossBarTitle string
 	// HealthPercentage is the percentage of health that is shown in the boss
 	// bar (0.0-1.0). The HealthPercentage may be set to a specific value if the
 	// BossEntityUniqueID matches the client's entity unique ID.
@@ -78,6 +82,7 @@ func (pk *BossEvent) Marshal(io protocol.IO) {
 	switch pk.EventType {
 	case BossEventShow:
 		io.String(&pk.BossBarTitle)
+		io.String(&pk.FilteredBossBarTitle)
 		io.Float32(&pk.HealthPercentage)
 		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)
@@ -90,6 +95,7 @@ func (pk *BossEvent) Marshal(io protocol.IO) {
 		io.Float32(&pk.HealthPercentage)
 	case BossEventTitle:
 		io.String(&pk.BossBarTitle)
+		io.String(&pk.FilteredBossBarTitle)
 	case BossEventAppearanceProperties:
 		io.Uint16(&pk.ScreenDarkening)
 		io.Varuint32(&pk.Colour)

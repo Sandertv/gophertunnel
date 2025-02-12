@@ -45,6 +45,9 @@ type CommandBlockUpdate struct {
 	// Name is the name of the command block updated. If not empty, it will show this name hovering above the
 	// command block when hovering over the block with the cursor.
 	Name string
+	// FilteredName is a filtered version of Name with all the profanity removed. The client will use this
+	// over Name if this field is not empty and they have the "Filter Profanity" setting enabled.
+	FilteredName string
 	// ShouldTrackOutput specifies if the command block tracks output. If set to false, the output box won't
 	// be shown within the command block.
 	ShouldTrackOutput bool
@@ -74,6 +77,7 @@ func (pk *CommandBlockUpdate) Marshal(io protocol.IO) {
 	io.String(&pk.Command)
 	io.String(&pk.LastOutput)
 	io.String(&pk.Name)
+	io.String(&pk.FilteredName)
 	io.Bool(&pk.ShouldTrackOutput)
 	io.Int32(&pk.TickDelay)
 	io.Bool(&pk.ExecuteOnFirstTick)
