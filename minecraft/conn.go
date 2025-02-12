@@ -1057,6 +1057,7 @@ func (conn *Conn) startGame() {
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
 		Blocks:                       data.CustomBlocks,
+		Items:                        data.Items, // For clients below 1.21.60.
 		AchievementsDisabled:         true,
 		Generator:                    1,
 		EducationFeaturesEnabled:     true,

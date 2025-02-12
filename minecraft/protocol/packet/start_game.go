@@ -213,6 +213,11 @@ type StartGame struct {
 	EnchantmentSeed int32
 	// Blocks is a list of all custom blocks registered on the server.
 	Blocks []protocol.BlockEntry
+	// Items is a list of all items with their legacy IDs which are available in the game. Failing to send any
+	// of the items that are in the game will crash mobile clients.
+	// TODO: This is just here to easily support legacy versions.
+	// Since 1.21.60, the server sends the ItemRegistry packet instead.
+	Items []protocol.ItemEntry
 	// MultiPlayerCorrelationID is a unique ID specifying the multi-player session of the player. A random
 	// UUID should be filled out for this field.
 	MultiPlayerCorrelationID string
