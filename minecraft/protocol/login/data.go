@@ -36,7 +36,7 @@ type IdentityData struct {
 
 // checkOfflineUsername is used to check if a username is valid for normal Minecraft client,
 // it validates usernames only for unauthenticated clients.
-var checkOfflineUsername = regexp.MustCompile("[ \\p{L}]").MatchString
+var checkOfflineUsername = regexp.MustCompile(`[ \p{L}]`).MatchString
 
 // checkOnlineUsername is used to check if a username is valid according to the Microsoft specification: "You can
 // use up to 15 characters: Aa-Zz, 0-9, and single spaces. It cannot start with a number and cannot start or
