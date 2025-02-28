@@ -16,6 +16,8 @@ const (
 	HudElementHunger
 	HudElementAirBubbles
 	HudElementHorseHealth
+	HudElementStatusEffects
+	HudElementItemText
 )
 
 const (
@@ -30,10 +32,10 @@ const (
 type SetHud struct {
 	// Elements is a list of HUD elements that are being modified. The values can be any of the HudElement
 	// constants above.
-	Elements []byte
+	Elements []uint32
 	// Visibility represents the new visibility of the specified Elements. It can be any of the HudVisibility
 	// constants above.
-	Visibility byte
+	Visibility uint32
 }
 
 // ID ...
@@ -42,6 +44,6 @@ func (*SetHud) ID() uint32 {
 }
 
 func (pk *SetHud) Marshal(io protocol.IO) {
-	protocol.FuncSlice(io, &pk.Elements, io.Uint8)
-	io.Uint8(&pk.Visibility)
+	protocol.FuncSlice(io, &pk.Elements, io.Varuint32)
+	io.Varuint32(&pk.Visibility)
 }

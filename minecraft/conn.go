@@ -591,6 +591,9 @@ func (conn *Conn) receive(data []byte) error {
 		_ = conn.Close()
 		return nil
 	}
+	if pkData.h.PacketID == packet.IDPlayerVideoCapture {
+		fmt.Println(data)
+	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
 		select {
 		case <-conn.close:
