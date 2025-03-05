@@ -138,8 +138,6 @@ type Conn struct {
 	// to this connection will call this function.
 	packetFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	disconnectMessage atomic.Pointer[string]
-
 	shieldID atomic.Int32
 
 	additional chan packet.Packet
