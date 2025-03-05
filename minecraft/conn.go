@@ -50,8 +50,9 @@ var exemptedPacks = []exemptedResourcePack{
 type Conn struct {
 	// once is used to ensure the Conn is closed only a single time. It protects the channel below from being
 	// closed multiple times.
-	once  sync.Once
-	close chan struct{}
+	once       sync.Once
+	ctx        context.Context
+	cancelFunc context.CancelCauseFunc
 
 	conn        net.Conn
 	log         *slog.Logger
@@ -155,7 +156,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		salt:         make([]byte, 16),
 		packets:      make(chan *packetData, 8),
 		additional:   make(chan packet.Packet, 16),
-		close:        make(chan struct{}),
 		spawn:        make(chan struct{}),
 		conn:         netConn,
 		privateKey:   key,
@@ -164,8 +164,12 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		proto:        proto,
 		readerLimits: limits,
 	}
-	var s string
-	conn.disconnectMessage.Store(&s)
+
+	if c, ok := netConn.(interface{ Context() context.Context }); ok {
+		conn.ctx, conn.cancelFunc = context.WithCancelCause(c.Context())
+	} else {
+		conn.ctx, conn.cancelFunc = context.WithCancelCause(context.Background())
+	}
 
 	if !limits {
 		// Disable the batch packet limit so that the server can send packets as often as it wants to.
@@ -183,7 +187,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {
-				_ = conn.Close()
+				_ = conn.close(err)
 				return
 			}
 		}
@@ -264,7 +268,7 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 	conn.startGame()
 
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return conn.closeErr("start game")
 	case <-ctx.Done():
 		return conn.wrap(ctx.Err(), "start game")
@@ -304,7 +308,7 @@ func (conn *Conn) DoSpawnTimeout(timeout time.Duration) error {
 // sent earlier by the server.
 func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return conn.closeErr("do spawn")
 	case <-ctx.Done():
 		return conn.wrap(ctx.Err(), "do spawn")
@@ -318,7 +322,7 @@ func (conn *Conn) DoSpawnContext(ctx context.Context) error {
 // next 20th of a second, after which the data is flushed and sent over the connection.
 func (conn *Conn) WritePacket(pk packet.Packet) error {
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return conn.closeErr("write packet")
 	default:
 	}
@@ -373,7 +377,7 @@ func (conn *Conn) ReadPacket() (pk packet.Packet, err error) {
 	}
 
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return nil, conn.closeErr("read packet")
 	case <-conn.readDeadline:
 		return nil, conn.wrap(context.DeadlineExceeded, "read packet")
@@ -417,7 +421,7 @@ func (conn *Conn) ReadBytes() ([]byte, error) {
 		return data.full, nil
 	}
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return nil, conn.closeErr("read")
 	case <-conn.readDeadline:
 		return nil, conn.wrap(context.DeadlineExceeded, "read")
@@ -437,7 +441,7 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 		return copy(b, data.full), nil
 	}
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return 0, conn.closeErr("read")
 	case <-conn.readDeadline:
 		return 0, conn.wrap(context.DeadlineExceeded, "read")
@@ -453,7 +457,7 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // are directly sent.
 func (conn *Conn) Flush() error {
 	select {
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return conn.closeErr("flush")
 	default:
 	}
@@ -480,13 +484,7 @@ func (conn *Conn) Flush() error {
 // Close closes the Conn and its underlying connection. Before closing, it also calls Flush() so that any
 // packets currently pending are sent out.
 func (conn *Conn) Close() error {
-	var err error
-	conn.once.Do(func() {
-		err = conn.Flush()
-		close(conn.close)
-		_ = conn.conn.Close()
-	})
-	return err
+	return conn.close(net.ErrClosed)
 }
 
 // LocalAddr returns the local address of the underlying connection.
@@ -549,6 +547,12 @@ func (conn *Conn) ChunkRadius() int {
 	return int(conn.gameData.ChunkRadius)
 }
 
+// Context returns the connection's context. The context is canceled when the connection is closed,
+// allowing for cancellation of operations that are tied to the lifecycle of the connection.
+func (conn *Conn) Context() context.Context {
+	return conn.ctx
+}
+
 // takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
 // packets. If none was found, it returns false, and if one was found, the data and true is returned.
 func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
@@ -587,13 +591,12 @@ func (conn *Conn) receive(data []byte) error {
 		if err != nil {
 			return err
 		}
-		conn.disconnectMessage.Store(&pks[0].(*packet.Disconnect).Message)
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr(pks[0].(*packet.Disconnect).Message))
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
 		select {
-		case <-conn.close:
+		case <-conn.ctx.Done():
 		case previous := <-conn.packets:
 			// There was already a packet in this channel, so take it out and defer it so that it is read
 			// next.
@@ -601,7 +604,7 @@ func (conn *Conn) receive(data []byte) error {
 		default:
 		}
 		select {
-		case <-conn.close:
+		case <-conn.ctx.Done():
 		case conn.packets <- pkData:
 		}
 		return nil
@@ -959,7 +962,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 	case packet.PackResponseRefused:
 		// Even though this response is never sent, we handle it appropriately in case it is changed to work
 		// correctly again.
-		return conn.Close()
+		return conn.close(conn.closeErr("resource pack refused"))
 	case packet.PackResponseSendPacks:
 		packs := pk.PacksToDownload
 		conn.packQueue = &resourcePackQueue{packs: conn.resourcePacks}
@@ -1102,7 +1105,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 				ChunkIndex: i,
 			})
 			select {
-			case <-conn.close:
+			case <-conn.ctx.Done():
 				return
 			case frag := <-pack.newFrag:
 				// Write the fragment to the full buffer of the downloading resource pack.
@@ -1325,10 +1328,10 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.expect(packet.IDResourcePacksInfo)
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("client outdated"))
 		return fmt.Errorf("client outdated")
 	case packet.PlayStatusLoginFailedServer:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("server outdated"))
 		return fmt.Errorf("server outdated")
 	case packet.PlayStatusPlayerSpawn:
 		// We've spawned and can send the last packet in the spawn sequence.
@@ -1336,22 +1339,22 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		conn.tryFinaliseClientConn()
 		return nil
 	case packet.PlayStatusLoginFailedInvalidTenant:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("invalid edu edition game owner"))
 		return fmt.Errorf("invalid edu edition game owner")
 	case packet.PlayStatusLoginFailedVanillaEdu:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("cannot join an edu edition game on vanilla"))
 		return fmt.Errorf("cannot join an edu edition game on vanilla")
 	case packet.PlayStatusLoginFailedEduVanilla:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("cannot join a vanilla game on edu edition"))
 		return fmt.Errorf("cannot join a vanilla game on edu edition")
 	case packet.PlayStatusLoginFailedServerFull:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("server full"))
 		return fmt.Errorf("server full")
 	case packet.PlayStatusLoginFailedEditorVanilla:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("cannot join a vanilla game on editor"))
 		return fmt.Errorf("cannot join a vanilla game on editor")
 	case packet.PlayStatusLoginFailedVanillaEditor:
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("cannot join an editor game on vanilla"))
 		return fmt.Errorf("cannot join an editor game on vanilla")
 	default:
 		return fmt.Errorf("unknown play status %v", pk.Status)
@@ -1409,11 +1412,23 @@ func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
 }
 
+func (conn *Conn) close(cause error) error {
+	var err error
+	conn.once.Do(func() {
+		err = conn.Flush()
+		conn.cancelFunc(cause)
+		_ = conn.conn.Close()
+	})
+	return err
+}
+
 // closeErr returns an adequate connection closed error for the op passed. If the connection was closed
 // through a Disconnect packet, the message is contained.
 func (conn *Conn) closeErr(op string) error {
-	if msg := *conn.disconnectMessage.Load(); msg != "" {
-		return conn.wrap(DisconnectError(msg), op)
+	select {
+	case <-conn.ctx.Done():
+		return conn.wrap(context.Cause(conn.ctx), op)
+	default:
+		return conn.wrap(net.ErrClosed, op)
 	}
-	return conn.wrap(net.ErrClosed, op)
 }
