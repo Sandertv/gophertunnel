@@ -28,6 +28,9 @@ type ClientMovementPredictionSync struct {
 	Health float32
 	// Hunger is the hunger attribute or 0 if not set.
 	Hunger float32
+	// EntityUniqueID is the unique ID of the entity. The unique ID is a value that remains consistent across
+	// different sessions of the same world.
+	EntityUniqueID int64
 }
 
 // ID ...
@@ -46,4 +49,5 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.JumpStrength)
 	io.Float32(&pk.Health)
 	io.Float32(&pk.Hunger)
+	io.Varint64(&pk.EntityUniqueID)
 }
