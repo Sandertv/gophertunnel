@@ -19,6 +19,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -150,10 +151,24 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 	return d.DialContext(ctx, network, address)
 }
 
+type DialOption func(*dialOptions)
+
+type dialOptions struct {
+	chainData string
+	key       *ecdsa.PrivateKey
+}
+
+func WithChainData(chainData string, key *ecdsa.PrivateKey) DialOption {
+	return func(opts *dialOptions) {
+		opts.chainData = chainData
+		opts.key = key
+	}
+}
+
 // DialContext dials a Minecraft connection to the address passed over the network passed. The network is
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
-func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+func (d Dialer) DialContext(ctx context.Context, network, address string, opts ...DialOption) (conn *Conn, err error) {
 	if d.ErrorLog == nil {
 		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -168,10 +183,27 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.FlushRate = time.Second / 20
 	}
 
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	options := &dialOptions{}
+	for _, opt := range opts {
+		opt(options)
+	}
+
+	var key *ecdsa.PrivateKey
+	if options.key != nil {
+		key = options.key
+	} else {
+		key, _ = ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	}
+
 	var chainData string
-	if d.TokenSource != nil {
-		chainData, err = authChain(ctx, d.TokenSource, key, d.RequestClient)
+	if options.chainData != "" {
+		identityData, err := readChainIdentityData([]byte(options.chainData))
+		if err != nil {
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+		}
+		d.IdentityData = identityData
+	} else if d.TokenSource != nil {
+		chainData, err = AuthChain(ctx, d.TokenSource, key, d.RequestClient)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -337,9 +369,9 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
-// authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
+// AuthChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
-func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey, c *http.Client) (string, error) {
+func AuthChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey, c *http.Client) (string, error) {
 	if c.Transport == nil {
 		c.Transport = &http.Transport{}
 	}
