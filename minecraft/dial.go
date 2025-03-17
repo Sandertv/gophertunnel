@@ -408,6 +408,12 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
 	}
+	if d.DefaultInputMode == 0 {
+		d.DefaultInputMode = packet.InputModeTouch
+	}
+	if d.CurrentInputMode == 0 {
+		d.CurrentInputMode = packet.InputModeTouch
+	}
 	if d.GameVersion == "" {
 		d.GameVersion = protocol.CurrentVersion
 	}
