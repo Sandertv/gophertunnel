@@ -12,6 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"math/rand"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -21,12 +28,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
-	"log/slog"
-	"math/rand"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // Dialer allows specifying specific settings for connection to a Minecraft server.
@@ -362,6 +363,12 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
+	}
+	if d.DefaultInputMode == 0 {
+		d.DefaultInputMode = packet.InputModeTouch
+	}
+	if d.CurrentInputMode == 0 {
+		d.CurrentInputMode = packet.InputModeTouch
 	}
 	if d.GameVersion == "" {
 		d.GameVersion = protocol.CurrentVersion
