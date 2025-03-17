@@ -177,7 +177,7 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 		HideDisconnectionScreen: message == "",
 		Message:                 message,
 	})
-	return conn.Close()
+	return conn.close(conn.closeErr(message))
 }
 
 // AddResourcePack adds a new resource pack to the listener's resource packs.
@@ -275,7 +275,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
-		_ = conn.Close()
+		_ = conn.close(conn.closeErr("server full"))
 		return
 	}
 	listener.playerCount.Add(1)
