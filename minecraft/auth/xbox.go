@@ -105,9 +105,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		// Xbox Live returns a custom error code in the x-err header.
 		if errorCode := resp.Header.Get("x-err"); errorCode != "" {
@@ -162,9 +160,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST %v: %v", "https://device.auth.xboxlive.com/device/authenticate", resp.Status)
 	}

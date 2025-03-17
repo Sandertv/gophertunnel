@@ -170,9 +170,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 
 	body, err = io.ReadAll(resp.Body)
 	if err != nil {

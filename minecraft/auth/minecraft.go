@@ -45,9 +45,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 	if err != nil {
 		return "", fmt.Errorf("POST %v: %w", minecraftAuthURL, err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return "", fmt.Errorf("POST %v: %v", minecraftAuthURL, resp.Status)
 	}

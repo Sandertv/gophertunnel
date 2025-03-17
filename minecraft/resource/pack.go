@@ -5,15 +5,14 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"github.com/google/uuid"
+	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
-
-	"github.com/google/uuid"
-	"github.com/muhammadmuzzammil1998/jsonc"
 )
 
 // Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds
@@ -55,9 +54,7 @@ func ReadURL(url string) (*Pack, error) {
 	if err != nil {
 		return nil, fmt.Errorf("download resource pack: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("download resource pack: %v (%d)", resp.Status, resp.StatusCode)
 	}

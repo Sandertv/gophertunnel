@@ -111,9 +111,7 @@ func StartDeviceAuth() (*deviceAuthConnect, error) {
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_connect.srf: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_connect.srf: %v", resp.Status)
 	}
@@ -132,9 +130,7 @@ func PollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	poll := new(deviceAuthPoll)
 	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
@@ -166,9 +162,7 @@ func refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	poll := new(deviceAuthPoll)
 	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
