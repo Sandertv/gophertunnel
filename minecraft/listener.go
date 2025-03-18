@@ -131,7 +131,10 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	if err != nil {
 		return nil, err
 	}
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generating ECDSA key: %w", err)
+	}
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,

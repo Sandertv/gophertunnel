@@ -192,7 +192,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string, opts .
 	if options.key != nil {
 		key = options.key
 	} else {
-		key, _ = ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+		key, err = ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+		if err != nil {
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+		}
 	}
 
 	var chainData string
