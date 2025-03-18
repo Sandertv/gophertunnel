@@ -12,6 +12,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
+	"math/rand"
+	"net"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -21,12 +28,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"golang.org/x/oauth2"
-	"log/slog"
-	"math/rand"
-	"net"
-	"strconv"
-	"strings"
-	"time"
 )
 
 // Dialer allows specifying specific settings for connection to a Minecraft server.
@@ -160,7 +161,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.FlushRate = time.Second / 20
 	}
 
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	if err != nil {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+	}
 	var chainData string
 	if d.TokenSource != nil {
 		chainData, err = authChain(ctx, d.TokenSource, key)
