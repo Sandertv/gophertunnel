@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -68,8 +69,10 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 	if err != nil {
 		return nil, fmt.Errorf("generating ECDSA key: %w", err)
 	}
+	start := time.Now()
 	deviceToken, err := obtainDeviceToken(ctx, c, key)
 	if err != nil {
+		slog.ErrorContext(ctx, "device token request failed", "time", time.Since(start).String(), "error", err)
 		return nil, err
 	}
 	return obtainXBLToken(ctx, c, key, liveToken, deviceToken, relyingParty)
