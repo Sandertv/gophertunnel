@@ -57,7 +57,6 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 	if t, ok := transport.(*http.Transport); ok {
 		t.TLSClientConfig = &tls.Config{
 			Renegotiation:      tls.RenegotiateOnceAsClient,
-			InsecureSkipVerify: true,
 		}
 	}
 
