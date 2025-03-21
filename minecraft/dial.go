@@ -243,7 +243,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	select {
 	case <-ctx.Done():
 		return nil, conn.wrap(context.Cause(ctx), "dial")
-	case <-conn.close:
+	case <-conn.ctx.Done():
 		return nil, conn.closeErr("dial")
 	case <-readyForLogin:
 		// We've received our network settings, so we can now send our login request.
@@ -256,7 +256,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		select {
 		case <-ctx.Done():
 			return nil, conn.wrap(context.Cause(ctx), "dial")
-		case <-conn.close:
+		case <-conn.ctx.Done():
 			return nil, conn.closeErr("dial")
 		case <-connected:
 			// We've connected successfully. We return the connection and no error.
