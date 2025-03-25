@@ -31,6 +31,8 @@ type ClientMovementPredictionSync struct {
 	// EntityUniqueID is the unique ID of the entity. The unique ID is a value that remains consistent across
 	// different sessions of the same world.
 	EntityUniqueID int64
+	// Flying specifies if the client is currently flying.
+	Flying bool
 }
 
 // ID ...
@@ -50,4 +52,5 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.Health)
 	io.Float32(&pk.Hunger)
 	io.Varint64(&pk.EntityUniqueID)
+	io.Bool(&pk.Flying)
 }
