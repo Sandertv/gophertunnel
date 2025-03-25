@@ -19,8 +19,6 @@ type PlayerVideoCapture struct {
 	// PlayerVideoCaptureActionStart. A higher frame rate will cause more frames to be recorded, but also
 	// a noticeable increase in lag.
 	FrameRate int32
-	// Unknown1, Unknown2, Unknown3 ... always 0?
-	Unknown1, Unknown2, Unknown3 byte
 	// FilePrefix is the prefix of the file name that will be used to save the frames. The frames will be saved
 	// in the format 'FilePrefix%d.png' where %d is the frame index.
 	FilePrefix string
