@@ -18,7 +18,7 @@ type PlayerVideoCapture struct {
 	// FrameRate is the frame rate at which the video should be recorded. It is only used when Action is
 	// PlayerVideoCaptureActionStart. A higher frame rate will cause more frames to be recorded, but also
 	// a noticeable increase in lag.
-	FrameRate uint32
+	FrameRate int32
 	// Unknown1, Unknown2, Unknown3 ... always 0?
 	Unknown1, Unknown2, Unknown3 byte
 	// FilePrefix is the prefix of the file name that will be used to save the frames. The frames will be saved
@@ -34,10 +34,7 @@ func (*PlayerVideoCapture) ID() uint32 {
 func (pk *PlayerVideoCapture) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Action)
 	if pk.Action == PlayerVideoCaptureActionStart {
-		io.Varuint32(&pk.FrameRate)
-		io.Uint8(&pk.Unknown1)
-		io.Uint8(&pk.Unknown2)
-		io.Uint8(&pk.Unknown3)
+		io.Int32(&pk.FrameRate)
 		io.String(&pk.FilePrefix)
 	}
 }
