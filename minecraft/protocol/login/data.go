@@ -223,6 +223,8 @@ type ClientData struct {
 	MemoryTier int
 	// PlatformType is the type of platform the client is running.
 	PlatformType int
+	// GraphicsMode is the graphics mode the client is running.
+	GraphicsMode int
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
