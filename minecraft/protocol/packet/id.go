@@ -223,4 +223,7 @@ const (
 	IDCameraAimAssistPresets
 	IDClientCameraAimAssist
 	IDClientMovementPredictionSync
+	IDUpdateClientOptions
+	IDPlayerVideoCapture
+	IDPlayerUpdateEntityOverrides
 )

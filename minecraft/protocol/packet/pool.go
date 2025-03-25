@@ -263,6 +263,9 @@ func init() {
 		IDCameraAimAssistPresets:         func() Packet { return &CameraAimAssistPresets{} },
 		IDClientCameraAimAssist:          func() Packet { return &ClientCameraAimAssist{} },
 		IDClientMovementPredictionSync:   func() Packet { return &ClientMovementPredictionSync{} },
+		IDUpdateClientOptions:            func() Packet { return &UpdateClientOptions{} },
+		IDPlayerVideoCapture:             func() Packet { return &PlayerVideoCapture{} },
+		IDPlayerUpdateEntityOverrides:    func() Packet { return &PlayerUpdateEntityOverrides{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -351,6 +354,7 @@ func init() {
 		IDServerBoundLoadingScreen:        func() Packet { return &ServerBoundLoadingScreen{} },
 		IDServerBoundDiagnostics:          func() Packet { return &ServerBoundDiagnostics{} },
 		IDClientMovementPredictionSync:    func() Packet { return &ClientMovementPredictionSync{} },
+		IDUpdateClientOptions:             func() Packet { return &UpdateClientOptions{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

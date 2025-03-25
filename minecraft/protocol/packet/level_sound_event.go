@@ -566,6 +566,10 @@ type LevelSoundEvent struct {
 	// sound will have full volume, regardless of where the Position is, whereas if set to false, the sound's
 	// volume will be based on the distance to Position.
 	DisableRelativeVolume bool
+	// EntityUniqueID is the unique ID of a source entity. The unique ID is a value that remains consistent across
+	// different sessions of the same world, but most servers simply fill the runtime ID of the entity out for
+	// this field.
+	EntityUniqueID int64
 }
 
 // ID ...
@@ -580,4 +584,5 @@ func (pk *LevelSoundEvent) Marshal(io protocol.IO) {
 	io.String(&pk.EntityType)
 	io.Bool(&pk.BabyMob)
 	io.Bool(&pk.DisableRelativeVolume)
+	io.Int64(&pk.EntityUniqueID)
 }
