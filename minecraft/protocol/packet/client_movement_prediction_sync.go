@@ -4,6 +4,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const ClientMovementPredictionSyncBitsetSize = 123
+
 // ClientMovementPredictionSync is sent by the client to the server periodically if the client has received
 // movement corrections from the server, containing information about client-predictions that are relevant
 // to movement.
@@ -41,7 +43,7 @@ func (*ClientMovementPredictionSync) ID() uint32 {
 }
 
 func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
-	io.Bitset(&pk.ActorFlags, 120)
+	io.Bitset(&pk.ActorFlags, ClientMovementPredictionSyncBitsetSize)
 	io.Float32(&pk.BoundingBoxScale)
 	io.Float32(&pk.BoundingBoxWidth)
 	io.Float32(&pk.BoundingBoxHeight)
