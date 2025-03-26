@@ -245,20 +245,6 @@ func (x *CameraPresetAimAssist) Marshal(r IO) {
 	OptionalFunc(r, &x.Distance, r.Float32)
 }
 
-// CameraAimAssistCategoryGroup is a group of categories which can be used by a CameraAimAssistPreset.
-type CameraAimAssistCategoryGroup struct {
-	// Identifier is the unique identifier of the group.
-	Identifier string
-	// Categories is a list of categories within this group.
-	Categories []CameraAimAssistCategory
-}
-
-// Marshal encodes/decodes a CameraAimAssistCategoryGroup.
-func (x *CameraAimAssistCategoryGroup) Marshal(r IO) {
-	r.String(&x.Identifier)
-	Slice(r, &x.Categories)
-}
-
 // CameraAimAssistCategory is an aim assist category that defines priorities for specific blocks and entities.
 type CameraAimAssistCategory struct {
 	// Name is the name of the category which can be used by a CameraAimAssistPreset.
@@ -313,8 +299,6 @@ func (x *CameraAimAssistPriority) Marshal(r IO) {
 type CameraAimAssistPreset struct {
 	// Identifier represents the identifier of this preset.
 	Identifier string
-	// CategoryGroup is the name of a CameraAimAssistCategoryGroup to use for the preset.
-	CategoryGroup string
 	// BlockExclusions is a list of block identifiers that should be ignored by the aim assist.
 	BlockExclusions []string
 	// LiquidTargets is a list of entity identifiers that should be targetted when inside of a liquid.
@@ -323,18 +307,16 @@ type CameraAimAssistPreset struct {
 	// will fallback to DefaultItemSettings or HandSettings if no item is held.
 	ItemSettings []CameraAimAssistItemSettings
 	// DefaultItemSettings is the identifier of a category to use when the player is not holding an item
-	// listed in ItemSettings. This must be the identifier of a category within the
-	// CameraAimAssistCategoryGroup references by CategoryGroup.
+	// listed in ItemSettings. This must be the identifier of a category within the Categories slice.
 	DefaultItemSettings Optional[string]
 	// HandSettings is the identifier of a category to use when the player is not holding an item. This must
-	// be the identifier of a category within the CameraAimAssistCategoryGroup references by CategoryGroup.
+	// be the identifier of a category within Categories slice.
 	HandSettings Optional[string]
 }
 
 // Marshal encodes/decodes a CameraAimAssistPreset.
 func (x *CameraAimAssistPreset) Marshal(r IO) {
 	r.String(&x.Identifier)
-	r.String(&x.CategoryGroup)
 	FuncSlice(r, &x.BlockExclusions, r.String)
 	FuncSlice(r, &x.LiquidTargets, r.String)
 	Slice(r, &x.ItemSettings)
@@ -347,7 +329,7 @@ type CameraAimAssistItemSettings struct {
 	// Item is the identifier of the item to apply the settings to.
 	Item string
 	// Category is the identifier of a category to use which has been defined by a CameraAimAssistCategory.
-	// Only categories defined in the CameraAimAssistCategoryGroup used by the CameraAimAssistPreset can be
+	// Only categories defined in the Categories slice used by the CameraAimAssistPreset can be
 	// used here.
 	Category string
 }
