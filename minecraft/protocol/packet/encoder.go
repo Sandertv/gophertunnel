@@ -14,6 +14,9 @@ import (
 type Encoder struct {
 	w io.Writer
 
+	header      byte
+	writeHeader bool
+
 	compression Compression
 	encrypt     *encrypt
 }
@@ -21,7 +24,17 @@ type Encoder struct {
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
+	var header byte
+	var writeHeader bool
+	if ph, ok := w.(packetHeader); ok {
+		header, writeHeader = ph.PacketHeader()
+	}
+	return &Encoder{
+		w: w,
+
+		header:      header,
+		writeHeader: writeHeader,
+	}
 }
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
@@ -60,7 +73,10 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
-	prepend := []byte{header}
+	var prepend []byte
+	if encoder.writeHeader {
+		prepend = append(prepend, encoder.header)
+	}
 	if encoder.compression != nil {
 		prepend = append(prepend, byte(encoder.compression.EncodeCompression()))
 		var err error

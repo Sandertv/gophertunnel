@@ -741,7 +741,7 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
 	// The next expected packet is a response from the client to the handshake.
-	conn.expect(packet.IDClientToServerHandshake)
+	//conn.expect(packet.IDClientToServerHandshake)
 	var (
 		err        error
 		authResult login.AuthResult
@@ -756,10 +756,10 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("client was not authenticated to XBOX Live")
 	}
-	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
-		return fmt.Errorf("enable encryption: %w", err)
-	}
-	return nil
+	//if err := conn.enableEncryption(authResult.PublicKey); err != nil {
+	//	return fmt.Errorf("enable encryption: %w", err)
+	//}
+	return conn.handleClientToServerHandshake()
 }
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.

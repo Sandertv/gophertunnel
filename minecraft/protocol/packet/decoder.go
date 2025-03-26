@@ -21,6 +21,9 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
+	header       byte
+	expectHeader bool
+
 	decompress bool
 	encrypt    *encrypt
 
@@ -33,16 +36,36 @@ type packetReader interface {
 	ReadPacket() ([]byte, error)
 }
 
+// packetHeader is used to determine if the first byte of the packet should be read and checked for a specific
+// value. I.e. RakNet packets are always prefixed with 0xfe.
+type packetHeader interface {
+	PacketHeader() (byte, bool)
+}
+
 // NewDecoder returns a new decoder decoding data from the io.Reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
+	var header byte
+	var expectHeader bool
+	if ph, ok := reader.(packetHeader); ok {
+		header, expectHeader = ph.PacketHeader()
+	}
 	if pr, ok := reader.(packetReader); ok {
-		return &Decoder{checkPacketLimit: true, pr: pr}
+		return &Decoder{
+			checkPacketLimit: true,
+			pr:               pr,
+
+			header:       header,
+			expectHeader: expectHeader,
+		}
 	}
 	return &Decoder{
 		r:                reader,
 		buf:              make([]byte, 1024*1024*3),
 		checkPacketLimit: true,
+
+		header:       header,
+		expectHeader: expectHeader,
 	}
 }
 
@@ -67,8 +90,6 @@ func (decoder *Decoder) DisableBatchPacketLimit() {
 }
 
 const (
-	// header is the header of compressed 'batches' from Minecraft.
-	header = 0xfe
 	// maximumInBatch is the maximum amount of packets that may be found in a batch. If a compressed batch has
 	// more than this amount, decoding will fail.
 	maximumInBatch = 812
@@ -91,10 +112,12 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	if len(data) == 0 {
 		return nil, nil
 	}
-	if data[0] != header {
-		return nil, fmt.Errorf("decode batch: invalid header %x, expected %x", data[0], header)
+	if decoder.expectHeader {
+		if data[0] != decoder.header {
+			return nil, fmt.Errorf("decode batch: invalid header %x, expected %x", data[0], decoder.header)
+		}
+		data = data[1:]
 	}
-	data = data[1:]
 	if decoder.encrypt != nil {
 		decoder.encrypt.decrypt(data)
 		if err := decoder.encrypt.verify(data); err != nil {
