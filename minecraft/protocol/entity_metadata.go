@@ -254,6 +254,11 @@ const (
 	EntityDataFlagTimerFlag1
 	EntityDataFlagTimerFlag2
 	EntityDataFlagTimerFlag3
+	EntityDataFlagBodyRotationBlocked
+	EntityDataFlagRenderWhenInvisible
+	EntityDataFlagBodyRotationAxisAligned
+	EntityDataFlagCollidable
+	EntityDataFlagWASDAirControlled
 )
 
 const (
