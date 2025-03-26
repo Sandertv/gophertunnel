@@ -154,7 +154,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	if string(path[0]) != "/" {
 		path = "/" + path
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf("https://pocket.realms.minecraft.net%s", path), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://pocket.realms.minecraft.net%s", path), nil)
 	if err != nil {
 		return nil, 0, err
 	}
