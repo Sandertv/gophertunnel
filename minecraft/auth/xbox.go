@@ -56,7 +56,10 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
-	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generating ECDSA key: %w", err)
+	}
 	deviceToken, err := obtainDeviceToken(ctx, c, key)
 	if err != nil {
 		return nil, err
