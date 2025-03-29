@@ -354,6 +354,7 @@ func init() {
 		IDServerBoundLoadingScreen:        func() Packet { return &ServerBoundLoadingScreen{} },
 		IDServerBoundDiagnostics:          func() Packet { return &ServerBoundDiagnostics{} },
 		IDClientMovementPredictionSync:    func() Packet { return &ClientMovementPredictionSync{} },
+		IDClientCameraAimAssist:           func() Packet { return &ClientCameraAimAssist{} },
 		IDUpdateClientOptions:             func() Packet { return &UpdateClientOptions{} },
 	}
 	for id, pk := range clientOriginating {

@@ -56,7 +56,10 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
-	key, _ := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generating ECDSA key: %w", err)
+	}
 	deviceToken, err := obtainDeviceToken(ctx, c, key)
 	if err != nil {
 		return nil, err
@@ -65,7 +68,7 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 }
 
 func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
-	data, _ := json.Marshal(map[string]any{
+	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             "0000000048183522",
 		"deviceToken":       device.Token,
@@ -82,7 +85,14 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 			"y":   base64.RawURLEncoding.EncodeToString(key.PublicKey.Y.Bytes()),
 		},
 	})
-	req, _ := http.NewRequestWithContext(ctx, "POST", "https://sisu.xboxlive.com/authorize", bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("marshaling XBL auth request: %w", err)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, "POST", "https://sisu.xboxlive.com/authorize", bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
+	}
 	req.Header.Set("x-xbl-contract-version", "1")
 	sign(req, data, key)
 
@@ -90,9 +100,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		// Xbox Live returns a custom error code in the x-err header.
 		if errorCode := resp.Header.Get("x-err"); errorCode != "" {
@@ -113,7 +121,7 @@ type deviceToken struct {
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
 func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
-	data, _ := json.Marshal(map[string]any{
+	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
 		"Properties": map[string]any{
@@ -131,7 +139,14 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 			},
 		},
 	})
-	request, _ := http.NewRequestWithContext(ctx, "POST", "https://device.auth.xboxlive.com/device/authenticate", bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("marshaling device auth request: %w", err)
+	}
+
+	request, err := http.NewRequestWithContext(ctx, "POST", "https://device.auth.xboxlive.com/device/authenticate", bytes.NewReader(data))
+	if err != nil {
+		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
+	}
 	request.Header.Set("x-xbl-contract-version", "1")
 	sign(request, data, key)
 
@@ -139,9 +154,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
-	defer func() {
-		_ = resp.Body.Close()
-	}()
+	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST %v: %v", "https://device.auth.xboxlive.com/device/authenticate", resp.Status)
 	}

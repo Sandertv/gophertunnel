@@ -161,7 +161,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.FlushRate = time.Second / 20
 	}
 
-	key, _ := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
+	if err != nil {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+	}
 	var chainData string
 	if d.TokenSource != nil {
 		chainData, err = authChain(ctx, d.TokenSource, key)
@@ -363,6 +366,12 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
+	}
+	if d.DefaultInputMode == 0 {
+		d.DefaultInputMode = packet.InputModeTouch
+	}
+	if d.CurrentInputMode == 0 {
+		d.CurrentInputMode = packet.InputModeTouch
 	}
 	if d.GameVersion == "" {
 		d.GameVersion = protocol.CurrentVersion
