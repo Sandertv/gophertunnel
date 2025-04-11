@@ -1217,7 +1217,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.receivedPackets.Store("gotStartGame", true)
 
 	if matched, _ := regexp.MatchString(`.*\.hivebedrock\.network.*`, conn.clientData.ServerAddress); matched {
-		pk.GameVersion = "1.17.0" //temporary fix for hivebedrock.network
+		pk.BaseGameVersion = "1.17.0" //temporary fix for hivebedrock.network
 	}
 
 	conn.gameData = GameData{
