@@ -1212,8 +1212,6 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
-	// Record that we've received the StartGame packet
-	// This is crucial for the InvalidOrderC check that requires PlayerAuthInput to be sent after StartGame
 	conn.receivedPackets.Store("gotStartGame", true)
 
 	if matched, _ := regexp.MatchString(`.*\.hivebedrock\.network.*`, conn.clientData.ServerAddress); matched {
@@ -1266,9 +1264,6 @@ func (conn *Conn) handleItemRegistry(pk *packet.ItemRegistry) error {
 			conn.shieldID.Store(int32(item.RuntimeID))
 		}
 	}
-
-	// According to InvalidOrderB anticheat check, we need to wait for these packets
-	// before sending RequestChunkRadius
 
 	// Check if all required packets have been received
 	if conn.haveRequiredPacketsArrived() {
