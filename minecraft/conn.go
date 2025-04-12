@@ -1222,7 +1222,21 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	// Check if there's a version override for this server
 	if conn.serverVersionOverrides != nil {
 		for serverPattern, version := range conn.serverVersionOverrides {
-			if matched, _ := regexp.MatchString(serverPattern, conn.clientData.ServerAddress); matched {
+			// Try exact match first
+			if serverPattern == conn.clientData.ServerAddress {
+				pk.BaseGameVersion = version
+				break
+			}
+
+			// If not exact match, try regex match
+			matched, err := regexp.MatchString(serverPattern, conn.clientData.ServerAddress)
+			if err != nil {
+				// If regex is invalid, log error but continue with other patterns
+				conn.log.Error(fmt.Sprintf("Invalid regex pattern for server version override: %s - %v", serverPattern, err))
+				continue
+			}
+
+			if matched {
 				pk.BaseGameVersion = version
 				break
 			}
