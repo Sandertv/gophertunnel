@@ -148,6 +148,10 @@ type Conn struct {
 	// receivedPackets tracks which packets have been received from the server
 	// Used to ensure proper packet ordering for anticheat checks
 	receivedPackets sync.Map
+
+	// serverVersionOverrides is a map of server addresses to specific game versions to use
+	// when connecting to those servers
+	serverVersionOverrides map[string]string
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -156,18 +160,19 @@ type Conn struct {
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
 	conn := &Conn{
-		enc:          packet.NewEncoder(netConn),
-		dec:          packet.NewDecoder(netConn),
-		salt:         make([]byte, 16),
-		packets:      make(chan *packetData, 8),
-		additional:   make(chan packet.Packet, 16),
-		spawn:        make(chan struct{}),
-		conn:         netConn,
-		privateKey:   key,
-		log:          log.With("raddr", netConn.RemoteAddr().String()),
-		hdr:          &packet.Header{},
-		proto:        proto,
-		readerLimits: limits,
+		enc:                    packet.NewEncoder(netConn),
+		dec:                    packet.NewDecoder(netConn),
+		salt:                   make([]byte, 16),
+		packets:                make(chan *packetData, 8),
+		additional:             make(chan packet.Packet, 16),
+		spawn:                  make(chan struct{}),
+		conn:                   netConn,
+		privateKey:             key,
+		log:                    log.With("raddr", netConn.RemoteAddr().String()),
+		hdr:                    &packet.Header{},
+		proto:                  proto,
+		readerLimits:           limits,
+		serverVersionOverrides: nil,
 	}
 
 	if c, ok := netConn.(interface{ Context() context.Context }); ok {
@@ -1214,8 +1219,14 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	conn.receivedPackets.Store("gotStartGame", true)
 
-	if matched, _ := regexp.MatchString(`.*\.hivebedrock\.network.*`, conn.clientData.ServerAddress); matched {
-		pk.BaseGameVersion = "1.17.0" //temporary fix for hivebedrock.network
+	// Check if there's a version override for this server
+	if conn.serverVersionOverrides != nil {
+		for serverPattern, version := range conn.serverVersionOverrides {
+			if matched, _ := regexp.MatchString(serverPattern, conn.clientData.ServerAddress); matched {
+				pk.BaseGameVersion = version
+				break
+			}
+		}
 	}
 
 	conn.gameData = GameData{

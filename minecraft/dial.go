@@ -99,6 +99,11 @@ type Dialer struct {
 	// the client when an XUID is present without logging in.
 	// For getting this to work with BDS, authentication should be disabled.
 	KeepXBLIdentityData bool
+
+	// BaseGameVersion is a map of server addresses to game versions to use when connecting to those servers.
+	// The keys are regex patterns that match against server addresses, and the values are the game versions
+	// to use when connecting to a server that matches the pattern.
+	BaseGameVersion map[string]string
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -203,6 +208,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
+	conn.serverVersionOverrides = d.BaseGameVersion
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
