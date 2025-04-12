@@ -160,19 +160,18 @@ type Conn struct {
 // key is generated.
 func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
 	conn := &Conn{
-		enc:                    packet.NewEncoder(netConn),
-		dec:                    packet.NewDecoder(netConn),
-		salt:                   make([]byte, 16),
-		packets:                make(chan *packetData, 8),
-		additional:             make(chan packet.Packet, 16),
-		spawn:                  make(chan struct{}),
-		conn:                   netConn,
-		privateKey:             key,
-		log:                    log.With("raddr", netConn.RemoteAddr().String()),
-		hdr:                    &packet.Header{},
-		proto:                  proto,
-		readerLimits:           limits,
-		serverVersionOverrides: nil,
+		enc:          packet.NewEncoder(netConn),
+		dec:          packet.NewDecoder(netConn),
+		salt:         make([]byte, 16),
+		packets:      make(chan *packetData, 8),
+		additional:   make(chan packet.Packet, 16),
+		spawn:        make(chan struct{}),
+		conn:         netConn,
+		privateKey:   key,
+		log:          log.With("raddr", netConn.RemoteAddr().String()),
+		hdr:          &packet.Header{},
+		proto:        proto,
+		readerLimits: limits,
 	}
 
 	if c, ok := netConn.(interface{ Context() context.Context }); ok {
