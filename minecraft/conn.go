@@ -263,7 +263,7 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 		}
 	}
 	conn.waitingForSpawn.Store(true)
-	conn.startGame()
+	conn.startGame(data)
 
 	select {
 	case <-conn.ctx.Done():
@@ -1002,8 +1002,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 }
 
 // startGame sends a StartGame packet using the game data of the connection.
-func (conn *Conn) startGame() {
-	data := conn.gameData
+func (conn *Conn) startGame(data GameData) {
 	_ = conn.WritePacket(&packet.StartGame{
 		Difficulty:                   data.Difficulty,
 		EntityUniqueID:               data.EntityUniqueID,
