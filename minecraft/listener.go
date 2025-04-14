@@ -72,9 +72,7 @@ type ListenConfig struct {
 
 	// GameVersion is the version string that the server presents to clients during login. It should reflect
 	// the version of the game that the server is compatible with in terms of resource packs, world generation,
-	// and client rendering. This version is shown on the server list in the client and must be consistent
-	// with the actual protocol and resource pack data used, or clients may encounter errors or mismatches.
-	// If left empty, the default GameVersion for the current Protocol will be used.
+	// and client rendering. If left empty, the default GameVersion for the current Protocol will be used.
 	GameVersion string
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
