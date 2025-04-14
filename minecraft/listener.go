@@ -70,10 +70,10 @@ type ListenConfig struct {
 	// after having called ListenConfig.Listen(). Note that these methods will not update resource packs for active connections.
 	ResourcePacks []*resource.Pack
 
-	// GameVersion is the version string that the server presents to clients during login. It should reflect
+	// BaseGameVersion is the version string that the server presents to clients during login. It should reflect
 	// the version of the game that the server is compatible with in terms of resource packs, world generation,
-	// and client rendering. If left empty, the default GameVersion for the current Protocol will be used.
-	GameVersion string
+	// and client rendering. If left empty, the default BaseGameVersion for the current Protocol will be used.
+	BaseGameVersion string
 	// Biomes contains information about all biomes that the server has registered, which the client can use
 	// to render the world more effectively. If these are nil, the default biome definitions will be used.
 	Biomes map[string]any
@@ -269,7 +269,10 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.compression = listener.cfg.Compression
 	conn.pool = conn.proto.Packets(true)
 
-	conn.gameData.BaseGameVersion = listener.cfg.GameVersion
+	conn.gameData.BaseGameVersion = listener.cfg.BaseGameVersion
+	if conn.gameData.BaseGameVersion == "" {
+		conn.gameData.BaseGameVersion = protocol.CurrentVersion
+	}
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
