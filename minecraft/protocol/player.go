@@ -46,6 +46,7 @@ const (
 )
 
 const (
+	// PlayerMovementModeClient is deprecated as of 1.21.80.
 	PlayerMovementModeClient = iota
 	PlayerMovementModeServer
 	PlayerMovementModeServerWithRewind
@@ -82,6 +83,9 @@ type PlayerListEntry struct {
 	Host bool
 	// SubClient specifies if the player that is added to the player list is a sub-client of another player.
 	SubClient bool
+	// PlayerColour is the colour of the player that is shown in UI elements, currently only used for the
+	// player locator bar.
+	PlayerColour int32
 }
 
 // Marshal encodes/decodes a PlayerListEntry.
@@ -96,6 +100,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
 	r.Bool(&x.SubClient)
+	r.Int32(&x.PlayerColour)
 }
 
 // PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.

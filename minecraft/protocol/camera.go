@@ -193,7 +193,8 @@ type CameraPreset struct {
 	// or not.
 	AlignTargetAndCameraForward Optional[bool]
 	// AimAssist defines the aim assist to use when using this preset.
-	AimAssist Optional[CameraPresetAimAssist]
+	AimAssist     Optional[CameraPresetAimAssist]
+	ControlScheme Optional[byte]
 }
 
 // Marshal encodes/decodes a CameraPreset.
@@ -220,6 +221,7 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
 	OptionalMarshaler(r, &x.AimAssist)
+	OptionalFunc(r, &x.ControlScheme, r.Uint8)
 }
 
 // CameraPresetAimAssist represents a preset for aim assist settings.

@@ -133,6 +133,10 @@ const (
 	EntityDataKeyPlayerHasDied
 	EntityDataKeyCollisionBox
 	EntityDataKeyVisibleMobEffects
+	EntityDataKeyFilteredName
+	EntityDataKeyEnterBedPosition
+	EntityDataKeySeatThirdPersonCameraRadius
+	EntityDataKeySeatCameraRelaxDistanceSmoothing
 )
 
 const (
@@ -259,6 +263,7 @@ const (
 	EntityDataFlagBodyRotationAxisAligned
 	EntityDataFlagCollidable
 	EntityDataFlagWASDAirControlled
+	EntityDataFlagDoesServerAuthOnlyDismount
 )
 
 const (
