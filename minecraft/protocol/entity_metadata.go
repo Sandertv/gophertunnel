@@ -49,7 +49,7 @@ const (
 	EntityDataKeyContainerSize
 	EntityDataKeyContainerStrengthModifier
 	EntityDataKeyBlockTarget
-	EntityDataKeyInventory
+	EntityDataKeyInvulnerableTicks
 	EntityDataKeyTargetA
 	EntityDataKeyTargetB
 	EntityDataKeyTargetC
