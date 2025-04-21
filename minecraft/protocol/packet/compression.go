@@ -56,6 +56,9 @@ var (
 	}
 )
 
+// maxDecompressedLen is the maximum size of a decompressed packet.
+const maxDecompressedLen = 1024 * 1024 * 8 // 8 MB
+
 // EncodeCompression ...
 func (nopCompression) EncodeCompression() uint16 {
 	return CompressionAlgorithmNone
@@ -114,7 +117,7 @@ func (flateCompression) Decompress(compressed []byte) ([]byte, error) {
 
 	// Guess an uncompressed size of 2*len(compressed).
 	decompressed := bytes.NewBuffer(make([]byte, 0, len(compressed)*2))
-	if _, err := io.Copy(decompressed, c); err != nil {
+	if _, err := io.Copy(decompressed, io.LimitReader(c, maxDecompressedLen)); err != nil {
 		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
 	return decompressed.Bytes(), nil
