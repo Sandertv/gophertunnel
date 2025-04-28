@@ -68,7 +68,6 @@ func init() {
 		IDPassengerJump:     func() Packet { return &PassengerJump{} },
 		IDUpdateBlock:       func() Packet { return &UpdateBlock{} },
 		IDAddPainting:       func() Packet { return &AddPainting{} },
-		IDTickSync:          func() Packet { return &TickSync{} },
 		// ---
 		IDLevelEvent:           func() Packet { return &LevelEvent{} },
 		IDBlockEvent:           func() Packet { return &BlockEvent{} },
@@ -281,7 +280,6 @@ func init() {
 		IDText:                            func() Packet { return &Text{} },
 		IDMovePlayer:                      func() Packet { return &MovePlayer{} },
 		IDPassengerJump:                   func() Packet { return &PassengerJump{} },
-		IDTickSync:                        func() Packet { return &TickSync{} },
 		IDActorEvent:                      func() Packet { return &ActorEvent{} },
 		IDInventoryTransaction:            func() Packet { return &InventoryTransaction{} },
 		IDMobEquipment:                    func() Packet { return &MobEquipment{} },

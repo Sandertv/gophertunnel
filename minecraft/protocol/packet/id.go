@@ -23,7 +23,7 @@ const (
 	IDPassengerJump
 	IDUpdateBlock
 	IDAddPainting
-	IDTickSync
+	_
 	_
 	IDLevelEvent
 	IDBlockEvent
