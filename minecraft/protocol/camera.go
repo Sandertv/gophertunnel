@@ -193,7 +193,18 @@ type CameraPreset struct {
 	// or not.
 	AlignTargetAndCameraForward Optional[bool]
 	// AimAssist defines the aim assist to use when using this preset.
-	AimAssist     Optional[CameraPresetAimAssist]
+	AimAssist Optional[CameraPresetAimAssist]
+	// ControlScheme is the control scheme that the client should use in this camera. It is one of the following:
+	//  - ControlSchemeLockedPlayerRelativeStrafe is the default behaviour, this cannot be set when the client
+	//    is in a custom camera.
+	//  - ControlSchemeCameraRelative makes movement relative to the camera's transform, with the client's
+	//    rotation being relative to the client's movement.
+	//  - ControlSchemeCameraRelativeStrafe makes movement relative to the camera's transform, with the
+	//    client's rotation being locked.
+	//  - ControlSchemePlayerRelative makes movement relative to the player's transform, meaning holding
+	//    left/right will make the player turn in a circle.
+	//  - ControlSchemePlayerRelativeStrafe makes movement the same as the default behaviour, but can be
+	//    used in a custom camera.
 	ControlScheme Optional[byte]
 }
 
