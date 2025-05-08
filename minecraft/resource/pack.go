@@ -230,6 +230,38 @@ func (pack *Pack) ReadAt(b []byte, off int64) (n int, err error) {
 	return pack.content.ReadAt(b, off)
 }
 
+// ReadFile reads a specific file from the Pack's content and returns its content as a byte slice.
+func (p *Pack) ReadFile(filePath string) ([]byte, error) {
+	// Create a new zip reader from the content of the bytes.Reader
+	zipReader, err := zip.NewReader(p.content, int64(p.content.Size()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zip reader: %w", err)
+	}
+
+	// Iterate over the files in the archive to find the file
+	for _, file := range zipReader.File {
+		// Check if the current file is the one we're looking for
+		if strings.EqualFold(file.Name, filePath) {
+			// Open the file
+			rc, err := file.Open()
+			if err != nil {
+				return nil, fmt.Errorf("failed to open file %s: %w", filePath, err)
+			}
+			defer rc.Close()
+
+			// Read the file content
+			content, err := io.ReadAll(rc)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file content: %w", err)
+			}
+
+			return content, nil
+		}
+	}
+
+	return nil, fmt.Errorf("file %s not found in the resource pack", filePath)
+}
+
 // WithContentKey creates a copy of the pack and sets the encryption key to the key provided, after which the
 // new Pack is returned.
 func (pack Pack) WithContentKey(key string) *Pack {
