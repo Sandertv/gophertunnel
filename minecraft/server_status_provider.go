@@ -111,7 +111,7 @@ func (f *ForeignStatusProvider) update() {
 				continue
 			}
 			f.mu.Lock()
-			f.status = parsePongData(data)
+			f.status = ParsePongData(data)
 			f.mu.Unlock()
 		case <-f.closed:
 			return
@@ -119,8 +119,8 @@ func (f *ForeignStatusProvider) update() {
 	}
 }
 
-// parsePongData parses the unconnected pong data passed into the relevant fields of a ServerStatus struct.
-func parsePongData(pong []byte) ServerStatus {
+// ParsePongData parses the unconnected pong data passed into the relevant fields of a ServerStatus struct.
+func ParsePongData(pong []byte) ServerStatus {
 	frag := splitPong(string(pong))
 	if len(frag) < 7 {
 		return ServerStatus{ServerName: "Invalid pong data"}
