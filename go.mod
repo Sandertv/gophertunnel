@@ -23,4 +23,4 @@ require (
 	golang.org/x/image v0.18.0 // indirect
 )
 
-replace github.com/sandertv/go-raknet => github.com/tedacmc/tedac-raknet v0.0.4
+replace github.com/sandertv/go-raknet => github.com/tedacmc/tedac-raknet v0.0.5
