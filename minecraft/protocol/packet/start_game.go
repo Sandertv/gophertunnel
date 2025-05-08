@@ -22,6 +22,7 @@ const (
 	EditorWorldTypeNotEditor = iota
 	EditorWorldTypeProject
 	EditorWorldTypeTestLevel
+	EditorWorldTypeRealmsUpload
 )
 
 // StartGame is sent by the server to send information about the world the player will be spawned in. It

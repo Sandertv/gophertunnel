@@ -12,11 +12,6 @@ const (
 	AnimateActionMagicCriticalHit
 )
 
-const (
-	AnimateActionRowRight = iota + 128
-	AnimateActionRowLeft
-)
-
 // Animate is sent by the server to send a player animation from one player to all viewers of that player. It
 // is used for a couple of actions, such as arm swimming and critical hits.
 type Animate struct {
