@@ -23,7 +23,7 @@ const (
 	_
 	IDUpdateBlock
 	IDAddPainting
-	IDTickSync
+	_
 	_
 	IDLevelEvent
 	IDBlockEvent

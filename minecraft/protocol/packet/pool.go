@@ -68,11 +68,10 @@ func init() {
 		// ---
 		IDUpdateBlock: func() Packet { return &UpdateBlock{} },
 		IDAddPainting: func() Packet { return &AddPainting{} },
-		IDTickSync:    func() Packet { return &TickSync{} },
 		// ---
 		IDLevelEvent:           func() Packet { return &LevelEvent{} },
 		IDBlockEvent:           func() Packet { return &BlockEvent{} },
-		IDActorEvent:           func() Packet { return &ActorEvent{} },
+		IDActorEvent:           func() Packet { ret urn &ActorEvent{} },
 		IDMobEffect:            func() Packet { return &MobEffect{} },
 		IDUpdateAttributes:     func() Packet { return &UpdateAttributes{} },
 		IDInventoryTransaction: func() Packet { return &InventoryTransaction{} },
@@ -282,7 +281,6 @@ func init() {
 		IDResourcePackClientResponse:      func() Packet { return &ResourcePackClientResponse{} },
 		IDText:                            func() Packet { return &Text{} },
 		IDMovePlayer:                      func() Packet { return &MovePlayer{} },
-		IDTickSync:                        func() Packet { return &TickSync{} },
 		IDActorEvent:                      func() Packet { return &ActorEvent{} },
 		IDInventoryTransaction:            func() Packet { return &InventoryTransaction{} },
 		IDMobEquipment:                    func() Packet { return &MobEquipment{} },
