@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -36,7 +37,12 @@ func ExampleListen() {
 
 			// Make the client spawn in the world using conn.StartGame. An error is returned if the client
 			// times out during the connection.
-			worldData := minecraft.GameData{ /* World data here */ }
+			worldData := minecraft.GameData{
+				// As of 1.21.80, protocol.PlayerMovementModeServer is the minimum requirement for MovementType.
+				PlayerMovementSettings: protocol.PlayerMovementSettings{
+					MovementType: protocol.PlayerMovementModeServer,
+				},
+			}
 			if err := conn.StartGame(worldData); err != nil {
 				return
 			}
