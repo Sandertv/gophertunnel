@@ -37,12 +37,9 @@ func ExampleListen() {
 			// Make the client spawn in the world using conn.StartGame. An error is returned if the client
 			// times out during the connection.
 			worldData := minecraft.GameData{
-				// As of 1.21.80, protocol.PlayerMovementModeServer is the minimum requirement for
-				// MovementType, which also requires ServerAuthoritativeBlockBreaking to be true.
+				// As of 1.21.80, protocol.PlayerMovementModeServer is the minimum requirement for MovementType.
 				PlayerMovementSettings: protocol.PlayerMovementSettings{
-					MovementType:                     protocol.PlayerMovementModeServer,
-					RewindHistorySize:                0,
-					ServerAuthoritativeBlockBreaking: true,
+					MovementType: protocol.PlayerMovementModeServer,
 				},
 			}
 			if err := conn.StartGame(worldData); err != nil {
