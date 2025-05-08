@@ -71,7 +71,7 @@ func init() {
 		// ---
 		IDLevelEvent:           func() Packet { return &LevelEvent{} },
 		IDBlockEvent:           func() Packet { return &BlockEvent{} },
-		IDActorEvent:           func() Packet { ret urn &ActorEvent{} },
+		IDActorEvent:           func() Packet { return &ActorEvent{} },
 		IDMobEffect:            func() Packet { return &MobEffect{} },
 		IDUpdateAttributes:     func() Packet { return &UpdateAttributes{} },
 		IDInventoryTransaction: func() Packet { return &InventoryTransaction{} },
