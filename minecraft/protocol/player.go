@@ -130,6 +130,9 @@ type PlayerMovementSettings struct {
 // PlayerMoveSettings reads/writes PlayerMovementSettings x to/from IO r.
 func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
 	r.Varint32(&x.MovementType)
+	if x.MovementType == PlayerMovementModeClient {
+		r.InvalidValue(x.MovementType, "movement type", "movement type 0 is deprecated in 1.21.80")
+	}
 	r.Varint32(&x.RewindHistorySize)
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
 }
