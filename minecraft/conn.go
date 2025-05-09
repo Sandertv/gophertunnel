@@ -58,14 +58,14 @@ type Conn struct {
 	log         *slog.Logger
 	authEnabled bool
 
-	proto               Protocol
-	acceptedProto       []Protocol
-	pool                packet.Pool
-	enc                 *packet.Encoder
-	dec                 *packet.Decoder
-	compression         packet.Compression
-	maxDecompressionLen int
-	readerLimits        bool
+	proto              Protocol
+	acceptedProto      []Protocol
+	pool               packet.Pool
+	enc                *packet.Encoder
+	dec                *packet.Decoder
+	compression        packet.Compression
+	maxDecompressedLen int
+	readerLimits       bool
 
 	disconnectOnUnknownPacket bool
 	disconnectOnInvalidPacket bool
@@ -722,7 +722,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	_ = conn.Flush()
 	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression(conn.maxDecompressionLen)
+	conn.dec.EnableCompression(conn.maxDecompressedLen)
 	return nil
 }
 
@@ -733,7 +733,7 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
 	conn.enc.EnableCompression(alg)
-	conn.dec.EnableCompression(conn.maxDecompressionLen)
+	conn.dec.EnableCompression(conn.maxDecompressedLen)
 	conn.readyToLogin = true
 	return nil
 }
