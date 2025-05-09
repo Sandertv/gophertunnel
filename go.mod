@@ -6,7 +6,7 @@ toolchain go1.22.1
 
 require (
 	github.com/go-gl/mathgl v1.1.0
-	github.com/go-jose/go-jose/v4 v4.0.4
+	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/golang/snappy v0.0.4
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.17.11
@@ -18,7 +18,4 @@ require (
 	golang.org/x/text v0.22.0
 )
 
-require (
-	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/image v0.21.0 // indirect
-)
+require golang.org/x/image v0.21.0 // indirect
