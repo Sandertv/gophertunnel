@@ -83,8 +83,8 @@ type ListenConfig struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// MaxDecompressedLen is the maximum length of a decompressed packet that prevents ZIP bombs. If 0,
-	// default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
+	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
+	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
 }
 
