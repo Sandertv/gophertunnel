@@ -271,6 +271,9 @@ func decodeChain(buf *bytes.Buffer) (chain, error) {
 	if err := binary.Read(buf, binary.LittleEndian, &chainLength); err != nil {
 		return nil, fmt.Errorf("read chain length: %w", err)
 	}
+	if chainLength <= 0 {
+		return nil, fmt.Errorf("invalid chain length: %d", chainLength)
+	}
 	chainData := buf.Next(int(chainLength))
 
 	request := &request{}
