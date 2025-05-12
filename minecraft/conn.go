@@ -9,6 +9,16 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
+	"net"
+	"regexp"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -18,13 +28,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"io"
-	"log/slog"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -137,6 +140,14 @@ type Conn struct {
 	shieldID atomic.Int32
 
 	additional chan packet.Packet
+
+	// receivedPackets tracks which packets have been received from the server
+	// Used to ensure proper packet ordering for anticheat checks
+	receivedPackets sync.Map
+
+	// serverVersionOverrides is a map of server addresses to specific game versions to use
+	// when connecting to those servers
+	serverVersionOverrides map[string]string
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -608,6 +619,9 @@ func (conn *Conn) receive(data []byte) error {
 
 // handle tries to handle the incoming packetData.
 func (conn *Conn) handle(pkData *packetData) error {
+	// Record this packet type as received, which helps us ensure proper packet ordering
+	conn.recordPacketReceived(pkData.h.PacketID)
+
 	for _, id := range conn.expectedIDs.Load().([]uint32) {
 		if id == pkData.h.PacketID {
 			// If the packet was expected, so we handle it right now.
@@ -1198,6 +1212,32 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
 // world, and it obtains most of its dedicated properties.
 func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
+	conn.receivedPackets.Store("gotStartGame", true)
+
+	// Check if there's a version override for this server
+	if conn.serverVersionOverrides != nil {
+		for serverPattern, version := range conn.serverVersionOverrides {
+			// Try exact match first
+			if serverPattern == conn.clientData.ServerAddress {
+				pk.BaseGameVersion = version
+				break
+			}
+
+			// If not exact match, try regex match
+			matched, err := regexp.MatchString(serverPattern, conn.clientData.ServerAddress)
+			if err != nil {
+				// If regex is invalid, log error but continue with other patterns
+				conn.log.Error(fmt.Sprintf("Invalid regex pattern for server version override: %s - %v", serverPattern, err))
+				continue
+			}
+
+			if matched {
+				pk.BaseGameVersion = version
+				break
+			}
+		}
+	}
+
 	conn.gameData = GameData{
 		Difficulty:                   pk.Difficulty,
 		WorldName:                    pk.WorldName,
@@ -1245,8 +1285,41 @@ func (conn *Conn) handleItemRegistry(pk *packet.ItemRegistry) error {
 		}
 	}
 
-	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
-	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
+	// Check if all required packets have been received
+	if conn.haveRequiredPacketsArrived() {
+		// All packets received, we can send RequestChunkRadius
+		_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
+		conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
+		return nil
+	}
+
+	// Not all required packets received yet, we'll keep waiting
+	// Start a goroutine to periodically check and send RequestChunkRadius when ready
+	go func() {
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+
+		timeout := time.After(5 * time.Second)
+
+		for {
+			select {
+			case <-ticker.C:
+				if conn.haveRequiredPacketsArrived() {
+					_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
+					conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
+					return
+				}
+			case <-timeout:
+				// Safety timeout, send the request anyway
+				_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
+				conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
+				return
+			case <-conn.ctx.Done():
+				return
+			}
+		}
+	}()
+
 	return nil
 }
 
@@ -1305,6 +1378,7 @@ func (conn *Conn) handleSetLocalPlayerAsInitialised(pk *packet.SetLocalPlayerAsI
 func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 	switch pk.Status {
 	case packet.PlayStatusLoginSuccess:
+		// Send ClientCacheStatus immediately after login success
 		if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
 			return fmt.Errorf("send ClientCacheStatus: %w", err)
 		}
@@ -1352,6 +1426,32 @@ func (conn *Conn) tryFinaliseClientConn() {
 	if conn.waitingForSpawn.Load() && conn.gameDataReceived.Load() {
 		conn.waitingForSpawn.Store(false)
 		conn.gameDataReceived.Store(false)
+
+		_, gotStartGame := conn.receivedPackets.Load("gotStartGame")
+
+		_ = conn.WritePacket(&packet.Interact{
+			ActionType:            packet.InteractActionMouseOverEntity,
+			TargetEntityRuntimeID: 0,
+			Position:              mgl32.Vec3{},
+		})
+
+		if gotStartGame {
+			_ = conn.WritePacket(&packet.PlayerAuthInput{
+				Pitch:            0,
+				Yaw:              0,
+				Position:         conn.gameData.PlayerPosition,
+				MoveVector:       mgl32.Vec2{},
+				HeadYaw:          0,
+				InputData:        protocol.NewBitset(packet.PlayerAuthInputBitsetSize),
+				InputMode:        packet.InputModeTouch,
+				PlayMode:         packet.PlayModeNormal,
+				InteractionModel: packet.InteractionModelTouch,
+				InteractPitch:    0,
+				InteractYaw:      0,
+				Tick:             0,
+				Delta:            mgl32.Vec3{},
+			})
+		}
 
 		close(conn.spawn)
 		conn.loggedIn = true
@@ -1415,4 +1515,34 @@ func (conn *Conn) closeErr(op string) error {
 	default:
 		return conn.wrap(net.ErrClosed, op)
 	}
+}
+
+func (conn *Conn) recordPacketReceived(packetID uint32) {
+	conn.receivedPackets.Store(packetID, true)
+}
+
+func (conn *Conn) hasReceivedPacket(packetID uint32) bool {
+	_, ok := conn.receivedPackets.Load(packetID)
+	return ok
+}
+
+func (conn *Conn) haveRequiredPacketsArrived() bool {
+	requiredPackets := []uint32{
+		packet.IDAvailableActorIdentifiers, // AvailableEntityIdentifiers
+		packet.IDBiomeDefinitionList,       // BiomeDefinitionList
+		packet.IDUpdateAttributes,          // UpdateAttributes
+		packet.IDAvailableCommands,         // AvailableCommands
+		packet.IDUpdateAbilities,           // UpdateAbilities
+		packet.IDSetActorData,              // SetEntityData
+		packet.IDInventoryContent,          // InventoryContent
+		packet.IDMobEquipment,              // MobEquipment
+		packet.IDPlayerList,                // PlayerList
+	}
+
+	for _, id := range requiredPackets {
+		if !conn.hasReceivedPacket(id) {
+			return false
+		}
+	}
+	return true
 }

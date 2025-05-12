@@ -2,6 +2,7 @@ package minecraft_test
 
 import (
 	"fmt"
+
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
@@ -11,6 +12,9 @@ func ExampleDial() {
 	// Create a minecraft.Dialer with an auth.TokenSource to authenticate to the server.
 	dialer := minecraft.Dialer{
 		TokenSource: auth.TokenSource,
+		BaseGameVersion: map[string]string{
+			"^.*\\.hivebedrock\\.network.*$": "1.17.0",
+		},
 	}
 	// Dial a new connection to the target server.
 	address := "mco.mineplex.com:19132"
