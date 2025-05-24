@@ -125,8 +125,8 @@ type Conn struct {
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
 	// fetchResourcePacks is an optional function passed to a Listener. If set, the returned resource packs from the function
-	// will determine which resource packs to send to the client based on its identity.
-	fetchResourcePacks func(identityData login.IdentityData, current []*resource.Pack) []*resource.Pack
+	// will determine which resource packs to send to the client based on its identity and client data.
+	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
 	// func returning false for the specific pack.
 	ignoredResourcePacks []exemptedResourcePack
@@ -770,7 +770,7 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 
 	if conn.fetchResourcePacks != nil {
-		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.resourcePacks)
+		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, conn.resourcePacks)
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
