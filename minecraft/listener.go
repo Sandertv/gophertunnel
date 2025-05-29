@@ -11,6 +11,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"log/slog"
+	"math"
 	"net"
 	"slices"
 	"sync"
@@ -78,6 +79,10 @@ type ListenConfig struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+
+	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
+	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
+	MaxDecompressedLen int
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -116,6 +121,11 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	if cfg.FlushRate == 0 {
 		cfg.FlushRate = time.Second / 20
+	}
+	if cfg.MaxDecompressedLen == 0 {
+		cfg.MaxDecompressedLen = 16 * 1024 * 1024 // 16MB
+	} else if cfg.MaxDecompressedLen < 0 {
+		cfg.MaxDecompressedLen = math.MaxInt
 	}
 
 	n, ok := networkByID(network, cfg.ErrorLog)
@@ -259,6 +269,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
+	conn.maxDecompressedLen = listener.cfg.MaxDecompressedLen
 	conn.pool = conn.proto.Packets(true)
 
 	conn.packetFunc = listener.cfg.PacketFunc
