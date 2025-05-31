@@ -116,9 +116,6 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 		if authenticated != (identityClaims.ExtraData.XUID != "") {
 			return iData, cData, res, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
 		}
-		if authenticated != (identityClaims.ExtraData.TitleID != "") {
-			return iData, cData, res, fmt.Errorf("identity data must have a title ID when logged into XBOX Live only")
-		}
 	default:
 		return iData, cData, res, fmt.Errorf("unexpected login chain length %v", len(req.Chain))
 	}
@@ -271,6 +268,9 @@ func decodeChain(buf *bytes.Buffer) (chain, error) {
 	var chainLength int32
 	if err := binary.Read(buf, binary.LittleEndian, &chainLength); err != nil {
 		return nil, fmt.Errorf("read chain length: %w", err)
+	}
+	if chainLength <= 0 {
+		return nil, fmt.Errorf("invalid chain length: %d", chainLength)
 	}
 	chainData := buf.Next(int(chainLength))
 
