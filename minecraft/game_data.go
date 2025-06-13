@@ -36,6 +36,8 @@ type GameData struct {
 	PersonaDisabled bool
 	// CustomSkinsDisabled is true if custom skins are disabled for the current game session.
 	CustomSkinsDisabled bool
+	// EmoteChatMuted is true if players will not be sent a chat message when using certain emotes.
+	EmoteChatMuted bool
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
