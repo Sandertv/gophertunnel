@@ -245,6 +245,8 @@ type StartGame struct {
 	WorldID string
 	// ScenarioID is always empty in vanilla and its usage is currently unknown.
 	ScenarioID string
+	// OwnerID is always empty in vanilla and its usage is currently unknown.
+	OwnerID string
 	// UseBlockNetworkIDHashes is true if the client should use the hash of a block's name as its network ID rather than
 	// its index in the expected block palette. This is useful for servers that wish to support multiple protocol versions
 	// and custom blocks, but it will result in extra bytes being written for every block in a sub chunk palette.
@@ -319,6 +321,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.String(&pk.ServerID)
 	io.String(&pk.WorldID)
 	io.String(&pk.ScenarioID)
+	io.String(&pk.OwnerID)
 	io.String(&pk.LevelID)
 	io.String(&pk.WorldName)
 	io.String(&pk.TemplateContentIdentity)

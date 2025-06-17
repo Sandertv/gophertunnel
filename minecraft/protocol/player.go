@@ -41,15 +41,8 @@ const (
 	PlayerActionStopCrawling
 	PlayerActionStartFlying
 	PlayerActionStopFlying
-	PlayerActionClientAckServerData
+	_
 	PlayerActionStartUsingItem
-)
-
-const (
-	// PlayerMovementModeClient is deprecated as of 1.21.80.
-	PlayerMovementModeClient = iota
-	PlayerMovementModeServer
-	PlayerMovementModeServerWithRewind
 )
 
 // PlayerListEntry is an entry found in the PlayerList packet. It represents a single player using the UUID
@@ -111,28 +104,15 @@ func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
 // the client will provide input to the server.
 type PlayerMovementSettings struct {
-	// MovementType specifies the way the server handles player movement. Available options are
-	// protocol.PlayerMovementModeClient, protocol.PlayerMovementModeServer and
-	// protocol.PlayerMovementModeServerWithRewind, where the server authoritative types result
-	// in the client sending PlayerAuthInput packets instead of MovePlayer packets and the rewind mode
-	// requires sending the tick of movement and several actions.
-	MovementType int32
-	// RewindHistorySize is the amount of history to keep at maximum if MovementType is
-	// protocol.PlayerMovementModeServerWithRewind.
+	// RewindHistorySize is the amount of history to keep at maximum.
 	RewindHistorySize int32
 	// ServerAuthoritativeBlockBreaking specifies if block breaking should be sent through
-	// packet.PlayerAuthInput or not. This field is somewhat redundant as it is always enabled if
-	// MovementType is packet.AuthoritativeMovementModeServer or
-	// protocol.PlayerMovementModeServerWithRewind
+	// packet.PlayerAuthInput or not.
 	ServerAuthoritativeBlockBreaking bool
 }
 
 // PlayerMoveSettings reads/writes PlayerMovementSettings x to/from IO r.
 func PlayerMoveSettings(r IO, x *PlayerMovementSettings) {
-	r.Varint32(&x.MovementType)
-	if x.MovementType == PlayerMovementModeClient {
-		r.InvalidValue(x.MovementType, "movement type", "movement type 0 is deprecated in 1.21.80")
-	}
 	r.Varint32(&x.RewindHistorySize)
 	r.Bool(&x.ServerAuthoritativeBlockBreaking)
 }

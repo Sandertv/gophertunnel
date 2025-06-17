@@ -221,7 +221,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		// we can't edit. We just enforce Android data for logging in.
 		setAndroidData(&conn.clientData)
 
-		request = login.Encode(chainData, conn.clientData, key)
+		request = login.Encode(chainData, conn.clientData, key, d.Protocol.ID() < 818)
 		identityData, _, _, _ := login.Parse(request)
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
 		// we are not aware of the identity data ourselves yet.
