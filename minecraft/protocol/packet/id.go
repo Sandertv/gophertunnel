@@ -219,7 +219,7 @@ const (
 	IDCameraAimAssist
 	IDContainerRegistryCleanup
 	IDMovementEffect
-	IDSetMovementAuthority
+	_
 	IDCameraAimAssistPresets
 	IDClientCameraAimAssist
 	IDClientMovementPredictionSync
@@ -228,4 +228,5 @@ const (
 	IDPlayerUpdateEntityOverrides
 	IDPlayerLocation
 	IDClientBoundControlSchemeSet
+	IDServerScriptDebugDrawer
 )
