@@ -4,7 +4,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const ClientMovementPredictionSyncBitsetSize = 123
+const ClientMovementPredictionSyncBitsetSize = 125
 
 // ClientMovementPredictionSync is sent by the client to the server periodically if the client has received
 // movement corrections from the server, containing information about client-predictions that are relevant
