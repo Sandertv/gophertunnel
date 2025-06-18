@@ -11,7 +11,7 @@ const (
 	ScriptDebugShapeBox
 	ScriptDebugShapeSphere
 	ScriptDebugShapeCircle
-	ScriptDebugShapeTest
+	ScriptDebugShapeText
 	ScriptDebugShapeArrow
 )
 
