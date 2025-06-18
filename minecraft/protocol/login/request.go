@@ -277,7 +277,7 @@ func encodeRequest(req *request) []byte {
 // passed will be used to self sign the JWTs.
 // Unlike Encode, EncodeOffline does not have a token signed by the Mojang key. It consists of only one JWT
 // which holds the identity data of the player.
-func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey) []byte {
+func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
 	keyData := MarshalPublicKey(&key.PublicKey)
 	claims := jwt.Claims{
 		Expiry:    jwt.NewNumericDate(time.Now().Add(time.Hour * 6)),
@@ -293,12 +293,17 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		IdentityPublicKey: keyData,
 	}).Serialize()
 
-	request := &request{Certificate: certificate{Chain: chain{firstJWT}}}
+	req := &request{
+		Certificate: certificate{
+			Chain: chain{firstJWT},
+		},
+		Legacy: legacy,
+	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
-	request.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
+	req.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
 
-	return encodeRequest(request)
+	return encodeRequest(req)
 }
 
 // decodeChain reads a certificate chain from the buffer passed and returns each claim found in the chain.
