@@ -85,6 +85,8 @@ type CameraInstructionSet struct {
 	EntityOffset Optional[mgl32.Vec3]
 	// Default determines whether the camera is a default camera or not.
 	Default Optional[bool]
+	// IgnoreStartingValuesComponent behavior is currently unknown.
+	IgnoreStartingValuesComponent bool
 }
 
 // Marshal encodes/decodes a CameraInstructionSet.
@@ -97,6 +99,7 @@ func (x *CameraInstructionSet) Marshal(r IO) {
 	OptionalFunc(r, &x.ViewOffset, r.Vec2)
 	OptionalFunc(r, &x.EntityOffset, r.Vec3)
 	OptionalFunc(r, &x.Default, r.Bool)
+	r.Bool(&x.IgnoreStartingValuesComponent)
 }
 
 // CameraFadeTimeData represents the time data for a CameraInstructionFade.
@@ -190,9 +193,6 @@ type CameraPreset struct {
 	AudioListener Optional[byte]
 	// PlayerEffects is currently unknown.
 	PlayerEffects Optional[bool]
-	// AlignTargetAndCameraForward determines whether the camera should align the target and the camera forward
-	// or not.
-	AlignTargetAndCameraForward Optional[bool]
 	// AimAssist defines the aim assist to use when using this preset.
 	AimAssist Optional[CameraPresetAimAssist]
 	// ControlScheme is the control scheme that the client should use in this camera. It is one of the following:
@@ -231,7 +231,6 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.MaxYawLimit, r.Float32)
 	OptionalFunc(r, &x.AudioListener, r.Uint8)
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
-	OptionalFunc(r, &x.AlignTargetAndCameraForward, r.Bool)
 	OptionalMarshaler(r, &x.AimAssist)
 	OptionalFunc(r, &x.ControlScheme, r.Uint8)
 }

@@ -19,13 +19,43 @@ import (
 // a public key used to verify other claims.
 type chain []string
 
+type certificate struct {
+	Chain chain `json:"chain"`
+}
+
 // request is the outer encapsulation of the request. It holds a chain and a ClientData object.
 type request struct {
-	// Chain is the client certificate chain. It holds several claims that the server may verify in order to
+	// Certificate holds the client certificate chain. The chain holds several claims that the server may verify in order to
 	// make sure that the client is logged into XBOX Live.
-	Chain chain `json:"chain"`
+	Certificate certificate `json:"Certificate"`
+	// AuthenticationType is the authentication type of the request.
+	AuthenticationType uint8 `json:"AuthenticationType"`
+	// Token is an empty string, it's unclear what's used for.
+	Token string `json:"Token"`
 	// RawToken holds the raw token that follows the JWT chain, holding the ClientData.
 	RawToken string `json:"-"`
+	// Legacy specifies whether to use the legacy format of the request or not.
+	Legacy bool `json:"-"`
+}
+
+func (r *request) MarshalJSON() ([]byte, error) {
+	if r.Legacy {
+		return json.Marshal(r.Certificate)
+	}
+
+	cert, err := json.Marshal(r.Certificate)
+	if err != nil {
+		return nil, err
+	}
+
+	type Alias request
+	return json.Marshal(&struct {
+		Certificate string `json:"Certificate"`
+		Alias
+	}{
+		Certificate: string(cert),
+		Alias:       (Alias)(*r),
+	})
 }
 
 func init() {
@@ -64,7 +94,7 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 	if err != nil {
 		return iData, cData, res, fmt.Errorf("parse login request: %w", err)
 	}
-	tok, err := jwt.ParseSigned(req.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
+	tok, err := jwt.ParseSigned(req.Certificate.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
 	if err != nil {
 		return iData, cData, res, fmt.Errorf("parse token 0: %w", err)
 	}
@@ -80,10 +110,10 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 	var authenticated bool
 	t, iss := time.Now(), "Mojang"
 
-	switch len(req.Chain) {
+	switch len(req.Certificate.Chain) {
 	case 1:
 		// Player was not authenticated with XBOX Live, meaning the one token in here is self-signed.
-		if err := parseFullClaim(req.Chain[0], key, &identityClaims); err != nil {
+		if err := parseFullClaim(req.Certificate.Chain[0], key, &identityClaims); err != nil {
 			return iData, cData, res, err
 		}
 		if err := identityClaims.Validate(jwt.Expected{Time: t}); err != nil {
@@ -93,7 +123,7 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 		// Player was (or should be) authenticated with XBOX Live, meaning the chain is exactly 3 tokens
 		// long.
 		var c jwt.Claims
-		if err := parseFullClaim(req.Chain[0], key, &c); err != nil {
+		if err := parseFullClaim(req.Certificate.Chain[0], key, &c); err != nil {
 			return iData, cData, res, fmt.Errorf("parse token 0: %w", err)
 		}
 		if err := c.Validate(jwt.Expected{Time: t}); err != nil {
@@ -101,13 +131,13 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 		}
 		authenticated = bytes.Equal(key.X.Bytes(), mojangKey.X.Bytes()) && bytes.Equal(key.Y.Bytes(), mojangKey.Y.Bytes())
 
-		if err := parseFullClaim(req.Chain[1], key, &c); err != nil {
+		if err := parseFullClaim(req.Certificate.Chain[1], key, &c); err != nil {
 			return iData, cData, res, fmt.Errorf("parse token 1: %w", err)
 		}
 		if err := c.Validate(jwt.Expected{Time: t, Issuer: iss}); err != nil {
 			return iData, cData, res, fmt.Errorf("validate token 1: %w", err)
 		}
-		if err := parseFullClaim(req.Chain[2], key, &identityClaims); err != nil {
+		if err := parseFullClaim(req.Certificate.Chain[2], key, &identityClaims); err != nil {
 			return iData, cData, res, fmt.Errorf("parse token 2: %w", err)
 		}
 		if err := identityClaims.Validate(jwt.Expected{Time: t, Issuer: iss}); err != nil {
@@ -117,7 +147,7 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 			return iData, cData, res, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
 		}
 	default:
-		return iData, cData, res, fmt.Errorf("unexpected login chain length %v", len(req.Chain))
+		return iData, cData, res, fmt.Errorf("unexpected login chain length %v", len(req.Certificate.Chain))
 	}
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
 		return iData, cData, res, fmt.Errorf("parse client data: %w", err)
@@ -149,7 +179,10 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 	if err := binary.Read(buf, binary.LittleEndian, &rawLength); err != nil {
 		return nil, fmt.Errorf("read raw token length: %w", err)
 	}
-	return &request{Chain: chain, RawToken: string(buf.Next(int(rawLength)))}, nil
+	return &request{
+		Certificate: certificate{Chain: chain},
+		RawToken:    string(buf.Next(int(rawLength))),
+	}, nil
 }
 
 // parseFullClaim parses and verifies a full claim using the ecdsa.PublicKey passed. The key passed is updated
@@ -186,14 +219,14 @@ func parseAsKey(k any, pub *ecdsa.PublicKey) error {
 // Encode encodes a login request using the encoded login chain passed and the client data. The request's
 // client data token is signed using the private key passed. It must be the same as the one used to get the
 // login chain.
-func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
-	// We first decode the login chain we actually got in a new request.
-	request := &request{}
-	_ = json.Unmarshal([]byte(loginChain), &request)
+func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
+	// We first decode the login chain we actually got in a new certificate.
+	cert := &certificate{}
+	_ = json.Unmarshal([]byte(loginChain), &cert)
 
 	// We parse the header of the first claim it has in the chain, which will soon be the second claim.
 	keyData := MarshalPublicKey(&key.PublicKey)
-	tok, _ := jwt.ParseSigned(request.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
+	tok, _ := jwt.ParseSigned(cert.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
 
 	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	x5uData, _ := tok.Headers[0].ExtraHeaders["x5u"]
@@ -212,13 +245,18 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey) []byte {
 		CertificateAuthority: true,
 	}).Serialize()
 
-	// We add our own claim at the start of the chain.
-	request.Chain = append(chain{firstJWT}, request.Chain...)
+	req := &request{
+		Certificate: certificate{
+			// We add our own claim at the start of the chain.
+			Chain: append(chain{firstJWT}, cert.Chain...),
+		},
+		Legacy: legacy,
+	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
-	request.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
+	req.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
 
-	return encodeRequest(request)
+	return encodeRequest(req)
 }
 
 // encodeRequest encodes the request passed to a byte slice which is suitable for setting to the Connection
@@ -255,7 +293,7 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		IdentityPublicKey: keyData,
 	}).Serialize()
 
-	request := &request{Chain: chain{firstJWT}}
+	request := &request{Certificate: certificate{Chain: chain{firstJWT}}}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
 	request.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
@@ -274,15 +312,34 @@ func decodeChain(buf *bytes.Buffer) (chain, error) {
 	}
 	chainData := buf.Next(int(chainLength))
 
-	request := &request{}
-	if err := json.Unmarshal(chainData, request); err != nil {
+	req := struct {
+		AuthenticationType uint8  `json:"AuthenticationType"`
+		Certificate        string `json:"Certificate"`
+		Chain              chain  `json:"chain"`
+	}{}
+	if err := json.Unmarshal(chainData, &req); err != nil {
 		return nil, fmt.Errorf("decode chain JSON: %w", err)
 	}
+
+	var ch chain
+	if req.Certificate != "" {
+		cert := &certificate{}
+		_ = json.Unmarshal([]byte(req.Certificate), &cert)
+		ch = cert.Chain
+	} else {
+		ch = req.Chain
+	}
+
 	// First check if the chain actually has any elements in it.
-	if len(request.Chain) == 0 {
+	if len(ch) == 0 {
 		return nil, fmt.Errorf("decode chain: no elements")
 	}
-	return request.Chain, nil
+
+	// Then check if the authentication type is guest mode.
+	if req.AuthenticationType == 1 {
+		return nil, fmt.Errorf("guest authentication is not supported")
+	}
+	return ch, nil
 }
 
 // identityClaims holds the claims for the last token in the chain, which contains the IdentityData of the

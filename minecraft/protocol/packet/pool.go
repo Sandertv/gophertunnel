@@ -258,15 +258,16 @@ func init() {
 		IDCameraAimAssist:                func() Packet { return &CameraAimAssist{} },
 		IDContainerRegistryCleanup:       func() Packet { return &ContainerRegistryCleanup{} },
 		IDMovementEffect:                 func() Packet { return &MovementEffect{} },
-		IDSetMovementAuthority:           func() Packet { return &SetMovementAuthority{} },
-		IDCameraAimAssistPresets:         func() Packet { return &CameraAimAssistPresets{} },
-		IDClientCameraAimAssist:          func() Packet { return &ClientCameraAimAssist{} },
-		IDClientMovementPredictionSync:   func() Packet { return &ClientMovementPredictionSync{} },
-		IDUpdateClientOptions:            func() Packet { return &UpdateClientOptions{} },
-		IDPlayerVideoCapture:             func() Packet { return &PlayerVideoCapture{} },
-		IDPlayerUpdateEntityOverrides:    func() Packet { return &PlayerUpdateEntityOverrides{} },
-		IDPlayerLocation:                 func() Packet { return &PlayerLocation{} },
-		IDClientBoundControlSchemeSet:    func() Packet { return &ClientBoundControlSchemeSet{} },
+		// ---
+		IDCameraAimAssistPresets:       func() Packet { return &CameraAimAssistPresets{} },
+		IDClientCameraAimAssist:        func() Packet { return &ClientCameraAimAssist{} },
+		IDClientMovementPredictionSync: func() Packet { return &ClientMovementPredictionSync{} },
+		IDUpdateClientOptions:          func() Packet { return &UpdateClientOptions{} },
+		IDPlayerVideoCapture:           func() Packet { return &PlayerVideoCapture{} },
+		IDPlayerUpdateEntityOverrides:  func() Packet { return &PlayerUpdateEntityOverrides{} },
+		IDPlayerLocation:               func() Packet { return &PlayerLocation{} },
+		IDClientBoundControlSchemeSet:  func() Packet { return &ClientBoundControlSchemeSet{} },
+		IDServerScriptDebugDrawer:      func() Packet { return &ServerScriptDebugDrawer{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
