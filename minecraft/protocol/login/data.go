@@ -194,12 +194,6 @@ type ClientData struct {
 	// ThirdPartyName is the username of the player. This username should not be used however. The DisplayName
 	// sent in the IdentityData should be preferred over this.
 	ThirdPartyName string
-	// ThirdPartyNameOnly specifies if the user only has a third party name. It should always be assumed to be
-	// false, because the third party name is not XBOX Live Auth protected, meaning it can be tempered with
-	// and the username changed.
-	// Although this field is obviously here for a reason, allowing this is too dangerous and should never be
-	// done.
-	ThirdPartyNameOnly bool
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
 	// TrustedSkin is a boolean indicating if the skin the client is using is trusted.
