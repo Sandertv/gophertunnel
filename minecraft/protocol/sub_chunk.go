@@ -37,14 +37,12 @@ type SubChunkEntry struct {
 	HeightMapType byte
 	// HeightMapData is the data for the height map.
 	HeightMapData []int8
-	// BlobHash is the hash of the blob.
-	BlobHash uint64
 	// RenderHeightMapType is always one of the constants defined in the HeightMapData constants.
 	RenderHeightMapType byte
 	// RenderHeightMapData is the data for the render height map.
 	RenderHeightMapData []int8
-	// RenderBlobHash is the hash of the render blob.
-	RenderBlobHash uint64
+	// BlobHash is the hash of the blob.
+	BlobHash uint64
 }
 
 // Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
@@ -58,12 +56,11 @@ func (x *SubChunkEntry) Marshal(r IO) {
 	if x.HeightMapType == HeightMapDataHasData {
 		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
 	}
-	r.Uint64(&x.BlobHash)
 	r.Uint8(&x.RenderHeightMapType)
 	if x.RenderHeightMapType == HeightMapDataHasData {
 		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
 	}
-	r.Uint64(&x.RenderBlobHash)
+	r.Uint64(&x.BlobHash)
 }
 
 // SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
