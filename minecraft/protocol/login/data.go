@@ -199,7 +199,7 @@ type ClientData struct {
 	// and the username changed.
 	// Although this field is obviously here for a reason, allowing this is too dangerous and should never be
 	// done.
-	ThirdPartyNameOnly bool
+	ThirdPartyNameOnly *bool `json:"ThirdPartyNameOnly,omitempty"`
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
 	// TrustedSkin is a boolean indicating if the skin the client is using is trusted.
