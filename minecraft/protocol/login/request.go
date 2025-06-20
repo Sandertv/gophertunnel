@@ -297,7 +297,8 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		Certificate: certificate{
 			Chain: chain{firstJWT},
 		},
-		Legacy: legacy,
+		AuthenticationType: 2,
+		Legacy:             legacy,
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
