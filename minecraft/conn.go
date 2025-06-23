@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -772,7 +773,7 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	}
 
 	if conn.fetchResourcePacks != nil {
-		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, conn.resourcePacks)
+		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, slices.Clone(conn.resourcePacks))
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {
