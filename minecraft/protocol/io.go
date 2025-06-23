@@ -43,6 +43,8 @@ type IO interface {
 	UUID(x *uuid.UUID)
 	RGB(x *color.RGBA)
 	RGBA(x *color.RGBA)
+	ARGB(x *color.RGBA)
+	BEARGB(x *color.RGBA)
 	VarRGBA(x *color.RGBA)
 	EntityMetadata(x *map[uint32]any)
 	Item(x *ItemStack)

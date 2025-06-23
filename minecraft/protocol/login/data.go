@@ -4,13 +4,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"golang.org/x/text/language"
 	"net"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"golang.org/x/text/language"
 )
 
 // IdentityData contains identity data of the player logged in. It is found in one of the JWT claims signed
@@ -198,7 +199,7 @@ type ClientData struct {
 	// and the username changed.
 	// Although this field is obviously here for a reason, allowing this is too dangerous and should never be
 	// done.
-	ThirdPartyNameOnly bool
+	ThirdPartyNameOnly *bool `json:"ThirdPartyNameOnly,omitempty"`
 	// UIProfile is the UI profile used. For the 'Pocket' UI, this is 1. For the 'Classic' UI, this is 0.
 	UIProfile int
 	// TrustedSkin is a boolean indicating if the skin the client is using is trusted.

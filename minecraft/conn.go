@@ -9,6 +9,14 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
+	"log/slog"
+	"net"
+	"strings"
+	"sync"
+	"sync/atomic"
+	"time"
+
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -18,13 +26,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
-	"io"
-	"log/slog"
-	"net"
-	"strings"
-	"sync"
-	"sync/atomic"
-	"time"
 )
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
@@ -57,13 +58,14 @@ type Conn struct {
 	log         *slog.Logger
 	authEnabled bool
 
-	proto         Protocol
-	acceptedProto []Protocol
-	pool          packet.Pool
-	enc           *packet.Encoder
-	dec           *packet.Decoder
-	compression   packet.Compression
-	readerLimits  bool
+	proto              Protocol
+	acceptedProto      []Protocol
+	pool               packet.Pool
+	enc                *packet.Encoder
+	dec                *packet.Decoder
+	compression        packet.Compression
+	maxDecompressedLen int
+	readerLimits       bool
 
 	disconnectOnUnknownPacket bool
 	disconnectOnInvalidPacket bool
@@ -720,7 +722,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	_ = conn.Flush()
 	conn.enc.EnableCompression(conn.compression)
-	conn.dec.EnableCompression()
+	conn.dec.EnableCompression(conn.maxDecompressedLen)
 	return nil
 }
 
@@ -731,7 +733,7 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
 	conn.enc.EnableCompression(alg)
-	conn.dec.EnableCompression()
+	conn.dec.EnableCompression(conn.maxDecompressedLen)
 	conn.readyToLogin = true
 	return nil
 }
@@ -1023,6 +1025,7 @@ func (conn *Conn) startGame() {
 		ExportedFromEditor:           data.ExportedFromEditor,
 		PersonaDisabled:              data.PersonaDisabled,
 		CustomSkinsDisabled:          data.CustomSkinsDisabled,
+		EmoteChatMuted:               data.EmoteChatMuted,
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
 		Blocks:                       data.CustomBlocks,
@@ -1223,6 +1226,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		ExportedFromEditor:           pk.ExportedFromEditor,
 		PersonaDisabled:              pk.PersonaDisabled,
 		CustomSkinsDisabled:          pk.CustomSkinsDisabled,
+		EmoteChatMuted:               pk.EmoteChatMuted,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
 		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
@@ -1252,7 +1256,7 @@ func (conn *Conn) handleItemRegistry(pk *packet.ItemRegistry) error {
 		}
 	}
 
-	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16})
+	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16, MaxChunkRadius: 16})
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
 	return nil
 }

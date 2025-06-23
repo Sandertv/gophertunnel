@@ -264,6 +264,8 @@ const (
 	EntityDataFlagCollidable
 	EntityDataFlagWASDAirControlled
 	EntityDataFlagDoesServerAuthOnlyDismount
+	EntityDataFlagBodyRotationAlwaysFollowsHead
+	EntityDataFlagCount
 )
 
 const (
