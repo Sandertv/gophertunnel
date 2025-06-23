@@ -8,7 +8,7 @@
 ## Overview
 
 gophertunnel is composed of several packages that may be of use for creating Minecraft related tools.
-As of version v1.38.0, Gophertunnel requires at least Go 1.22.
+As of version v1.47.5, Gophertunnel requires at least Go 1.24.
 A brief overview of all packages may be found [here](https://pkg.go.dev/mod/github.com/sandertv/gophertunnel?tab=packages).
 
 ## Examples
