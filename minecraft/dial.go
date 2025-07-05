@@ -55,8 +55,8 @@ type Dialer struct {
 	TokenSource oauth2.TokenSource
 
 	// XBLToken should be used in place of TokenSource if the XBL token is already known, i.e through a different
-	// oauth source
-	MultiplayerToken *auth.XBLToken
+	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party
+	XBLToken *auth.XBLToken
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
@@ -176,13 +176,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
 	}
 	var chainData string
-	if d.TokenSource != nil || d.MultiplayerToken != nil {
+	if d.TokenSource != nil || d.XBLToken != nil {
 		xblToken, err := getXBLToken(d)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
-		}
-		if xblToken == nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("no XBL token provided")}
 		}
 		chainData, err = authChain(ctx, xblToken, key)
 		if err != nil {
@@ -352,11 +349,8 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 }
 
 func getXBLToken(dialer Dialer) (*auth.XBLToken, error) {
-	if dialer.MultiplayerToken != nil {
-		return dialer.MultiplayerToken, nil
-	}
-	if dialer.TokenSource == nil {
-		return nil, fmt.Errorf("no XBL token source provided")
+	if dialer.XBLToken != nil {
+		return dialer.XBLToken, nil
 	}
 
 	ctx := context.Background()
