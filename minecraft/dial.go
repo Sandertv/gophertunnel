@@ -177,7 +177,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	}
 	var chainData string
 	if d.TokenSource != nil || d.XBLToken != nil {
-		xblToken, err := getXBLToken(d)
+		xblToken, err := getXBLToken(ctx, d)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -348,12 +348,11 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
-func getXBLToken(dialer Dialer) (*auth.XBLToken, error) {
+func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
 	if dialer.XBLToken != nil {
 		return dialer.XBLToken, nil
 	}
 
-	ctx := context.Background()
 	liveToken, err := dialer.TokenSource.Token()
 	if err != nil {
 		return nil, fmt.Errorf("request Live Connect token: %w", err)
