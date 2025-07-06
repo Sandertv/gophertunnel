@@ -20,13 +20,14 @@ type Client struct {
 }
 
 // NewClient returns a new Client instance with the supplied token source for authentication.
-func NewClient(src oauth2.TokenSource, client *http.Client) *Client {
-	if client == nil {
-		client = http.DefaultClient
+// If httpClient is nil, http.DefaultClient will be used to request the realms api.
+func NewClient(src oauth2.TokenSource, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
 	}
 	return &Client{
 		tokenSrc:   src,
-		httpClient: client,
+		httpClient: httpClient,
 	}
 }
 
