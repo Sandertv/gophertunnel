@@ -14,14 +14,20 @@ import (
 
 // Client is an instance of the realms api with a token.
 type Client struct {
-	tokenSrc oauth2.TokenSource
-	xblToken *auth.XBLToken
+	tokenSrc   oauth2.TokenSource
+	xblToken   *auth.XBLToken
+	httpClient *http.Client
 }
 
 // NewClient returns a new Client instance with the supplied token source for authentication.
-func NewClient(src oauth2.TokenSource) *Client {
+// If httpClient is nil, http.DefaultClient will be used to request the realms api.
+func NewClient(src oauth2.TokenSource, httpClient *http.Client) *Client {
+	if httpClient == nil {
+		httpClient = http.DefaultClient
+	}
 	return &Client{
-		tokenSrc: src,
+		tokenSrc:   src,
+		httpClient: httpClient,
 	}
 }
 
@@ -166,7 +172,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	}
 	xbl.SetAuthHeader(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := r.httpClient.Do(req)
 	if err != nil {
 		return nil, 0, err
 	}
