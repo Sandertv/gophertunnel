@@ -54,6 +54,10 @@ type Dialer struct {
 	// If TokenSource is nil, the connection will not use authentication.
 	TokenSource oauth2.TokenSource
 
+	// XBLToken should be used in place of TokenSource if the XBL token is already known, i.e through a different
+	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party.
+	XBLToken *auth.XBLToken
+
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
@@ -172,8 +176,12 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
 	}
 	var chainData string
-	if d.TokenSource != nil {
-		chainData, err = authChain(ctx, d.TokenSource, key)
+	if d.TokenSource != nil || d.XBLToken != nil {
+		xblToken, err := getXBLToken(ctx, d)
+		if err != nil {
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+		}
+		chainData, err = authChain(ctx, xblToken, key)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -340,21 +348,28 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
-// authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
-// chain ready to be put in a login request is returned.
-func authChain(ctx context.Context, src oauth2.TokenSource, key *ecdsa.PrivateKey) (string, error) {
-	// Obtain the Live token, and using that the XSTS token.
-	liveToken, err := src.Token()
-	if err != nil {
-		return "", fmt.Errorf("request Live Connect token: %w", err)
-	}
-	xsts, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
-	if err != nil {
-		return "", fmt.Errorf("request XBOX Live token: %w", err)
+func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
+	if dialer.XBLToken != nil {
+		return dialer.XBLToken, nil
 	}
 
+	liveToken, err := dialer.TokenSource.Token()
+	if err != nil {
+		return nil, fmt.Errorf("request Live Connect token: %w", err)
+	}
+	xblToken, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
+	if err != nil {
+		return nil, fmt.Errorf("request XBOX Live token: %w", err)
+	}
+	return xblToken, nil
+}
+
+// authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
+// chain ready to be put in a login request is returned.
+func authChain(ctx context.Context, xblToken *auth.XBLToken, key *ecdsa.PrivateKey) (string, error) {
+
 	// Obtain the raw chain data using the
-	chain, err := auth.RequestMinecraftChain(ctx, xsts, key)
+	chain, err := auth.RequestMinecraftChain(ctx, xblToken, key)
 	if err != nil {
 		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
 	}
