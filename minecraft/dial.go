@@ -55,7 +55,7 @@ type Dialer struct {
 	TokenSource oauth2.TokenSource
 
 	// XBLToken should be used in place of TokenSource if the XBL token is already known, i.e through a different
-	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party
+	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party.
 	XBLToken *auth.XBLToken
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
