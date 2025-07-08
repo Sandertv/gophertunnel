@@ -12,6 +12,7 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -58,13 +59,14 @@ type Conn struct {
 	log         *slog.Logger
 	authEnabled bool
 
-	proto         Protocol
-	acceptedProto []Protocol
-	pool          packet.Pool
-	enc           *packet.Encoder
-	dec           *packet.Decoder
-	compression   packet.Compression
-	readerLimits  bool
+	proto              Protocol
+	acceptedProto      []Protocol
+	pool               packet.Pool
+	enc                *packet.Encoder
+	dec                *packet.Decoder
+	compression        packet.Compression
+	maxDecompressedLen int
+	readerLimits       bool
 
 	disconnectOnUnknownPacket bool
 	disconnectOnInvalidPacket bool
@@ -125,6 +127,9 @@ type Conn struct {
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
+	// fetchResourcePacks is an optional function passed to a Listener. If set, the returned resource packs from the function
+	// will determine which resource packs to send to the client based on its identity and client data.
+	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
 	// func returning false for the specific pack.
 	ignoredResourcePacks []exemptedResourcePack
@@ -722,13 +727,14 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		return fmt.Errorf("send NetworkSettings: %w", err)
 	}
 	_ = conn.Flush()
+
 	compression := conn.compression
 	if pk.ClientProtocol >= 649 { // 1.20.60
 		// TODO: I hate this hack as much as the next person, but I don't see another other way out.
 		compression = packet.NewOnTheFlyCompression(compression)
 	}
 	conn.enc.EnableCompression(compression)
-	conn.dec.EnableCompression(compression)
+	conn.dec.EnableCompression(compression, conn.maxDecompressedLen)
 	return nil
 }
 
@@ -744,7 +750,7 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 		compression = packet.NewOnTheFlyCompression(compression)
 	}
 	conn.enc.EnableCompression(compression)
-	conn.dec.EnableCompression(compression)
+	conn.dec.EnableCompression(compression, conn.maxDecompressedLen)
 	conn.readyToLogin = true
 	return nil
 }
@@ -799,6 +805,10 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
 		return fmt.Errorf("send PlayStatus (Status=LoginSuccess): %w", err)
+	}
+
+	if conn.fetchResourcePacks != nil {
+		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, slices.Clone(conn.resourcePacks))
 	}
 	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired}
 	for _, pack := range conn.resourcePacks {

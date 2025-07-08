@@ -10,9 +10,9 @@ const (
 	PlayerLocationTypeHide
 )
 
-// PlayerLocation is sent by the client to the server when it updates its own skin using the in-game skin picker.
-// It is relayed by the server, or sent if the server changes the skin of a player on its own accord. Note
-// that the packet can only be sent for players that are in the player list at the time of sending.
+// PlayerLocation is sent by the server to the client to either update a player's position on the locator bar,
+// or remove them completely. The client will determine how to render the player on the locator bar based on
+// their own distance to Position.
 type PlayerLocation struct {
 	// Type is the action that is being performed. It is one of the constants above.
 	Type int32
