@@ -23,6 +23,8 @@ type Decoder struct {
 	compression Compression
 	encryption  Encryption
 
+	maxDecompressedLen int
+
 	checkPacketLimit bool
 }
 
@@ -52,8 +54,9 @@ func (decoder *Decoder) EnableEncryption(encryption Encryption) {
 }
 
 // EnableCompression enables compression for the Decoder.
-func (decoder *Decoder) EnableCompression(compression Compression) {
+func (decoder *Decoder) EnableCompression(compression Compression, maxDecompressedLen int) {
 	decoder.compression = compression
+	decoder.maxDecompressedLen = maxDecompressedLen
 }
 
 // DisableBatchPacketLimit disables the check that limits the number of packets allowed in a single packet
@@ -101,7 +104,7 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	}
 
 	if decoder.compression != nil {
-		data, err = decoder.compression.Decompress(data)
+		data, err = decoder.compression.Decompress(data, decoder.maxDecompressedLen)
 		if err != nil {
 			return nil, &CompressionError{Op: "decompress batch", Err: err}
 		}
