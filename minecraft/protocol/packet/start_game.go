@@ -253,6 +253,8 @@ type StartGame struct {
 	UseBlockNetworkIDHashes bool
 	// ServerAuthoritativeSound is currently unknown as to what it does.
 	ServerAuthoritativeSound bool
+	// TickDeathSystemsEnabled specifies if the new tick death systems are enabled.
+	TickDeathSystemsEnabled bool
 }
 
 // ID ...
@@ -339,4 +341,5 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
 	io.Bool(&pk.ServerAuthoritativeSound)
+	io.Bool(&pk.TickDeathSystemsEnabled)
 }
