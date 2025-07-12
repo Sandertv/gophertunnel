@@ -25,6 +25,8 @@ type CameraAimAssist struct {
 	TargetMode byte
 	// Action is the action that should be performed with the aim assist. This is one of the constants above.
 	Action byte
+	// ShowDebugRender specifies if debug render should be shown.
+	ShowDebugRender bool
 }
 
 // ID ...
@@ -38,4 +40,5 @@ func (pk *CameraAimAssist) Marshal(io protocol.IO) {
 	io.Float32(&pk.Distance)
 	io.Uint8(&pk.TargetMode)
 	io.Uint8(&pk.Action)
+	io.Bool(&pk.ShowDebugRender)
 }
