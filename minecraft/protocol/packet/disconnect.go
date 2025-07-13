@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	DisconnectReasonUnknown uint32 = iota
+	DisconnectReasonUnknown int32 = iota
 	DisconnectReasonCantConnectNoInternet
 	DisconnectReasonNoPermissions
 	DisconnectReasonUnrecoverableError
