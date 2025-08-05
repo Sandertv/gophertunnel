@@ -106,7 +106,7 @@ type BiomeDefinition struct {
 	// NameIndex represents the index of the biome name in the string list.
 	NameIndex int16
 	// BiomeID is the biome ID.
-	BiomeID uint16
+	BiomeID int16
 	// Temperature is the temperature of the biome, used for weather, biome behaviours and sky colour.
 	Temperature float32
 	// Downfall is the amount that precipitation affects colours and block changes.
@@ -138,7 +138,7 @@ type BiomeDefinition struct {
 
 func (x *BiomeDefinition) Marshal(r IO) {
 	r.Int16(&x.NameIndex)
-	r.Uint16(&x.BiomeID)
+	r.Int16(&x.BiomeID)
 	r.Float32(&x.Temperature)
 	r.Float32(&x.Downfall)
 	r.Float32(&x.RedSporeDensity)
