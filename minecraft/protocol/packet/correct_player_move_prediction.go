@@ -22,8 +22,7 @@ type CorrectPlayerMovePrediction struct {
 	Position mgl32.Vec3
 	// Delta is the change in position compared to what the client sent as its position at that specific tick.
 	Delta mgl32.Vec3
-	// Rotation is the rotation of the player at the tick written in the field below. It is only included if
-	// PredictionType is PredictionTypeVehicle.
+	// Rotation is the rotation of the player at the tick written in the field below.
 	Rotation mgl32.Vec2
 	// VehicleAngularVelocity is the angular velocity of the vehicle that the rider is riding.
 	VehicleAngularVelocity protocol.Optional[float32]
@@ -42,10 +41,8 @@ func (pk *CorrectPlayerMovePrediction) Marshal(io protocol.IO) {
 	io.Uint8(&pk.PredictionType)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Delta)
-	if pk.PredictionType == PredictionTypeVehicle {
-		io.Vec2(&pk.Rotation)
-		protocol.OptionalFunc(io, &pk.VehicleAngularVelocity, io.Float32)
-	}
+	io.Vec2(&pk.Rotation)
+	protocol.OptionalFunc(io, &pk.VehicleAngularVelocity, io.Float32)
 	io.Bool(&pk.OnGround)
 	io.Varuint64(&pk.Tick)
 }
