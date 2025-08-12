@@ -29,7 +29,7 @@ const (
 	DisconnectReasonCrossPlatformDisabled
 	DisconnectReasonCantConnect
 	DisconnectReasonSessionNotFound
-	DisconnectReasonClientSettingsIncompatibleWithServer
+	_
 	DisconnectReasonServerFull
 	DisconnectReasonInvalidPlatformSkin
 	DisconnectReasonEditionVersionMismatch
@@ -41,10 +41,10 @@ const (
 	DisconnectReasonServerNotFound
 	DisconnectReasonOutdatedServer
 	DisconnectReasonOutdatedClient
-	DisconnectReasonNoPremiumPlatform
+	_
 	DisconnectReasonMultiplayerDisabled
 	DisconnectReasonNoWiFi
-	DisconnectReasonWorldCorruption
+	_
 	DisconnectReasonNoReason
 	DisconnectReasonDisconnected
 	DisconnectReasonInvalidPlayer
@@ -72,7 +72,7 @@ const (
 	DisconnectReasonInvalidHeights
 	DisconnectReasonInvalidWidths
 	_
-	DisconnectReasonZombieConnection
+	DisconnectReason_
 	DisconnectReasonShutdown
 	_
 	DisconnectReasonLoadingStateTimeout
@@ -114,7 +114,7 @@ const (
 	DisconnectReasonRequestServerShutdown
 	DisconnectReasonClientGameSetupCancelled
 	DisconnectReasonClientGameSetupFailed
-	DisconnectReasonNoVenue
+	_
 	DisconnectReasonNetherNetSignalingSigninFailed
 	DisconnectReasonSessionAccessDenied
 	DisconnectReasonServiceSigninIssue
@@ -127,6 +127,7 @@ const (
 	DisconnectReasonRealmsTimelineRequired
 	DisconnectReasonGuestWithoutHost
 	DisconnectReasonFailedToJoinExperience
+	DisconnectReasonNetherNetDataChannelClosed
 )
 
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the
