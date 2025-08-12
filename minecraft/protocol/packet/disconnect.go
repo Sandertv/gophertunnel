@@ -72,7 +72,7 @@ const (
 	DisconnectReasonInvalidHeights
 	DisconnectReasonInvalidWidths
 	_
-	DisconnectReason_
+	_
 	DisconnectReasonShutdown
 	_
 	DisconnectReasonLoadingStateTimeout
