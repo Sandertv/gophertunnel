@@ -148,6 +148,26 @@ func (x *CameraInstructionTarget) Marshal(r IO) {
 	r.Int64(&x.EntityUniqueID)
 }
 
+// CameraInstructionFieldOfView represents a camera instruction that updates the field of view.
+type CameraInstructionFieldOfView struct {
+	// FieldOfView is the field of view of the camera.
+	FieldOfView float32
+	// EaseTime is the time in seconds that the easing function should take.
+	EaseTime float32
+	// EaseType is the type of easing function used. This is one of the constants above.
+	EaseType uint8
+	// Clear can be set to true to clear the current instruction.
+	Clear bool
+}
+
+// Marshal encodes/decodes a CameraInstructionFieldOfView.
+func (x *CameraInstructionFieldOfView) Marshal(r IO) {
+	r.Float32(&x.FieldOfView)
+	r.Float32(&x.EaseTime)
+	r.Uint8(&x.EaseType)
+	r.Bool(&x.Clear)
+}
+
 // CameraPreset represents a basic preset that can be extended upon by more complex instructions.
 type CameraPreset struct {
 	// Name is the name of the preset. Each preset must have their own unique name.

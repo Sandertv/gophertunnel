@@ -568,6 +568,7 @@ const (
 	SoundEventLeadUnleash
 	SoundEventLeadBreak
 	SoundEventUnsaddle
+	SoundEventEquipCopper
 	SoundEventRecordLavaChicken
 )
 

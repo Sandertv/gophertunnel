@@ -256,6 +256,8 @@ type StartGame struct {
 	// its index in the expected block palette. This is useful for servers that wish to support multiple protocol versions
 	// and custom blocks, but it will result in extra bytes being written for every block in a sub chunk palette.
 	UseBlockNetworkIDHashes bool
+	// TickDeathSystemsEnabled specifies if the new tick death systems are enabled.
+	TickDeathSystemsEnabled bool
 	// ServerAuthoritativeSound is currently unknown as to what it does.
 	ServerAuthoritativeSound bool
 }
@@ -343,5 +345,6 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.UUID(&pk.WorldTemplateID)
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
+	io.Bool(&pk.TickDeathSystemsEnabled)
 	io.Bool(&pk.ServerAuthoritativeSound)
 }
