@@ -198,11 +198,9 @@ func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	// Sign the checksum produced, and combine the 'r' and 's' into a single signature.
 	// Encode r and s as 32-byte, zero-padded big-endian values so the P-256 signature is always exactly 64 bytes long.
 	r, s, _ := ecdsa.Sign(rand.Reader, key, hash.Sum(nil))
-	r32 := make([]byte, 32)
-	s32 := make([]byte, 32)
-	r.FillBytes(r32)
-	s.FillBytes(s32)
-	signature := append(r32, s32...)
+	signature := make([]byte, 64)
+	r.FillBytes(signature[:32])
+	s.FillBytes(signature[32:])
 
 	// The signature begins with 12 bytes, the first being the signature policy version (0, 0, 0, 1) again,
 	// and the other 8 the timestamp again.
