@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/google/uuid"
+	"github.com/muhammadmuzzammil1998/jsonc"
 )
 
 // Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds
@@ -296,6 +297,7 @@ func createTempArchive(path string) (*os.File, error) {
 		return nil, err
 	}
 	writer := zip.NewWriter(temp)
+	defer writer.Close()
 	if err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -327,17 +329,16 @@ func createTempArchive(path string) (*os.File, error) {
 		if err != nil {
 			return fmt.Errorf("open resource pack file %v: %w", filePath, err)
 		}
+		defer file.Close()
 		data, _ := io.ReadAll(file)
 		// Write the original content into the 'zip file' so that we write compressed data to the file.
 		if _, err := f.Write(data); err != nil {
 			return fmt.Errorf("write file data to zip: %w", err)
 		}
-		_ = file.Close()
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("build zip archive: %w", err)
 	}
-	_ = writer.Close()
 	return temp, nil
 }
 
