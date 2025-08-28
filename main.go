@@ -1,24 +1,58 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
 	"errors"
-	"github.com/pelletier/go-toml"
-	"github.com/sandertv/gophertunnel/minecraft"
-	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"golang.org/x/oauth2"
 	"log"
 	"os"
 	"sync"
+
+	"github.com/pelletier/go-toml"
+	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"github.com/sandertv/gophertunnel/minecraft/session"
+	"golang.org/x/oauth2"
 )
+
+func requestToken() *oauth2.Token {
+	token, err := auth.RequestLiveToken()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	return token
+}
+
+func tokenSource() oauth2.TokenSource {
+	token := new(oauth2.Token)
+	tokenData, err := os.ReadFile("token.tok")
+	if err == nil {
+		_ = json.Unmarshal(tokenData, token)
+	} else {
+		token = requestToken()
+	}
+	src := auth.RefreshTokenSource(token)
+	_, err = src.Token()
+	if err != nil {
+		// The cached refresh token expired and can no longer be used to obtain a new token. We require the
+		// user to log in again and use that token instead.
+		src = auth.RefreshTokenSource(requestToken())
+	}
+	tok, _ := src.Token()
+	b, _ := json.Marshal(tok)
+	_ = os.WriteFile("token.tok", b, 0644)
+	return src
+}
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
 func main() {
 	config := readConfig()
-	token, err := auth.RequestLiveToken()
+	src := tokenSource()
+
+	session, err := session.FromTokenSource(src, auth.DeviceAndroid, context.Background())
 	if err != nil {
 		panic(err)
 	}
-	src := auth.RefreshTokenSource(token)
 
 	p, err := minecraft.NewForeignStatusProvider(config.Connection.RemoteAddress)
 	if err != nil {
@@ -36,15 +70,15 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		go handleConn(c.(*minecraft.Conn), listener, config, src)
+		go handleConn(c.(*minecraft.Conn), listener, config, session)
 	}
 }
 
 // handleConn handles a new incoming minecraft.Conn from the minecraft.Listener passed.
-func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, src oauth2.TokenSource) {
+func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, session *session.Session) {
 	serverConn, err := minecraft.Dialer{
-		TokenSource: src,
-		ClientData:  conn.ClientData(),
+		Session:    session,
+		ClientData: conn.ClientData(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)

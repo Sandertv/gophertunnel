@@ -3,6 +3,7 @@ module github.com/sandertv/gophertunnel
 go 1.24
 
 require (
+	github.com/df-mc/go-playfab v0.0.0-00010101000000-000000000000
 	github.com/go-gl/mathgl v1.1.0
 	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/golang/snappy v0.0.4
@@ -16,4 +17,11 @@ require (
 	golang.org/x/text v0.22.0
 )
 
-require golang.org/x/image v0.21.0 // indirect
+require (
+	github.com/df-mc/go-xsapi v0.0.0-20240902102602-e7c4bffb955f // indirect
+	golang.org/x/image v0.0.0-20190321063152-3fc05d484e9f // indirect
+)
+
+replace github.com/df-mc/go-xsapi => github.com/lactyy/go-xsapi v0.0.0-20240911052022-1b9dffef64ab
+
+replace github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20240911042657-037f6afe426f
