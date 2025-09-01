@@ -351,8 +351,7 @@ func (a *AgentCommandEvent) Marshal(r IO) {
 	r.String(&a.Output)
 }
 
-// AgentCreatedEvent is the event data sent when a agent is created.
-// It does not have any data.
+// AgentCreatedEvent is the event data sent when an agent is created.
 type AgentCreatedEvent struct{}
 
 // Marshal ...
