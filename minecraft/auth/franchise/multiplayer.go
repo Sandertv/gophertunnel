@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
+	"github.com/sandertv/gophertunnel/minecraft/auth/franchise/internal"
 )
 
 type MultiplayerToken struct {
@@ -50,6 +50,8 @@ func RequestMultiplayerToken(ctx context.Context, env AuthorizationEnvironment, 
 	if err != nil {
 		return nil, fmt.Errorf("request multiplayer token: %w", err)
 	}
+
+	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST %v: %v", u, resp.Status)

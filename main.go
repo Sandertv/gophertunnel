@@ -11,7 +11,6 @@ import (
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"github.com/sandertv/gophertunnel/minecraft/session"
 	"golang.org/x/oauth2"
 )
 
@@ -49,7 +48,7 @@ func main() {
 	config := readConfig()
 	src := tokenSource()
 
-	session, err := session.FromTokenSource(src, auth.DeviceAndroid, context.Background())
+	session, err := auth.SessionFromTokenSource(src, auth.DeviceAndroid, context.Background())
 	if err != nil {
 		panic(err)
 	}
@@ -75,10 +74,10 @@ func main() {
 }
 
 // handleConn handles a new incoming minecraft.Conn from the minecraft.Listener passed.
-func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, session *session.Session) {
+func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, session *auth.Session) {
 	serverConn, err := minecraft.Dialer{
-		Session:    session,
-		ClientData: conn.ClientData(),
+		AuthSession: session,
+		ClientData:  conn.ClientData(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)

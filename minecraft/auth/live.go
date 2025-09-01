@@ -26,7 +26,7 @@ func WriterTokenSource(w io.Writer) oauth2.TokenSource {
 // WriterTokenSourceDevice returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSourceDevice allows passing an io.Writer to which information on the auth URL and
 // code are printed. WriterTokenSourceDevice automatically refreshes tokens.
-func WriterTokenSourceDevice(w io.Writer, d *Device) oauth2.TokenSource {
+func WriterTokenSourceDevice(w io.Writer, d Device) oauth2.TokenSource {
 	return &tokenSource{w: w, d: d}
 }
 
@@ -35,7 +35,7 @@ func WriterTokenSourceDevice(w io.Writer, d *Device) oauth2.TokenSource {
 type tokenSource struct {
 	w io.Writer
 	t *oauth2.Token
-	d *Device
+	d Device
 }
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
@@ -62,7 +62,7 @@ func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 // RefreshTokenSourceDevice returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
 // refreshes the token everytime it expires. Note that this function must be used over oauth2.ReuseTokenSource
 // due to that function not refreshing with the correct scopes.
-func RefreshTokenSourceDevice(t *oauth2.Token, d *Device) oauth2.TokenSource {
+func RefreshTokenSourceDevice(t *oauth2.Token, d Device) oauth2.TokenSource {
 	return RefreshTokenSourceWriterDevice(t, os.Stdout, d)
 }
 
@@ -75,7 +75,7 @@ func RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
 // refreshes the token everytime it expires. It requests from io.Writer if the oauth2.Token is invalid.
 // Note that this function must be used over oauth2.ReuseTokenSource due to that
 // function not refreshing with the correct scopes.
-func RefreshTokenSourceWriterDevice(t *oauth2.Token, w io.Writer, d *Device) oauth2.TokenSource {
+func RefreshTokenSourceWriterDevice(t *oauth2.Token, w io.Writer, d Device) oauth2.TokenSource {
 	return oauth2.ReuseTokenSource(t, &tokenSource{w: w, t: t, d: d})
 }
 
@@ -87,7 +87,7 @@ func RequestLiveToken() (*oauth2.Token, error) {
 // RequestLiveTokenDevice does a login request for Microsoft Live Connect using device auth. A login URL will be
 // printed to the stdout with a user code which the user must use to submit.
 // RequestLiveTokenDevice is the equivalent of RequestLiveTokenWriter(os.Stdout).
-func RequestLiveTokenDevice(deviceType *Device) (*oauth2.Token, error) {
+func RequestLiveTokenDevice(deviceType Device) (*oauth2.Token, error) {
 	return RequestLiveTokenWriterDevice(os.Stdout, deviceType)
 }
 
@@ -99,7 +99,7 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 // RequestLiveTokenWriterDevice does a login request for Microsoft Live Connect using device auth. A login URL will
 // be printed to the io.Writer passed with a user code which the user must use to submit.
 // Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
-func RequestLiveTokenWriterDevice(w io.Writer, deviceType *Device) (*oauth2.Token, error) {
+func RequestLiveTokenWriterDevice(w io.Writer, deviceType Device) (*oauth2.Token, error) {
 	d, err := startDeviceAuth(deviceType)
 	if err != nil {
 		return nil, err
@@ -125,7 +125,7 @@ func RequestLiveTokenWriterDevice(w io.Writer, deviceType *Device) (*oauth2.Toke
 
 // startDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
 // enter.
-func startDeviceAuth(deviceType *Device) (*deviceAuthConnect, error) {
+func startDeviceAuth(deviceType Device) (*deviceAuthConnect, error) {
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
 		"client_id":     {deviceType.ClientID},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
@@ -144,7 +144,7 @@ func startDeviceAuth(deviceType *Device) (*deviceAuthConnect, error) {
 
 // pollDeviceAuth polls the token endpoint for the device code. A token is returned if the user authenticated
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
-func pollDeviceAuth(deviceCode string, deviceType *Device) (t *oauth2.Token, err error) {
+func pollDeviceAuth(deviceCode string, deviceType Device) (t *oauth2.Token, err error) {
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
 		"client_id":   {deviceType.ClientID},
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
@@ -173,7 +173,7 @@ func pollDeviceAuth(deviceCode string, deviceType *Device) (t *oauth2.Token, err
 
 // refreshToken refreshes the oauth2.Token passed and returns a new oauth2.Token. An error is returned if
 // refreshing was not successful.
-func refreshToken(t *oauth2.Token, deviceType *Device) (*oauth2.Token, error) {
+func refreshToken(t *oauth2.Token, deviceType Device) (*oauth2.Token, error) {
 	// This function unfortunately needs to exist because golang.org/x/oauth2 does not pass the scope to this
 	// request, which Microsoft Connect enforces.
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{

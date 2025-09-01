@@ -46,10 +46,10 @@ type XblTokenObtainer struct {
 	key         *ecdsa.PrivateKey
 	liveToken   *oauth2.Token
 	deviceToken *deviceToken
-	deviceType  *Device
+	deviceType  Device
 }
 
-func NewXblTokenObtainer(liveToken *oauth2.Token, deviceType *Device, ctx context.Context) (*XblTokenObtainer, error) {
+func NewXblTokenObtainer(liveToken *oauth2.Token, deviceType Device, ctx context.Context) (*XblTokenObtainer, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -99,7 +99,7 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 }
 
 // RequestXBLTokenDevice requests an XBOX Live auth token using the passed Live token pair.
-func RequestXBLTokenDevice(ctx context.Context, liveToken *oauth2.Token, deviceType *Device, relyingParty string) (*XBLToken, error) {
+func RequestXBLTokenDevice(ctx context.Context, liveToken *oauth2.Token, deviceType Device, relyingParty string) (*XBLToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -126,7 +126,7 @@ func RequestXBLTokenDevice(ctx context.Context, liveToken *oauth2.Token, deviceT
 	return obtainXBLToken(ctx, c, key, liveToken, deviceToken, deviceType, relyingParty)
 }
 
-func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, deviceType *Device, relyingParty string) (*XBLToken, error) {
+func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, deviceType Device, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             deviceType.ClientID,
@@ -181,7 +181,7 @@ type deviceToken struct {
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
-func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, deviceType *Device) (token *deviceToken, err error) {
+func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, deviceType Device) (token *deviceToken, err error) {
 	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",

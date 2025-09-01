@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
+	"github.com/sandertv/gophertunnel/minecraft/auth/franchise/internal"
 )
+
+const userAgent = "libhttpclient/1.0.0.0"
 
 var discovered = map[string]*Discovery{}
 
@@ -21,7 +23,7 @@ func Discover(build string) (*Discovery, error) {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", internal.UserAgent)
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -36,7 +38,7 @@ func Discover(build string) (*Discovery, error) {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 	if result.Data == nil {
-		return nil, errors.New("minecraft/franchise: Discover: result.Data is nil")
+		return nil, errors.New("franchise: Discover: result.Data is nil")
 	}
 	discovered[build] = result.Data
 	return result.Data, nil
@@ -50,11 +52,11 @@ type Discovery struct {
 func (d *Discovery) Environment(env Environment, typ string) error {
 	e, ok := d.ServiceEnvironments[env.EnvironmentName()]
 	if !ok {
-		return errors.New("minecraft/franchise: environment not found")
+		return errors.New("franchise: environment not found")
 	}
 	data, ok := e[typ]
 	if !ok {
-		return errors.New("minecraft/franchise: environment with type not found")
+		return errors.New("franchise: environment with type not found")
 	}
 	if err := json.Unmarshal(data, &env); err != nil {
 		return fmt.Errorf("decode environment: %w", err)

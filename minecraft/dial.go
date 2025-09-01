@@ -28,7 +28,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/minecraft/session"
 	"golang.org/x/oauth2"
 )
 
@@ -55,9 +54,9 @@ type Dialer struct {
 	// If both TokenSource and Session are nil, the connection will not use authentication.
 	TokenSource oauth2.TokenSource
 
-	// Session should be used in place of TokenSource if the session is already created. Using this over
+	// AuthSession should be used in place of TokenSource if the session is already created. Using this over
 	// TokenSource will result in much faster logins, especially if you are reusing it.
-	Session *session.Session
+	AuthSession *auth.Session
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
@@ -178,8 +177,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	}
 	var chainData string
 	var multiplayerToken string
-	if d.TokenSource != nil || d.Session != nil {
-		session, err := getSession(ctx, d)
+	if d.TokenSource != nil || d.AuthSession != nil {
+		session, err := getAuthSession(ctx, d)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -235,7 +234,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
-	if d.TokenSource == nil && d.Session == nil {
+	if d.TokenSource == nil && d.AuthSession == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
@@ -360,12 +359,12 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
-func getSession(ctx context.Context, dialer Dialer) (*session.Session, error) {
-	if dialer.Session != nil {
-		return dialer.Session, nil
+func getAuthSession(ctx context.Context, dialer Dialer) (*auth.Session, error) {
+	if dialer.AuthSession != nil {
+		return dialer.AuthSession, nil
 	}
 
-	return session.FromTokenSource(dialer.TokenSource, auth.DeviceAndroid, ctx)
+	return auth.SessionFromTokenSource(dialer.TokenSource, auth.DeviceAndroid, ctx)
 }
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded

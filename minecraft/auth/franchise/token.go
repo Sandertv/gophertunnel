@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
+	"github.com/sandertv/gophertunnel/minecraft/auth/franchise/internal"
 
 	"github.com/google/uuid"
 	"golang.org/x/text/language"
@@ -49,7 +49,7 @@ func (conf TokenConfig) Token() (*Token, error) {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", internal.UserAgent)
+	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -108,25 +108,15 @@ type DeviceConfig struct {
 	Type               string    `json:"type,omitempty"`
 }
 
-const (
-	ApplicationTypeMinecraftPE = "MinecraftPE"
-)
+const ApplicationTypeMinecraftPE = "MinecraftPE"
 
-const (
-	CapabilityRayTracing = "RayTracing"
-)
+const CapabilityRayTracing = "RayTracing"
 
-const (
-	PlatformWindows10 = "Windows10"
-)
+const PlatformWindows10 = "Windows10"
 
-const (
-	StorePlatformUWPStore = "uwp.store"
-)
+const StorePlatformUWPStore = "uwp.store"
 
-const (
-	DeviceTypeWindows10 = "Windows10"
-)
+const DeviceTypeWindows10 = "Windows10"
 
 type UserConfig struct {
 	Language     language.Tag `json:"language,omitempty"`
@@ -136,6 +126,4 @@ type UserConfig struct {
 	TokenType    string       `json:"tokenType,omitempty"`
 }
 
-const (
-	TokenTypePlayFab = "PlayFab"
-)
+const TokenTypePlayFab = "PlayFab"

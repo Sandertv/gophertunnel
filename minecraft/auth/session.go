@@ -1,4 +1,4 @@
-package session
+package auth
 
 import (
 	"context"
@@ -11,8 +11,7 @@ import (
 	"github.com/df-mc/go-playfab"
 	"github.com/df-mc/go-playfab/title"
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"github.com/sandertv/gophertunnel/minecraft/franchise"
+	"github.com/sandertv/gophertunnel/minecraft/auth/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/oauth2"
 	"golang.org/x/text/language"
@@ -20,17 +19,17 @@ import (
 
 type Session struct {
 	env                  franchise.AuthorizationEnvironment
-	obtainer             *auth.XblTokenObtainer
-	legacyMultiplayerXBL *auth.XBLToken
+	obtainer             *XblTokenObtainer
+	legacyMultiplayerXBL *XBLToken
 	playfabIdentity      *playfab.Identity
 	mcToken              *franchise.Token
 	src                  oauth2.TokenSource
-	deviceType           *auth.Device
+	deviceType           Device
 	conf                 *franchise.TokenConfig
 }
 
-// FromTokenSource creates a session from an XBOX token source and returns it.
-func FromTokenSource(src oauth2.TokenSource, deviceType *auth.Device, ctx context.Context) (s *Session, err error) {
+// SessionFromTokenSource creates a session from an XBOX token source and returns it.
+func SessionFromTokenSource(src oauth2.TokenSource, deviceType Device, ctx context.Context) (s *Session, err error) {
 	s = &Session{src: src, deviceType: deviceType}
 	if err := s.login(ctx); err != nil {
 		return nil, err
@@ -70,7 +69,7 @@ func (s *Session) login(ctx context.Context) error {
 		Environment: &s.env,
 	}
 
-	s.obtainer, err = auth.NewXblTokenObtainer(tok, s.deviceType, ctx)
+	s.obtainer, err = NewXblTokenObtainer(tok, s.deviceType, ctx)
 	if err != nil {
 		return fmt.Errorf("obtain device token: %w", err)
 	}
@@ -101,7 +100,7 @@ func (s *Session) loginWithPlayfab(ctx context.Context) (err error) {
 		return fmt.Errorf("request playfab token: %w", err)
 	}
 
-	s.playfabIdentity, err = auth.XboxPlayfabLoginConfig{
+	s.playfabIdentity, err = XboxPlayfabLoginConfig{
 		LoginConfig: playfab.LoginConfig{
 			Title:         title.Title(s.env.PlayFabTitleID),
 			CreateAccount: true,
@@ -128,7 +127,7 @@ func (s *Session) obtainMcToken(ctx context.Context) (err error) {
 }
 
 // Obtainer returns the Xbox token obtainer, which contains the device token
-func (s *Session) Obtainer() *auth.XblTokenObtainer {
+func (s *Session) Obtainer() *XblTokenObtainer {
 	return s.obtainer
 }
 
@@ -153,7 +152,7 @@ func (s *Session) MCToken(ctx context.Context) (*franchise.Token, error) {
 }
 
 // LegacyMultiplayerXBL requests an XBL token for the old multiplayer endpoint.
-func (s *Session) LegacyMultiplayerXBL(ctx context.Context) (tok *auth.XBLToken, err error) {
+func (s *Session) LegacyMultiplayerXBL(ctx context.Context) (tok *XBLToken, err error) {
 	if s.legacyMultiplayerXBL == nil || pastExpirationTime(s.legacyMultiplayerXBL.AuthorizationToken.NotAfter) {
 		s.legacyMultiplayerXBL, err = s.obtainer.RequestXBLToken(ctx, "https://multiplayer.minecraft.net/")
 		if err != nil {

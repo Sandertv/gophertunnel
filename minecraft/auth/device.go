@@ -6,4 +6,4 @@ type Device struct {
 	Version    string
 }
 
-var DeviceAndroid = &Device{ClientID: "0000000048183522", DeviceType: "Android", Version: "10"}
+var DeviceAndroid = Device{ClientID: "0000000048183522", DeviceType: "Android", Version: "10"}
