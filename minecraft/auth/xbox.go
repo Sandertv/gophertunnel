@@ -42,14 +42,16 @@ func (t XBLToken) SetAuthHeader(r *http.Request) {
 	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
 }
 
-type XblTokenObtainer struct {
+// XBLTokenObtainer holds a live token and device token used for requesting XBL tokens.
+type XBLTokenObtainer struct {
 	key         *ecdsa.PrivateKey
 	liveToken   *oauth2.Token
 	deviceToken *deviceToken
 	deviceType  Device
 }
 
-func NewXblTokenObtainer(liveToken *oauth2.Token, deviceType Device, ctx context.Context) (*XblTokenObtainer, error) {
+// NewXBLTokenObtainer creates a new XBLTokenObtainer from the live token passed.
+func NewXBLTokenObtainer(liveToken *oauth2.Token, deviceType Device, ctx context.Context) (*XBLTokenObtainer, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -72,10 +74,11 @@ func NewXblTokenObtainer(liveToken *oauth2.Token, deviceType Device, ctx context
 	if err != nil {
 		return nil, err
 	}
-	return &XblTokenObtainer{key: key, deviceToken: deviceToken, liveToken: liveToken, deviceType: deviceType}, nil
+	return &XBLTokenObtainer{key: key, deviceToken: deviceToken, liveToken: liveToken, deviceType: deviceType}, nil
 }
 
-func (x *XblTokenObtainer) RequestXBLToken(ctx context.Context, relyingParty string) (*XBLToken, error) {
+// RequestXBLToken requests an XBL token using the pair stored in the obtainer.
+func (x *XBLTokenObtainer) RequestXBLToken(ctx context.Context, relyingParty string) (*XBLToken, error) {
 	if !x.liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}

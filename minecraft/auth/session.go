@@ -19,7 +19,7 @@ import (
 
 type Session struct {
 	env                  franchise.AuthorizationEnvironment
-	obtainer             *XblTokenObtainer
+	obtainer             *XBLTokenObtainer
 	legacyMultiplayerXBL *XBLToken
 	playfabIdentity      *playfab.Identity
 	mcToken              *franchise.Token
@@ -69,7 +69,7 @@ func (s *Session) login(ctx context.Context) error {
 		Environment: &s.env,
 	}
 
-	s.obtainer, err = NewXblTokenObtainer(tok, s.deviceType, ctx)
+	s.obtainer, err = NewXBLTokenObtainer(tok, s.deviceType, ctx)
 	if err != nil {
 		return fmt.Errorf("obtain device token: %w", err)
 	}
@@ -100,7 +100,7 @@ func (s *Session) loginWithPlayfab(ctx context.Context) (err error) {
 		return fmt.Errorf("request playfab token: %w", err)
 	}
 
-	s.playfabIdentity, err = XboxPlayfabLoginConfig{
+	s.playfabIdentity, err = XBOXPlayfabLoginConfig{
 		LoginConfig: playfab.LoginConfig{
 			Title:         title.Title(s.env.PlayFabTitleID),
 			CreateAccount: true,
@@ -127,7 +127,7 @@ func (s *Session) obtainMcToken(ctx context.Context) (err error) {
 }
 
 // Obtainer returns the Xbox token obtainer, which contains the device token
-func (s *Session) Obtainer() *XblTokenObtainer {
+func (s *Session) Obtainer() *XBLTokenObtainer {
 	return s.obtainer
 }
 
