@@ -119,15 +119,6 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 	}
 
 	var decompressed bytes.Buffer
-	if limit == math.MaxInt {
-		// No limit, assume an uncompressed size of 2*len(compressed).
-		decompressed.Grow(len(compressed) * 2)
-		if _, err := io.Copy(&decompressed, r); err != nil {
-			return nil, fmt.Errorf("decompress flate: %w", err)
-		}
-		return decompressed.Bytes(), nil
-	}
-
 	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
 	l := len(compressed)
 	capHint := limit
@@ -135,6 +126,14 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 		capHint = l * 2
 	}
 	decompressed.Grow(capHint)
+
+	// Handle no limit
+	if limit == math.MaxInt {
+		if _, err := io.Copy(&decompressed, r); err != nil {
+			return nil, fmt.Errorf("decompress flate: %w", err)
+		}
+		return decompressed.Bytes(), nil
+	}
 
 	// Read limit+1 bytes to detect overflow without CopyN truncating the result.
 	toRead := int64(limit) + 1
