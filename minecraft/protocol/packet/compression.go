@@ -3,11 +3,13 @@ package packet
 import (
 	"bytes"
 	"fmt"
+	"io"
+	"math"
+	"sync"
+
 	"github.com/golang/snappy"
 	"github.com/klauspost/compress/flate"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
-	"io"
-	"sync"
 )
 
 // Compression represents a compression algorithm that can compress and decompress data.
@@ -106,19 +108,43 @@ func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 
 // Decompress ...
 func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
-	buf := bytes.NewReader(compressed)
-	c := flateDecompressPool.Get().(io.ReadCloser)
-	defer flateDecompressPool.Put(c)
+	r := flateDecompressPool.Get().(io.ReadCloser)
+	defer func() {
+		_ = r.Close()
+		flateDecompressPool.Put(r)
+	}()
 
-	if err := c.(flate.Resetter).Reset(buf, nil); err != nil {
+	if err := r.(flate.Resetter).Reset(bytes.NewReader(compressed), nil); err != nil {
 		return nil, fmt.Errorf("reset flate: %w", err)
 	}
-	_ = c.Close()
 
-	// Guess an uncompressed size of 2*len(compressed).
-	decompressed := bytes.NewBuffer(make([]byte, 0, len(compressed)*2))
-	if _, err := io.Copy(decompressed, io.LimitReader(c, int64(limit))); err != nil {
+	var decompressed bytes.Buffer
+	if limit == math.MaxInt {
+		// No limit, assume an uncompressed size of 2*len(compressed).
+		decompressed.Grow(len(compressed) * 2)
+		if _, err := io.Copy(&decompressed, r); err != nil {
+			return nil, fmt.Errorf("decompress flate: %w", err)
+		}
+		return decompressed.Bytes(), nil
+	}
+
+	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
+	l := len(compressed)
+	capHint := limit
+	if l <= limit/2 {
+		capHint = l * 2
+	}
+	decompressed.Grow(capHint)
+
+	// Read limit+1 bytes to detect overflow without CopyN truncating the result.
+	toRead := int64(limit) + 1
+	n, err := io.CopyN(&decompressed, r, toRead)
+	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+		// CopyN returns an EOF error if the stream is shorter than the limit, we can ignore those cases.
 		return nil, fmt.Errorf("decompress flate: %w", err)
+	}
+	if n > int64(limit) {
+		return nil, fmt.Errorf("decompress flate: size %d exceeds limit %d", n, limit)
 	}
 	return decompressed.Bytes(), nil
 }
