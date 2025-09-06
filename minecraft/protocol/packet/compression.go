@@ -138,7 +138,7 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 	// Read limit+1 bytes to detect overflow without CopyN truncating the result.
 	toRead := int64(limit) + 1
 	n, err := io.CopyN(&decompressed, r, toRead)
-	if err != nil && err != io.EOF && err != io.ErrUnexpectedEOF {
+	if err != nil && err != io.EOF {
 		// CopyN returns an EOF error if the stream is shorter than the limit, we can ignore those cases.
 		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
