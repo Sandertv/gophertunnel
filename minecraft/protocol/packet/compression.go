@@ -139,7 +139,7 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 	toRead := int64(limit) + 1
 	n, err := io.CopyN(&decompressed, r, toRead)
 	if err != nil && err != io.EOF {
-		// CopyN returns an EOF error if the stream is shorter than the limit, we can ignore those cases.
+		// CopyN returns an EOF error if the stream is shorter than the limit, we can treat that as a success.
 		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
 	if n > int64(limit) {
