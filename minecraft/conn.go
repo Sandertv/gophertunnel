@@ -344,11 +344,11 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 		internal.BufferPool.Put(buf)
 	}()
 
-	conn.hdr.PacketID = pk.ID()
-	_ = conn.hdr.Write(buf)
-	l := buf.Len()
-
 	for _, converted := range conn.proto.ConvertFromLatest(pk, conn) {
+		conn.hdr.PacketID = converted.ID()
+		_ = conn.hdr.Write(buf)
+		l := buf.Len()
+
 		converted.Marshal(conn.proto.NewWriter(buf, conn.shieldID.Load()))
 
 		if conn.packetFunc != nil {
@@ -357,6 +357,7 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 
 		sendBuf := internal.BufferPool.Get().(*bytes.Buffer)
 		sendBuf.Write(buf.Bytes())
+		buf.Reset()
 		conn.bufferedSend = append(conn.bufferedSend, sendBufferEntry{b: sendBuf, pool: true})
 	}
 	return nil
