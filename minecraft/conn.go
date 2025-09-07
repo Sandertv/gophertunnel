@@ -45,6 +45,13 @@ var exemptedPacks = []exemptedResourcePack{
 	},
 }
 
+// sendBufferEntry is a struct containing a buffer to send and a bool indicating if the buffer should be
+// returned to the buffer pool after being sent.
+type sendBufferEntry struct {
+	b    *bytes.Buffer
+	pool bool
+}
+
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, but ReadPacket
 // must not be called on multiple goroutines simultaneously.
@@ -96,9 +103,10 @@ type Conn struct {
 	readDeadline    <-chan time.Time
 
 	sendMu sync.Mutex
-	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
+	// bufferedSend is a slice of sendBufferEntry containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
-	bufferedSend [][]byte
+	bufferedSend []sendBufferEntry
+	encodeBuffer [][]byte
 	hdr          *packet.Header
 
 	// readyToLogin is a bool indicating if the connection is ready to login. This is used to ensure that the client
@@ -346,7 +354,10 @@ func (conn *Conn) WritePacket(pk packet.Packet) error {
 		if conn.packetFunc != nil {
 			conn.packetFunc(*conn.hdr, buf.Bytes()[l:], conn.LocalAddr(), conn.RemoteAddr())
 		}
-		conn.bufferedSend = append(conn.bufferedSend, append([]byte(nil), buf.Bytes()...))
+
+		sendBuf := internal.BufferPool.Get().(*bytes.Buffer)
+		sendBuf.Write(buf.Bytes())
+		conn.bufferedSend = append(conn.bufferedSend, sendBufferEntry{b: sendBuf, pool: true})
 	}
 	return nil
 }
@@ -410,7 +421,7 @@ func (conn *Conn) Write(b []byte) (n int, err error) {
 	conn.sendMu.Lock()
 	defer conn.sendMu.Unlock()
 
-	conn.bufferedSend = append(conn.bufferedSend, b)
+	conn.bufferedSend = append(conn.bufferedSend, sendBufferEntry{b: bytes.NewBuffer(b)})
 	return len(b), nil
 }
 
@@ -465,18 +476,22 @@ func (conn *Conn) Flush() error {
 	defer conn.sendMu.Unlock()
 
 	if len(conn.bufferedSend) > 0 {
-		if err := conn.enc.Encode(conn.bufferedSend); err != nil && !errors.Is(err, net.ErrClosed) {
+		for _, b := range conn.bufferedSend {
+			conn.encodeBuffer = append(conn.encodeBuffer, b.b.Bytes())
+		}
+		if err := conn.enc.Encode(conn.encodeBuffer); err != nil && !errors.Is(err, net.ErrClosed) {
 			// Should never happen.
 			panic(fmt.Errorf("error encoding packet batch: %w", err))
 		}
-		// First manually clear out conn.bufferedSend so that re-using the slice after resetting its length to
-		// 0 doesn't result in an 'invisible' memory leak.
-		for i := range conn.bufferedSend {
-			conn.bufferedSend[i] = nil
+		for _, b := range conn.bufferedSend {
+			if b.pool {
+				internal.BufferPool.Put(b.b)
+			}
 		}
-		// Slice the conn.bufferedSend to a length of 0 so we don't have to re-allocate space in this slice
-		// every time.
+		// Slice the conn.bufferedSend and conn.encodeBuffer to a length of 0 so we don't have
+		// to re-allocate space in this slice every time.
 		conn.bufferedSend = conn.bufferedSend[:0]
+		conn.encodeBuffer = conn.encodeBuffer[:0]
 	}
 	return nil
 }
