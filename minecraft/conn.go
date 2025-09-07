@@ -484,14 +484,17 @@ func (conn *Conn) Flush() error {
 			panic(fmt.Errorf("error encoding packet batch: %w", err))
 		}
 
-		// First manually clear out conn.bufferedSend so that re-using the slice after resetting its length to
-		// 0 doesn't result in an 'invisible' memory leak.
+		// First manually clear out conn.bufferedSend and conn.encodeBuffer so that re-using the slice after
+		// resetting its length to 0 doesn't result in an 'invisible' memory leak.
 		for i, b := range conn.bufferedSend {
 			if b.pool {
 				b.b.Reset()
 				internal.BufferPool.Put(b.b)
 			}
 			conn.bufferedSend[i].b = nil
+		}
+		for i := range conn.encodeBuffer {
+			conn.encodeBuffer[i] = nil
 		}
 		// Slice the conn.bufferedSend and conn.encodeBuffer to a length of 0 so we don't have
 		// to re-allocate space in this slice every time.
