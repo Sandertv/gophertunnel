@@ -409,7 +409,7 @@ func readManifest(path string) (*Manifest, error) {
 		return nil, fmt.Errorf("read manifest file: %w", err)
 	}
 	manifest := &Manifest{}
-	if err := jsonc.Unmarshal(allData, manifest); err != nil {
+	if err := unmarshalJSON(allData, manifest); err != nil {
 		return nil, fmt.Errorf("decode manifest JSON: %w (data: %v)", err, string(allData))
 	}
 
@@ -418,4 +418,13 @@ func readManifest(path string) (*Manifest, error) {
 	}
 
 	return manifest, nil
+}
+
+// unmarshalJSON unmarshals JSON data into a struct and removes trailing comments.
+func unmarshalJSON(data []byte, v any) error {
+	clean := jsonc.ToJSON([]byte(data))
+	if idx := bytes.LastIndex(clean, []byte("}")); idx != -1 {
+		clean = clean[:idx+1]
+	}
+	return jsonc.Unmarshal(clean, v)
 }
