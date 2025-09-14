@@ -17,3 +17,5 @@ require (
 )
 
 require golang.org/x/image v0.21.0 // indirect
+
+replace github.com/muhammadmuzzammil1998/jsonc => github.com/df-mc/jsonc v1.0.1
