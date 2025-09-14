@@ -878,6 +878,18 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			conn.packQueue.packAmount--
 			continue
 		}
+
+		// Try to use the Download URL if set
+		if pack.DownloadURL != "" {
+			newPack, err := resource.ReadURL(pack.DownloadURL)
+			if err != nil {
+				conn.log.Warn("handle ResourcePacksInfo: failed to download pack from URL", "UUID", pack.UUID, "err", err)
+			} else {
+				conn.resourcePacks = append(conn.resourcePacks, newPack.WithContentKey(pack.ContentKey))
+				continue
+			}
+		}
+
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, id+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[id] = downloadingPack{
