@@ -43,6 +43,30 @@ var exemptedPacks = []exemptedResourcePack{
 		uuid:    "0fba4063-dba1-4281-9b89-ff9390653530",
 		version: "1.0.0",
 	},
+	{
+		uuid:    "b41c2785-c512-4a49-af56-3a87afd47c57",
+		version: "1.21.30",
+	},
+	{
+		uuid:    "a4df0cb3-17be-4163-88d7-fcf7002b935d",
+		version: "1.21.20",
+	},
+	{
+		uuid:    "d19adffe-a2e1-4b02-8436-ca4583368c89",
+		version: "1.21.10",
+	},
+	{
+		uuid:    "85d5603d-2824-4b21-8044-34f441f4fce1",
+		version: "1.21.0",
+	},
+	{
+		uuid:    "e977cd13-0a11-4618-96fb-03dfe9c43608",
+		version: "1.20.60",
+	},
+	{
+		uuid:    "0674721c-a0aa-41a1-9ba8-1ed33ea3e7ed",
+		version: "1.20.50",
+	},
 }
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
