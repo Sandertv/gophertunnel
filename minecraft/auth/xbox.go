@@ -176,9 +176,12 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 // sign signs the request passed containing the body passed. It signs the request using the ECDSA private key
 // passed. If the request has a 'ProofKey' field in the Properties field, that key must be passed here.
 func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
+	serverDateMu.Lock()
+	currentServerDate := serverDate
+	serverDateMu.Unlock()
 	var currentTime int64
-	if !serverDate.IsZero() {
-		currentTime = windowsTimestamp(serverDate)
+	if !currentServerDate.IsZero() {
+		currentTime = windowsTimestamp(currentServerDate)
 	} else { // Should never happen
 		currentTime = windowsTimestamp(time.Now())
 	}

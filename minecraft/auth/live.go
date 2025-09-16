@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -98,7 +99,10 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	panic("unreachable")
 }
 
-var serverDate time.Time
+var (
+	serverDateMu sync.Mutex
+	serverDate   time.Time
+)
 
 func getDateHeader(headers http.Header) time.Time {
 	date := headers.Get("Date")
@@ -113,7 +117,9 @@ func getDateHeader(headers http.Header) time.Time {
 
 func setServerDate(d time.Time) {
 	if !d.IsZero() {
+		serverDateMu.Lock()
 		serverDate = d
+		serverDateMu.Unlock()
 	}
 }
 
