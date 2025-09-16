@@ -12,44 +12,6 @@ import (
 // Documentation on this may be found here:
 // https://learn.microsoft.com/en-us/minecraft/creator/reference/content/addonsreference/examples/addonmanifest
 
-// Version may be present in the manifest as [1,0,0] or "1.0.0".
-type Version [3]int
-
-func (v *Version) UnmarshalJSON(b []byte) error {
-	// Parse common array format [1,0,0]
-	var arr []int
-	if err := json.Unmarshal(b, &arr); err == nil && len(arr) > 0 {
-		for i := 0; i < 3 && i < len(arr); i++ {
-			v[i] = arr[i]
-		}
-		return nil
-	}
-
-	// Parse semver format "1.0.0"
-	var s string
-	if err := json.Unmarshal(b, &s); err == nil {
-		s = strings.TrimPrefix(strings.TrimSpace(s), "v")
-		if i := strings.IndexAny(s, "+-"); i >= 0 {
-			s = s[:i]
-		}
-
-		parts := strings.Split(s, ".")
-		for i := 0; i < 3 && i < len(parts); i++ {
-			if parts[i] == "" {
-				continue
-			}
-			n, err := strconv.Atoi(parts[i])
-			if err != nil {
-				return fmt.Errorf("invalid version component %q in %q", parts[i], s)
-			}
-			v[i] = n
-		}
-		return nil
-	}
-
-	return fmt.Errorf("invalid version: %s", string(b))
-}
-
 // Manifest contains all the basic information about the pack that Minecraft needs to identify it.
 type Manifest struct {
 	// FormatVersion defines the current version of the manifest. This is currently always 2.
@@ -71,6 +33,13 @@ type Manifest struct {
 	// worldTemplate holds a value indicating if the pack holds an entire world template or not.
 	worldTemplate bool
 }
+
+// Capability is a particular feature that the pack utilises of that isn't necessarily enabled by default.
+//
+//	experimental_custom_ui: Allows HTML files in the pack to be used for custom UI, and scripts in the pack
+//	                        to call and manipulate custom UI.
+//	chemistry:              Allows the pack to add, change or replace Chemistry functionality.
+type Capability string
 
 // Header is the header of a resource pack. It contains information that applies to the entire resource pack,
 // such as the name of the resource pack.
@@ -113,13 +82,6 @@ type Dependency struct {
 	Version Version `json:"version"`
 }
 
-// Capability is a particular feature that the pack utilises of that isn't necessarily enabled by default.
-//
-//	experimental_custom_ui: Allows HTML files in the pack to be used for custom UI, and scripts in the pack
-//	                        to call and manipulate custom UI.
-//	chemistry:              Allows the pack to add, change or replace Chemistry functionality.
-type Capability string
-
 // Metadata contains additional information about the pack that is otherwise optional.
 type Metadata struct {
 	// Author is the name of the author(s) of the pack.
@@ -128,4 +90,36 @@ type Metadata struct {
 	License string `json:"license,omitempty"`
 	// URL is the home website of the creator of the pack.
 	URL string `json:"url,omitempty"`
+}
+
+// Version may be present in the manifest as [1,0,0] or "1.0.0".
+type Version [3]int
+
+func (v *Version) UnmarshalJSON(b []byte) error {
+	// Parse common array format [1,0,0]
+	var arr [3]int
+	if err := json.Unmarshal(b, &arr); err == nil {
+		*v = arr
+		return nil
+	}
+
+	// Parse semver format "1.0.0"
+	var s string
+	if err := json.Unmarshal(b, &s); err == nil {
+		s = strings.TrimSpace(s)
+		parts := strings.Split(s, ".")
+		if len(parts) != 3 {
+			return fmt.Errorf("invalid version %q (need x.y.z)", s)
+		}
+		for i := range 3 {
+			n, err := strconv.Atoi(parts[i])
+			if err != nil {
+				return fmt.Errorf("invalid version component %q in %q", parts[i], s)
+			}
+			v[i] = n
+		}
+		return nil
+	}
+
+	return fmt.Errorf("invalid version: %s", string(b))
 }
