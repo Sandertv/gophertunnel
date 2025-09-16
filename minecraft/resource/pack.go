@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-  
+
 	"github.com/df-mc/jsonc"
 	"github.com/google/uuid"
 )
