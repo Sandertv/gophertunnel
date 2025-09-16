@@ -101,7 +101,10 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 
 var (
 	serverDateMu sync.Mutex
-	serverDate   time.Time
+	// serverDate represents the most recent server date received from Microsoft servers.
+	// It's used for the signed requests which can be blocked if the users device time is not synced.
+	// It uses the date received from the unsigned requests.
+	serverDate time.Time
 )
 
 func getDateHeader(headers http.Header) time.Time {
