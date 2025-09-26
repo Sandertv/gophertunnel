@@ -3,7 +3,7 @@ module github.com/sandertv/gophertunnel
 go 1.24
 
 require (
-	github.com/df-mc/jsonc v1.0.5-0.20250926155432-6f3bafdc982c
+	github.com/df-mc/jsonc v1.0.5
 	github.com/go-gl/mathgl v1.1.0
 	github.com/go-jose/go-jose/v4 v4.1.0
 	github.com/golang/snappy v0.0.4
