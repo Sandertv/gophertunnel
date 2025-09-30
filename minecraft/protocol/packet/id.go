@@ -229,4 +229,5 @@ const (
 	IDPlayerLocation
 	IDClientBoundControlSchemeSet
 	IDServerScriptDebugDrawer
+	IDServerBoundPackSettingChange
 )

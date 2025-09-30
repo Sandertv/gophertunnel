@@ -137,3 +137,16 @@ func (x *PlayerBlockAction) Marshal(r IO) {
 		r.Varint32(&x.Face)
 	}
 }
+
+type PlayerArmourDamageEntry struct {
+	// ArmourSlot ...
+	ArmourSlot uint8
+	// Damage ...
+	Damage int16
+}
+
+// Marshal encodes/decodes a PlayerArmourDamageEntry.
+func (x *PlayerArmourDamageEntry) Marshal(r IO) {
+	r.Uint8(&x.ArmourSlot)
+	r.Int16(&x.Damage)
+}
