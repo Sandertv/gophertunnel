@@ -179,7 +179,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
 	w.Varuint32(&x.TriggerType)
-	w.BlockPos(&x.BlockPosition)
+	w.UBlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
 	w.ItemInstance(&x.HeldItem)
