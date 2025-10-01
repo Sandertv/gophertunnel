@@ -355,6 +355,7 @@ func init() {
 		IDClientMovementPredictionSync:    func() Packet { return &ClientMovementPredictionSync{} },
 		IDClientCameraAimAssist:           func() Packet { return &ClientCameraAimAssist{} },
 		IDUpdateClientOptions:             func() Packet { return &UpdateClientOptions{} },
+		IDServerBoundPackSettingChange:    func() Packet { return &ServerBoundPackSettingChange{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
