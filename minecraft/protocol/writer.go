@@ -475,6 +475,7 @@ func (w *Writer) AbilityValue(x *any) {
 
 var varintMaxByteValue = big.NewInt(0x80)
 
+// Bitset writes a Bitset x to the underlying buffer.
 func (w *Writer) Bitset(x *Bitset, size int) {
 	if x.size != size {
 		w.panicf("bitset size mismatch: expected %v, got %v", size, x.size)
@@ -494,6 +495,7 @@ func (w *Writer) Bitset(x *Bitset, size int) {
 	_ = w.w.WriteByte(byte(u.Bits()[0]))
 }
 
+// PackSetting writes a PackSetting x to the underlying buffer.
 func (w *Writer) PackSetting(x *PackSetting) {
 	w.String(&x.Name)
 	var id uint32
