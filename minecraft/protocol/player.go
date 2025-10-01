@@ -138,10 +138,11 @@ func (x *PlayerBlockAction) Marshal(r IO) {
 	}
 }
 
+// PlayerArmourDamageEntry represents an entry for a single piece of armour that should be damaged.
 type PlayerArmourDamageEntry struct {
-	// ArmourSlot ...
+	// ArmourSlot is the index of the armour slot to damage.
 	ArmourSlot uint8
-	// Damage ...
+	// Damage is the amount of damage to apply to the armour in the specified slot.
 	Damage int16
 }
 

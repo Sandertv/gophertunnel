@@ -111,11 +111,11 @@ type BiomeDefinition struct {
 	Temperature float32
 	// Downfall is the amount that precipitation affects colours and block changes.
 	Downfall float32
-	// FoliageSnow ...
+	// FoliageSnow is the progression factor for foliage turning white due to snow.
 	FoliageSnow float32
-	// Depth ...
+	// Depth is the depth of the biome.
 	Depth float32
-	// Scale ...
+	// Scale is the scale of the biome.
 	Scale float32
 	// MapWaterColour is an ARGB value for the water colour on maps in the biome.
 	MapWaterColour int32
@@ -159,7 +159,7 @@ type BiomeChunkGeneration struct {
 	SurfaceMaterialAdjustments Optional[[]BiomeElementData]
 	// SurfaceMaterials is a set of materials to use for the surface layers of the biome.
 	SurfaceMaterials Optional[BiomeSurfaceMaterial]
-	// HasDefaultOverworldSurface ...
+	// HasDefaultOverworldSurface is true if the biome has a default overworld surface.
 	HasDefaultOverworldSurface bool
 	// HasSwampSurface is true if the biome has a swamp surface.
 	HasSwampSurface bool

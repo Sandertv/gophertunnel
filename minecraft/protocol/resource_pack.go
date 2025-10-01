@@ -93,10 +93,11 @@ func (x *PackURL) Marshal(r IO) {
 	r.String(&x.URL)
 }
 
-// PackSetting ...
+// PackSetting represents a single setting from the pack settings UI. It holds information
+// about the setting that was changed, including its name and the new value.
 type PackSetting struct {
 	// Name is the name of the pack setting.
 	Name string
-	// Value is the new value of the pack setting. This is either a bool, float32 or string.
+	// Value is the new value of the setting. This is either a float32, bool or string.
 	Value any
 }
