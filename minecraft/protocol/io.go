@@ -1,10 +1,11 @@
 package protocol
 
 import (
+	"image/color"
+
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
-	"image/color"
 )
 
 // IO represents a packet IO direction. Implementations of this interface are Reader and Writer. Reader reads
@@ -97,6 +98,13 @@ func SliceUint16Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 func SliceUint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint32(len(*x))
 	r.Uint32(&count)
+	SliceOfLen[T, S, A](r, count, x)
+}
+
+// SliceVaruint32Length reads/writes a slice of T with a varuint32 prefix.
+func SliceVaruint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
+	count := uint32(len(*x))
+	r.Varuint32(&count)
 	SliceOfLen[T, S, A](r, count, x)
 }
 
