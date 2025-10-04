@@ -25,5 +25,5 @@ func (pk *PlayerArmourDamage) ID() uint32 {
 }
 
 func (pk *PlayerArmourDamage) Marshal(io protocol.IO) {
-	protocol.SliceVaruint32Length(io, &pk.List)
+	protocol.Slice(io, &pk.List)
 }

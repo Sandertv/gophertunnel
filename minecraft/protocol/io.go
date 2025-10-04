@@ -101,13 +101,6 @@ func SliceUint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	SliceOfLen[T, S, A](r, count, x)
 }
 
-// SliceVaruint32Length reads/writes a slice of T with a varuint32 prefix.
-func SliceVaruint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
-	count := uint32(len(*x))
-	r.Varuint32(&count)
-	SliceOfLen[T, S, A](r, count, x)
-}
-
 // SliceVarint32Length reads/writes a slice of T with a varint32 prefix.
 func SliceVarint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := int32(len(*x))
