@@ -14,7 +14,7 @@ const (
 // additional event data. The event is typically used by the client for telemetry.
 type SimpleEvent struct {
 	// EventType is the type of the event to be called. It is one of the constants that may be found above.
-	EventType int16
+	EventType uint16
 }
 
 // ID ...
@@ -23,5 +23,5 @@ func (*SimpleEvent) ID() uint32 {
 }
 
 func (pk *SimpleEvent) Marshal(io protocol.IO) {
-	io.Int16(&pk.EventType)
+	io.Uint16(&pk.EventType)
 }
