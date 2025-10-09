@@ -1,9 +1,8 @@
 package protocol
 
 import (
-	"image/color"
-
 	"github.com/google/uuid"
+	"image/color"
 )
 
 const (
