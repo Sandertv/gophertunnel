@@ -13,7 +13,7 @@ type RequestChunkRadius struct {
 	ChunkRadius int32
 	// MaxChunkRadius is the maximum chunk radius that the player wants to receive. The reason for the client sending this
 	// is currently unknown.
-	MaxChunkRadius int32
+	MaxChunkRadius uint8
 }
 
 // ID ...
@@ -23,5 +23,5 @@ func (*RequestChunkRadius) ID() uint32 {
 
 func (pk *RequestChunkRadius) Marshal(io protocol.IO) {
 	io.Varint32(&pk.ChunkRadius)
-	io.Varint32(&pk.MaxChunkRadius)
+	io.Uint8(&pk.MaxChunkRadius)
 }
