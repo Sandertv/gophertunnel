@@ -103,9 +103,7 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 	}
 	defer resp.Body.Close()
 
-	if d := getDateHeader(resp.Header); !d.IsZero() {
-		setServerDate(d)
-	}
+	updateServerTimeFromHeaders(resp.Header)
 
 	if resp.StatusCode != 200 {
 		// Xbox Live returns a custom error code in the x-err header.
@@ -161,9 +159,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
 
-	if d := getDateHeader(resp.Header); !d.IsZero() {
-		setServerDate(d)
-	}
+	updateServerTimeFromHeaders(resp.Header)
 
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
@@ -176,9 +172,9 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 // sign signs the request passed containing the body passed. It signs the request using the ECDSA private key
 // passed. If the request has a 'ProofKey' field in the Properties field, that key must be passed here.
 func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
-	serverDateMu.Lock()
-	currentServerDate := serverDate
-	serverDateMu.Unlock()
+	serverTimeMu.Lock()
+	currentServerDate := serverTime
+	serverTimeMu.Unlock()
 	var currentTime int64
 	if !currentServerDate.IsZero() {
 		currentTime = windowsTimestamp(currentServerDate)
