@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"sync"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -78,7 +79,8 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	if err != nil {
 		return nil, err
 	}
-	_, _ = w.Write([]byte(fmt.Sprintf("Authenticate at %v using the code %v.\n", d.VerificationURI, d.UserCode)))
+
+	_, _ = fmt.Fprintf(w, "Authenticate at %v using the code %v.\n", d.VerificationURI, d.UserCode)
 	ticker := time.NewTicker(time.Second * time.Duration(d.Interval))
 	defer ticker.Stop()
 
@@ -95,6 +97,28 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 		}
 	}
 	panic("unreachable")
+}
+
+var (
+	serverTimeMu sync.Mutex
+	// serverTime represents the most recent server date received from Microsoft servers.
+	// It's used for the signed requests which can be blocked if the users device time is not synced.
+	// It uses the date received from the unsigned requests.
+	serverTime time.Time
+)
+
+func updateServerTimeFromHeaders(headers http.Header) {
+	date := headers.Get("Date")
+	if date == "" {
+		return
+	}
+	t, err := time.Parse(time.RFC1123, date)
+	if err != nil || t.IsZero() {
+		return
+	}
+	serverTimeMu.Lock()
+	serverTime = t
+	serverTimeMu.Unlock()
 }
 
 // startDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
@@ -128,13 +152,17 @@ func pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
 	}
 	defer resp.Body.Close()
+
+	updateServerTimeFromHeaders(resp.Header)
+
 	poll := new(deviceAuthPoll)
 	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
 	}
-	if poll.Error == "authorization_pending" {
+	switch poll.Error {
+	case "authorization_pending":
 		return nil, nil
-	} else if poll.Error == "" {
+	case "":
 		return &oauth2.Token{
 			AccessToken:  poll.AccessToken,
 			TokenType:    poll.TokenType,
@@ -160,6 +188,9 @@ func refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: %w", err)
 	}
 	defer resp.Body.Close()
+
+	updateServerTimeFromHeaders(resp.Header)
+
 	poll := new(deviceAuthPoll)
 	if err := json.NewDecoder(resp.Body).Decode(poll); err != nil {
 		return nil, fmt.Errorf("POST https://login.live.com/oauth20_token.srf: json decode: %w", err)
