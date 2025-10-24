@@ -94,13 +94,10 @@ func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 	}()
 
 	w.Reset(compressed)
-
-	_, err := w.Write(decompressed)
-	if err != nil {
+	if _, err := w.Write(decompressed); err != nil {
 		return nil, fmt.Errorf("compress flate: %w", err)
 	}
-	err = w.Close()
-	if err != nil {
+	if err := w.Close(); err != nil {
 		return nil, fmt.Errorf("close flate writer: %w", err)
 	}
 	return append([]byte(nil), compressed.Bytes()...), nil
@@ -109,23 +106,13 @@ func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 // Decompress ...
 func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
 	r := flateDecompressPool.Get().(io.ReadCloser)
-	defer func() {
-		_ = r.Close()
-		flateDecompressPool.Put(r)
-	}()
+	defer flateDecompressPool.Put(r)
 
 	if err := r.(flate.Resetter).Reset(bytes.NewReader(compressed), nil); err != nil {
 		return nil, fmt.Errorf("reset flate: %w", err)
 	}
 
 	var decompressed bytes.Buffer
-	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
-	l := len(compressed)
-	capHint := limit
-	if l <= limit/2 {
-		capHint = l * 2
-	}
-	decompressed.Grow(capHint)
 
 	// Handle no limit
 	if limit == math.MaxInt {
@@ -134,6 +121,13 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 		}
 		return decompressed.Bytes(), nil
 	}
+
+	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
+	capHint := limit
+	if l := len(compressed); l <= limit/2 {
+		capHint = l * 2
+	}
+	decompressed.Grow(capHint)
 
 	// Read limit+1 bytes to detect overflow without CopyN truncating the result.
 	toRead := int64(limit) + 1
