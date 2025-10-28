@@ -106,20 +106,30 @@ func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 // Decompress ...
 func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
 	r := flateDecompressPool.Get().(io.ReadCloser)
-	defer flateDecompressPool.Put(r)
+	defer func() {
+		_ = r.Close()
+		flateDecompressPool.Put(r)
+	}()
 
 	if err := r.(flate.Resetter).Reset(bytes.NewReader(compressed), nil); err != nil {
 		return nil, fmt.Errorf("reset flate: %w", err)
 	}
 
-	var decompressed bytes.Buffer
+	decompressed := internal.BufferPool.Get().(*bytes.Buffer)
+	defer func() {
+		// Only return reasonably sized buffers to the pool to avoid retaining very large arrays.
+		if decompressed.Cap() <= 1<<20 { // 1 MiB cap
+			decompressed.Reset()
+			internal.BufferPool.Put(decompressed)
+		}
+	}()
 
 	// Handle no limit
 	if limit == math.MaxInt {
-		if _, err := io.Copy(&decompressed, r); err != nil {
+		if _, err := io.Copy(decompressed, r); err != nil {
 			return nil, fmt.Errorf("decompress flate: %w", err)
 		}
-		return decompressed.Bytes(), nil
+		return append([]byte(nil), decompressed.Bytes()...), nil
 	}
 
 	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
@@ -129,16 +139,15 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 	}
 	decompressed.Grow(capHint)
 
-	// Read limit+1 bytes to detect overflow without CopyN truncating the result.
-	toRead := int64(limit) + 1
-	lr := &io.LimitedReader{R: r, N: toRead}
-	if _, err := io.Copy(&decompressed, lr); err != nil {
+	// Read limit+1 bytes to detect overflow
+	lr := &io.LimitedReader{R: r, N: int64(limit) + 1}
+	if _, err := io.Copy(decompressed, lr); err != nil {
 		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
 	if lr.N <= 0 {
 		return nil, fmt.Errorf("decompress flate: size exceeds limit %d", limit)
 	}
-	return decompressed.Bytes(), nil
+	return append([]byte(nil), decompressed.Bytes()...), nil
 }
 
 // EncodeCompression ...
