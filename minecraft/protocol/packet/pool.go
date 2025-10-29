@@ -269,7 +269,6 @@ func init() {
 		IDClientBoundControlSchemeSet:  func() Packet { return &ClientBoundControlSchemeSet{} },
 		IDDebugDrawer:                  func() Packet { return &DebugDrawer{} },
 		IDServerBoundPackSettingChange: func() Packet { return &ServerBoundPackSettingChange{} },
-		IDDataStoreSync:                func() Packet { return &DataStoreSync{} },
 		IDGraphicsOverrideParameter:    func() Packet { return &GraphicsOverrideParameter{} },
 	}
 	for id, pk := range serverOriginating {
