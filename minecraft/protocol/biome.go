@@ -575,7 +575,7 @@ type BiomeReplacementData struct {
 	TargetBiomes []int16
 	// Amount is the amount of replacement to apply.
 	Amount float32
-	// NoiseFrequencyScale...
+	// NoiseFrequencyScale ...
 	NoiseFrequencyScale float32
 	// ReplacementIndex is the index of the replacement.
 	ReplacementIndex uint32
