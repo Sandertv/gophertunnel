@@ -24,7 +24,7 @@ type Animate struct {
 	// ID is unique for each world session, and entities are generally identified in packets using this
 	// runtime ID.
 	EntityRuntimeID uint64
-	// Data is optional data associated with the animation action.
+	// Data ...
 	Data float32
 	// RowingTime is the time for rowing actions.
 	RowingTime float32
