@@ -4,11 +4,139 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	DisconnectReasonUnknown int32 = iota
+	DisconnectReasonCantConnectNoInternet
+	DisconnectReasonNoPermissions
+	DisconnectReasonUnrecoverableError
+	DisconnectReasonThirdPartyBlocked
+	DisconnectReasonThirdPartyNoInternet
+	DisconnectReasonThirdPartyBadIP
+	DisconnectReasonThirdPartyNoServerOrServerLocked
+	DisconnectReasonVersionMismatch
+	DisconnectReasonSkinIssue
+	DisconnectReasonInviteSessionNotFound
+	DisconnectReasonEduLevelSettingsMissing
+	DisconnectReasonLocalServerNotFound
+	DisconnectReasonLegacyDisconnect
+	DisconnectReasonUserLeaveGameAttempted
+	DisconnectReasonPlatformLockedSkinsError
+	DisconnectReasonRealmsWorldUnassigned
+	DisconnectReasonRealmsServerCantConnect
+	DisconnectReasonRealmsServerHidden
+	DisconnectReasonRealmsServerDisabledBeta
+	DisconnectReasonRealmsServerDisabled
+	DisconnectReasonCrossPlatformDisabled
+	DisconnectReasonCantConnect
+	DisconnectReasonSessionNotFound
+	_
+	DisconnectReasonServerFull
+	DisconnectReasonInvalidPlatformSkin
+	DisconnectReasonEditionVersionMismatch
+	DisconnectReasonEditionMismatch
+	DisconnectReasonLevelNewerThanExeVersion
+	DisconnectReasonNoFailOccurred
+	DisconnectReasonBannedSkin
+	DisconnectReasonTimeout
+	DisconnectReasonServerNotFound
+	DisconnectReasonOutdatedServer
+	DisconnectReasonOutdatedClient
+	_
+	DisconnectReasonMultiplayerDisabled
+	DisconnectReasonNoWiFi
+	_
+	DisconnectReasonNoReason
+	DisconnectReasonDisconnected
+	DisconnectReasonInvalidPlayer
+	DisconnectReasonLoggedInOtherLocation
+	DisconnectReasonServerIdConflict
+	DisconnectReasonNotAllowed
+	DisconnectReasonNotAuthenticated
+	DisconnectReasonInvalidTenant
+	DisconnectReasonUnknownPacket
+	DisconnectReasonUnexpectedPacket
+	DisconnectReasonInvalidCommandRequestPacket
+	DisconnectReasonHostSuspended
+	DisconnectReasonLoginPacketNoRequest
+	DisconnectReasonLoginPacketNoCert
+	DisconnectReasonMissingClient
+	DisconnectReasonKicked
+	DisconnectReasonKickedForExploit
+	DisconnectReasonKickedForIdle
+	DisconnectReasonResourcePackProblem
+	DisconnectReasonIncompatiblePack
+	DisconnectReasonOutOfStorage
+	DisconnectReasonInvalidLevel
+	_
+	DisconnectReasonBlockMismatch
+	DisconnectReasonInvalidHeights
+	DisconnectReasonInvalidWidths
+	_
+	_
+	DisconnectReasonShutdown
+	_
+	DisconnectReasonLoadingStateTimeout
+	DisconnectReasonResourcePackLoadingFailed
+	DisconnectReasonSearchingForSessionLoadingScreenFailed
+	DisconnectReasonNetherNetProtocolVersion
+	DisconnectReasonSubsystemStatusError
+	DisconnectReasonEmptyAuthFromDiscovery
+	DisconnectReasonEmptyUrlFromDiscovery
+	DisconnectReasonExpiredAuthFromDiscovery
+	DisconnectReasonUnknownSignalServiceSignInFailure
+	DisconnectReasonXBLJoinLobbyFailure
+	DisconnectReasonUnspecifiedClientInstanceDisconnection
+	DisconnectReasonNetherNetSessionNotFound
+	DisconnectReasonNetherNetCreatePeerConnection
+	DisconnectReasonNetherNetICE
+	DisconnectReasonNetherNetConnectRequest
+	DisconnectReasonNetherNetConnectResponse
+	DisconnectReasonNetherNetNegotiationTimeout
+	DisconnectReasonNetherNetInactivityTimeout
+	DisconnectReasonStaleConnectionBeingReplaced
+	_
+	DisconnectReasonBadPacket
+	DisconnectReasonNetherNetFailedToCreateOffer
+	DisconnectReasonNetherNetFailedToCreateAnswer
+	DisconnectReasonNetherNetFailedToSetLocalDescription
+	DisconnectReasonNetherNetFailedToSetRemoteDescription
+	DisconnectReasonNetherNetNegotiationTimeoutWaitingForResponse
+	DisconnectReasonNetherNetNegotiationTimeoutWaitingForAccept
+	DisconnectReasonNetherNetIncomingConnectionIgnored
+	DisconnectReasonNetherNetSignalingParsingFailure
+	DisconnectReasonNetherNetSignalingUnknownError
+	DisconnectReasonNetherNetSignalingUnicastDeliveryFailed
+	DisconnectReasonNetherNetSignalingBroadcastDeliveryFailed
+	DisconnectReasonNetherNetSignalingGenericDeliveryFailed
+	DisconnectReasonEditorMismatchEditorWorld
+	DisconnectReasonEditorMismatchVanillaWorld
+	DisconnectReasonWorldTransferNotPrimaryClient
+	DisconnectReasonRequestServerShutdown
+	DisconnectReasonClientGameSetupCancelled
+	DisconnectReasonClientGameSetupFailed
+	_
+	DisconnectReasonNetherNetSignalingSigninFailed
+	DisconnectReasonSessionAccessDenied
+	DisconnectReasonServiceSigninIssue
+	DisconnectReasonNetherNetNoSignalingChannel
+	DisconnectReasonNetherNetNotLoggedIn
+	DisconnectReasonNetherNetClientSignalingError
+	DisconnectReasonSubClientLoginDisabled
+	DisconnectReasonDeepLinkTryingToOpenDemoWorldWhileSignedIn
+	DisconnectReasonAsyncJoinTaskDenied
+	DisconnectReasonRealmsTimelineRequired
+	DisconnectReasonGuestWithoutHost
+	DisconnectReasonFailedToJoinExperience
+	DisconnectReasonNetherNetDataChannelClosed
+	DisconnectReasonDiscoveryEnvironmentMismatch
+	DisconnectReasonHostWithoutKeys
+)
+
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the
 // disconnect screen.
 type Disconnect struct {
-	// Reason is the reason for the disconnection. It seems as if this field has no use other than for
-	// telemetry reasons as it does not affect the message that gets displayed on the disconnect screen.
+	// Reason is the reason for the disconnection. This affects the error code displayed on the Ore UI
+	// disconnection screen and is one of the constants above.
 	Reason int32
 	// HideDisconnectionScreen specifies if the disconnection screen should be hidden when the client is
 	// disconnected, meaning it will be sent directly to the main menu.
