@@ -51,6 +51,10 @@ const (
 	EasingTypeInOutElastic
 )
 
+const (
+	SplineEaseTypeCatmullRom = iota
+	SplineEaseTypeLinear
+)
 // CameraEase represents an easing function that can be used by a CameraInstructionSet.
 type CameraEase struct {
 	// Type is the type of easing function used. This is one of the constants above.
