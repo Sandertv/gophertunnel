@@ -577,6 +577,17 @@ func (conn *Conn) Context() context.Context {
 	return conn.ctx
 }
 
+// Disconnect disconnects the connection by first sending a disconnect packet with the message passed, and
+// closing the connection after. If the message passed is empty, the client will be immediately sent to the
+// server list instead of a disconnect screen.
+func (conn *Conn) Disconnect(message string) error {
+	_ = conn.WritePacket(&packet.Disconnect{
+		HideDisconnectionScreen: message == "",
+		Message:                 message,
+	})
+	return conn.close(conn.closeErr(message))
+}
+
 // takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
 // packets. If none was found, it returns false, and if one was found, the data and true is returned.
 func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
