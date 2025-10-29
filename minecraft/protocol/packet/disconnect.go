@@ -133,7 +133,8 @@ const (
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the
 // disconnect screen.
 type Disconnect struct {
-	// Reason is the reason for the disconnection. This affects the error code displayed on the Ore UI disconnection screen and is one of the constants above.
+	// Reason is the reason for the disconnection. This affects the error code displayed on the Ore UI 
+	// disconnection screen and is one of the constants above.
 	Reason int32
 	// HideDisconnectionScreen specifies if the disconnection screen should be hidden when the client is
 	// disconnected, meaning it will be sent directly to the main menu.
