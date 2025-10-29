@@ -537,19 +537,22 @@ type BiomeReplacementData struct {
 	// Biome is the biome ID to replace.
 	Biome int16
 	// Dimension is the dimension ID where the replacement applies.
-	Dimension int32
+	Dimension int16
 	// TargetBiomes is a list of target biome IDs for the replacement.
 	TargetBiomes []int16
 	// Amount is the amount of replacement to apply.
 	Amount float32
+	// NoiseFrequencyScale...
+	NoiseFrequencyScale float32
 	// ReplacementIndex is the index of the replacement.
 	ReplacementIndex uint32
 }
 
 func (x *BiomeReplacementData) Marshal(r IO) {
 	r.Int16(&x.Biome)
-	r.Varint32(&x.Dimension)
+	r.Int16(&x.Dimension)
 	FuncSlice(r, &x.TargetBiomes, r.Int16)
 	r.Float32(&x.Amount)
+	r.Float32(&x.NoiseFrequencyScale)
 	r.Uint32(&x.ReplacementIndex)
 }
