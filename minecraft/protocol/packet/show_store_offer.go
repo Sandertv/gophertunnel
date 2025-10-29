@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -17,9 +18,8 @@ const (
 // on the client side. Sending the packet does therefore not work when using a proxy that is not connected to
 // with the domain of one of the partnered servers.
 type ShowStoreOffer struct {
-	// OfferID is a string that identifies the offer for which a window should be opened. ID should be in the format of
-	// a UUID, however it can be left empty if StoreOfferTypeServerPage is used.
-	OfferID string
+	// OfferID is a UUID that identifies the offer for which a window should be opened.
+	OfferID uuid.UUID
 	// Type is the type of the store offer that is being shown to the player. It is one of the constants that may be
 	// found above.
 	Type byte
@@ -31,6 +31,6 @@ func (*ShowStoreOffer) ID() uint32 {
 }
 
 func (pk *ShowStoreOffer) Marshal(io protocol.IO) {
-	io.String(&pk.OfferID)
+	io.UUID(&pk.OfferID)
 	io.Uint8(&pk.Type)
 }

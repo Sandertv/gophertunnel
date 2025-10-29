@@ -178,6 +178,8 @@ type BiomeChunkGeneration struct {
 	// LegacyRules is a list of legacy rules for the biomes using an older format, which is just a list of
 	// weighted biomes.
 	LegacyRules Optional[[]BiomeConditionalTransformation]
+	// ReplacementsData is a list of biome replacement data.
+	ReplacementsData Optional[[]BiomeReplacementData]
 }
 
 func (x *BiomeChunkGeneration) Marshal(r IO) {
@@ -199,6 +201,9 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 	OptionalMarshaler(r, &x.OverworldRules)
 	OptionalMarshaler(r, &x.MultiNoiseRules)
 	OptionalFunc(r, &x.LegacyRules, func(s *[]BiomeConditionalTransformation) {
+		Slice(r, s)
+	})
+	OptionalFunc(r, &x.ReplacementsData, func(s *[]BiomeReplacementData) {
 		Slice(r, s)
 	})
 }
@@ -525,4 +530,26 @@ type BiomeTemperatureWeight struct {
 func (x *BiomeTemperatureWeight) Marshal(r IO) {
 	r.Varint32(&x.Temperature)
 	r.Uint32(&x.Weight)
+}
+
+// BiomeReplacementData represents data for biome replacements.
+type BiomeReplacementData struct {
+	// Biome is the biome ID to replace.
+	Biome int16
+	// Dimension is the dimension ID where the replacement applies.
+	Dimension int32
+	// TargetBiomes is a list of target biome IDs for the replacement.
+	TargetBiomes []int16
+	// Amount is the amount of replacement to apply.
+	Amount float32
+	// ReplacementIndex is the index of the replacement.
+	ReplacementIndex uint32
+}
+
+func (x *BiomeReplacementData) Marshal(r IO) {
+	r.Int16(&x.Biome)
+	r.Varint32(&x.Dimension)
+	FuncSlice(r, &x.TargetBiomes, r.Int16)
+	r.Float32(&x.Amount)
+	r.Uint32(&x.ReplacementIndex)
 }
