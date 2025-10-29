@@ -26,7 +26,7 @@ type Animate struct {
 	EntityRuntimeID uint64
 	// Data is optional data associated with the animation action.
 	Data float32
-	// RowingTime is the time for rowing actions (ACTION_ROW_LEFT and ACTION_ROW_RIGHT).
+	// RowingTime is the time for rowing actions.
 	RowingTime float32
 }
 
