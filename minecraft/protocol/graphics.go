@@ -5,7 +5,7 @@ import (
 )
 
 const (
-    GraphicsOverrideParameterTypeSkyZenithColor uint8 = iota
+	GraphicsOverrideParameterTypeSkyZenithColor uint8 = iota
 )
 
 // ParameterKeyframeValue represents a keyframe value for graphics parameters.
