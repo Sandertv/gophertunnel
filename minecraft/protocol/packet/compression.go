@@ -7,8 +7,8 @@ import (
 	"math"
 	"sync"
 
-	"github.com/golang/snappy"
 	"github.com/klauspost/compress/flate"
+	"github.com/klauspost/compress/snappy"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
