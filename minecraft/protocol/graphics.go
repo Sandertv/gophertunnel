@@ -4,11 +4,8 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-// GraphicsOverrideParameterType represents the type of graphics override parameter.
-type GraphicsOverrideParameterType uint8
-
 const (
-	GraphicsOverrideParameterTypeSkyZenithColor GraphicsOverrideParameterType = iota
+    GraphicsOverrideParameterTypeSkyZenithColor uint8 = iota
 )
 
 // ParameterKeyframeValue represents a keyframe value for graphics parameters.
