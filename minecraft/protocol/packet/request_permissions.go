@@ -12,7 +12,7 @@ type RequestPermissions struct {
 	EntityUniqueID int64
 	// PermissionLevel is the current permission level of the player. This is one of the constants that may be found
 	// in the AdventureSettings packet.
-	PermissionLevel uint8
+	PermissionLevel int32
 	// RequestedPermissions contains the requested permission flags.
 	RequestedPermissions uint16
 }
@@ -24,6 +24,6 @@ func (*RequestPermissions) ID() uint32 {
 
 func (pk *RequestPermissions) Marshal(io protocol.IO) {
 	io.Int64(&pk.EntityUniqueID)
-	io.Uint8(&pk.PermissionLevel)
+	io.Varint32(&pk.PermissionLevel)
 	io.Uint16(&pk.RequestedPermissions)
 }

@@ -267,7 +267,9 @@ func init() {
 		IDPlayerUpdateEntityOverrides:  func() Packet { return &PlayerUpdateEntityOverrides{} },
 		IDPlayerLocation:               func() Packet { return &PlayerLocation{} },
 		IDClientBoundControlSchemeSet:  func() Packet { return &ClientBoundControlSchemeSet{} },
-		IDServerScriptDebugDrawer:      func() Packet { return &ServerScriptDebugDrawer{} },
+		IDDebugDrawer:                  func() Packet { return &DebugDrawer{} },
+		IDServerBoundPackSettingChange: func() Packet { return &ServerBoundPackSettingChange{} },
+		IDGraphicsOverrideParameter:    func() Packet { return &GraphicsOverrideParameter{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

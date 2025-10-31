@@ -3,7 +3,6 @@ package packet
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"image/color"
-
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -63,19 +62,19 @@ func (x *DebugDrawerShape) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &x.Segments, io.Uint8)
 }
 
-// ServerScriptDebugDrawer is a packet sent by the server to instruct the client to render
+// DebugDrawer is a packet sent by the server to instruct the client to render
 // one or more debug shapes. Each packet fully replaces any previously rendered shapes.
 // To remove a shape, omit it from the next packet's Shapes slice.
-type ServerScriptDebugDrawer struct {
+type DebugDrawer struct {
 	// Shapes is a list of shapes to draw on the client-side.
 	Shapes []DebugDrawerShape
 }
 
 // ID ...
-func (pk *ServerScriptDebugDrawer) ID() uint32 {
-	return IDServerScriptDebugDrawer
+func (pk *DebugDrawer) ID() uint32 {
+	return IDDebugDrawer
 }
 
-func (pk *ServerScriptDebugDrawer) Marshal(io protocol.IO) {
+func (pk *DebugDrawer) Marshal(io protocol.IO) {
 	protocol.Slice(io, &pk.Shapes)
 }
