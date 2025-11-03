@@ -118,6 +118,7 @@ const (
 	UseItemActionClickBlock = iota
 	UseItemActionClickAir
 	UseItemActionBreakBlock
+	UseItemActionUseAsAttack
 )
 
 const (

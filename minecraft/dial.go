@@ -370,8 +370,7 @@ func getAuthSession(ctx context.Context, dialer Dialer) (*auth.Session, error) {
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
 // chain ready to be put in a login request is returned.
 func authChain(ctx context.Context, xblToken *auth.XBLToken, key *ecdsa.PrivateKey) (string, error) {
-
-	// Obtain the raw chain data using the
+	// Obtain the raw chain data using the XBL token.
 	chain, err := auth.RequestMinecraftChain(ctx, xblToken, key)
 	if err != nil {
 		return "", fmt.Errorf("request Minecraft auth chain: %w", err)

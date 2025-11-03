@@ -43,6 +43,6 @@ func (*AgentAction) ID() uint32 {
 
 func (pk *AgentAction) Marshal(io protocol.IO) {
 	io.String(&pk.Identifier)
-	io.Varint32(&pk.Action)
+	io.Int32(&pk.Action)
 	io.ByteSlice(&pk.Response)
 }

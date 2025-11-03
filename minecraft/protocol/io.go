@@ -57,8 +57,10 @@ type IO interface {
 	TransactionDataType(x *InventoryTransactionData)
 	PlayerInventoryAction(x *UseItemTransactionData)
 	GameRule(x *GameRule)
+	GameRuleLegacy(x *GameRule)
 	AbilityValue(x *any)
 	Bitset(x *Bitset, size int)
+	PackSetting(x *PackSetting)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)

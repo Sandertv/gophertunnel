@@ -1,84 +1,117 @@
 package protocol
 
 const (
-	BiomeExpressionOpUnknown = iota - 1
-	BiomeExpressionOpLeftBrace
-	BiomeExpressionOpRightBrace
-	BiomeExpressionOpLeftBracket
-	BiomeExpressionOpRightBracket
-	BiomeExpressionOpLeftParenthesis
-	BiomeExpressionOpRightParenthesis
-	BiomeExpressionOpNegate
-	BiomeExpressionOpLogicalNot
-	BiomeExpressionOpAbs
-	BiomeExpressionOpAdd
-	BiomeExpressionOpAcos
-	BiomeExpressionOpAsin
-	BiomeExpressionOpAtan
-	BiomeExpressionOpAtan2
-	BiomeExpressionOpCeil
-	BiomeExpressionOpClamp
-	BiomeExpressionOpCopySign
-	BiomeExpressionCos
-	BiomeExpressionDieRoll
-	BiomeExpressionDieRollInt
-	BiomeExpressionDiv
-	BiomeExpressionExp
-	BiomeExpressionFloor
-	BiomeExpressionHermiteBlend
-	BiomeExpressionLerp
-	BiomeExpressionLerpRotate
-	BiomeExpressionLn
-	BiomeExpressionMax
-	BiomeExpressionMin
-	BiomeExpressionMinAngle
-	BiomeExpressionMod
-	BiomeExpressionMul
-	BiomeExpressionPow
-	BiomeExpressionRandom
-	BiomeExpressionRandomInt
-	BiomeExpressionRound
-	BiomeExpressionSin
-	BiomeExpressionSign
-	BiomeExpressionSqrt
-	BiomeExpressionTrunc
-	BiomeExpressionQueryFunction
-	BiomeExpressionArrayVariable
-	BiomeExpressionContextVariable
-	BiomeExpressionEntityVariable
-	BiomeExpressionTempVariable
-	BiomeExpressionMemberAccessor
-	BiomeExpressionHashedStringHash
-	BiomeExpressionGeometryVariable
-	BiomeExpressionMaterialVariable
-	BiomeExpressionTextureVariable
-	BiomeExpressionLessThan
-	BiomeExpressionLessEqual
-	BiomeExpressionGreaterEqual
-	BiomeExpressionGreaterThan
-	BiomeExpressionLogicalEqual
-	BiomeExpressionLogicalNotEqual
-	BiomeExpressionLogicalOr
-	BiomeExpressionLogicalAnd
-	BiomeExpressionNullCoalescing
-	BiomeExpressionConditional
-	BiomeExpressionConditionalElse
-	BiomeExpressionFloat
-	BiomeExpressionPi
-	BiomeExpressionArray
-	BiomeExpressionGeometry
-	BiomeExpressionMaterial
-	BiomeExpressionTexture
-	BiomeExpressionLoop
-	BiomeExpressionForEach
-	BiomeExpressionBreak
-	BiomeExpressionContinue
-	BiomeExpressionAssignment
-	BiomeExpressionPointer
-	BiomeExpressionSemicolon
-	BiomeExpressionReturn
-	BiomeExpressionComma
-	BiomeExpressionThis
+    BiomeExpressionOpUnknown = iota - 1
+    BiomeExpressionOpLeftBrace
+    BiomeExpressionOpRightBrace
+    BiomeExpressionOpLeftBracket
+    BiomeExpressionOpRightBracket
+    BiomeExpressionOpLeftParenthesis
+    BiomeExpressionOpRightParenthesis
+    BiomeExpressionOpNegate
+    BiomeExpressionOpLogicalNot
+    BiomeExpressionOpAbs
+    BiomeExpressionOpAdd
+    BiomeExpressionOpAcos
+    BiomeExpressionOpAsin
+    BiomeExpressionOpAtan
+    BiomeExpressionOpAtan2
+    BiomeExpressionOpCeil
+    BiomeExpressionOpClamp
+    BiomeExpressionOpCopySign
+    BiomeExpressionCos
+    BiomeExpressionDieRoll
+    BiomeExpressionDieRollInt
+    BiomeExpressionDiv
+    BiomeExpressionExp
+    BiomeExpressionFloor
+    BiomeExpressionHermiteBlend
+    BiomeExpressionLerp
+    BiomeExpressionLerpRotate
+    BiomeExpressionLn
+    BiomeExpressionMax
+    BiomeExpressionMin
+    BiomeExpressionMinAngle
+    BiomeExpressionMod
+    BiomeExpressionMul
+    BiomeExpressionPow
+    BiomeExpressionRandom
+    BiomeExpressionRandomInt
+    BiomeExpressionRound
+    BiomeExpressionSin
+    BiomeExpressionSign
+    BiomeExpressionSqrt
+    BiomeExpressionTrunc
+    BiomeExpressionQueryFunction
+    BiomeExpressionArrayVariable
+    BiomeExpressionContextVariable
+    BiomeExpressionEntityVariable
+    BiomeExpressionTempVariable
+    BiomeExpressionMemberAccessor
+    BiomeExpressionHashedStringHash
+    BiomeExpressionGeometryVariable
+    BiomeExpressionMaterialVariable
+    BiomeExpressionTextureVariable
+    BiomeExpressionLessThan
+    BiomeExpressionLessEqual
+    BiomeExpressionGreaterEqual
+    BiomeExpressionGreaterThan
+    BiomeExpressionLogicalEqual
+    BiomeExpressionLogicalNotEqual
+    BiomeExpressionLogicalOr
+    BiomeExpressionLogicalAnd
+    BiomeExpressionNullCoalescing
+    BiomeExpressionConditional
+    BiomeExpressionConditionalElse
+    BiomeExpressionFloat
+    BiomeExpressionPi
+    BiomeExpressionArray
+    BiomeExpressionGeometry
+    BiomeExpressionMaterial
+    BiomeExpressionTexture
+    BiomeExpressionLoop
+    BiomeExpressionForEach
+    BiomeExpressionBreak
+    BiomeExpressionContinue
+    BiomeExpressionAssignment
+    BiomeExpressionPointer
+    BiomeExpressionSemicolon
+    BiomeExpressionReturn
+    BiomeExpressionComma
+    BiomeExpressionThis
+    BiomeExpressionNonEvaluatedArray
+    BiomeExpressionInverseLerp
+    BiomeExpressionEaseInQuad
+    BiomeExpressionEaseOutQuad
+    BiomeExpressionEaseInOutQuad
+    BiomeExpressionEaseInCubic
+    BiomeExpressionEaseOutCubic
+    BiomeExpressionEaseInOutCubic
+    BiomeExpressionEaseInQuart
+    BiomeExpressionEaseOutQuart
+    BiomeExpressionEaseInOutQuart
+    BiomeExpressionEaseInQuint
+    BiomeExpressionEaseOutQuint
+    BiomeExpressionEaseInOutQuint
+    BiomeExpressionEaseInSine
+    BiomeExpressionEaseOutSine
+    BiomeExpressionEaseInOutSine
+    BiomeExpressionEaseInExpo
+    BiomeExpressionEaseOutExpo
+    BiomeExpressionEaseInOutExpo
+    BiomeExpressionEaseInCirc
+    BiomeExpressionEaseOutCirc
+    BiomeExpressionEaseInOutCirc
+    BiomeExpressionEaseInBounce
+    BiomeExpressionEaseOutBounce
+    BiomeExpressionEaseInOutBounce
+    BiomeExpressionEaseInBack
+    BiomeExpressionEaseOutBack
+    BiomeExpressionEaseInOutBack
+    BiomeExpressionEaseInElastic
+    BiomeExpressionEaseOutElastic
+    BiomeExpressionEaseInOutElastic
+    BiomeExpressionCount
 )
 
 const (
@@ -111,17 +144,11 @@ type BiomeDefinition struct {
 	Temperature float32
 	// Downfall is the amount that precipitation affects colours and block changes.
 	Downfall float32
-	// RedSporeDensity is the density of red spore precipitation visuals.
-	RedSporeDensity float32
-	// BlueSporeDensity is the density of blue spore precipitation visuals.
-	BlueSporeDensity float32
-	// AshDensity is the density of ash precipitation visuals.
-	AshDensity float32
-	// WhiteAshDensity is the density of white ash precipitation visuals.
-	WhiteAshDensity float32
-	// Depth ...
+	// FoliageSnow is the progression factor for foliage turning white due to snow.
+	FoliageSnow float32
+	// Depth is the depth of the biome.
 	Depth float32
-	// Scale ...
+	// Scale is the scale of the biome.
 	Scale float32
 	// MapWaterColour is an ARGB value for the water colour on maps in the biome.
 	MapWaterColour int32
@@ -141,10 +168,7 @@ func (x *BiomeDefinition) Marshal(r IO) {
 	r.Int16(&x.BiomeID)
 	r.Float32(&x.Temperature)
 	r.Float32(&x.Downfall)
-	r.Float32(&x.RedSporeDensity)
-	r.Float32(&x.BlueSporeDensity)
-	r.Float32(&x.AshDensity)
-	r.Float32(&x.WhiteAshDensity)
+	r.Float32(&x.FoliageSnow)
 	r.Float32(&x.Depth)
 	r.Float32(&x.Scale)
 	r.Int32(&x.MapWaterColour)
@@ -168,6 +192,8 @@ type BiomeChunkGeneration struct {
 	SurfaceMaterialAdjustments Optional[[]BiomeElementData]
 	// SurfaceMaterials is a set of materials to use for the surface layers of the biome.
 	SurfaceMaterials Optional[BiomeSurfaceMaterial]
+	// HasDefaultOverworldSurface is true if the biome has a default overworld surface.
+	HasDefaultOverworldSurface bool
 	// HasSwampSurface is true if the biome has a swamp surface.
 	HasSwampSurface bool
 	// HasFrozenOceanSurface is true if the biome has a frozen ocean surface.
@@ -185,6 +211,8 @@ type BiomeChunkGeneration struct {
 	// LegacyRules is a list of legacy rules for the biomes using an older format, which is just a list of
 	// weighted biomes.
 	LegacyRules Optional[[]BiomeConditionalTransformation]
+	// ReplacementsData is a list of biome replacement data.
+	ReplacementsData Optional[[]BiomeReplacementData]
 }
 
 func (x *BiomeChunkGeneration) Marshal(r IO) {
@@ -197,6 +225,7 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 		Slice(r, s)
 	})
 	OptionalMarshaler(r, &x.SurfaceMaterials)
+	r.Bool(&x.HasDefaultOverworldSurface)
 	r.Bool(&x.HasSwampSurface)
 	r.Bool(&x.HasFrozenOceanSurface)
 	r.Bool(&x.HasEndSurface)
@@ -207,6 +236,9 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 	OptionalFunc(r, &x.LegacyRules, func(s *[]BiomeConditionalTransformation) {
 		Slice(r, s)
 	})
+	OptionalFunc(r, &x.ReplacementsData, func(s *[]BiomeReplacementData) {
+		Slice(r, s)
+	})
 }
 
 // BiomeClimate represents the climate of a biome, mainly for ambience but also defines certain behaviours.
@@ -215,14 +247,6 @@ type BiomeClimate struct {
 	Temperature float32
 	// Downfall is the amount that precipitation affects colours and block changes.
 	Downfall float32
-	// RedSporeDensity is the density of red spore precipitation visuals.
-	RedSporeDensity float32
-	// BlueSporeDensity is the density of blue spore precipitation visuals.
-	BlueSporeDensity float32
-	// AshDensity is the density of ash precipitation visuals.
-	AshDensity float32
-	// WhiteAshDensity is the density of white ash precipitation visuals.
-	WhiteAshDensity float32
 	// SnowAccumulationMin is the minimum amount of snow that can accumulate in the biome, every 0.125 is
 	// another layer of snow.
 	SnowAccumulationMin float32
@@ -234,10 +258,6 @@ type BiomeClimate struct {
 func (x *BiomeClimate) Marshal(r IO) {
 	r.Float32(&x.Temperature)
 	r.Float32(&x.Downfall)
-	r.Float32(&x.RedSporeDensity)
-	r.Float32(&x.BlueSporeDensity)
-	r.Float32(&x.AshDensity)
-	r.Float32(&x.WhiteAshDensity)
 	r.Float32(&x.SnowAccumulationMin)
 	r.Float32(&x.SnowAccumulationMax)
 }
@@ -543,4 +563,29 @@ type BiomeTemperatureWeight struct {
 func (x *BiomeTemperatureWeight) Marshal(r IO) {
 	r.Varint32(&x.Temperature)
 	r.Uint32(&x.Weight)
+}
+
+// BiomeReplacementData represents data for biome replacements.
+type BiomeReplacementData struct {
+	// Biome is the biome ID to replace.
+	Biome int16
+	// Dimension is the dimension ID where the replacement applies.
+	Dimension int16
+	// TargetBiomes is a list of target biome IDs for the replacement.
+	TargetBiomes []int16
+	// Amount is the amount of replacement to apply.
+	Amount float32
+	// NoiseFrequencyScale ...
+	NoiseFrequencyScale float32
+	// ReplacementIndex is the index of the replacement.
+	ReplacementIndex uint32
+}
+
+func (x *BiomeReplacementData) Marshal(r IO) {
+	r.Int16(&x.Biome)
+	r.Int16(&x.Dimension)
+	FuncSlice(r, &x.TargetBiomes, r.Int16)
+	r.Float32(&x.Amount)
+	r.Float32(&x.NoiseFrequencyScale)
+	r.Uint32(&x.ReplacementIndex)
 }

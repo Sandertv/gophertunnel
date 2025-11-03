@@ -2,6 +2,12 @@ package protocol
 
 import "github.com/google/uuid"
 
+const (
+	PackSettingTypeFloat = iota
+	PackSettingTypeBool
+	PackSettingTypeString
+)
+
 // TexturePackInfo represents a texture pack's info sent over network. It holds information about the
 // texture pack such as its name, description and version.
 type TexturePackInfo struct {
@@ -85,4 +91,13 @@ type PackURL struct {
 func (x *PackURL) Marshal(r IO) {
 	r.String(&x.UUIDVersion)
 	r.String(&x.URL)
+}
+
+// PackSetting represents a single setting from the pack settings UI. It holds information
+// about the setting that was changed, including its name and the new value.
+type PackSetting struct {
+	// Name is the name of the pack setting.
+	Name string
+	// Value is the new value of the setting. This is either a float32, bool or string.
+	Value any
 }

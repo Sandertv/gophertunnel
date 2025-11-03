@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
-	"github.com/google/uuid"
-	"github.com/muhammadmuzzammil1998/jsonc"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/df-mc/jsonc"
+	"github.com/google/uuid"
 )
 
 // Pack is a container of a resource pack parsed from a directory or a .zip archive (or .mcpack). It holds
@@ -230,6 +231,38 @@ func (pack *Pack) ReadAt(b []byte, off int64) (n int, err error) {
 	return pack.content.ReadAt(b, off)
 }
 
+// ReadFile reads a specific file from the Pack's content and returns its content as a byte slice.
+func (p *Pack) ReadFile(filePath string) ([]byte, error) {
+	// Create a new zip reader from the content of the bytes.Reader
+	zipReader, err := zip.NewReader(p.content, int64(p.content.Size()))
+	if err != nil {
+		return nil, fmt.Errorf("failed to create zip reader: %w", err)
+	}
+
+	// Iterate over the files in the archive to find the file
+	for _, file := range zipReader.File {
+		// Check if the current file is the one we're looking for
+		if strings.EqualFold(file.Name, filePath) {
+			// Open the file
+			rc, err := file.Open()
+			if err != nil {
+				return nil, fmt.Errorf("failed to open file %s: %w", filePath, err)
+			}
+			defer rc.Close()
+
+			// Read the file content
+			content, err := io.ReadAll(rc)
+			if err != nil {
+				return nil, fmt.Errorf("failed to read file content: %w", err)
+			}
+
+			return content, nil
+		}
+	}
+
+	return nil, fmt.Errorf("file %s not found in the resource pack", filePath)
+}
+
 // WithContentKey creates a copy of the pack and sets the encryption key to the key provided, after which the
 // new Pack is returned.
 func (pack Pack) WithContentKey(key string) *Pack {
@@ -296,6 +329,7 @@ func createTempArchive(path string) (*os.File, error) {
 		return nil, err
 	}
 	writer := zip.NewWriter(temp)
+	defer writer.Close()
 	if err := filepath.Walk(path, func(filePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
@@ -327,17 +361,16 @@ func createTempArchive(path string) (*os.File, error) {
 		if err != nil {
 			return fmt.Errorf("open resource pack file %v: %w", filePath, err)
 		}
+		defer file.Close()
 		data, _ := io.ReadAll(file)
 		// Write the original content into the 'zip file' so that we write compressed data to the file.
 		if _, err := f.Write(data); err != nil {
 			return fmt.Errorf("write file data to zip: %w", err)
 		}
-		_ = file.Close()
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("build zip archive: %w", err)
 	}
-	_ = writer.Close()
 	return temp, nil
 }
 
@@ -409,7 +442,7 @@ func readManifest(path string) (*Manifest, error) {
 		return nil, fmt.Errorf("read manifest file: %w", err)
 	}
 	manifest := &Manifest{}
-	if err := jsonc.Unmarshal(allData, manifest); err != nil {
+	if err := jsonc.UnmarshalLenient(allData, manifest); err != nil {
 		return nil, fmt.Errorf("decode manifest JSON: %w (data: %v)", err, string(allData))
 	}
 
