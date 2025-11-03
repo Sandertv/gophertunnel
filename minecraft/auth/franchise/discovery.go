@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"sync"
 
 	"github.com/sandertv/gophertunnel/minecraft/auth/franchise/internal"
 )
@@ -13,8 +14,11 @@ import (
 const userAgent = "libhttpclient/1.0.0.0"
 
 var discovered = map[string]*Discovery{}
+var discoveredMu sync.Mutex
 
 func Discover(build string) (*Discovery, error) {
+	discoveredMu.Lock()
+	defer discoveredMu.Unlock()
 	if discovery, ok := discovered[build]; ok {
 		return discovery, nil
 	}
