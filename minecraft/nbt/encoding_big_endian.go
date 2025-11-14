@@ -324,7 +324,7 @@ func (e littleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	}
 	// Manually rotate the bytes, so we can just re-interpret this as a slice.
 	for i := int32(0); i < n; i++ {
-		off := i * 4
+		off := i * 8
 		b[off], b[off+7] = b[off+7], b[off]
 		b[off+1], b[off+6] = b[off+6], b[off+1]
 		b[off+2], b[off+5] = b[off+5], b[off+2]
