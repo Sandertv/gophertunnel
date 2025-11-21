@@ -30,7 +30,7 @@ type request struct {
 	Certificate certificate `json:"Certificate"`
 	// AuthenticationType is the authentication type of the request.
 	AuthenticationType uint8 `json:"AuthenticationType"`
-	// Token is an empty string, it's unclear what's used for.
+	// Token is the new token used for authentication.
 	Token string `json:"Token"`
 	// RawToken holds the raw token that follows the JWT chain, holding the ClientData.
 	RawToken string `json:"-"`
@@ -218,8 +218,8 @@ func parseAsKey(k any, pub *ecdsa.PublicKey) error {
 
 // Encode encodes a login request using the encoded login chain passed and the client data. The request's
 // client data token is signed using the private key passed. It must be the same as the one used to get the
-// login chain.
-func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
+// login chain The multiplayer token is the new Token field introduced in 1.21.90 and used in 1.21.100 and later.
+func Encode(loginChain string, multiplayerToken string, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
 	// We first decode the login chain we actually got in a new certificate.
 	cert := &certificate{}
 	_ = json.Unmarshal([]byte(loginChain), &cert)
@@ -250,6 +250,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, legacy bo
 			// We add our own claim at the start of the chain.
 			Chain: append(chain{firstJWT}, cert.Chain...),
 		},
+		Token:  multiplayerToken,
 		Legacy: legacy,
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
@@ -293,6 +294,7 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		IdentityPublicKey: keyData,
 	}).Serialize()
 
+	// TODO: Pass token for offline logins if needed
 	req := &request{
 		Certificate: certificate{
 			Chain: chain{firstJWT},
