@@ -728,6 +728,11 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 			break
 		}
 	}
+	if !found && protocol.CurrentProtocol == 860 && pk.ClientProtocol == 859 {
+		conn.proto = DefaultProtocol
+		conn.pool = conn.proto.Packets(true)
+		found = true
+	}
 	if !found {
 		status := packet.PlayStatusLoginFailedClient
 		if pk.ClientProtocol > protocol.CurrentProtocol {
