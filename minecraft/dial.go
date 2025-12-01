@@ -241,7 +241,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if !d.KeepXBLIdentityData {
 			clearXBLIdentityData(&conn.identityData)
 		}
-		request = login.EncodeOffline(conn.identityData, conn.clientData, key, d.EnableLegacyAuth)
+		// Pass empty string for multiplayer token for offline logins
+		request = login.EncodeOffline(conn.identityData, conn.clientData, key, "", d.EnableLegacyAuth)
 	} else {
 		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
 		// we can't edit. We just enforce Android data for logging in.
