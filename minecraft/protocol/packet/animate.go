@@ -13,8 +13,20 @@ const (
 )
 
 const (
-    AnimateActionRowRight = iota + 128
-    AnimateActionRowLeft
+	AnimateActionRowRight = iota + 128
+	AnimateActionRowLeft
+)
+
+const (
+	SwingSourceNone = iota
+	SwingSourceBuild
+	SwingSourceMine
+	SwingSourceInteract
+	SwingSourceAttack
+	SwingSourceUseItem
+	SwingSourceThrowItem
+	SwingSourceDropItem
+	SwingSourceEvent
 )
 
 // Animate is sent by the server to send a player animation from one player to all viewers of that player. It
@@ -31,6 +43,8 @@ type Animate struct {
 	Data float32
 	// RowingTime is the time for rowing actions.
 	RowingTime float32
+	// SwingSource is the source of the swing animation.
+	SwingSource int32
 }
 
 // ID ...
@@ -45,4 +59,5 @@ func (pk *Animate) Marshal(io protocol.IO) {
 	if pk.ActionType == AnimateActionRowLeft || pk.ActionType == AnimateActionRowRight {
 		io.Float32(&pk.RowingTime)
 	}
+	io.Varint32(&pk.SwingSource)
 }

@@ -573,6 +573,18 @@ const (
 	SoundEventPlaceItem
 	SoundEventSingleItemSwap
 	SoundEventMultiItemSwap
+	SoundEventLunge1
+	SoundEventLunge2
+	SoundEventLunge3
+	SoundEventAttackCritical
+	SoundEventSpearAttackHit
+	SoundEventSpearAttackMiss
+	SoundEventWoodenSpearAttackHit
+	SoundEventWoodenSpearAttackMiss
+	SoundEventImitateParched
+	SoundEventImitateCamelHusk
+	SoundEventSpearUse
+	SoundEventWoodenSpearUse
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
