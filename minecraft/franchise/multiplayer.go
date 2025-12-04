@@ -13,7 +13,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sandertv/gophertunnel/minecraft/auth/franchise/internal"
+	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
 )
 
 type MultiplayerToken struct {
