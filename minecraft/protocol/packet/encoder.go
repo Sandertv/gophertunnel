@@ -68,10 +68,10 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		compression = NopCompression
 	}
 
-	prepend := []byte{header, byte(encoder.compression.EncodeCompression())}
+	prepend := []byte{header, byte(compression.EncodeCompression())}
 
 	var err error
-	data, err = encoder.compression.Compress(data)
+	data, err = compression.Compress(data)
 	if err != nil {
 		return fmt.Errorf("compress batch: %w", err)
 	}
