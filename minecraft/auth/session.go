@@ -11,7 +11,7 @@ import (
 	"github.com/df-mc/go-playfab"
 	"github.com/df-mc/go-playfab/title"
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/auth/franchise"
+	"github.com/sandertv/gophertunnel/minecraft/franchise"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/oauth2"
 	"golang.org/x/text/language"
@@ -48,8 +48,9 @@ func (s *Session) login(ctx context.Context) error {
 	}
 
 	region, _ := language.English.Region()
+	base := language.English
 	s.conf = &franchise.TokenConfig{
-		Device: &franchise.DeviceConfig{
+		Device: franchise.DeviceConfig{
 			ApplicationType: franchise.ApplicationTypeMinecraftPE,
 			Capabilities:    []string{franchise.CapabilityRayTracing},
 			GameVersion:     protocol.CurrentVersion,
@@ -60,9 +61,9 @@ func (s *Session) login(ctx context.Context) error {
 			StorePlatform:   franchise.StorePlatformUWPStore,
 			Type:            franchise.DeviceTypeWindows10,
 		},
-		User: &franchise.UserConfig{
+		User: franchise.UserConfig{
 			Language:     language.English,
-			LanguageCode: language.AmericanEnglish,
+			LanguageCode: base.String(),
 			RegionCode:   region.String(),
 			TokenType:    franchise.TokenTypePlayFab,
 		},

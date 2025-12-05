@@ -1,8 +1,9 @@
 package franchise
 
 import (
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"testing"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 func TestDiscover(t *testing.T) {
