@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/text/language"
 )
 
@@ -145,23 +143,6 @@ type TokenConfig struct {
 	Environment *AuthorizationEnvironment `json:"-"`
 }
 
-// defaultDeviceConfig returns a default DeviceConfig based on the AuthorizationEnvironment.
-// It is called by the [TokenConfig.Token] method to set a default device configuration when
-// the [TokenConfig.Device] field is not set.
-func defaultDeviceConfig(env *AuthorizationEnvironment) *DeviceConfig {
-	return &DeviceConfig{
-		ApplicationType: ApplicationTypeMinecraftPE,
-		Capabilities:    []string{},
-		GameVersion:     protocol.CurrentVersion,
-		ID:              uuid.New(),
-		Memory:          strconv.FormatUint(16*(1<<30), 10),
-		Platform:        PlatformWindows10,
-		PlayFabTitleID:  env.PlayFabTitleID,
-		StorePlatform:   StorePlatformUWPStore,
-		Type:            DeviceTypeWindows10,
-	}
-}
-
 // DeviceConfig holds the details for the device used in authorization. It contains several fields that defines the
 // features and capabilities of the device, which are associated with the Token being obtained.
 type DeviceConfig struct {
@@ -173,8 +154,7 @@ type DeviceConfig struct {
 	// include graphics capabilities like 'RayTracing' or other hardware or software features.
 	Capabilities []string `json:"capabilities,omitempty"`
 
-	// GameVersion indicates the version of the game running on the device. It is typically [protocol.CurrentVersion]
-	// to ensure compatibility with the current version of the protocol package.
+	// GameVersion indicates the version of the game running on the device.
 	GameVersion string `json:"gameVersion,omitempty"`
 
 	// ID is a unique ID for the device, represented as a UUID.
@@ -225,18 +205,6 @@ const StorePlatformUWPStore = "uwp.store"
 
 // DeviceTypeWindows10 is reported on both Windows 10/11 devices running either UWP or GDK installation of the game.
 const DeviceTypeWindows10 = "Windows10"
-
-// defaultUserConfig returns the default value for UserConfig.
-func defaultUserConfig() *UserConfig {
-	base, _ := language.AmericanEnglish.Base()
-	region, _ := language.AmericanEnglish.Region()
-
-	return &UserConfig{
-		Language:     language.AmericanEnglish,
-		LanguageCode: base.String(),
-		RegionCode:   region.String(),
-	}
-}
 
 // UserConfig represents the configuration details for a user whose Token is being obtained for authorization.
 // It includes various fields related to the identity and language preferences of the user.
