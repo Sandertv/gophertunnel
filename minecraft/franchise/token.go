@@ -197,8 +197,7 @@ type DeviceConfig struct {
 
 	// StorePlatform represents the digital store platform where the application can be downloaded or purchased from.
 	// It could be one of constants defined below, such as 'UWPStore', that indicates the source of the application.
-	StorePlatform string `json:"storePlatform,omitempty"
-`
+	StorePlatform string `json:"storePlatform,omitempty"`
 	// TreatmentOverrides specifies any custom treatments that should be applied to the Token. These treatments may affect
 	// how the Token is handled or used across various services available through Discovery.
 	TreatmentOverrides []string `json:"treatmentOverrides,omitempty"`
