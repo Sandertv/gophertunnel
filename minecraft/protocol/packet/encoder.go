@@ -62,18 +62,18 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
+	prepend := []byte{header}
 
-	compression := encoder.compression
-	if compression == nil || len(data) < encoder.compressionThreshold {
-		compression = NopCompression
-	}
-
-	prepend := []byte{header, byte(compression.EncodeCompression())}
-
-	var err error
-	data, err = compression.Compress(data)
-	if err != nil {
-		return fmt.Errorf("compress batch: %w", err)
+	if compression := encoder.compression; compression != nil {
+		if len(data) < encoder.compressionThreshold {
+			compression = NopCompression
+		}
+		var err error
+		data, err = compression.Compress(data)
+		if err != nil {
+			return fmt.Errorf("compress batch: %w", err)
+		}
+		prepend = append(prepend, byte(compression.EncodeCompression()))
 	}
 
 	data = append(prepend, data...)
