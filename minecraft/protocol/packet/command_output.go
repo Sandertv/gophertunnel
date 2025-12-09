@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	CommandOutputTypeNone = iota
-	CommandOutputTypeLastOutput
-	CommandOutputTypeSilent
-	CommandOutputTypeAllOutput
-	CommandOutputTypeDataSet
+	CommandOutputTypeNone       = "none"
+	CommandOutputTypeLastOutput = "lastoutput"
+	CommandOutputTypeSilent     = "silent"
+	CommandOutputTypeAllOutput  = "alloutput"
+	CommandOutputTypeDataSet    = "dataset"
 )
 
 // CommandOutput is sent by the server to the client to send text as output of a command. Most servers do not
@@ -25,7 +25,7 @@ type CommandOutput struct {
 	CommandOrigin protocol.CommandOrigin
 	// OutputType specifies the type of output that is sent. The OutputType sent by vanilla games appears to
 	// be 3, which seems to work.
-	OutputType byte
+	OutputType string
 	// SuccessCount is the amount of times that a command was executed successfully as a result of the command
 	// that was requested. For servers, this is usually a rather meaningless fields, but for vanilla, this is
 	// applicable for commands created with Functions.
@@ -34,7 +34,7 @@ type CommandOutput struct {
 	// shown or not, depends on the type of the messages.
 	OutputMessages []protocol.CommandOutputMessage
 	// DataSet ... TODO: Find out what this is for.
-	DataSet string
+	DataSet protocol.Optional[string]
 }
 
 // ID ...
@@ -44,10 +44,8 @@ func (*CommandOutput) ID() uint32 {
 
 func (pk *CommandOutput) Marshal(io protocol.IO) {
 	protocol.CommandOriginData(io, &pk.CommandOrigin)
-	io.Uint8(&pk.OutputType)
-	io.Varuint32(&pk.SuccessCount)
+	io.String(&pk.OutputType)
+	io.Uint32(&pk.SuccessCount)
 	protocol.Slice(io, &pk.OutputMessages)
-	if pk.OutputType == CommandOutputTypeDataSet {
-		io.String(&pk.DataSet)
-	}
+	protocol.OptionalFunc(io, &pk.DataSet, io.String)
 }

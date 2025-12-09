@@ -2,7 +2,15 @@ package protocol
 
 import (
 	"github.com/google/uuid"
-	"math"
+)
+
+const (
+	CommandPermissionLevelAny           = "any"
+	CommandPermissionLevelGameDirectors = "gamedirectors"
+	CommandPermissionLevelAdmin         = "admin"
+	CommandPermissionLevelHost          = "host"
+	CommandPermissionLevelOwner         = "owner"
+	CommandPermissionLevelInternal      = "internal"
 )
 
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
@@ -19,13 +27,13 @@ type Command struct {
 	// PermissionLevel is the command permission level that the player required to execute this command. The
 	// field no longer seems to serve a purpose, as the client does not handle the execution of commands
 	// anymore: The permissions should be checked server-side.
-	PermissionLevel byte
+	PermissionLevel string
 	// AliasesOffset is the offset to a CommandEnum that holds the values that
 	// should be used as aliases for this command.
 	AliasesOffset uint32
 	// ChainedSubcommandOffsets is a slice of offsets that all point to a different ChainedSubcommand from the
 	// ChainedSubcommands slice in the AvailableCommands packet.
-	ChainedSubcommandOffsets []uint16
+	ChainedSubcommandOffsets []uint32
 	// Overloads is a list of command overloads that specify the ways in which a command may be executed. The
 	// overloads may be completely different.
 	Overloads []CommandOverload
@@ -35,9 +43,9 @@ func (c *Command) Marshal(r IO) {
 	r.String(&c.Name)
 	r.String(&c.Description)
 	r.Uint16(&c.Flags)
-	r.Uint8(&c.PermissionLevel)
+	r.String(&c.PermissionLevel)
 	r.Uint32(&c.AliasesOffset)
-	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint16)
+	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint32)
 	Slice(r, &c.Overloads)
 }
 
@@ -132,7 +140,7 @@ type CommandEnum struct {
 	Type string
 	// ValueIndices holds a list of indices that point to the EnumValues slice in the
 	// AvailableCommandsPacket. These represent the options of the enum.
-	ValueIndices []uint
+	ValueIndices []uint32
 }
 
 // CommandEnumContext holds context required for encoding command enums.
@@ -143,27 +151,7 @@ type CommandEnumContext struct {
 // Marshal encodes/decodes a CommandEnum.
 func (ctx CommandEnumContext) Marshal(r IO, x *CommandEnum) {
 	r.String(&x.Type)
-	FuncIOSlice(r, &x.ValueIndices, ctx.enumOption)
-}
-
-// enumOption writes/reads a command enum option as a byte/uint16/uint32,
-// depending on the amount of enum values.
-func (ctx CommandEnumContext) enumOption(r IO, opt *uint) {
-	n := len(ctx.EnumValues)
-	switch {
-	case n <= math.MaxUint8:
-		val := byte(*opt)
-		r.Uint8(&val)
-		*opt = uint(val)
-	case n <= math.MaxUint16:
-		val := uint16(*opt)
-		r.Uint16(&val)
-		*opt = uint(val)
-	default:
-		val := uint32(*opt)
-		r.Uint32(&val)
-		*opt = uint(val)
-	}
+	FuncSlice(r, &x.ValueIndices, r.Uint32)
 }
 
 // ChainedSubcommand represents a subcommand that can have chained commands, such as /execute which allows you to run
@@ -184,15 +172,15 @@ func (x *ChainedSubcommand) Marshal(r IO) {
 type ChainedSubcommandValue struct {
 	// Index is the index of the argument in the ChainedSubcommandValues slice from the AvailableCommands packet. This is
 	// then used to set the type specified by the Value field below.
-	Index uint16
+	Index uint32
 	// Value is a combination of the flags above and specified the type of argument. Unlike regular parameter types,
 	// this should NOT contain any of the special flags (valid, enum, suffixed or soft enum) but only the basic types.
-	Value uint16
+	Value uint32
 }
 
 func (x *ChainedSubcommandValue) Marshal(r IO) {
-	r.Uint16(&x.Index)
-	r.Uint16(&x.Value)
+	r.Varuint32(&x.Index)
+	r.Varuint32(&x.Value)
 }
 
 // DynamicEnum is an enum variant that can have its options changed during runtime,
@@ -240,22 +228,22 @@ func (c *CommandEnumConstraint) Marshal(r IO) {
 }
 
 const (
-	CommandOriginPlayer = iota
-	CommandOriginBlock
-	CommandOriginMinecartBlock
-	CommandOriginDevConsole
-	CommandOriginTest
-	CommandOriginAutomationPlayer
-	CommandOriginClientAutomation
-	CommandOriginDedicatedServer
-	CommandOriginEntity
-	CommandOriginVirtual
-	CommandOriginGameArgument
-	CommandOriginEntityServer
-	CommandOriginPrecompiled
-	CommandOriginGameDirectorEntityServer
-	CommandOriginScript
-	CommandOriginExecutor
+	CommandOriginPlayer                   = "player"
+	CommandOriginBlock                    = "commandblock"
+	CommandOriginMinecartBlock            = "minecartcommandblock"
+	CommandOriginDevConsole               = "devconsole"
+	CommandOriginTest                     = "test"
+	CommandOriginAutomationPlayer         = "automationplayer"
+	CommandOriginClientAutomation         = "clientautomation"
+	CommandOriginDedicatedServer          = "dedicatedserver"
+	CommandOriginEntity                   = "entity"
+	CommandOriginVirtual                  = "virtual"
+	CommandOriginGameArgument             = "gameargument"
+	CommandOriginEntityServer             = "entityserver"
+	CommandOriginPrecompiled              = "precompiled"
+	CommandOriginGameDirectorEntityServer = "gamedirectorentityserver"
+	CommandOriginScript                   = "scripting"
+	CommandOriginExecutor                 = "executecontext"
 )
 
 // CommandOrigin holds data that identifies the origin of the requesting of a command. It holds several
@@ -265,7 +253,7 @@ type CommandOrigin struct {
 	// Origin is one of the values above that specifies the origin of the command. The origin may change,
 	// depending on what part of the client actually called the command. The command may be issued by a
 	// websocket server, for example.
-	Origin uint32
+	Origin string
 	// UUID is a unique identifier for every instantiation of a command.
 	UUID uuid.UUID
 	// RequestID is an ID that identifies the request of the client. The server should send a CommandOrigin
@@ -281,12 +269,10 @@ type CommandOrigin struct {
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.
 func CommandOriginData(r IO, x *CommandOrigin) {
-	r.Varuint32(&x.Origin)
+	r.String(&x.Origin)
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
-	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
-		r.Varint64(&x.PlayerUniqueID)
-	}
+	r.Int64(&x.PlayerUniqueID)
 }
 
 // CommandOutputMessage represents a message sent by a command that holds the output of one of the commands

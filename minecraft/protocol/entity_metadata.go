@@ -266,6 +266,7 @@ const (
 	EntityDataFlagDoesServerAuthOnlyDismount
 	EntityDataFlagBodyRotationAlwaysFollowsHead
 	EntityDataFlagCanUseVerticalMovementAction
+	EntityDataFlagRotationLockedToVehicle
 	EntityDataFlagCount
 )
 

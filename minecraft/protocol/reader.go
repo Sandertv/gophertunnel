@@ -4,15 +4,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
 	"math"
 	"math/big"
 	"math/bits"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
 // Reader implements reading operations for reading types from Minecraft packets. Each Packet implementation
@@ -640,6 +641,25 @@ func (r *Reader) ShapeData(x *ShapeData) {
 		return
 	}
 	(*x).Marshal(r)
+}
+
+// TextCategory reads a text category from the reader.
+func (r *Reader) TextCategory(x *uint8) {
+	var category uint8
+	var length int
+	r.Uint8(&category)
+	switch category {
+	case TextCategoryMessageOnly:
+		length = 6
+	case TextCategoryAuthorizedMessage:
+		length = 3
+	case TextCategoryMessageWithParameters:
+		length = 3
+	}
+	var tmp string
+	for i := 0; i < length; i++ {
+		r.String(&tmp)
+	}
 }
 
 // SliceLimit checks if the value passed is lower than the limit passed. If

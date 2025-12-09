@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	ClientBoundDebugRendererClear uint32 = iota + 1
-	ClientBoundDebugRendererAddCube
+	ClientBoundDebugRendererClear   = "cleardebugmarkers"
+	ClientBoundDebugRendererAddCube = "adddebugmarkercube"
 )
 
 // ClientBoundDebugRenderer is sent by the server to spawn an outlined cube on client-side.
 type ClientBoundDebugRenderer struct {
 	// Type is the type of action. It is one of the constants above.
-	Type uint32
+	Type string
 	// Text is the text that is displayed above the debug.
 	Text string
 	// Position is the position to spawn the debug on.
@@ -36,7 +36,7 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 }
 
 func (pk *ClientBoundDebugRenderer) Marshal(io protocol.IO) {
-	io.Uint32(&pk.Type)
+	io.String(&pk.Type)
 	if pk.Type == ClientBoundDebugRendererAddCube {
 		io.String(&pk.Text)
 		io.Vec3(&pk.Position)
