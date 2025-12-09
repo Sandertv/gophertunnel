@@ -167,6 +167,17 @@ type Conn struct {
 	shieldID atomic.Int32
 
 	additional chan packet.Packet
+
+	// packDownloadMu protects the resource pack download retry mechanism.
+	packDownloadMu sync.Mutex
+	// lastChunkResponse stores the last ResourcePackChunkData sent, for potential retry.
+	lastChunkResponse *packet.ResourcePackChunkData
+	// lastDataInfo stores the last ResourcePackDataInfo sent, for potential retry.
+	lastDataInfo *packet.ResourcePackDataInfo
+	// packRetryTimer is used to retry sending pack data if no chunk request is received.
+	packRetryTimer *time.Timer
+	// packRetryCount tracks how many retries have been attempted for the current pack.
+	packRetryCount int
 }
 
 // newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
@@ -1085,6 +1096,12 @@ func (conn *Conn) startGame() {
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
 
+// packRetryInterval is the duration to wait before retrying to send resource pack data.
+const packRetryInterval = 5 * time.Second
+
+// maxPackRetries is the maximum number of retries for sending resource pack data.
+const maxPackRetries = 10
+
 // nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info
 // packet with information about it.
 func (conn *Conn) nextResourcePackDownload() error {
@@ -1095,9 +1112,64 @@ func (conn *Conn) nextResourcePackDownload() error {
 	if err := conn.WritePacket(pk); err != nil {
 		return fmt.Errorf("send ResourcePackDataInfo: %w", err)
 	}
+
+	// Store for potential retry and start retry timer
+	conn.packDownloadMu.Lock()
+	conn.lastDataInfo = pk
+	conn.lastChunkResponse = nil
+	conn.packRetryCount = 0
+	conn.startPackRetryTimer()
+	conn.packDownloadMu.Unlock()
+
 	// Set the next expected packet to ResourcePackChunkRequest packets.
 	conn.expect(packet.IDResourcePackChunkRequest)
 	return nil
+}
+
+// startPackRetryTimer starts or resets the retry timer for resource pack downloads.
+// Must be called with packDownloadMu held.
+func (conn *Conn) startPackRetryTimer() {
+	if conn.packRetryTimer != nil {
+		conn.packRetryTimer.Stop()
+	}
+	conn.packRetryTimer = time.AfterFunc(packRetryInterval, conn.retryPackDownload)
+}
+
+// stopPackRetryTimer stops the resource pack retry timer.
+func (conn *Conn) stopPackRetryTimer() {
+	conn.packDownloadMu.Lock()
+	defer conn.packDownloadMu.Unlock()
+	if conn.packRetryTimer != nil {
+		conn.packRetryTimer.Stop()
+		conn.packRetryTimer = nil
+	}
+}
+
+// retryPackDownload retries sending resource pack data if the download appears stuck.
+func (conn *Conn) retryPackDownload() {
+	conn.packDownloadMu.Lock()
+	defer conn.packDownloadMu.Unlock()
+
+	conn.packRetryCount++
+	if conn.packRetryCount > maxPackRetries {
+		conn.log.Warn("resource pack download stuck after max retries, closing connection")
+		_ = conn.Close()
+		return
+	}
+
+	// Retry sending the last chunk response, or the data info if no chunks were sent yet
+	if conn.lastChunkResponse != nil {
+		conn.log.Debug("retrying ResourcePackChunkData", "chunk", conn.lastChunkResponse.ChunkIndex, "retry", conn.packRetryCount)
+		_ = conn.WritePacket(conn.lastChunkResponse)
+		_ = conn.Flush()
+	} else if conn.lastDataInfo != nil {
+		conn.log.Debug("retrying ResourcePackDataInfo", "uuid", conn.lastDataInfo.UUID, "retry", conn.packRetryCount)
+		_ = conn.WritePacket(conn.lastDataInfo)
+		_ = conn.Flush()
+	}
+
+	// Schedule next retry
+	conn.startPackRetryTimer()
 }
 
 // handleResourcePackDataInfo handles a resource pack data info packet, which initiates the downloading of the
@@ -1211,6 +1283,8 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 		Data:       make([]byte, packChunkSize),
 	}
 	conn.packQueue.currentOffset += packChunkSize
+
+	isLastChunk := false
 	// We read the data directly into the response's data.
 	if n, err := current.ReadAt(response.Data, int64(response.DataOffset)); err != nil {
 		// If we hit an EOF, we don't need to return an error, as we've simply reached the end of the content
@@ -1219,8 +1293,12 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 			return fmt.Errorf("read resource pack chunk: %w", err)
 		}
 		response.Data = response.Data[:n]
+		isLastChunk = true
 
 		defer func() {
+			// Stop retry timer as this pack is complete
+			conn.stopPackRetryTimer()
+
 			if !conn.packQueue.AllDownloaded() {
 				_ = conn.nextResourcePackDownload()
 			} else {
@@ -1230,6 +1308,15 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	}
 	if err := conn.WritePacket(response); err != nil {
 		return fmt.Errorf("send ResourcePackChunkData: %w", err)
+	}
+
+	// Store the response and reset retry timer (only if not the last chunk)
+	if !isLastChunk {
+		conn.packDownloadMu.Lock()
+		conn.lastChunkResponse = response
+		conn.packRetryCount = 0
+		conn.startPackRetryTimer()
+		conn.packDownloadMu.Unlock()
 	}
 
 	return nil
@@ -1440,6 +1527,14 @@ func (conn *Conn) expect(packetIDs ...uint32) {
 func (conn *Conn) close(cause error) error {
 	var err error
 	conn.once.Do(func() {
+		// Stop the resource pack retry timer if running
+		conn.packDownloadMu.Lock()
+		if conn.packRetryTimer != nil {
+			conn.packRetryTimer.Stop()
+			conn.packRetryTimer = nil
+		}
+		conn.packDownloadMu.Unlock()
+
 		err = conn.Flush()
 		conn.cancelFunc(cause)
 		_ = conn.conn.Close()

@@ -88,6 +88,10 @@ type ListenConfig struct {
 	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
+
+	// LoginTimeout is the maximum duration to wait for a client to complete the login sequence (including
+	// resource pack downloads). If zero, defaults to 2 minutes. If negative, no timeout is applied.
+	LoginTimeout time.Duration
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -320,6 +324,21 @@ func (listener *Listener) handleConn(conn *Conn) {
 		listener.playerCount.Add(-1)
 		listener.updatePongData()
 	}()
+
+	// Set up login timeout to prevent stuck connections (e.g. during resource pack download)
+	loginTimeout := listener.cfg.LoginTimeout
+	if loginTimeout == 0 {
+		loginTimeout = 2 * time.Minute
+	}
+	var loginTimer *time.Timer
+	if loginTimeout > 0 {
+		loginTimer = time.AfterFunc(loginTimeout, func() {
+			conn.log.Warn("login timeout - closing connection")
+			_ = conn.Close()
+		})
+		defer loginTimer.Stop()
+	}
+
 	for {
 		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
 		// and push them to the Conn so that they may be processed.
@@ -337,6 +356,10 @@ func (listener *Listener) handleConn(conn *Conn) {
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {
+				// Login completed, stop the timeout timer
+				if loginTimer != nil {
+					loginTimer.Stop()
+				}
 				select {
 				case <-listener.close:
 					// The listener was closed while this one was logged in, so the incoming channel will be
