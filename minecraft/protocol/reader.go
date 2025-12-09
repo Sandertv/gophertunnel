@@ -645,9 +645,9 @@ func (r *Reader) ShapeData(x *ShapeData) {
 
 // TextCategory reads a text category from the reader.
 func (r *Reader) TextCategory(x *uint8) {
-	var category uint8
-	var length int
+	category := *x
 	r.Uint8(&category)
+	var length int
 	switch category {
 	case TextCategoryMessageOnly:
 		length = 6

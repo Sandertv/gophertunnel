@@ -530,8 +530,9 @@ func (w *Writer) ShapeData(x *ShapeData) {
 
 // TextCategory writes a text category to the writer.
 func (w *Writer) TextCategory(x *uint8) {
-	w.Uint8(x)
-	switch *x {
+	category := *x
+	w.Uint8(&category)
+	switch category {
 	case TextCategoryMessageOnly:
 		w.String(&textCategories[TextCategoryMessageOnly][0])
 		w.String(&textCategories[TextCategoryMessageOnly][1])
