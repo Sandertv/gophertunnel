@@ -651,7 +651,7 @@ func (r *Reader) TextCategory(x *uint8) {
 	switch category {
 	case TextCategoryMessageOnly:
 		length = 6
-	case TextCategoryAuthorizedMessage:
+	case TextCategoryAuthoredMessage:
 		length = 3
 	case TextCategoryMessageWithParameters:
 		length = 3

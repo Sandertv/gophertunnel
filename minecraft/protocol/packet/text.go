@@ -62,7 +62,7 @@ func (pk *Text) Marshal(io protocol.IO) {
 	if pk.TextType == TextTypeRaw || pk.TextType == TextTypeTip || pk.TextType == TextTypeSystem || pk.TextType == TextTypeObjectWhisper || pk.TextType == TextTypeObjectAnnouncement || pk.TextType == TextTypeObject {
 		categoryType = protocol.TextCategoryMessageOnly
 	} else if pk.TextType == TextTypeChat || pk.TextType == TextTypeWhisper || pk.TextType == TextTypeAnnouncement {
-		categoryType = protocol.TextCategoryAuthorizedMessage
+		categoryType = protocol.TextCategoryAuthoredMessage
 	} else {
 		categoryType = protocol.TextCategoryMessageWithParameters
 	}

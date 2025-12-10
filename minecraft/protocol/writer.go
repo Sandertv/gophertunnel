@@ -540,10 +540,10 @@ func (w *Writer) TextCategory(x *uint8) {
 		w.String(&textCategories[TextCategoryMessageOnly][3])
 		w.String(&textCategories[TextCategoryMessageOnly][4])
 		w.String(&textCategories[TextCategoryMessageOnly][5])
-	case TextCategoryAuthorizedMessage:
-		w.String(&textCategories[TextCategoryAuthorizedMessage][0])
-		w.String(&textCategories[TextCategoryAuthorizedMessage][1])
-		w.String(&textCategories[TextCategoryAuthorizedMessage][2])
+	case TextCategoryAuthoredMessage:
+		w.String(&textCategories[TextCategoryAuthoredMessage][0])
+		w.String(&textCategories[TextCategoryAuthoredMessage][1])
+		w.String(&textCategories[TextCategoryAuthoredMessage][2])
 	case TextCategoryMessageWithParameters:
 		w.String(&textCategories[TextCategoryMessageWithParameters][0])
 		w.String(&textCategories[TextCategoryMessageWithParameters][1])

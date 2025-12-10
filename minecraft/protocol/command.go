@@ -294,7 +294,7 @@ type CommandOutputMessage struct {
 
 // Marshal encodes/decodes a CommandOutputMessage.
 func (x *CommandOutputMessage) Marshal(r IO) {
-	r.Bool(&x.Success)
 	r.String(&x.Message)
+	r.Bool(&x.Success)
 	FuncSlice(r, &x.Parameters, r.String)
 }
