@@ -79,6 +79,10 @@ func (pk *Text) Marshal(io protocol.IO) {
 		io.String(&pk.Message)
 		protocol.FuncSlice(io, &pk.Parameters, io.String)
 	}
+
+	if len(pk.Message) == 0 {
+		io.InvalidValue(pk.Message, "message", "string cannot be empty")
+	}
 	io.String(&pk.XUID)
 	io.String(&pk.PlatformChatID)
 	protocol.OptionalFunc(io, &pk.FilteredMessage, io.String)
