@@ -24,7 +24,7 @@ type CommandOutput struct {
 	// messages in this packet to the right origin, depending on what is sent here.
 	CommandOrigin protocol.CommandOrigin
 	// OutputType specifies the type of output that is sent. The OutputType sent by vanilla games appears to
-	// be 3, which seems to work.
+	// be CommandOutputTypeAllOutput, which seems to work.
 	OutputType string
 	// SuccessCount is the amount of times that a command was executed successfully as a result of the command
 	// that was requested. For servers, this is usually a rather meaningless fields, but for vanilla, this is

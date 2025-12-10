@@ -59,11 +59,12 @@ func (*Text) ID() uint32 {
 func (pk *Text) Marshal(io protocol.IO) {
 	io.Bool(&pk.NeedsTranslation)
 	var categoryType uint8
-	if pk.TextType == TextTypeRaw || pk.TextType == TextTypeTip || pk.TextType == TextTypeSystem || pk.TextType == TextTypeObjectWhisper || pk.TextType == TextTypeObjectAnnouncement || pk.TextType == TextTypeObject {
+	switch pk.TextType {
+	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObjectWhisper, TextTypeObjectAnnouncement, TextTypeObject:
 		categoryType = protocol.TextCategoryMessageOnly
-	} else if pk.TextType == TextTypeChat || pk.TextType == TextTypeWhisper || pk.TextType == TextTypeAnnouncement {
+	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
 		categoryType = protocol.TextCategoryAuthoredMessage
-	} else {
+	default:
 		categoryType = protocol.TextCategoryMessageWithParameters
 	}
 	io.TextCategory(&categoryType)

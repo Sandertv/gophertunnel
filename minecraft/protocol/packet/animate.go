@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	AnimateActionSwingArm = uint8(iota + 1)
+	AnimateActionSwingArm = iota + 1
 	_
 	AnimateActionStopSleep
 	AnimateActionCriticalHit
