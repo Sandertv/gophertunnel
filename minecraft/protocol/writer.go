@@ -447,6 +447,16 @@ func (w *Writer) EventType(x *Event) {
 	w.Varint32(&t)
 }
 
+// EventOrdinal writes an Event ordinal to the writer.
+func (w *Writer) EventOrdinal(x *Event) {
+	var ordinal uint32
+	if !lookupEventOrdinal(*x, &ordinal) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		return
+	}
+	w.Varuint32(&ordinal)
+}
+
 // TransactionDataType writes an InventoryTransactionData type to the writer.
 func (w *Writer) TransactionDataType(x *InventoryTransactionData) {
 	var id uint32

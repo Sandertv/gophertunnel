@@ -55,6 +55,7 @@ type IO interface {
 	MaterialReducer(x *MaterialReducer)
 	Recipe(x *Recipe)
 	EventType(x *Event)
+	EventOrdinal(x *Event)
 	TransactionDataType(x *InventoryTransactionData)
 	PlayerInventoryAction(x *UseItemTransactionData)
 	GameRule(x *GameRule)

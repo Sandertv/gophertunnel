@@ -182,6 +182,57 @@ func lookupEventType(x Event, eventType *int32) bool {
 	return true
 }
 
+// lookupEventOrdinal looks up the event ordinal for the Event passed.
+func lookupEventOrdinal(x Event, eventOrdinal *uint32) bool {
+	switch x.(type) {
+	case *AchievementAwardedEvent:
+		*eventOrdinal = 0
+	case *EntityInteractEvent:
+		*eventOrdinal = 1
+	case *PortalBuiltEvent:
+		*eventOrdinal = 2
+	case *PortalUsedEvent:
+		*eventOrdinal = 3
+	case *MobKilledEvent:
+		*eventOrdinal = 4
+	case *CauldronUsedEvent:
+		*eventOrdinal = 5
+	case *PlayerDiedEvent:
+		*eventOrdinal = 6
+	case *BossKilledEvent:
+		*eventOrdinal = 7
+	case *SlashCommandExecutedEvent:
+		*eventOrdinal = 8
+	case *MobBornEvent:
+		*eventOrdinal = 9
+	case *CauldronInteractEvent:
+		*eventOrdinal = 10
+	case *ComposterInteractEvent:
+		*eventOrdinal = 11
+	case *BellUsedEvent:
+		*eventOrdinal = 12
+	case *EntityDefinitionTriggerEvent:
+		*eventOrdinal = 13
+	case *RaidUpdateEvent:
+		*eventOrdinal = 14
+	case *TargetBlockHitEvent:
+		*eventOrdinal = 15
+	case *PiglinBarterEvent:
+		*eventOrdinal = 16
+	case *WaxedOrUnwaxedCopperEvent:
+		*eventOrdinal = 17
+	case *CodeBuilderRuntimeActionEvent:
+		*eventOrdinal = 18
+	case *CodeBuilderScoreboardEvent:
+		*eventOrdinal = 19
+	case *ItemUsedEvent:
+		*eventOrdinal = 20
+	default:
+		return false
+	}
+	return true
+}
+
 // Event represents an object that holds data specific to an event.
 // The data it holds depends on the type.
 type Event interface {

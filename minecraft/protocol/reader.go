@@ -563,6 +563,16 @@ func (r *Reader) EventType(x *Event) {
 	}
 }
 
+// EventOrdinal reads an Event's ordinal from the reader.
+func (r *Reader) EventOrdinal(x *Event) {
+	var ordinal uint32
+	if !lookupEventOrdinal(*x, &ordinal) {
+		r.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		return
+	}
+	r.Varuint32(&ordinal)
+}
+
 // TransactionDataType reads an InventoryTransactionData type from the reader.
 func (r *Reader) TransactionDataType(x *InventoryTransactionData) {
 	var transactionType uint32
