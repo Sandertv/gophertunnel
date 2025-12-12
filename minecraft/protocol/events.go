@@ -192,12 +192,12 @@ type Event interface {
 // AchievementAwardedEvent is the event data sent for achievements.
 type AchievementAwardedEvent struct {
 	// AchievementID is the ID for the achievement.
-	AchievementID int32
+	AchievementID uint8
 }
 
 // Marshal ...
 func (a *AchievementAwardedEvent) Marshal(r IO) {
-	r.Varint32(&a.AchievementID)
+	r.Uint8(&a.AchievementID)
 }
 
 // EntityInteractEvent is the event data sent for entity interactions.
@@ -205,7 +205,7 @@ type EntityInteractEvent struct {
 	// InteractedEntityID ...
 	InteractedEntityID int64
 	// InteractionType ...
-	InteractionType int32
+	InteractionType uint8
 	// InteractionEntityType ...
 	InteractionEntityType int32
 	// EntityVariant ...
@@ -217,7 +217,7 @@ type EntityInteractEvent struct {
 // Marshal ...
 func (e *EntityInteractEvent) Marshal(r IO) {
 	r.Varint64(&e.InteractedEntityID)
-	r.Varint32(&e.InteractionType)
+	r.Uint8(&e.InteractionType)
 	r.Varint32(&e.InteractionEntityType)
 	r.Varint32(&e.EntityVariant)
 	r.Uint8(&e.EntityColour)
@@ -279,16 +279,16 @@ type CauldronUsedEvent struct {
 	// Colour ...
 	Colour uint32
 	// PotionID ...
-	PotionID int32
+	PotionID int16
 	// FillLevel ...
-	FillLevel int32
+	FillLevel int16
 }
 
 // Marshal ...
 func (c *CauldronUsedEvent) Marshal(r IO) {
 	r.Varuint32(&c.Colour)
-	r.Varint32(&c.PotionID)
-	r.Varint32(&c.FillLevel)
+	r.Int16(&c.PotionID)
+	r.Int16(&c.FillLevel)
 }
 
 // PlayerDiedEvent is the event data sent when a player dies.
@@ -415,40 +415,40 @@ func (p *PetDiedEvent) Marshal(r IO) {}
 // CauldronInteractEvent is the event data sent when a cauldron is interacted with.
 type CauldronInteractEvent struct {
 	// BlockInteractionType ...
-	BlockInteractionType int32
+	BlockInteractionType uint8
 	// ItemID ...
-	ItemID int32
+	ItemID int16
 }
 
 // Marshal ...
 func (c *CauldronInteractEvent) Marshal(r IO) {
-	r.Varint32(&c.BlockInteractionType)
-	r.Varint32(&c.ItemID)
+	r.Uint8(&c.BlockInteractionType)
+	r.Int16(&c.ItemID)
 }
 
 // ComposterInteractEvent is the event data sent when a composter is interacted with.
 type ComposterInteractEvent struct {
 	// BlockInteractionType ...
-	BlockInteractionType int32
+	BlockInteractionType uint8
 	// ItemID ...
-	ItemID int32
+	ItemID int16
 }
 
 // Marshal ...
 func (c *ComposterInteractEvent) Marshal(r IO) {
-	r.Varint32(&c.BlockInteractionType)
-	r.Varint32(&c.ItemID)
+	r.Uint8(&c.BlockInteractionType)
+	r.Int16(&c.ItemID)
 }
 
 // BellUsedEvent is the event data sent when a bell is used.
 type BellUsedEvent struct {
 	// ItemID ...
-	ItemID int32
+	ItemID int16
 }
 
 // Marshal ...
 func (b *BellUsedEvent) Marshal(r IO) {
-	r.Varint32(&b.ItemID)
+	r.Int16(&b.ItemID)
 }
 
 // EntityDefinitionTriggerEvent is an event used for an unknown purpose.
