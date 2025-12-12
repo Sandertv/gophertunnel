@@ -5,11 +5,11 @@ import (
 )
 
 const (
-	CommandOutputTypeNone       = "none"
-	CommandOutputTypeLastOutput = "lastoutput"
-	CommandOutputTypeSilent     = "silent"
-	CommandOutputTypeAllOutput  = "alloutput"
-	CommandOutputTypeDataSet    = "dataset"
+	CommandOutputTypeNone = iota
+	CommandOutputTypeLastOutput
+	CommandOutputTypeSilent
+	CommandOutputTypeAllOutput
+	CommandOutputTypeDataSet
 )
 
 // CommandOutput is sent by the server to the client to send text as output of a command. Most servers do not
@@ -25,7 +25,7 @@ type CommandOutput struct {
 	CommandOrigin protocol.CommandOrigin
 	// OutputType specifies the type of output that is sent. The OutputType sent by vanilla games appears to
 	// be CommandOutputTypeAllOutput, which seems to work.
-	OutputType string
+	OutputType byte
 	// SuccessCount is the amount of times that a command was executed successfully as a result of the command
 	// that was requested. For servers, this is usually a rather meaningless fields, but for vanilla, this is
 	// applicable for commands created with Functions.
@@ -44,8 +44,48 @@ func (*CommandOutput) ID() uint32 {
 
 func (pk *CommandOutput) Marshal(io protocol.IO) {
 	protocol.CommandOriginData(io, &pk.CommandOrigin)
-	io.String(&pk.OutputType)
+	outputTypeStr := commandOutputTypeToString(pk.OutputType)
+	io.String(&outputTypeStr)
+	if outputType, ok := commandOutputTypeFromString(outputTypeStr); ok {
+		pk.OutputType = outputType
+	} else {
+		io.InvalidValue(outputType, "outputType", "unknown type")
+	}
 	io.Uint32(&pk.SuccessCount)
 	protocol.Slice(io, &pk.OutputMessages)
 	protocol.OptionalFunc(io, &pk.DataSet, io.String)
+}
+
+func commandOutputTypeToString(x byte) string {
+	switch x {
+	case CommandOutputTypeNone:
+		return "none"
+	case CommandOutputTypeLastOutput:
+		return "lastoutput"
+	case CommandOutputTypeSilent:
+		return "silent"
+	case CommandOutputTypeAllOutput:
+		return "alloutput"
+	case CommandOutputTypeDataSet:
+		return "dataset"
+	default:
+		return "unknown"
+	}
+}
+
+func commandOutputTypeFromString(x string) (byte, bool) {
+	switch x {
+	case "none":
+		return CommandOutputTypeNone, true
+	case "lastoutput":
+		return CommandOutputTypeLastOutput, true
+	case "silent":
+		return CommandOutputTypeSilent, true
+	case "alloutput":
+		return CommandOutputTypeAllOutput, true
+	case "dataset":
+		return CommandOutputTypeDataSet, true
+	default:
+		return 0, false
+	}
 }
