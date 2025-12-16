@@ -46,11 +46,7 @@ func (pk *CommandOutput) Marshal(io protocol.IO) {
 	protocol.CommandOriginData(io, &pk.CommandOrigin)
 	outputTypeStr := commandOutputTypeToString(pk.OutputType)
 	io.String(&outputTypeStr)
-	if outputType, ok := commandOutputTypeFromString(outputTypeStr); ok {
-		pk.OutputType = outputType
-	} else {
-		io.InvalidValue(outputType, "outputType", "unknown type")
-	}
+	commandOutputTypeFromString(io, &pk.OutputType, outputTypeStr)
 	io.Uint32(&pk.SuccessCount)
 	protocol.Slice(io, &pk.OutputMessages)
 	protocol.OptionalFunc(io, &pk.DataSet, io.String)
@@ -73,19 +69,19 @@ func commandOutputTypeToString(x byte) string {
 	}
 }
 
-func commandOutputTypeFromString(x string) (byte, bool) {
-	switch x {
+func commandOutputTypeFromString(io protocol.IO, x *byte, s string) {
+	switch s {
 	case "none":
-		return CommandOutputTypeNone, true
+		*x = CommandOutputTypeNone
 	case "lastoutput":
-		return CommandOutputTypeLastOutput, true
+		*x = CommandOutputTypeLastOutput
 	case "silent":
-		return CommandOutputTypeSilent, true
+		*x = CommandOutputTypeSilent
 	case "alloutput":
-		return CommandOutputTypeAllOutput, true
+		*x = CommandOutputTypeAllOutput
 	case "dataset":
-		return CommandOutputTypeDataSet, true
+		*x = CommandOutputTypeDataSet
 	default:
-		return 0, false
+		io.InvalidValue(s, "outputType", "unknown type")
 	}
 }

@@ -45,11 +45,7 @@ func (c *Command) Marshal(r IO) {
 	r.String(&c.Description)
 	r.Uint16(&c.Flags)
 	r.String(&permissionStr)
-	if permission, ok := commandPermissionFromString(permissionStr); ok {
-		c.PermissionLevel = permission
-	} else {
-		r.InvalidValue(permissionStr, "permissionLevel", "unknown permission level")
-	}
+	commandPermissionFromString(r, &c.PermissionLevel, permissionStr)
 	r.Uint32(&c.AliasesOffset)
 	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint32)
 	Slice(r, &c.Overloads)
@@ -280,11 +276,7 @@ func CommandOriginData(r IO, x *CommandOrigin) {
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
 	r.Int64(&x.PlayerUniqueID)
-	if origin, ok := commandOriginFromString(originStr); ok {
-		x.Origin = origin
-	} else {
-		r.InvalidValue(origin, "origin", "unknown origin")
-	}
+	commandOriginFromString(r, &x.Origin, originStr)
 }
 
 // CommandOutputMessage represents a message sent by a command that holds the output of one of the commands
@@ -350,42 +342,42 @@ func commandOriginToString(x uint32) string {
 	}
 }
 
-func commandOriginFromString(s string) (uint32, bool) {
+func commandOriginFromString(r IO, x *uint32, s string) {
 	switch s {
 	case "player":
-		return CommandOriginPlayer, true
+		*x = CommandOriginPlayer
 	case "commandblock":
-		return CommandOriginBlock, true
+		*x = CommandOriginBlock
 	case "minecartcommandblock":
-		return CommandOriginMinecartBlock, true
+		*x = CommandOriginMinecartBlock
 	case "devconsole":
-		return CommandOriginDevConsole, true
+		*x = CommandOriginDevConsole
 	case "test":
-		return CommandOriginTest, true
+		*x = CommandOriginTest
 	case "automationplayer":
-		return CommandOriginAutomationPlayer, true
+		*x = CommandOriginAutomationPlayer
 	case "clientautomation":
-		return CommandOriginClientAutomation, true
+		*x = CommandOriginClientAutomation
 	case "dedicatedserver":
-		return CommandOriginDedicatedServer, true
+		*x = CommandOriginDedicatedServer
 	case "entity":
-		return CommandOriginEntity, true
+		*x = CommandOriginEntity
 	case "virtual":
-		return CommandOriginVirtual, true
+		*x = CommandOriginVirtual
 	case "gameargument":
-		return CommandOriginGameArgument, true
+		*x = CommandOriginGameArgument
 	case "entityserver":
-		return CommandOriginEntityServer, true
+		*x = CommandOriginEntityServer
 	case "precompiled":
-		return CommandOriginPrecompiled, true
+		*x = CommandOriginPrecompiled
 	case "gamedirectorentityserver":
-		return CommandOriginGameDirectorEntityServer, true
+		*x = CommandOriginGameDirectorEntityServer
 	case "scripting":
-		return CommandOriginScript, true
+		*x = CommandOriginScript
 	case "executecontext":
-		return CommandOriginExecutor, true
+		*x = CommandOriginExecutor
 	default:
-		return 0, false
+		r.InvalidValue(s, "origin", "unknown origin")
 	}
 }
 
@@ -408,21 +400,21 @@ func commandPermissionToString(x byte) string {
 	}
 }
 
-func commandPermissionFromString(s string) (byte, bool) {
+func commandPermissionFromString(r IO, x *byte, s string) {
 	switch s {
 	case "any":
-		return CommandPermissionLevelAny, true
+		*x = CommandPermissionLevelAny
 	case "gamedirectors":
-		return CommandPermissionLevelGameDirectors, true
+		*x = CommandPermissionLevelGameDirectors
 	case "admin":
-		return CommandPermissionLevelAdmin, true
+		*x = CommandPermissionLevelAdmin
 	case "host":
-		return CommandPermissionLevelHost, true
+		*x = CommandPermissionLevelHost
 	case "owner":
-		return CommandPermissionLevelOwner, true
+		*x = CommandPermissionLevelOwner
 	case "internal":
-		return CommandPermissionLevelInternal, true
+		*x = CommandPermissionLevelInternal
 	default:
-		return 0, false
+		r.InvalidValue(s, "permissionLevel", "unknown permission level")
 	}
 }

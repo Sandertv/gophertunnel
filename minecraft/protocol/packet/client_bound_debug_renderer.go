@@ -38,11 +38,7 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 func (pk *ClientBoundDebugRenderer) Marshal(io protocol.IO) {
 	typStr := clientBoundDebugRenderToString(pk.Type)
 	io.String(&typStr)
-	if typ, ok := clientBoundDebugRenderFromString(typStr); ok {
-		pk.Type = typ
-	} else {
-		io.InvalidValue(typ, "type", "unknown type")
-	}
+	clientBoundDebugRenderFromString(io, &pk.Type, typStr)
 	if pk.Type == ClientBoundDebugRendererAddCube {
 		io.String(&pk.Text)
 		io.Vec3(&pk.Position)
@@ -65,13 +61,13 @@ func clientBoundDebugRenderToString(x uint32) string {
 	}
 }
 
-func clientBoundDebugRenderFromString(x string) (uint32, bool) {
-	switch x {
+func clientBoundDebugRenderFromString(io protocol.IO, x *uint32, s string) {
+	switch s {
 	case "cleardebugmarkers":
-		return ClientBoundDebugRendererClear, true
+		*x = ClientBoundDebugRendererClear
 	case "adddebugmarkercube":
-		return ClientBoundDebugRendererAddCube, true
+		*x = ClientBoundDebugRendererAddCube
 	default:
-		return 0, false
+		io.InvalidValue(s, "type", "unknown type")
 	}
 }
