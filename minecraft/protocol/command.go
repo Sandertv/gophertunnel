@@ -5,12 +5,12 @@ import (
 )
 
 const (
-	CommandPermissionLevelAny           = "any"
-	CommandPermissionLevelGameDirectors = "gamedirectors"
-	CommandPermissionLevelAdmin         = "admin"
-	CommandPermissionLevelHost          = "host"
-	CommandPermissionLevelOwner         = "owner"
-	CommandPermissionLevelInternal      = "internal"
+	CommandPermissionLevelAny = iota
+	CommandPermissionLevelGameDirectors
+	CommandPermissionLevelAdmin
+	CommandPermissionLevelHost
+	CommandPermissionLevelOwner
+	CommandPermissionLevelInternal
 )
 
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
@@ -27,7 +27,7 @@ type Command struct {
 	// PermissionLevel is the command permission level that the player required to execute this command. The
 	// field no longer seems to serve a purpose, as the client does not handle the execution of commands
 	// anymore: The permissions should be checked server-side.
-	PermissionLevel string
+	PermissionLevel byte
 	// AliasesOffset is the offset to a CommandEnum that holds the values that
 	// should be used as aliases for this command.
 	AliasesOffset uint32
@@ -40,10 +40,12 @@ type Command struct {
 }
 
 func (c *Command) Marshal(r IO) {
+	permissionStr := commandPermissionToString(c.PermissionLevel)
 	r.String(&c.Name)
 	r.String(&c.Description)
 	r.Uint16(&c.Flags)
-	r.String(&c.PermissionLevel)
+	r.String(&permissionStr)
+	commandPermissionFromString(r, &c.PermissionLevel, permissionStr)
 	r.Uint32(&c.AliasesOffset)
 	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint32)
 	Slice(r, &c.Overloads)
@@ -228,22 +230,22 @@ func (c *CommandEnumConstraint) Marshal(r IO) {
 }
 
 const (
-	CommandOriginPlayer                   = "player"
-	CommandOriginBlock                    = "commandblock"
-	CommandOriginMinecartBlock            = "minecartcommandblock"
-	CommandOriginDevConsole               = "devconsole"
-	CommandOriginTest                     = "test"
-	CommandOriginAutomationPlayer         = "automationplayer"
-	CommandOriginClientAutomation         = "clientautomation"
-	CommandOriginDedicatedServer          = "dedicatedserver"
-	CommandOriginEntity                   = "entity"
-	CommandOriginVirtual                  = "virtual"
-	CommandOriginGameArgument             = "gameargument"
-	CommandOriginEntityServer             = "entityserver"
-	CommandOriginPrecompiled              = "precompiled"
-	CommandOriginGameDirectorEntityServer = "gamedirectorentityserver"
-	CommandOriginScript                   = "scripting"
-	CommandOriginExecutor                 = "executecontext"
+	CommandOriginPlayer = iota
+	CommandOriginBlock
+	CommandOriginMinecartBlock
+	CommandOriginDevConsole
+	CommandOriginTest
+	CommandOriginAutomationPlayer
+	CommandOriginClientAutomation
+	CommandOriginDedicatedServer
+	CommandOriginEntity
+	CommandOriginVirtual
+	CommandOriginGameArgument
+	CommandOriginEntityServer
+	CommandOriginPrecompiled
+	CommandOriginGameDirectorEntityServer
+	CommandOriginScript
+	CommandOriginExecutor
 )
 
 // CommandOrigin holds data that identifies the origin of the requesting of a command. It holds several
@@ -253,7 +255,7 @@ type CommandOrigin struct {
 	// Origin is one of the values above that specifies the origin of the command. The origin may change,
 	// depending on what part of the client actually called the command. The command may be issued by a
 	// websocket server, for example.
-	Origin string
+	Origin uint32
 	// UUID is a unique identifier for every instantiation of a command.
 	UUID uuid.UUID
 	// RequestID is an ID that identifies the request of the client. The server should send a CommandOrigin
@@ -269,10 +271,12 @@ type CommandOrigin struct {
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.
 func CommandOriginData(r IO, x *CommandOrigin) {
-	r.String(&x.Origin)
+	originStr := commandOriginToString(x.Origin)
+	r.String(&originStr)
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
 	r.Int64(&x.PlayerUniqueID)
+	commandOriginFromString(r, &x.Origin, originStr)
 }
 
 // CommandOutputMessage represents a message sent by a command that holds the output of one of the commands
@@ -297,4 +301,120 @@ func (x *CommandOutputMessage) Marshal(r IO) {
 	r.String(&x.Message)
 	r.Bool(&x.Success)
 	FuncSlice(r, &x.Parameters, r.String)
+}
+
+func commandOriginToString(x uint32) string {
+	switch x {
+	case CommandOriginPlayer:
+		return "player"
+	case CommandOriginBlock:
+		return "commandblock"
+	case CommandOriginMinecartBlock:
+		return "minecartcommandblock"
+	case CommandOriginDevConsole:
+		return "devconsole"
+	case CommandOriginTest:
+		return "test"
+	case CommandOriginAutomationPlayer:
+		return "automationplayer"
+	case CommandOriginClientAutomation:
+		return "clientautomation"
+	case CommandOriginDedicatedServer:
+		return "dedicatedserver"
+	case CommandOriginEntity:
+		return "entity"
+	case CommandOriginVirtual:
+		return "virtual"
+	case CommandOriginGameArgument:
+		return "gameargument"
+	case CommandOriginEntityServer:
+		return "entityserver"
+	case CommandOriginPrecompiled:
+		return "precompiled"
+	case CommandOriginGameDirectorEntityServer:
+		return "gamedirectorentityserver"
+	case CommandOriginScript:
+		return "scripting"
+	case CommandOriginExecutor:
+		return "executecontext"
+	default:
+		return "unknown"
+	}
+}
+
+func commandOriginFromString(r IO, x *uint32, s string) {
+	switch s {
+	case "player":
+		*x = CommandOriginPlayer
+	case "commandblock":
+		*x = CommandOriginBlock
+	case "minecartcommandblock":
+		*x = CommandOriginMinecartBlock
+	case "devconsole":
+		*x = CommandOriginDevConsole
+	case "test":
+		*x = CommandOriginTest
+	case "automationplayer":
+		*x = CommandOriginAutomationPlayer
+	case "clientautomation":
+		*x = CommandOriginClientAutomation
+	case "dedicatedserver":
+		*x = CommandOriginDedicatedServer
+	case "entity":
+		*x = CommandOriginEntity
+	case "virtual":
+		*x = CommandOriginVirtual
+	case "gameargument":
+		*x = CommandOriginGameArgument
+	case "entityserver":
+		*x = CommandOriginEntityServer
+	case "precompiled":
+		*x = CommandOriginPrecompiled
+	case "gamedirectorentityserver":
+		*x = CommandOriginGameDirectorEntityServer
+	case "scripting":
+		*x = CommandOriginScript
+	case "executecontext":
+		*x = CommandOriginExecutor
+	default:
+		r.InvalidValue(s, "origin", "unknown origin")
+	}
+}
+
+func commandPermissionToString(x byte) string {
+	switch x {
+	case CommandPermissionLevelAny:
+		return "any"
+	case CommandPermissionLevelGameDirectors:
+		return "gamedirectors"
+	case CommandPermissionLevelAdmin:
+		return "admin"
+	case CommandPermissionLevelHost:
+		return "host"
+	case CommandPermissionLevelOwner:
+		return "owner"
+	case CommandPermissionLevelInternal:
+		return "internal"
+	default:
+		return "unknown"
+	}
+}
+
+func commandPermissionFromString(r IO, x *byte, s string) {
+	switch s {
+	case "any":
+		*x = CommandPermissionLevelAny
+	case "gamedirectors":
+		*x = CommandPermissionLevelGameDirectors
+	case "admin":
+		*x = CommandPermissionLevelAdmin
+	case "host":
+		*x = CommandPermissionLevelHost
+	case "owner":
+		*x = CommandPermissionLevelOwner
+	case "internal":
+		*x = CommandPermissionLevelInternal
+	default:
+		r.InvalidValue(s, "permissionLevel", "unknown permission level")
+	}
 }
