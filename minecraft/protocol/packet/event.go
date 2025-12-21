@@ -26,5 +26,6 @@ func (pk *Event) Marshal(io protocol.IO) {
 	io.Varint64(&pk.EntityRuntimeID)
 	io.EventType(&pk.Event)
 	io.Bool(&pk.UsePlayerID)
+	io.EventOrdinal(&pk.Event)
 	pk.Event.Marshal(io)
 }
