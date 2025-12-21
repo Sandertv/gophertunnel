@@ -643,22 +643,21 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// TextCategory reads a text category from the reader.
-func (r *Reader) TextCategory(x *uint8) {
-	category := *x
-	r.Uint8(&category)
-	var length int
-	switch category {
-	case TextCategoryMessageOnly:
-		length = 6
-	case TextCategoryAuthoredMessage:
-		length = 3
-	case TextCategoryMessageWithParameters:
-		length = 3
+// StringConst reads a string from the reader and matches its length against x.
+func (r *Reader) StringConst(x string) {
+	var length uint32
+	r.Varuint32(&length)
+	l := int(length)
+	if l != len(x) {
+		r.panicf("expected string with a length of %x, got %v", len(x), l)
 	}
-	var tmp string
-	for i := 0; i < length; i++ {
-		r.String(&tmp)
+	data := make([]byte, l)
+	if _, err := r.r.Read(data); err != nil {
+		r.panic(err)
+	}
+	input := *(*string)(unsafe.Pointer(&data))
+	if input != x {
+		r.panicf("expected string to be %x, got %v", x, input)
 	}
 }
 

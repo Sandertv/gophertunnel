@@ -63,7 +63,7 @@ type IO interface {
 	Bitset(x *Bitset, size int)
 	PackSetting(x *PackSetting)
 	ShapeData(x *ShapeData)
-	TextCategory(x *uint8)
+	StringConst(x string)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)

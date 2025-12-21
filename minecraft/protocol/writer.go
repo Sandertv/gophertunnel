@@ -528,27 +528,9 @@ func (w *Writer) ShapeData(x *ShapeData) {
 	(*x).Marshal(w)
 }
 
-// TextCategory writes a text category to the writer.
-func (w *Writer) TextCategory(x *uint8) {
-	category := *x
-	w.Uint8(&category)
-	switch category {
-	case TextCategoryMessageOnly:
-		w.String(&textCategories[TextCategoryMessageOnly][0])
-		w.String(&textCategories[TextCategoryMessageOnly][1])
-		w.String(&textCategories[TextCategoryMessageOnly][2])
-		w.String(&textCategories[TextCategoryMessageOnly][3])
-		w.String(&textCategories[TextCategoryMessageOnly][4])
-		w.String(&textCategories[TextCategoryMessageOnly][5])
-	case TextCategoryAuthoredMessage:
-		w.String(&textCategories[TextCategoryAuthoredMessage][0])
-		w.String(&textCategories[TextCategoryAuthoredMessage][1])
-		w.String(&textCategories[TextCategoryAuthoredMessage][2])
-	case TextCategoryMessageWithParameters:
-		w.String(&textCategories[TextCategoryMessageWithParameters][0])
-		w.String(&textCategories[TextCategoryMessageWithParameters][1])
-		w.String(&textCategories[TextCategoryMessageWithParameters][2])
-	}
+// StringConst writes a string to the writer.
+func (w *Writer) StringConst(x string) {
+	w.String(&x)
 }
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
