@@ -576,6 +576,16 @@ func (r *Reader) EventType(x *Event) {
 	}
 }
 
+// EventOrdinal reads an Event's ordinal from the reader.
+func (r *Reader) EventOrdinal(x *Event) {
+	var ordinal uint32
+	if !lookupEventOrdinal(*x, &ordinal) {
+		r.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		return
+	}
+	r.Varuint32(&ordinal)
+}
+
 // TransactionDataType reads an InventoryTransactionData type from the reader.
 func (r *Reader) TransactionDataType(x *InventoryTransactionData) {
 	var transactionType uint32
@@ -654,6 +664,24 @@ func (r *Reader) ShapeData(x *ShapeData) {
 		return
 	}
 	(*x).Marshal(r)
+}
+
+// StringConst reads a string from the reader and matches its length against x.
+func (r *Reader) StringConst(x string) {
+	var length uint32
+	r.Varuint32(&length)
+	l := int(length)
+	if l != len(x) {
+		r.panicf("expected string with a length of %x, got %v", len(x), l)
+	}
+	data := make([]byte, l)
+	if _, err := r.r.Read(data); err != nil {
+		r.panic(err)
+	}
+	input := *(*string)(unsafe.Pointer(&data))
+	if input != x {
+		r.panicf("expected string to be %x, got %v", x, input)
+	}
 }
 
 // SliceLimit checks if the value passed is lower than the limit passed. If

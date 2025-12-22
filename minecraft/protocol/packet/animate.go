@@ -13,8 +13,15 @@ const (
 )
 
 const (
-    AnimateActionRowRight = iota + 128
-    AnimateActionRowLeft
+	AnimateSwingSourceNone      = "none"
+	AnimateSwingSourceBuild     = "build"
+	AnimateSwingSourceMine      = "mine"
+	AnimateSwingSourceInteract  = "interact"
+	AnimateSwingSourceAttack    = "attack"
+	AnimateSwingSourceUseItem   = "useitem"
+	AnimateSwingSourceThrowItem = "throwitem"
+	AnimateSwingSourceDropItem  = "dropitem"
+	AnimateSwingSourceEvent     = "event"
 )
 
 // Animate is sent by the server to send a player animation from one player to all viewers of that player. It
@@ -22,15 +29,16 @@ const (
 type Animate struct {
 	// ActionType is the ID of the animation action to execute. It is one of the action type constants that
 	// may be found above.
-	ActionType int32
+	ActionType uint8
 	// EntityRuntimeID is the runtime ID of the player that the animation should be played upon. The runtime
 	// ID is unique for each world session, and entities are generally identified in packets using this
 	// runtime ID.
 	EntityRuntimeID uint64
 	// Data ...
 	Data float32
-	// RowingTime is the time for rowing actions.
-	RowingTime float32
+	// SwingSource is the source for swing actions. It is one of the action type constants that
+	// may be found above.
+	SwingSource protocol.Optional[string]
 }
 
 // ID ...
@@ -39,10 +47,8 @@ func (*Animate) ID() uint32 {
 }
 
 func (pk *Animate) Marshal(io protocol.IO) {
-	io.Varint32(&pk.ActionType)
+	io.Uint8(&pk.ActionType)
 	io.Varuint64(&pk.EntityRuntimeID)
 	io.Float32(&pk.Data)
-	if pk.ActionType == AnimateActionRowLeft || pk.ActionType == AnimateActionRowRight {
-		io.Float32(&pk.RowingTime)
-	}
+	protocol.OptionalFunc(io, &pk.SwingSource, io.String)
 }

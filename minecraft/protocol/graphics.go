@@ -6,6 +6,15 @@ import (
 
 const (
 	GraphicsOverrideParameterTypeSkyZenithColor uint8 = iota
+	GraphicsOverrideParameterTypeSkyHorizonColor
+	GraphicsOverrideParameterTypeHorizonBlendMin
+	GraphicsOverrideParameterTypeHorizonBlendMax
+	GraphicsOverrideParameterTypeHorizonBlendStart
+	GraphicsOverrideParameterTypeHorizonBlendMieStart
+	GraphicsOverrideParameterTypeRayleighStrength
+	GraphicsOverrideParameterTypeSunMieStrength
+	GraphicsOverrideParameterTypeMoonMieStrength
+	GraphicsOverrideParameterTypeSunGlareShape
 )
 
 // ParameterKeyframeValue represents a keyframe value for graphics parameters.

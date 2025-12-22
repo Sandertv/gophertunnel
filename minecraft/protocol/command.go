@@ -1,9 +1,16 @@
 package protocol
 
 import (
-	"math"
-
 	"github.com/google/uuid"
+)
+
+const (
+	CommandPermissionLevelAny = iota
+	CommandPermissionLevelGameDirectors
+	CommandPermissionLevelAdmin
+	CommandPermissionLevelHost
+	CommandPermissionLevelOwner
+	CommandPermissionLevelInternal
 )
 
 // Command holds the data that a command requires to be shown to a player client-side. The command is shown in
@@ -26,19 +33,21 @@ type Command struct {
 	AliasesOffset uint32
 	// ChainedSubcommandOffsets is a slice of offsets that all point to a different ChainedSubcommand from the
 	// ChainedSubcommands slice in the AvailableCommands packet.
-	ChainedSubcommandOffsets []uint16
+	ChainedSubcommandOffsets []uint32
 	// Overloads is a list of command overloads that specify the ways in which a command may be executed. The
 	// overloads may be completely different.
 	Overloads []CommandOverload
 }
 
 func (c *Command) Marshal(r IO) {
+	permissionStr := commandPermissionToString(c.PermissionLevel)
 	r.String(&c.Name)
 	r.String(&c.Description)
 	r.Uint16(&c.Flags)
-	r.Uint8(&c.PermissionLevel)
+	r.String(&permissionStr)
+	commandPermissionFromString(r, &c.PermissionLevel, permissionStr)
 	r.Uint32(&c.AliasesOffset)
-	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint16)
+	FuncSlice(r, &c.ChainedSubcommandOffsets, r.Uint32)
 	Slice(r, &c.Overloads)
 }
 
@@ -133,7 +142,7 @@ type CommandEnum struct {
 	Type string
 	// ValueIndices holds a list of indices that point to the EnumValues slice in the
 	// AvailableCommandsPacket. These represent the options of the enum.
-	ValueIndices []uint
+	ValueIndices []uint32
 }
 
 // CommandEnumContext holds context required for encoding command enums.
@@ -144,27 +153,7 @@ type CommandEnumContext struct {
 // Marshal encodes/decodes a CommandEnum.
 func (ctx CommandEnumContext) Marshal(r IO, x *CommandEnum) {
 	r.String(&x.Type)
-	FuncIOSlice(r, &x.ValueIndices, ctx.enumOption)
-}
-
-// enumOption writes/reads a command enum option as a byte/uint16/uint32,
-// depending on the amount of enum values.
-func (ctx CommandEnumContext) enumOption(r IO, opt *uint) {
-	n := len(ctx.EnumValues)
-	switch {
-	case n <= math.MaxUint8:
-		val := byte(*opt)
-		r.Uint8(&val)
-		*opt = uint(val)
-	case n <= math.MaxUint16:
-		val := uint16(*opt)
-		r.Uint16(&val)
-		*opt = uint(val)
-	default:
-		val := uint32(*opt)
-		r.Uint32(&val)
-		*opt = uint(val)
-	}
+	FuncSlice(r, &x.ValueIndices, r.Uint32)
 }
 
 // ChainedSubcommand represents a subcommand that can have chained commands, such as /execute which allows you to run
@@ -185,15 +174,15 @@ func (x *ChainedSubcommand) Marshal(r IO) {
 type ChainedSubcommandValue struct {
 	// Index is the index of the argument in the ChainedSubcommandValues slice from the AvailableCommands packet. This is
 	// then used to set the type specified by the Value field below.
-	Index uint16
+	Index uint32
 	// Value is a combination of the flags above and specified the type of argument. Unlike regular parameter types,
 	// this should NOT contain any of the special flags (valid, enum, suffixed or soft enum) but only the basic types.
-	Value uint16
+	Value uint32
 }
 
 func (x *ChainedSubcommandValue) Marshal(r IO) {
-	r.Uint16(&x.Index)
-	r.Uint16(&x.Value)
+	r.Varuint32(&x.Index)
+	r.Varuint32(&x.Value)
 }
 
 // DynamicEnum is an enum variant that can have its options changed during runtime,
@@ -282,12 +271,12 @@ type CommandOrigin struct {
 
 // CommandOriginData reads/writes a CommandOrigin x using IO r.
 func CommandOriginData(r IO, x *CommandOrigin) {
-	r.Varuint32(&x.Origin)
+	originStr := commandOriginToString(x.Origin)
+	r.String(&originStr)
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
-	if x.Origin == CommandOriginDevConsole || x.Origin == CommandOriginTest {
-		r.Varint64(&x.PlayerUniqueID)
-	}
+	r.Int64(&x.PlayerUniqueID)
+	commandOriginFromString(r, &x.Origin, originStr)
 }
 
 // CommandOutputMessage represents a message sent by a command that holds the output of one of the commands
@@ -309,7 +298,123 @@ type CommandOutputMessage struct {
 
 // Marshal encodes/decodes a CommandOutputMessage.
 func (x *CommandOutputMessage) Marshal(r IO) {
-	r.Bool(&x.Success)
 	r.String(&x.Message)
+	r.Bool(&x.Success)
 	FuncSlice(r, &x.Parameters, r.String)
+}
+
+func commandOriginToString(x uint32) string {
+	switch x {
+	case CommandOriginPlayer:
+		return "player"
+	case CommandOriginBlock:
+		return "commandblock"
+	case CommandOriginMinecartBlock:
+		return "minecartcommandblock"
+	case CommandOriginDevConsole:
+		return "devconsole"
+	case CommandOriginTest:
+		return "test"
+	case CommandOriginAutomationPlayer:
+		return "automationplayer"
+	case CommandOriginClientAutomation:
+		return "clientautomation"
+	case CommandOriginDedicatedServer:
+		return "dedicatedserver"
+	case CommandOriginEntity:
+		return "entity"
+	case CommandOriginVirtual:
+		return "virtual"
+	case CommandOriginGameArgument:
+		return "gameargument"
+	case CommandOriginEntityServer:
+		return "entityserver"
+	case CommandOriginPrecompiled:
+		return "precompiled"
+	case CommandOriginGameDirectorEntityServer:
+		return "gamedirectorentityserver"
+	case CommandOriginScript:
+		return "scripting"
+	case CommandOriginExecutor:
+		return "executecontext"
+	default:
+		return "unknown"
+	}
+}
+
+func commandOriginFromString(r IO, x *uint32, s string) {
+	switch s {
+	case "player":
+		*x = CommandOriginPlayer
+	case "commandblock":
+		*x = CommandOriginBlock
+	case "minecartcommandblock":
+		*x = CommandOriginMinecartBlock
+	case "devconsole":
+		*x = CommandOriginDevConsole
+	case "test":
+		*x = CommandOriginTest
+	case "automationplayer":
+		*x = CommandOriginAutomationPlayer
+	case "clientautomation":
+		*x = CommandOriginClientAutomation
+	case "dedicatedserver":
+		*x = CommandOriginDedicatedServer
+	case "entity":
+		*x = CommandOriginEntity
+	case "virtual":
+		*x = CommandOriginVirtual
+	case "gameargument":
+		*x = CommandOriginGameArgument
+	case "entityserver":
+		*x = CommandOriginEntityServer
+	case "precompiled":
+		*x = CommandOriginPrecompiled
+	case "gamedirectorentityserver":
+		*x = CommandOriginGameDirectorEntityServer
+	case "scripting":
+		*x = CommandOriginScript
+	case "executecontext":
+		*x = CommandOriginExecutor
+	default:
+		r.InvalidValue(s, "origin", "unknown origin")
+	}
+}
+
+func commandPermissionToString(x byte) string {
+	switch x {
+	case CommandPermissionLevelAny:
+		return "any"
+	case CommandPermissionLevelGameDirectors:
+		return "gamedirectors"
+	case CommandPermissionLevelAdmin:
+		return "admin"
+	case CommandPermissionLevelHost:
+		return "host"
+	case CommandPermissionLevelOwner:
+		return "owner"
+	case CommandPermissionLevelInternal:
+		return "internal"
+	default:
+		return "unknown"
+	}
+}
+
+func commandPermissionFromString(r IO, x *byte, s string) {
+	switch s {
+	case "any":
+		*x = CommandPermissionLevelAny
+	case "gamedirectors":
+		*x = CommandPermissionLevelGameDirectors
+	case "admin":
+		*x = CommandPermissionLevelAdmin
+	case "host":
+		*x = CommandPermissionLevelHost
+	case "owner":
+		*x = CommandPermissionLevelOwner
+	case "internal":
+		*x = CommandPermissionLevelInternal
+	default:
+		r.InvalidValue(s, "permissionLevel", "unknown permission level")
+	}
 }
