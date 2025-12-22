@@ -62,6 +62,7 @@ type IO interface {
 	AbilityValue(x *any)
 	Bitset(x *Bitset, size int)
 	PackSetting(x *PackSetting)
+	ShapeData(x *ShapeData)
 
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)

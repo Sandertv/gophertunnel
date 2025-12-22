@@ -645,6 +645,17 @@ func (r *Reader) PackSetting(x *PackSetting) {
 	}
 }
 
+// ShapeData reads a ShapeData's type from the reader.
+func (r *Reader) ShapeData(x *ShapeData) {
+	var shapeDataType uint32
+	r.Varuint32(&shapeDataType)
+	if !lookupShapeData(shapeDataType, x) {
+		r.UnknownEnumOption(shapeDataType, "debug shape data type")
+		return
+	}
+	(*x).Marshal(r)
+}
+
 // SliceLimit checks if the value passed is lower than the limit passed. If
 // not, the Reader panics.
 func (r *Reader) SliceLimit(value uint32, max uint32) {

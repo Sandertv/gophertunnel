@@ -518,6 +518,16 @@ func (w *Writer) PackSetting(x *PackSetting) {
 	}
 }
 
+// ShapeData writes a ShapeData to the writer.
+func (w *Writer) ShapeData(x *ShapeData) {
+	var shapeDataType uint32
+	if !lookupShapeDataType(*x, &shapeDataType) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "debug shape data type")
+	}
+	w.Varuint32(&shapeDataType)
+	(*x).Marshal(w)
+}
+
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x
