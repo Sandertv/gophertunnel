@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	ClientBoundDebugRendererClear uint32 = iota + 1
+	ClientBoundDebugRendererClear = iota
 	ClientBoundDebugRendererAddCube
 )
 
@@ -36,7 +36,9 @@ func (*ClientBoundDebugRenderer) ID() uint32 {
 }
 
 func (pk *ClientBoundDebugRenderer) Marshal(io protocol.IO) {
-	io.Uint32(&pk.Type)
+	typStr := clientBoundDebugRenderToString(pk.Type)
+	io.String(&typStr)
+	clientBoundDebugRenderFromString(io, &pk.Type, typStr)
 	if pk.Type == ClientBoundDebugRendererAddCube {
 		io.String(&pk.Text)
 		io.Vec3(&pk.Position)
@@ -45,5 +47,27 @@ func (pk *ClientBoundDebugRenderer) Marshal(io protocol.IO) {
 		io.Float32(&pk.Blue)
 		io.Float32(&pk.Alpha)
 		io.Uint64(&pk.Duration)
+	}
+}
+
+func clientBoundDebugRenderToString(x uint32) string {
+	switch x {
+	case ClientBoundDebugRendererClear:
+		return "cleardebugmarkers"
+	case ClientBoundDebugRendererAddCube:
+		return "adddebugmarkercube"
+	default:
+		return "unknown"
+	}
+}
+
+func clientBoundDebugRenderFromString(io protocol.IO, x *uint32, s string) {
+	switch s {
+	case "cleardebugmarkers":
+		*x = ClientBoundDebugRendererClear
+	case "adddebugmarkercube":
+		*x = ClientBoundDebugRendererAddCube
+	default:
+		io.InvalidValue(s, "type", "unknown type")
 	}
 }
