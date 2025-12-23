@@ -64,30 +64,36 @@ func (*Text) ID() uint32 {
 
 func (pk *Text) Marshal(io protocol.IO) {
 	io.Bool(&pk.NeedsTranslation)
+
 	var categoryType uint8
 	switch pk.TextType {
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObjectWhisper, TextTypeObjectAnnouncement, TextTypeObject:
 		categoryType = TextCategoryMessageOnly
-		io.Uint8(&categoryType)
+	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
+		categoryType = TextCategoryAuthoredMessage
+	default:
+		categoryType = TextCategoryMessageWithParameters
+	}
+	io.Uint8(&categoryType)
+
+	switch categoryType {
+	case TextCategoryMessageOnly:
 		io.StringConst("raw")
 		io.StringConst("tip")
 		io.StringConst("systemMessage")
 		io.StringConst("textObjectWhisper")
 		io.StringConst("textObjectAnnouncement")
 		io.StringConst("textObject")
-	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		categoryType = TextCategoryAuthoredMessage
-		io.Uint8(&categoryType)
+	case TextCategoryAuthoredMessage:
 		io.StringConst("chat")
 		io.StringConst("whisper")
 		io.StringConst("announcement")
 	default:
-		categoryType = TextCategoryMessageWithParameters
-		io.Uint8(&categoryType)
 		io.StringConst("translate")
 		io.StringConst("popup")
 		io.StringConst("jukeboxPopup")
 	}
+
 	io.Uint8(&pk.TextType)
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
