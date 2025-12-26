@@ -80,7 +80,7 @@ func (pk *Text) Marshal(io protocol.IO) {
 	case TextCategoryMessageOnly:
 		io.StringConst("raw")
 		io.StringConst("tip")
-		io.StringConst("systemMessage")
+		io.StringConst("systemmessage")
 		io.StringConst("textObjectWhisper")
 		io.StringConst("textObjectAnnouncement")
 		io.StringConst("textObject")
@@ -91,7 +91,7 @@ func (pk *Text) Marshal(io protocol.IO) {
 	default:
 		io.StringConst("translate")
 		io.StringConst("popup")
-		io.StringConst("jukeboxPopup")
+		io.StringConst("jukeboxpopup")
 	}
 
 	io.Uint8(&pk.TextType)

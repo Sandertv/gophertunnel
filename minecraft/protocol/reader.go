@@ -659,7 +659,7 @@ func (r *Reader) StringConst(x string) {
 	r.Varuint32(&length)
 	l := int(length)
 	if l != len(x) {
-		r.panicf("expected string with a length of %x, got %v", len(x), l)
+		r.panicf("expected string with a length of %v, got %v", len(x), l)
 	}
 	data := make([]byte, l)
 	if _, err := r.r.Read(data); err != nil {
@@ -667,7 +667,7 @@ func (r *Reader) StringConst(x string) {
 	}
 	input := *(*string)(unsafe.Pointer(&data))
 	if input != x {
-		r.panicf("expected string to be %x, got %v", x, input)
+		r.panicf("expected string to be %v, got %v", x, input)
 	}
 }
 
