@@ -30,7 +30,7 @@ type request struct {
 	Certificate certificate `json:"Certificate"`
 	// AuthenticationType is the authentication type of the request.
 	AuthenticationType uint8 `json:"AuthenticationType"`
-	// Token is an empty string, it's unclear what's used for.
+	// Token is the new token used for authentication.
 	Token string `json:"Token"`
 	// RawToken holds the raw token that follows the JWT chain, holding the ClientData.
 	RawToken string `json:"-"`
@@ -168,11 +168,11 @@ func Parse(request []byte) (IdentityData, ClientData, AuthResult, error) {
 // parseLoginRequest parses the structure of a login request from the data passed and returns it.
 func parseLoginRequest(requestData []byte) (*request, error) {
 	buf := bytes.NewBuffer(requestData)
-	chain, err := decodeChain(buf)
+	chainData, err := decodeChain(buf)
 	if err != nil {
 		return nil, err
 	}
-	if len(chain) < 1 {
+	if len(chainData.chain) < 1 {
 		return nil, fmt.Errorf("JWT chain must be at least 1 token long")
 	}
 	var rawLength int32
@@ -180,8 +180,10 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 		return nil, fmt.Errorf("read raw token length: %w", err)
 	}
 	return &request{
-		Certificate: certificate{Chain: chain},
-		RawToken:    string(buf.Next(int(rawLength))),
+		Certificate:        certificate{Chain: chainData.chain},
+		AuthenticationType: chainData.authenticationType,
+		Token:              chainData.token,
+		RawToken:           string(buf.Next(int(rawLength))),
 	}, nil
 }
 
@@ -218,8 +220,8 @@ func parseAsKey(k any, pub *ecdsa.PublicKey) error {
 
 // Encode encodes a login request using the encoded login chain passed and the client data. The request's
 // client data token is signed using the private key passed. It must be the same as the one used to get the
-// login chain.
-func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
+// login chain The multiplayer token is the new Token field introduced in 1.21.90 and used in 1.21.100 and later.
+func Encode(loginChain string, multiplayerToken string, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
 	// We first decode the login chain we actually got in a new certificate.
 	cert := &certificate{}
 	_ = json.Unmarshal([]byte(loginChain), &cert)
@@ -250,6 +252,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, legacy bo
 			// We add our own claim at the start of the chain.
 			Chain: append(chain{firstJWT}, cert.Chain...),
 		},
+		Token:  multiplayerToken,
 		Legacy: legacy,
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
@@ -277,7 +280,8 @@ func encodeRequest(req *request) []byte {
 // passed will be used to self sign the JWTs.
 // Unlike Encode, EncodeOffline does not have a token signed by the Mojang key. It consists of only one JWT
 // which holds the identity data of the player.
-func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
+// The token parameter is optional and can be an empty string for offline logins that don't require a multiplayer token.
+func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, token string, legacy bool) []byte {
 	keyData := MarshalPublicKey(&key.PublicKey)
 	claims := jwt.Claims{
 		Expiry:    jwt.NewNumericDate(time.Now().Add(time.Hour * 6)),
@@ -298,6 +302,7 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 			Chain: chain{firstJWT},
 		},
 		AuthenticationType: 2,
+		Token:              token,
 		Legacy:             legacy,
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
@@ -307,8 +312,14 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	return encodeRequest(req)
 }
 
+type chainData struct {
+	chain              chain
+	authenticationType uint8
+	token              string
+}
+
 // decodeChain reads a certificate chain from the buffer passed and returns each claim found in the chain.
-func decodeChain(buf *bytes.Buffer) (chain, error) {
+func decodeChain(buf *bytes.Buffer) (*chainData, error) {
 	var chainLength int32
 	if err := binary.Read(buf, binary.LittleEndian, &chainLength); err != nil {
 		return nil, fmt.Errorf("read chain length: %w", err)
@@ -316,14 +327,15 @@ func decodeChain(buf *bytes.Buffer) (chain, error) {
 	if chainLength <= 0 {
 		return nil, fmt.Errorf("invalid chain length: %d", chainLength)
 	}
-	chainData := buf.Next(int(chainLength))
+	chainDataBytes := buf.Next(int(chainLength))
 
 	req := struct {
 		AuthenticationType uint8  `json:"AuthenticationType"`
 		Certificate        string `json:"Certificate"`
 		Chain              chain  `json:"chain"`
+		Token              string `json:"Token"`
 	}{}
-	if err := json.Unmarshal(chainData, &req); err != nil {
+	if err := json.Unmarshal(chainDataBytes, &req); err != nil {
 		return nil, fmt.Errorf("decode chain JSON: %w", err)
 	}
 
@@ -345,7 +357,11 @@ func decodeChain(buf *bytes.Buffer) (chain, error) {
 	if req.AuthenticationType == 1 {
 		return nil, fmt.Errorf("guest authentication is not supported")
 	}
-	return ch, nil
+	return &chainData{
+		chain:              ch,
+		authenticationType: req.AuthenticationType,
+		token:              req.Token,
+	}, nil
 }
 
 // identityClaims holds the claims for the last token in the chain, which contains the IdentityData of the
