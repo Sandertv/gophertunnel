@@ -452,10 +452,10 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			}
 			if val.Kind() == reflect.Interface && isAny(val) {
 				m, _ := val.Interface().(map[string]any)
-				if m != nil {
-					clear(m)
-				} else {
+				if m == nil {
 					m = make(map[string]any)
+				} else {
+					clear(m)
 				}
 				val.Set(reflect.ValueOf(m))
 				if err := d.unmarshalCompoundAny(m); err != nil {
