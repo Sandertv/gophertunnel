@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"math/bits"
+	"strings"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -659,15 +660,15 @@ func (r *Reader) StringConst(x string) {
 	r.Varuint32(&length)
 	l := int(length)
 	if l != len(x) {
-		r.panicf("expected string with a length of %x, got %v", len(x), l)
+		r.panicf("expected string with a length of %v, got %v", len(x), l)
 	}
 	data := make([]byte, l)
 	if _, err := r.r.Read(data); err != nil {
 		r.panic(err)
 	}
 	input := *(*string)(unsafe.Pointer(&data))
-	if input != x {
-		r.panicf("expected string to be %x, got %v", x, input)
+	if !strings.EqualFold(input, x) {
+		r.panicf("expected string to be %q, got %q", x, input)
 	}
 }
 
