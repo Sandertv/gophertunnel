@@ -102,6 +102,7 @@ const (
 	// <false|true|yes|no> <$Name: bool>.
 	ParamOptionCollapseEnum = iota + 1
 	ParamOptionHasSemanticConstraint
+	_
 	ParamOptionAsChainedCommand
 )
 
