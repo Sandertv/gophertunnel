@@ -298,6 +298,7 @@ func init() {
 		IDContainerClose:                  func() Packet { return &ContainerClose{} },
 		IDAdventureSettings:               func() Packet { return &AdventureSettings{} },
 		IDSetPlayerGameType:               func() Packet { return &SetPlayerGameType{} },
+		IDSimpleEvent:                     func() Packet { return &SimpleEvent{} },
 		IDMapInfoRequest:                  func() Packet { return &MapInfoRequest{} },
 		IDRequestChunkRadius:              func() Packet { return &RequestChunkRadius{} },
 		IDBossEvent:                       func() Packet { return &BossEvent{} },
