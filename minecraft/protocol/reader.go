@@ -9,6 +9,7 @@ import (
 	"math"
 	"math/big"
 	"math/bits"
+	"strings"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -666,8 +667,8 @@ func (r *Reader) StringConst(x string) {
 		r.panic(err)
 	}
 	input := *(*string)(unsafe.Pointer(&data))
-	if input != x {
-		r.panicf("expected string to be %v, got %v", x, input)
+	if !strings.EqualFold(input, x) {
+		r.panicf("expected string to be %q, got %q", x, input)
 	}
 }
 
