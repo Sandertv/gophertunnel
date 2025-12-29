@@ -427,10 +427,8 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
-		x.MetadataValue, x.Count, x.BlockRuntimeID = 0, 0, 0
-		x.NBTData = nil
-		x.CanBePlacedOn, x.CanBreak = nil, nil
-		i.StackNetworkID = 0
+		x.MetadataValue, x.Count, x.BlockRuntimeID, i.StackNetworkID = 0, 0, 0, 0
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
 		return
 	}
 
@@ -490,8 +488,7 @@ func (r *Reader) Item(x *ItemStack) {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
 		x.MetadataValue, x.Count, x.BlockRuntimeID = 0, 0, 0
-		x.NBTData = nil
-		x.CanBePlacedOn, x.CanBreak = nil, nil
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
 		return
 	}
 
