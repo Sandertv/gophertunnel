@@ -748,7 +748,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	_ = conn.Flush()
 	conn.enc.EnableCompression(conn.compression, conn.compressionThreshold)
-	conn.dec.EnableCompression(conn.compression, conn.maxDecompressedLen))
+	conn.dec.EnableCompression(conn.compression, conn.maxDecompressedLen)
 	return nil
 }
 
