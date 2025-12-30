@@ -431,41 +431,41 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			}
 			fieldMapPool.Put(fields)
 		case reflect.Interface, reflect.Map:
-			if vk := val.Kind(); vk == reflect.Interface && val.NumMethod() != 0 {
-				return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
+			valKind := val.Kind()
+			valType := val.Type()
+			if valKind == reflect.Interface && val.NumMethod() != 0 {
+				return InvalidTypeError{Off: d.r.off, FieldType: valType, Field: tagName, TagType: t}
 			}
 
 			// Fast path for TAG_Compound into map[string]any and any(map[string]any).
 			// Avoid reflect.Map SetMapIndex; reuse+clear maps and fill via native assignments.
-			if val.Kind() == reflect.Map && val.Type() == mapStringAnyType {
-				m := val.Interface().(map[string]any)
-				if m == nil {
+			if (valKind == reflect.Map && valType == mapStringAnyType) || (valKind == reflect.Interface && isAny(val)) {
+				var m map[string]any
+				if valKind == reflect.Map {
+					m = val.Interface().(map[string]any)
+				} else {
+					m, _ = val.Interface().(map[string]any)
+				}
+
+				allocated := m == nil
+				if allocated {
 					m = make(map[string]any)
+				} else {
+					clear(m)
+				}
+
+				// Needed when decoding into an interface slot, or when the map was nil and we created a new one.
+				if valKind == reflect.Interface || allocated {
 					val.Set(reflect.ValueOf(m))
-				} else {
-					clear(m)
 				}
-				if err := d.unmarshalCompoundAny(m); err != nil {
-					return err
-				}
-				break
-			}
-			if val.Kind() == reflect.Interface && isAny(val) {
-				m, _ := val.Interface().(map[string]any)
-				if m == nil {
-					m = make(map[string]any)
-				} else {
-					clear(m)
-				}
-				val.Set(reflect.ValueOf(m))
+
 				if err := d.unmarshalCompoundAny(m); err != nil {
 					return err
 				}
 				break
 			}
 
-			valType := val.Type()
-			if val.Kind() == reflect.Map {
+			if valKind == reflect.Map {
 				valType = valType.Elem()
 			}
 			m := reflect.MakeMap(reflect.MapOf(stringType, valType))
