@@ -59,7 +59,7 @@ type ListenConfig struct {
 	// will default to packet.flateCompression.
 	Compression packet.Compression // TODO: Change this to snappy once Windows crashes are resolved.
 	// CompressionThreshold specifies the minimum data size in bytes that triggers compression. Data smaller than this threshold
-	// will not be compressed. If zero, compression threshold will default to 1024.
+	// will not be compressed. If zero, compression threshold will default to 256.
 	// A value of -1 disables compression entirely.
 	CompressionThreshold int
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
@@ -132,7 +132,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		cfg.FlushRate = time.Second / 20
 	}
 	if cfg.CompressionThreshold == 0 {
-		cfg.CompressionThreshold = 1024
+		cfg.CompressionThreshold = 256
 	} else if cfg.CompressionThreshold < 0 {
 		cfg.CompressionThreshold = 0
 	}
