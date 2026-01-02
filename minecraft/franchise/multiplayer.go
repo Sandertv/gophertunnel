@@ -16,6 +16,12 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/franchise/internal"
 )
 
+// MultiplayerToken represents a token used for authenticating with multiplayer servers.
+// It contains a signed token that is used to establish secure connections to multiplayer services.
+//
+// To create a MultiplayerToken, call [RequestMultiplayerToken] with the appropriate authorization
+// environment, Minecraft token, and ECDSA private key. The token will be valid until the time
+// specified in ValidUntil, after which a new token must be requested.
 type MultiplayerToken struct {
 	SignedToken string    `json:"signedToken"`
 	ValidUntil  time.Time `json:"validUntil"`

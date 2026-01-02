@@ -41,21 +41,6 @@ func Discover(build string) (*Discovery, error) {
 
 // Discovery provides access to environments for various franchise services based on the game
 // version. It can be obtained from Discover using a specific game version.
-//
-// Example usage:
-//
-//	discovery, err := franchise.Discover(protocol.CurrentVersion)
-//	if err != nil {
-//		log.Fatalf("Error obtaining discovery: %s", err)
-//	}
-//
-//	// Look up and decode an environment for authorization.
-//	auth := new(franchise.AuthorizationEnvironment)
-//	if err := discovery.Environment(auth, franchise.EnvironmentTypeProduction); err != nil {
-//		log.Fatalf("Error reading environment for %q: %s", a.EnvironmentName(), err)
-//	}
-//
-//	// Use discovery and auth for further use.
 type Discovery struct {
 	// ServiceEnvironments is a map where each key represents a service name. Each value is another map where keys are environment
 	// types and values are environment-specific data represented as [json.RawMessage]. [Discovery.Environment] can be used to look

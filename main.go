@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"log"
 	"os"
@@ -22,31 +21,11 @@ func requestToken() *oauth2.Token {
 	return token
 }
 
-func tokenSource() oauth2.TokenSource {
-	token := new(oauth2.Token)
-	tokenData, err := os.ReadFile("token.tok")
-	if err == nil {
-		_ = json.Unmarshal(tokenData, token)
-	} else {
-		token = requestToken()
-	}
-	src := auth.RefreshTokenSource(token)
-	_, err = src.Token()
-	if err != nil {
-		// The cached refresh token expired and can no longer be used to obtain a new token. We require the
-		// user to log in again and use that token instead.
-		src = auth.RefreshTokenSource(requestToken())
-	}
-	tok, _ := src.Token()
-	b, _ := json.Marshal(tok)
-	_ = os.WriteFile("token.tok", b, 0644)
-	return src
-}
-
 // The following program implements a proxy that forwards players from one local address to a remote address.
 func main() {
 	config := readConfig()
-	src := tokenSource()
+	token := requestToken()
+	src := auth.RefreshTokenSource(token)
 
 	session, err := auth.SessionFromTokenSource(src, auth.DeviceAndroid, context.Background())
 	if err != nil {
