@@ -10,21 +10,15 @@ import (
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"golang.org/x/oauth2"
 )
-
-func requestToken() *oauth2.Token {
-	token, err := auth.RequestLiveToken()
-	if err != nil {
-		log.Fatal(err.Error())
-	}
-	return token
-}
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
 func main() {
 	config := readConfig()
-	token := requestToken()
+	token, err := auth.RequestLiveToken()
+	if err != nil {
+		panic(err)
+	}
 	src := auth.RefreshTokenSource(token)
 
 	session, err := auth.SessionFromTokenSource(src, auth.DeviceAndroid, context.Background())
