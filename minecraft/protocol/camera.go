@@ -305,6 +305,8 @@ type CameraAimAssistPriorities struct {
 	Entities []CameraAimAssistPriority
 	// Blocks is a list of priorities for specific block identifiers.
 	Blocks []CameraAimAssistPriority
+	// BlockTags is a list of priorities for specific block tags.
+	BlockTags []CameraAimAssistPriority
 	// EntityDefault is the default priority for entities.
 	EntityDefault Optional[int32]
 	// BlockDefault is the default priority for blocks.
@@ -315,6 +317,7 @@ type CameraAimAssistPriorities struct {
 func (x *CameraAimAssistPriorities) Marshal(r IO) {
 	Slice(r, &x.Entities)
 	Slice(r, &x.Blocks)
+	Slice(r, &x.BlockTags)
 	OptionalFunc(r, &x.EntityDefault, r.Int32)
 	OptionalFunc(r, &x.BlockDefault, r.Int32)
 }
@@ -339,6 +342,10 @@ type CameraAimAssistPreset struct {
 	Identifier string
 	// BlockExclusions is a list of block identifiers that should be ignored by the aim assist.
 	BlockExclusions []string
+	// EntityExclusions is a list of entity identifiers that should be ignored by the aim assist.
+	EntityExclusions []string
+	// BlockTagExclusions is a list of block tags that should be ignored by the aim assist.
+	BlockTagExclusions []string
 	// LiquidTargets is a list of entity identifiers that should be targetted when inside of a liquid.
 	LiquidTargets []string
 	// ItemSettings is a list of settings for specific item identifiers. If an item is not listed here, it
@@ -356,6 +363,8 @@ type CameraAimAssistPreset struct {
 func (x *CameraAimAssistPreset) Marshal(r IO) {
 	r.String(&x.Identifier)
 	FuncSlice(r, &x.BlockExclusions, r.String)
+	FuncSlice(r, &x.EntityExclusions, r.String)
+	FuncSlice(r, &x.BlockTagExclusions, r.String)
 	FuncSlice(r, &x.LiquidTargets, r.String)
 	Slice(r, &x.ItemSettings)
 	OptionalFunc(r, &x.DefaultItemSettings, r.String)

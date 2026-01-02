@@ -18,7 +18,7 @@ type CommandRequest struct {
 	// this field is not known.
 	Internal bool
 	// Version is the version of the command that is being executed. This field currently has no purpose or functionality.
-	Version int32
+	Version string
 }
 
 // ID ...
@@ -30,5 +30,5 @@ func (pk *CommandRequest) Marshal(io protocol.IO) {
 	io.String(&pk.CommandLine)
 	protocol.CommandOriginData(io, &pk.CommandOrigin)
 	io.Bool(&pk.Internal)
-	io.Varint32(&pk.Version)
+	io.String(&pk.Version)
 }

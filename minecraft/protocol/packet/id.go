@@ -230,6 +230,7 @@ const (
 	IDClientBoundControlSchemeSet
 	IDDebugDrawer
 	IDServerBoundPackSettingChange
-	_
+	_ // TODO: Implement client-bound data store
 	IDGraphicsOverrideParameter
+	_ // TODO: Implement server-bound data store
 )

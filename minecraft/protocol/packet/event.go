@@ -12,7 +12,7 @@ type Event struct {
 	EntityRuntimeID int64
 	// UsePlayerID ...
 	// TODO: Figure out what UsePlayerID is for.
-	UsePlayerID byte
+	UsePlayerID bool
 	// Event is the event that is transmitted.
 	Event protocol.Event
 }
@@ -25,6 +25,7 @@ func (*Event) ID() uint32 {
 func (pk *Event) Marshal(io protocol.IO) {
 	io.Varint64(&pk.EntityRuntimeID)
 	io.EventType(&pk.Event)
-	io.Uint8(&pk.UsePlayerID)
+	io.Bool(&pk.UsePlayerID)
+	io.EventOrdinal(&pk.Event)
 	pk.Event.Marshal(io)
 }

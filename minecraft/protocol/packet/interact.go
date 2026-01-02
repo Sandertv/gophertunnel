@@ -26,7 +26,7 @@ type Interact struct {
 	// Position associated with the ActionType above. For the InteractActionMouseOverEntity, this is the
 	// position relative to the entity moused over over which the player hovered with its mouse/touch. For the
 	// InteractActionLeaveVehicle, this is the position that the player spawns at after leaving the vehicle.
-	Position mgl32.Vec3
+	Position protocol.Optional[mgl32.Vec3]
 }
 
 // ID ...
@@ -37,7 +37,5 @@ func (*Interact) ID() uint32 {
 func (pk *Interact) Marshal(io protocol.IO) {
 	io.Uint8(&pk.ActionType)
 	io.Varuint64(&pk.TargetEntityRuntimeID)
-	if pk.ActionType == InteractActionMouseOverEntity || pk.ActionType == InteractActionLeaveVehicle {
-		io.Vec3(&pk.Position)
-	}
+	protocol.OptionalFunc(io, &pk.Position, io.Vec3)
 }
