@@ -1055,6 +1055,7 @@ func (conn *Conn) startGame() {
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
+		PropertyData:                 data.PropertyData,
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
@@ -1247,6 +1248,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		ClientSideGeneration:         pk.ClientSideGeneration,
 		Experiments:                  pk.Experiments,
 		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
+		PropertyData:                 pk.PropertyData,
 	}
 	conn.expect(packet.IDItemRegistry)
 	return nil
