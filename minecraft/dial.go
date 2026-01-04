@@ -403,7 +403,8 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.ClientRandomID = rand.Int63()
 	}
 	if d.DeviceID == "" {
-		d.DeviceID = uuid.New().String()
+		// this can be parsed as a bigint and is standard on `most` devices
+		d.DeviceID = login.DeviceID(strings.ReplaceAll(uuid.NewString(), "-", ""))
 	}
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
@@ -413,6 +414,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		_, _ = cryptorand.Read(id)
 		d.PlayFabID = hex.EncodeToString(id)
 	}
+
 	if d.AnimatedImageData == nil {
 		d.AnimatedImageData = make([]login.SkinAnimation, 0)
 	}

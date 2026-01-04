@@ -118,7 +118,7 @@ type ClientData struct {
 	DeviceOS protocol.DeviceOS
 	// DeviceID is usually a UUID specific to the device. A different user will have the same UUID for this.
 	// DeviceID is not guaranteed to always be a UUID. It is a base64 encoded string under some circumstances.
-	DeviceID string `json:"DeviceId"`
+	DeviceID DeviceID `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.
 	GameVersion string
 	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 or -2 for a smaller
@@ -318,9 +318,6 @@ func (data ClientData) Validate() error {
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
-	if err := validateDeviceId(&data); err != nil {
-		return fmt.Errorf("failed to validate device id: %v", err)
-	}
 	if !checkVersion(data.GameVersion) {
 		return fmt.Errorf("GameVersion must only contain dots and numbers, but got %v", data.GameVersion)
 	}
@@ -452,78 +449,48 @@ func validateStrings(any interface{}, fieldNames ...string) error {
 	return nil
 }
 
-var (
-	_GUIDRegex        = regexp.MustCompile(`^[a-f0-9]{8}(-?[a-f0-9]{4}){3}-?[a-f0-9]{12}$`)
-	validDeviceModels = []deviceModelEntry{
-		{
-			DeviceModel:  "xbox_series_x",
-			DeviceIDType: deviceIDTypeBase64,
-		},
-		{
-			DeviceModel:  "xbox_series_s",
-			DeviceIDType: deviceIDTypeBase64,
-		},
-		{
-			DeviceModel:  "xbox_one_x",
-			DeviceIDType: deviceIDTypeBase64,
-		},
-		{
-			DeviceModel:  "playstation_5",
-			DeviceIDType: deviceIDTypeGUID,
-		},
-		{
-			DeviceModel:  "playstation_5_emu",
-			DeviceIDType: deviceIDTypeGUID,
-		},
-		{
-			DeviceModel:  "Switch",
-			DeviceIDType: deviceIDTypeGUID,
-		},
-	}
-)
+type DeviceID string
 
-type deviceIDType uint8
+// DeviceIDFormat describes the format of the DeviceID,
+// most devices use BigInt however the documented are below:
+//
+//	TODO: change documentation to `DeviceOS to DeviceIDFormat`
+//	DeviceModel to DeviceIDFormat
+//		xbox_series_x -> Base64,
+//		xbox_series_s -> Base64,
+//		xbox_one_x -> Base64,
+//		playstation_5 -> GUID,
+//		playstation_5_emu -> GUID,
+//		Switch -> GUID,
 
-type deviceModelEntry struct {
-	DeviceModel  string
-	DeviceIDType deviceIDType
-}
+type DeviceIDFormat uint8
 
 const (
-	deviceIDTypeBigInt deviceIDType = iota
-	deviceIDTypeBase64
-	deviceIDTypeGUID
+	DeviceIDFormatBigInt DeviceIDFormat = iota
+	DeviceIDFormatBase64
+	DeviceIDFormatUUID
+	DeviceIDFormatUnknown
 )
 
-func validateDeviceId(data *ClientData) error {
-	for _, m := range validDeviceModels {
-		if data.DeviceModel != m.DeviceModel {
-			continue
-		}
-		return runModelCheck(data.DeviceID, m.DeviceIDType)
+func (dId DeviceID) Format() DeviceIDFormat {
+	deviceId := string(dId)
+
+	// this must be checked before UUID as technically these are valid UUIDs as well.
+	bigInt := new(big.Int)
+	_, ok := bigInt.SetString(deviceId, 16)
+	if ok {
+		return DeviceIDFormatBigInt
 	}
 
-	return runModelCheck(data.DeviceID, deviceIDTypeBigInt)
-}
-
-func runModelCheck(deviceId string, expectedType deviceIDType) error {
-	switch expectedType {
-	case deviceIDTypeGUID:
-		if !_GUIDRegex.MatchString(deviceId) {
-			return fmt.Errorf("%s is not a valid GUID", deviceId)
-		}
-	case deviceIDTypeBase64:
-		_, err := base64.StdEncoding.DecodeString(deviceId)
-		if err != nil {
-			return fmt.Errorf("%s is not a valid Base64", deviceId)
-		}
-	case deviceIDTypeBigInt:
-		bigInt := new(big.Int)
-		_, ok := bigInt.SetString(deviceId, 16)
-		if !ok {
-			return fmt.Errorf("%s is not a valid BigInt Hex", deviceId)
-		}
+	_, err := uuid.Parse(deviceId)
+	if err == nil {
+		return DeviceIDFormatUUID
 	}
 
-	return nil
+	_, err = base64.StdEncoding.DecodeString(deviceId)
+	if err == nil {
+		return DeviceIDFormatBase64
+	}
+
+	return DeviceIDFormatUnknown
 }
