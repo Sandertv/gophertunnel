@@ -85,6 +85,7 @@ type Conn struct {
 
 	proto                Protocol
 	acceptedProto        []Protocol
+	protocolFunc         func(id int32) (Protocol, bool)
 	pool                 packet.Pool
 	enc                  *packet.Encoder
 	dec                  *packet.Decoder
@@ -721,12 +722,16 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 // version is not supported, otherwise sending back a NetworkSettings packet.
 func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings) error {
 	found := false
-	for _, pro := range conn.acceptedProto {
-		if pro.ID() == pk.ClientProtocol {
-			conn.proto = pro
-			conn.pool = pro.Packets(true)
-			found = true
-			break
+	if conn.protocolFunc != nil {
+		conn.proto, found = conn.protocolFunc(pk.ClientProtocol)
+	} else {
+		for _, pro := range conn.acceptedProto {
+			if pro.ID() == pk.ClientProtocol {
+				conn.proto = pro
+				conn.pool = pro.Packets(true)
+				found = true
+				break
+			}
 		}
 	}
 	if !found {

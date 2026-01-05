@@ -6,11 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"log/slog"
 	"math"
 	"net"
@@ -18,6 +13,12 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sandertv/gophertunnel/minecraft/internal"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/resource"
 )
 
 // ListenConfig holds settings that may be edited to change behaviour of a Listener.
@@ -50,6 +51,9 @@ type ListenConfig struct {
 	// StatusProvider is the ServerStatusProvider of the Listener. When set to nil, the default provider,
 	// ListenerStatusProvider, is used as provider.
 	StatusProvider ServerStatusProvider
+
+	// ProtocolFunc is a function that returns Protocol by its id, if ProtocolFunc equals nil, listener will look up protocol in AcceptedProtocols.
+	ProtocolFunc func(id int32) (Protocol, bool)
 
 	// AcceptedProtocols is a slice of Protocol accepted by a Listener created with this ListenConfig. The current
 	// Protocol is always added to this slice. Clients with a protocol version that is not present in this slice will
@@ -287,6 +291,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
+	conn.protocolFunc = listener.cfg.ProtocolFunc
 	conn.compression = listener.cfg.Compression
 	conn.compressionThreshold = listener.cfg.CompressionThreshold
 	conn.maxDecompressedLen = listener.cfg.MaxDecompressedLen
