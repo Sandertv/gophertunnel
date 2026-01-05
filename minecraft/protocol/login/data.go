@@ -307,7 +307,7 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
-func (data ClientData) Validate() error {
+func (data *ClientData) Validate() error {
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
@@ -370,6 +370,26 @@ func (data ClientData) Validate() error {
 	if data.UIProfile < 0 || data.UIProfile > 2 {
 		return fmt.Errorf("UIProfile must be between 0-2, but got %v", data.UIProfile)
 	}
+	if err := data.validatePersona(); err != nil {
+		return fmt.Errorf("failed to validate Persona integrity: %w", err)
+	}
+	return nil
+}
+
+// validatePersona ensures the integrity of Persona related data.
+// It will return an error if a provided PersonaPieceTintColour.PieceType isn't declared in PersonaPieces.
+func (data *ClientData) validatePersona() error {
+	validPieceIDs := make(map[string]struct{})
+	for _, piece := range data.PersonaPieces {
+		validPieceIDs[piece.PieceID] = struct{}{}
+	}
+
+	for _, pieceTintColour := range data.PieceTintColours {
+		if _, found := validPieceIDs[pieceTintColour.PieceType]; !found {
+			return fmt.Errorf("unexpected PieceTintColour provided for '%s'", pieceTintColour.PieceType)
+		}
+	}
+
 	return nil
 }
 
