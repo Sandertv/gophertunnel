@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math/big"
 	"net"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
@@ -309,12 +308,6 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
 func (data ClientData) Validate() error {
-	if err := validateStrings(data); err != nil {
-		return fmt.Errorf("failed to validate strings: %v", err)
-	}
-	if err := validateArrays(data); err != nil {
-		return fmt.Errorf("failed to validate arrays: %v", err)
-	}
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
@@ -396,59 +389,6 @@ func base64DecLength(base64Data string, validLengths ...int) error {
 	return fmt.Errorf("invalid size: got %v, expected one of %v", actualLength, validLengths)
 }
 
-// validateArrays function checks if any of the arrays in the given interface are too large.
-// this is useful as large arrays seem to crash bedrock dedicated server.
-func validateArrays(any interface{}, fieldNames ...string) error {
-	val := reflect.ValueOf(any)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-
-	switch val.Kind() {
-	case reflect.Struct:
-		for i := 0; i < val.NumField(); i++ {
-			if err := validateArrays(val.Field(i).Interface(), append(fieldNames, val.Type().Field(0).Name)...); err != nil {
-				return err
-			}
-		}
-	case reflect.Slice:
-		if val.Len() > 100 {
-			return fmt.Errorf("%s array size too large: %d", strings.Join(fieldNames, "."), val.Len())
-		}
-		for i := 0; i < val.Len(); i++ {
-			if err := validateArrays(val.Index(i).Interface(), append(fieldNames, val.Type().Field(0).Name)...); err != nil {
-				return err
-			}
-		}
-	default:
-		return nil
-	}
-
-	return nil
-}
-
-// validateStrings validates all strings in the given interface have printable characters;
-func validateStrings(any interface{}, fieldNames ...string) error {
-	val := reflect.ValueOf(any)
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-	if val.Kind() == reflect.Struct {
-		for i := 0; i < val.NumField(); i++ {
-			if err := validateStrings(val.Field(i).Interface(), append(fieldNames, val.Type().Field(0).Name)...); err != nil {
-				return err
-			}
-		}
-	} else if val.Kind() == reflect.String {
-		for _, r := range val.String() {
-			if r < 0x20 || r > 0x7E {
-				return fmt.Errorf("%s contains invalid character: %c", strings.Join(fieldNames, "."), r)
-			}
-		}
-	}
-	return nil
-}
-
 type DeviceID string
 
 // DeviceIDFormat describes the format of the DeviceID,
@@ -475,7 +415,7 @@ const (
 func (dId DeviceID) Format() DeviceIDFormat {
 	deviceId := string(dId)
 
-	// this must be checked before UUID as technically these are valid UUIDs as well.
+	// This must be checked before UUID as these are valid UUIDs as well.
 	bigInt := new(big.Int)
 	_, ok := bigInt.SetString(deviceId, 16)
 	if ok {
