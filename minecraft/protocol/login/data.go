@@ -371,7 +371,7 @@ func (data *ClientData) Validate() error {
 		return fmt.Errorf("UIProfile must be between 0-2, but got %v", data.UIProfile)
 	}
 	if err := data.validatePersona(); err != nil {
-		return fmt.Errorf("failed to validate Persona integrity: %w", err)
+		return err
 	}
 	return nil
 }
@@ -379,6 +379,13 @@ func (data *ClientData) Validate() error {
 // validatePersona ensures the integrity of Persona related data.
 // It will return an error if a provided PersonaPieceTintColour.PieceType isn't declared in PersonaPieces.
 func (data *ClientData) validatePersona() error {
+	if len(data.PersonaPieces) > 255 {
+		return fmt.Errorf("PersonaPieces must not have more than 255 pieces, but got %v", len(data.PersonaPieces))
+	}
+	if len(data.PieceTintColours) > 255 {
+		return fmt.Errorf("PieceTintColours must not have more than 255 tint colours, but got %v", len(data.PieceTintColours))
+	}
+
 	validPieceIDs := make(map[string]struct{})
 	for _, piece := range data.PersonaPieces {
 		validPieceIDs[piece.PieceID] = struct{}{}
