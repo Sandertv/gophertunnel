@@ -20,6 +20,57 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// XBLConfig specifies the configuration for authenticating with Xbox Live services.
+type XBLConfig struct {
+	// ClientID is the ID used for the SISU authorization flow.
+	ClientID string
+	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
+	DeviceType string
+	// Version indicates the version of the authentication library used in the client.
+	Version string
+	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
+	UserAgent string
+}
+
+var (
+	// AndroidXBLConfig is the configuration used in Minecraft: Bedrock Edition for Android devices.
+	AndroidXBLConfig = XBLConfig{
+		DeviceType: "Android",
+		ClientID:   "0000000048183522",
+		Version:    "8.0.0",
+		UserAgent:  "XAL Android 2020.07.20200714.000",
+	}
+	// IOSXBLConfig is the configuration used in Minecraft: Bedrock Edition for iOS devices.
+	IOSXBLConfig = XBLConfig{
+		DeviceType: "iOS",
+		ClientID:   "000000004c17c01a",
+		Version:    "15.6.1",
+		UserAgent:  "XAL iOS 2021.11.20211021.000",
+	}
+	// Win32XBLConfig is the configuration used in Minecraft: Bedrock Edition for Windows devices.
+	// Please note that the actual GDK/UWP build of the game requests the device token in more different way.
+	Win32XBLConfig = XBLConfig{
+		DeviceType: "Win32",
+		ClientID:   "0000000040159362",
+		Version:    "10.0.25398.4909",
+		UserAgent:  "XAL Win32 2021.11.20220411.002",
+	}
+	// NintendoXBLConfig is the configuration used in Minecraft: Bedrock Edition for Nintendo Switch.
+	NintendoXBLConfig = XBLConfig{
+		DeviceType: "Nintendo",
+		ClientID:   "00000000441cc96b",
+		Version:    "0.0.0",
+		UserAgent:  "XAL",
+	}
+	// PlayStationXBLConfig is the configuration used in Minecraft: Bedrock Edition for PlayStation devices.
+	PlayStationXBLConfig = XBLConfig{
+		DeviceType: "Playstation",
+		ClientID:   "000000004827c78e",
+		Version:    "10.0.0",
+		UserAgent:  "XAL",
+	}
+)
+
 // XBLToken holds info on the authorization token used for authenticating with XBOX Live.
 type XBLToken struct {
 	AuthorizationToken struct {
@@ -42,6 +93,11 @@ func (t XBLToken) SetAuthHeader(r *http.Request) {
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	return AndroidXBLConfig.RequestXBLToken(ctx, liveToken, relyingParty)
+}
+
+// RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
+func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -65,10 +121,11 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 	if err != nil {
 		return nil, err
 	}
-	return obtainXBLToken(ctx, c, key, liveToken, deviceToken, relyingParty)
+	return conf.obtainXBLToken(ctx, c, key, liveToken, deviceToken, relyingParty)
 }
 
-func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
+// obtainXBLToken retrieves an XSTS token from the authorization result from SISU flow.
+func (conf XBLConfig) obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             "0000000048183522",
