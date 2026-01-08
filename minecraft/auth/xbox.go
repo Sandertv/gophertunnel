@@ -26,7 +26,7 @@ import (
 type XBLToken struct {
 	AuthorizationToken struct {
 		DisplayClaims struct {
-			// UserInfo is the user information from the authorization token.
+			// UserInfo contains the user information claimed from the authorization token.
 			// GamerTag and XUID are only populated on the "xboxlive.com" relying party.
 			// The rest only return UserHash.
 			UserInfo []struct {
@@ -49,7 +49,7 @@ func (t XBLToken) SetAuthHeader(r *http.Request) {
 
 // NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
 // in [RequestXBLToken].
-func (conf XBLConfig) NewTokenCache() *XBLTokenCache {
+func (conf Config) NewTokenCache() *XBLTokenCache {
 	return &XBLTokenCache{
 		config: conf,
 	}
@@ -71,12 +71,12 @@ type contextKey struct{}
 var tokenCacheContextKey contextKey
 
 // XBLTokenCache caches device tokens for requesting Xbox Live tokens.
-// It may be created from [XBLConfig.NewTokenCache] and included to a
+// It may be created from [Config.NewTokenCache] and included to a
 // [context.Context] for re-using the device token in [RequestXBLToken].
 type XBLTokenCache struct {
-	// config is the XBLConfig used to request device tokens.
+	// config is the Config used to request device tokens.
 	// It contains platform-specific values for logging in with different device types.
-	config XBLConfig
+	config Config
 	// device caches the device token requested by XBLTokenCache.
 	device *deviceToken
 	// mu guards device from concurrent access.
@@ -104,8 +104,8 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*devic
 	return d, nil
 }
 
-// XBLConfig specifies the configuration for authenticating with Xbox Live services.
-type XBLConfig struct {
+// Config specifies the configuration for authenticating with Xbox Live services.
+type Config struct {
 	// ClientID is the ID used for the SISU authorization flow.
 	ClientID string
 	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
@@ -117,37 +117,37 @@ type XBLConfig struct {
 }
 
 var (
-	// AndroidXBLConfig is the configuration used in Minecraft: Bedrock Edition for Android devices.
-	AndroidXBLConfig = XBLConfig{
+	// AndroidConfig is the configuration used in Minecraft: Bedrock Edition for Android devices.
+	AndroidConfig = Config{
 		DeviceType: "Android",
 		ClientID:   "0000000048183522",
 		Version:    "8.0.0",
 		UserAgent:  "XAL Android 2020.07.20200714.000",
 	}
-	// IOSXBLConfig is the configuration used in Minecraft: Bedrock Edition for iOS devices.
-	IOSXBLConfig = XBLConfig{
+	// IOSConfig is the configuration used in Minecraft: Bedrock Edition for iOS devices.
+	IOSConfig = Config{
 		DeviceType: "iOS",
 		ClientID:   "000000004c17c01a",
 		Version:    "15.6.1",
 		UserAgent:  "XAL iOS 2021.11.20211021.000",
 	}
-	// Win32XBLConfig is the configuration used in Minecraft: Bedrock Edition for Windows devices.
+	// Win32Config is the configuration used in Minecraft: Bedrock Edition for Windows devices.
 	// Please note that the actual GDK/UWP build of the game requests the device token in more different way.
-	Win32XBLConfig = XBLConfig{
+	Win32Config = Config{
 		DeviceType: "Win32",
 		ClientID:   "0000000040159362",
 		Version:    "10.0.25398.4909",
 		UserAgent:  "XAL Win32 2021.11.20220411.002",
 	}
-	// NintendoXBLConfig is the configuration used in Minecraft: Bedrock Edition for Nintendo Switch.
-	NintendoXBLConfig = XBLConfig{
+	// NintendoConfig is the configuration used in Minecraft: Bedrock Edition for Nintendo Switch.
+	NintendoConfig = Config{
 		DeviceType: "Nintendo",
 		ClientID:   "00000000441cc96b",
 		Version:    "0.0.0",
 		UserAgent:  "XAL",
 	}
-	// PlayStationXBLConfig is the configuration used in Minecraft: Bedrock Edition for PlayStation devices.
-	PlayStationXBLConfig = XBLConfig{
+	// PlayStationConfig is the configuration used in Minecraft: Bedrock Edition for PlayStation devices.
+	PlayStationConfig = Config{
 		DeviceType: "Playstation",
 		ClientID:   "000000004827c78e",
 		Version:    "10.0.0",
@@ -155,13 +155,13 @@ var (
 	}
 )
 
-// RequestXBLToken calls [XBLConfig.RequestXBLToken] with the default device info.
+// RequestXBLToken calls [Config.RequestXBLToken] with the default device info.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
-	return AndroidXBLConfig.RequestXBLToken(ctx, liveToken, relyingParty)
+	return AndroidConfig.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
-func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
@@ -184,7 +184,7 @@ func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Tok
 
 // getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
 // a new device token using a new proof key.
-func (conf XBLConfig) getDeviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
+func (conf Config) getDeviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
 	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
 		// If the context has a value with XBLTokenCache, we re-use them.
 		if cache.config != conf {
@@ -205,7 +205,7 @@ func (conf XBLConfig) getDeviceToken(ctx context.Context, c *http.Client) (*devi
 	return d, nil
 }
 
-func (conf XBLConfig) obtainXBLToken(ctx context.Context, c *http.Client, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
+func (conf Config) obtainXBLToken(ctx context.Context, c *http.Client, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             conf.ClientID,
@@ -271,7 +271,7 @@ func (d *deviceToken) Valid() bool {
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
-func (conf XBLConfig) obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
+func (conf Config) obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
 	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
@@ -312,7 +312,7 @@ func (conf XBLConfig) obtainDeviceToken(ctx context.Context, c *http.Client, key
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST %v: %v", "https://device.auth.xboxlive.com/device/authenticate", resp.Status)
 	}
-	token = &deviceToken{}
+	token = &deviceToken{proofKey: key}
 	return token, json.NewDecoder(resp.Body).Decode(token)
 }
 
