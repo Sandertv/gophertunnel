@@ -17,7 +17,7 @@ import (
 // TokenSource holds an oauth2.TokenSource which uses device auth to get a code. The user authenticates using
 // a code. TokenSource prints the authentication code and URL to os.Stdout. To use a different io.Writer, use
 // WriterTokenSource. TokenSource automatically refreshes tokens.
-var TokenSource oauth2.TokenSource = &tokenSource{w: os.Stdout}
+var TokenSource oauth2.TokenSource = AndroidConfig.WriterTokenSource(os.Stdout)
 
 // WriterTokenSource returns a new oauth2.TokenSource which, like TokenSource, uses device auth to get a code.
 // Unlike TokenSource, WriterTokenSource allows passing an io.Writer to which information on the auth URL and
@@ -32,6 +32,10 @@ func (conf Config) WriterTokenSource(w io.Writer) oauth2.TokenSource {
 
 // tokenSource implements the oauth2.TokenSource interface. It provides a method to get an oauth2.Token using
 // device auth through a call to RequestLiveToken.
+//
+// NOTE: tokenSource requires a Config field to be set, otherwise the device auth
+// flow will send an invalid request and fail. Prefer constructing via [Config.WriterTokenSource] (or
+// [AndroidConfig.WriterTokenSource]) rather than instantiating tokenSource directly.
 type tokenSource struct {
 	w    io.Writer
 	t    *oauth2.Token
@@ -40,6 +44,9 @@ type tokenSource struct {
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
 func (src *tokenSource) Token() (*oauth2.Token, error) {
+	if src.conf.ClientID == "" {
+		panic(fmt.Errorf("minecraft/auth: tokenSource: missing ClientID; construct via Config.WriterTokenSource (or AndroidConfig.WriterTokenSource)"))
+	}
 	if src.t == nil {
 		t, err := src.conf.RequestLiveTokenWriter(src.w)
 		src.t = t
@@ -158,6 +165,9 @@ func updateServerTimeFromHeaders(headers http.Header) {
 // startDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
 // enter.
 func (conf Config) startDeviceAuth() (*deviceAuthConnect, error) {
+	if conf.ClientID == "" {
+		panic(fmt.Errorf("minecraft/auth: missing ClientID for device auth"))
+	}
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
 		"client_id":     {conf.ClientID},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
