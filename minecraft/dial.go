@@ -185,14 +185,13 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
 			verifier, err = oidcVerifier()
 			if err != nil {
-				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
 				m = &multiplayerTokenSource{d.TokenSource}
 			}
-			var err error
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
