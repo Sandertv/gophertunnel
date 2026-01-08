@@ -55,8 +55,8 @@ func (t XBLToken) Valid() bool {
 	return time.Now().Before(t.AuthorizationToken.NotAfter.Add(-expirationDelta))
 }
 
-// XBLConfig specifies the configuration for authenticating with Xbox Live and Microsoft services.
-type XBLConfig struct {
+// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
+type Config struct {
 	// ClientID is the ID used for the SISU authorization flow.
 	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
 	ClientID string
@@ -71,7 +71,7 @@ type XBLConfig struct {
 // XBLTokenObtainer requests XBL tokens using a specific Config and HTTP client.
 // If Client is nil, a default client is used.
 type XBLTokenObtainer struct {
-	Config XBLConfig
+	Config Config
 	Client *http.Client
 }
 
@@ -100,12 +100,12 @@ type contextKey struct{}
 var tokenCacheContextKey contextKey
 
 // XBLTokenCache caches device tokens for requesting Xbox Live tokens.
-// It may be created from [XBLConfig.NewTokenCache] and included to a
+// It may be created from [Config.NewTokenCache] and included to a
 // [context.Context] for re-using the device token in [RequestXBLToken].
 type XBLTokenCache struct {
 	// config is the Config used to request device tokens.
 	// It contains platform-specific values for logging in with different device types.
-	config XBLConfig
+	config Config
 	// device caches the device token requested by XBLTokenCache.
 	device *deviceToken
 	// mu guards device from concurrent access.
@@ -114,7 +114,7 @@ type XBLTokenCache struct {
 
 // NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
 // in [RequestXBLToken].
-func (conf XBLConfig) NewTokenCache() *XBLTokenCache {
+func (conf Config) NewTokenCache() *XBLTokenCache {
 	return &XBLTokenCache{
 		config: conf,
 	}
@@ -155,14 +155,14 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, o XBLTokenObtainer) (*d
 
 var (
 	// AndroidConfig is the configuration used in Minecraft: Bedrock Edition for Android devices.
-	AndroidConfig = XBLConfig{
+	AndroidConfig = Config{
 		DeviceType: "Android",
 		ClientID:   "0000000048183522",
 		Version:    "8.0.0",
 		UserAgent:  "XAL Android 2020.07.20200714.000",
 	}
 	// IOSConfig is the configuration used in Minecraft: Bedrock Edition for iOS devices.
-	IOSConfig = XBLConfig{
+	IOSConfig = Config{
 		DeviceType: "iOS",
 		ClientID:   "000000004c17c01a",
 		Version:    "15.6.1",
@@ -170,21 +170,21 @@ var (
 	}
 	// Win32Config is the configuration used in Minecraft: Bedrock Edition for Windows devices.
 	// Please note that the actual GDK/UWP build of the game requests the device token in more different way.
-	Win32Config = XBLConfig{
+	Win32Config = Config{
 		DeviceType: "Win32",
 		ClientID:   "0000000040159362",
 		Version:    "10.0.25398.4909",
 		UserAgent:  "XAL Win32 2021.11.20220411.002",
 	}
 	// NintendoConfig is the configuration used in Minecraft: Bedrock Edition for Nintendo Switch.
-	NintendoConfig = XBLConfig{
+	NintendoConfig = Config{
 		DeviceType: "Nintendo",
 		ClientID:   "00000000441cc96b",
 		Version:    "0.0.0",
 		UserAgent:  "XAL",
 	}
 	// PlayStationConfig is the configuration used in Minecraft: Bedrock Edition for PlayStation devices.
-	PlayStationConfig = XBLConfig{
+	PlayStationConfig = Config{
 		DeviceType: "Playstation",
 		ClientID:   "000000004827c78e",
 		Version:    "10.0.0",
@@ -192,13 +192,13 @@ var (
 	}
 )
 
-// RequestXBLToken calls [XBLConfig.RequestXBLToken] with the default device info.
+// RequestXBLToken calls [Config.RequestXBLToken] with the default device info.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	return XBLTokenObtainer{Config: AndroidConfig}.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
-func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	return XBLTokenObtainer{Config: conf}.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 

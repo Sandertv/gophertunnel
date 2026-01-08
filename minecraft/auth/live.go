@@ -26,7 +26,7 @@ func WriterTokenSource(w io.Writer) oauth2.TokenSource {
 	return AndroidConfig.WriterTokenSource(w)
 }
 
-func (conf XBLConfig) WriterTokenSource(w io.Writer) oauth2.TokenSource {
+func (conf Config) WriterTokenSource(w io.Writer) oauth2.TokenSource {
 	return &tokenSource{w: w, conf: conf}
 }
 
@@ -35,7 +35,7 @@ func (conf XBLConfig) WriterTokenSource(w io.Writer) oauth2.TokenSource {
 type tokenSource struct {
 	w    io.Writer
 	t    *oauth2.Token
-	conf XBLConfig
+	conf Config
 }
 
 // Token attempts to return a Live Connect token using the RequestLiveToken function.
@@ -64,7 +64,7 @@ func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 // RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
 // refreshes the token everytime it expires. Note that this function must be used over oauth2.ReuseTokenSource
 // due to that function not refreshing with the correct scopes.
-func (conf XBLConfig) RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
+func (conf Config) RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 	return conf.RefreshTokenSourceWriter(t, os.Stdout)
 }
 
@@ -80,7 +80,7 @@ func RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
 // refreshes the token everytime it expires. It requests from io.Writer if the oauth2.Token is invalid.
 // Note that this function must be used over oauth2.ReuseTokenSource due to that
 // function not refreshing with the correct scopes.
-func (conf XBLConfig) RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
+func (conf Config) RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
 	return oauth2.ReuseTokenSource(t, &tokenSource{w: w, t: t, conf: conf})
 }
 
@@ -94,7 +94,7 @@ func RequestLiveToken() (*oauth2.Token, error) {
 // RequestLiveToken does a login request for Microsoft Live Connect using device auth. A login URL will be
 // printed to the stdout with a user code which the user must use to submit.
 // RequestLiveToken is the equivalent of RequestLiveTokenWriter(os.Stdout).
-func (conf XBLConfig) RequestLiveToken() (*oauth2.Token, error) {
+func (conf Config) RequestLiveToken() (*oauth2.Token, error) {
 	return conf.RequestLiveTokenWriter(os.Stdout)
 }
 
@@ -108,7 +108,7 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 // RequestLiveTokenWriter does a login request for Microsoft Live Connect using device auth. A login URL will
 // be printed to the io.Writer passed with a user code which the user must use to submit.
 // Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
-func (conf XBLConfig) RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
+func (conf Config) RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 	d, err := conf.startDeviceAuth()
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func updateServerTimeFromHeaders(headers http.Header) {
 
 // startDeviceAuth starts the device auth, retrieving a login URI for the user and a code the user needs to
 // enter.
-func (conf XBLConfig) startDeviceAuth() (*deviceAuthConnect, error) {
+func (conf Config) startDeviceAuth() (*deviceAuthConnect, error) {
 	resp, err := http.PostForm("https://login.live.com/oauth20_connect.srf", url.Values{
 		"client_id":     {conf.ClientID},
 		"scope":         {"service::user.auth.xboxlive.com::MBI_SSL"},
@@ -176,7 +176,7 @@ func (conf XBLConfig) startDeviceAuth() (*deviceAuthConnect, error) {
 
 // pollDeviceAuth polls the token endpoint for the device code. A token is returned if the user authenticated
 // successfully. If the user has not yet authenticated, err is nil but the token is nil too.
-func (conf XBLConfig) pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
+func (conf Config) pollDeviceAuth(deviceCode string) (t *oauth2.Token, err error) {
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
 		"client_id":   {conf.ClientID},
 		"grant_type":  {"urn:ietf:params:oauth:grant-type:device_code"},
@@ -209,7 +209,7 @@ func (conf XBLConfig) pollDeviceAuth(deviceCode string) (t *oauth2.Token, err er
 
 // refreshToken refreshes the oauth2.Token passed and returns a new oauth2.Token. An error is returned if
 // refreshing was not successful.
-func (conf XBLConfig) refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
+func (conf Config) refreshToken(t *oauth2.Token) (*oauth2.Token, error) {
 	// This function unfortunately needs to exist because golang.org/x/oauth2 does not pass the scope to this
 	// request, which Microsoft Connect enforces.
 	resp, err := http.PostForm(microsoft.LiveConnectEndpoint.TokenURL, url.Values{
