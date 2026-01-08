@@ -1,6 +1,7 @@
 package minecraft
 
 import (
+	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -9,6 +10,7 @@ import (
 	"log/slog"
 	"math"
 	"net"
+	"net/http"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -28,6 +30,11 @@ type ListenConfig struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of
 	// clients are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
+
+	// HTTPClient is the HTTP client used for outbound HTTP requests needed by the listener,
+	// such as fetching OpenID configuration/JWKs when authentication is enabled.
+	// If nil, [http.DefaultClient] is used.
+	HTTPClient *http.Client
 
 	// AuthenticationDisabled specifies if authentication of players that join is disabled. If set to true, no
 	// verification will be done to ensure that the player connecting is authenticated using their XBOX Live
@@ -143,7 +150,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	var verifier *oidc.IDTokenVerifier
 	if !cfg.AuthenticationDisabled {
 		var err error
-		verifier, err = oidcVerifier()
+		verifier, err = oidcVerifier(cfg.HTTPClient)
 		if err != nil {
 			return nil, fmt.Errorf("create default OIDC verifier: %w", err)
 		}
@@ -194,7 +201,7 @@ var authEnvCache atomic.Pointer[service.AuthorizationEnvironment]
 
 // authEnv returns the authorization environment that can be used for issuing
 // or verifying the multiplayer token for OpenID authentication.
-func authEnv() (*service.AuthorizationEnvironment, error) {
+func authEnv(client *http.Client) (*service.AuthorizationEnvironment, error) {
 	if e := authEnvCache.Load(); e != nil {
 		return e, nil
 	}
@@ -206,6 +213,7 @@ func authEnv() (*service.AuthorizationEnvironment, error) {
 	if err := discovery.Environment(e); err != nil {
 		return nil, fmt.Errorf("decode environment for auth: %w", err)
 	}
+	e.HTTPClient = client
 	authEnvCache.Store(e)
 	return e, nil
 }
@@ -213,13 +221,15 @@ func authEnv() (*service.AuthorizationEnvironment, error) {
 // oidcVerifier returns the OpenID token verifier that could be used for
 // authenticating new multiplayer tokens issued by the authorization service
 // of Minecraft.
-func oidcVerifier() (*oidc.IDTokenVerifier, error) {
-	e, err := authEnv()
+func oidcVerifier(client *http.Client) (*oidc.IDTokenVerifier, error) {
+	e, err := authEnv(client)
 	if err != nil {
 		return nil, fmt.Errorf("obtain environment for authorization: %w", err)
 	}
 	// Verifier already caches the *oidc.IDTokenVerifier so we don't need to cache it here.
-	return e.Verifier()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	return e.VerifierContext(ctx)
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send

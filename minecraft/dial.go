@@ -16,6 +16,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,11 @@ type Dialer struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of
 	// servers are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
+
+	// HTTPClient is the HTTP client used for outbound HTTP requests needed by the dialer,
+	// such as fetching OpenID configuration/JWKs when authentication is enabled.
+	// If nil, [http.DefaultClient] is used.
+	HTTPClient *http.Client
 
 	// ClientData is the client data used to login to the server with. It includes fields such as the skin,
 	// locale and UUIDs unique to the client. If empty, a default is sent produced using defaultClientData().
@@ -183,14 +189,14 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	)
 	if d.TokenSource != nil || d.XBLToken != nil {
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
-			verifier, err = oidcVerifier()
+			verifier, err = oidcVerifier(d.HTTPClient)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				m = &multiplayerTokenSource{d.TokenSource}
+				m = &multiplayerTokenSource{TokenSource: d.TokenSource, client: d.HTTPClient}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
 			if err != nil {
@@ -313,11 +319,12 @@ type MultiplayerTokenSource interface {
 // to sign in to the PlayFab account with Xbox Live.
 type multiplayerTokenSource struct {
 	oauth2.TokenSource
+	client *http.Client
 }
 
 // MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
 func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
-	env, err := authEnv()
+	env, err := authEnv(s.client)
 	if err != nil {
 		return "", fmt.Errorf("obtain environment for auth: %w", err)
 	}

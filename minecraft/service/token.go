@@ -56,11 +56,23 @@ type AuthorizationEnvironment struct {
 	// account and to log in with some of the services for Education Edition.
 	EduPlayFabTitleID string `json:"eduPlayFabTitleId"`
 
+	// HTTPClient is the HTTP client used for requests made by AuthorizationEnvironment.
+	// If nil, [http.DefaultClient] is used.
+	HTTPClient *http.Client `json:"-"`
+
 	// verifier verifies OpenID Multiplayer Token issued by the authorization service.
 	// It is cached and kept by [Environment.Verifier] to reduce network time.
 	verifier *oidc.IDTokenVerifier
 	// verifierMu is a mutex that should be held when verifier is in access.
 	verifierMu sync.Mutex
+}
+
+// httpClient returns the HTTP client used for requests made by AuthorizationEnvironment.
+func (e *AuthorizationEnvironment) httpClient() *http.Client {
+	if e.HTTPClient != nil {
+		return e.HTTPClient
+	}
+	return http.DefaultClient
 }
 
 // ServiceName implements [service.Environment.ServiceName] and returns "auth".
@@ -120,7 +132,7 @@ func (e *AuthorizationEnvironment) Token(ctx context.Context, config TokenConfig
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +172,7 @@ func (e *AuthorizationEnvironment) Renew(ctx context.Context, token *Token, user
 	req.Header.Set("Accept", "application/json")
 	token.SetAuthHeader(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +215,7 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +255,7 @@ func (e *AuthorizationEnvironment) publicKeys(ctx context.Context, config oidc.P
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -340,7 +352,7 @@ func (e *AuthorizationEnvironment) MultiplayerToken(ctx context.Context, src Tok
 	req.Header.Set("Accept", "application/json")
 	token.SetAuthHeader(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return "", err
 	}
