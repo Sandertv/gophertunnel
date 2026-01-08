@@ -177,16 +177,15 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	return listener, nil
 }
 
-// oidcVerifier returns the OpenID token verifier that could be used for
-// authenticating new multiplayer tokens issued by the authorization service
-// of Minecraft.
-func oidcVerifier() (*oidc.IDTokenVerifier, error) {
-	e, err := authEnv()
-	if err != nil {
-		return nil, fmt.Errorf("obtain environment for authorization: %w", err)
-	}
-	// Verifier already caches the *oidc.IDTokenVerifier so we don't need to cache it here.
-	return e.Verifier()
+// Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
+// "unixpacket" or "raknet". A Listener is returned which may be used to accept connections.
+// If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
+// available unicast and anycast IP addresses of the local system.
+// Listen has the default values for the fields of Listener filled out. To use different values for these
+// fields, call &Listener{}.Listen() instead.
+func Listen(network, address string) (*Listener, error) {
+	var lc ListenConfig
+	return lc.Listen(network, address)
 }
 
 // authEnvCache holds authorization environment used to issue or verify
@@ -211,15 +210,16 @@ func authEnv() (*service.AuthorizationEnvironment, error) {
 	return e, nil
 }
 
-// Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
-// "unixpacket" or "raknet". A Listener is returned which may be used to accept connections.
-// If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
-// available unicast and anycast IP addresses of the local system.
-// Listen has the default values for the fields of Listener filled out. To use different values for these
-// fields, call &Listener{}.Listen() instead.
-func Listen(network, address string) (*Listener, error) {
-	var lc ListenConfig
-	return lc.Listen(network, address)
+// oidcVerifier returns the OpenID token verifier that could be used for
+// authenticating new multiplayer tokens issued by the authorization service
+// of Minecraft.
+func oidcVerifier() (*oidc.IDTokenVerifier, error) {
+	e, err := authEnv()
+	if err != nil {
+		return nil, fmt.Errorf("obtain environment for authorization: %w", err)
+	}
+	// Verifier already caches the *oidc.IDTokenVerifier so we don't need to cache it here.
+	return e.Verifier()
 }
 
 // Accept accepts a fully connected (on Minecraft layer) connection which is ready to receive and send
