@@ -288,32 +288,45 @@ func decodeKeySet(r io.Reader) (*jose.JSONWebKeySet, error) {
 		Keys: make([]jose.JSONWebKey, len(data.Keys)),
 	}
 	for i, key := range data.Keys {
-		x5u, ok := key["x5t"].(string)
+		x5t, ok := key["x5t"].(string)
 		if !ok {
 			return nil, errors.New("no x5t found in jwk")
 		}
-		// They use hex instead of base64 for the 'x5t' field, which
-		// is violating the JOSE spec.
-		fingerprint, err := hex.DecodeString(x5u)
-		if err != nil {
-			return nil, fmt.Errorf("decode x5t: %w", err)
+
+		// Microsoft uses hex instead of base64 for the 'x5t' field, which violates the JOSE spec.
+		// For a SHA-1 thumbprint (20 bytes), we expect either:
+		// - Hex: 40 chars
+		// - Base64URL (no padding): 27 chars
+		var fingerprint []byte
+		switch len(x5t) {
+		case 40:
+			var err error
+			fingerprint, err = hex.DecodeString(x5t)
+			if err != nil {
+				return nil, fmt.Errorf("decode x5t hex: %w", err)
+			}
+			key["x5t"] = base64.RawURLEncoding.EncodeToString(fingerprint)
+		case 27:
+			var err error
+			fingerprint, err = base64.RawURLEncoding.DecodeString(x5t)
+			if err != nil {
+				return nil, fmt.Errorf("decode x5t base64: %w", err)
+			}
+		default:
+			return nil, fmt.Errorf("invalid x5t length: %d", len(x5t))
 		}
 		if n := len(fingerprint); n != 20 {
 			return nil, fmt.Errorf("fingerprint is not 20 bytes long: %d", n)
 		}
-		// Re-encode the 'x5t' field to use BASE64URL.
-		key["x5t"] = base64.RawURLEncoding.EncodeToString(fingerprint)
 
-		// We might want to just decode the key as a struct that embeds
-		// the original [jose.JSONWebKey] with different x5t field, but
-		// it uses an UnmarshalJSON method to validate the key so we need
-		// to re-encode the reformatted jwk to bytes then decode it again.
+		// jose.JSONWebKey validates during JSON unmarshalling, so after patching x5t we re-encode the
+		// JWK and let the custom UnmarshalJSON validate and decode it.
 		b, err := json.Marshal(key)
 		if err != nil {
 			return nil, fmt.Errorf("encode reformatted jwk: %w", err)
 		}
 		var jwk jose.JSONWebKey
-		if err := json.Unmarshal(b, &jwk); err != nil {
+		if err := jwk.UnmarshalJSON(b); err != nil {
 			return nil, fmt.Errorf("decode reformatted jwk: %w", err)
 		}
 		set.Keys[i] = jwk
