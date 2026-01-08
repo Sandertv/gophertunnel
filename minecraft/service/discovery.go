@@ -38,6 +38,34 @@ type Discovery struct {
 	SupportedEnvironments map[string][]string `json:"supportedEnvironments,omitempty"`
 }
 
+const (
+	// ApplicationTypeDedicatedServer is the application type for Bedrock Dedicated Server.
+	// distributed by Mojang/Microsoft. For only usage for listeners, it might be preferred
+	// over ApplicationTypeMinecraftPE.
+	ApplicationTypeDedicatedServer = "MinecraftDedicatedServer"
+
+	// ApplicationTypeMinecraftPE is the application type for Minecraft: Bedrock Edition
+	// clients on all platform.
+	//
+	// ApplicationTypeMinecraftPE should be the default application type used in most services
+	// as indicates both server and client.
+	ApplicationTypeMinecraftPE = "MinecraftPE"
+)
+
+var (
+	// discoveryURL is the base URL used to make a GET request for obtaining a Discovery
+	// from [Discover] with a specific application type and build version.
+	discoveryURL = &url.URL{
+		Scheme: "https",
+		Host:   "client.discovery.minecraft-services.net",
+	}
+
+	// discoveryCache is a map where keys are the string composed of <appType>-<version>
+	// and the values are the result of [Discover], cached to reduce network time.
+	discoveryCache   = make(map[string]*Discovery)
+	discoveryCacheMu sync.Mutex
+)
+
 // Environment looks up for a value in [Discovery.ServiceEnvironments]
 // using [Environment.ServiceName] as the key, then decodes the nested
 // payload into the Environment.
@@ -56,35 +84,6 @@ func (d *Discovery) Environment(env Environment) error {
 	return json.Unmarshal(m2, env)
 }
 
-var (
-	// cache is a map where keys are the string composed of <appType>-<version>
-	// and the values are the result of [Discover], cached to reduce network time.
-	cache = make(map[string]*Discovery)
-	// cacheMu is a mutex that should be locked when cache is in access.
-	cacheMu sync.Mutex
-
-	// discoveryURL is the base URL used to make a GET request for obtaining a Discovery
-	// from [Discover] with a specific application type and build version.
-	discoveryURL = &url.URL{
-		Scheme: "https",
-		Host:   "client.discovery.minecraft-services.net",
-	}
-)
-
-const (
-	// ApplicationTypeDedicatedServer is the application type for Bedrock Dedicated Server.
-	// distributed by Mojang/Microsoft. For only usage for listeners, it might be preferred
-	// over ApplicationTypeMinecraftPE.
-	ApplicationTypeDedicatedServer = "MinecraftDedicatedServer"
-
-	// ApplicationTypeMinecraftPE is the application type for Minecraft: Bedrock Edition
-	// clients on all platform.
-	//
-	// ApplicationTypeMinecraftPE should be the default application type used in most services
-	// as indicates both server and client.
-	ApplicationTypeMinecraftPE = "MinecraftPE"
-)
-
 // Discover obtains a Discover for the specific version for the specific
 // application type. The returned Discovery contains environments for
 // various services in Minecraft: Bedrock Edition and will be used as
@@ -97,10 +96,11 @@ const (
 // Discover caches the result and can be called multiple times by various
 // services without waiting for network latency each time if cache was hit.
 func Discover(appType, version string) (*Discovery, error) {
-	cacheMu.Lock()
-	defer cacheMu.Unlock()
+	discoveryCacheMu.Lock()
+	defer discoveryCacheMu.Unlock()
+
 	requestURL := discoveryURL.JoinPath("/api/v1.0/discovery", appType, "builds", version).String()
-	if d, ok := cache[requestURL]; ok {
+	if d, ok := discoveryCache[requestURL]; ok {
 		return d, nil
 	}
 
@@ -125,6 +125,6 @@ func Discover(appType, version string) (*Discovery, error) {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 	d := &result.Data
-	cache[requestURL] = d
+	discoveryCache[requestURL] = d
 	return d, nil
 }
