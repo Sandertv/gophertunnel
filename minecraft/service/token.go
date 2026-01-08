@@ -182,13 +182,20 @@ func (e *AuthorizationEnvironment) Renew(ctx context.Context, token *Token, user
 // token sent from clients in the Login packet to authenticate themselves with a remote
 // OpenID configuration.
 func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
+	return e.VerifierContext(context.Background())
+}
+
+// VerifierContext returns an [oidc.IDTokenVerifier] that can be used to verify the multiplayer
+// token sent from clients in the Login packet to authenticate themselves with a remote
+// OpenID configuration.
+func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.IDTokenVerifier, error) {
 	e.verifierMu.Lock()
 	defer e.verifierMu.Unlock()
 	if e.verifier != nil {
 		return e.verifier, nil
 	}
 
-	req, err := http.NewRequest(http.MethodGet, e.ServiceURI.JoinPath("/.well-known/openid-configuration").String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.ServiceURI.JoinPath("/.well-known/openid-configuration").String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
@@ -209,7 +216,7 @@ func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 
-	keys, err := e.publicKeys(config)
+	keys, err := e.publicKeys(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("obtain public keys: %w", err)
 	}
@@ -227,8 +234,8 @@ func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
 
 // publicKeys resolves the public keys from the JWKs URL of the [oidc.ProviderConfig].
 // Those keys are used for verifying multiplayer tokens issued by the authorization service.
-func (e *AuthorizationEnvironment) publicKeys(config oidc.ProviderConfig) ([]crypto.PublicKey, error) {
-	req, err := http.NewRequest(http.MethodGet, config.JWKSURL, nil)
+func (e *AuthorizationEnvironment) publicKeys(ctx context.Context, config oidc.ProviderConfig) ([]crypto.PublicKey, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, config.JWKSURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
