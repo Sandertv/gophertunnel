@@ -187,7 +187,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		chainData, token string
 		verifier         *oidc.IDTokenVerifier
 	)
-	if d.TokenSource != nil || d.XBLToken != nil {
+	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
 			verifier, err = oidcVerifier(d.HTTPClient)
 			if err != nil {
@@ -401,8 +401,11 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
+// getXBLToken obtains an XBOX Live token using the credentials passed.
+// If the Dialer contains a valid XBLToken, it is returned directly.
+// Otherwise a new token is requested using a default Android device config.
 func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
-	if dialer.XBLToken != nil {
+	if dialer.XBLToken != nil && dialer.XBLToken.Valid() {
 		return dialer.XBLToken, nil
 	}
 
@@ -411,7 +414,10 @@ func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
 		return nil, fmt.Errorf("request Live Connect token: %w", err)
 	}
 
-	xblToken, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
+	xblToken, err := auth.XBLTokenObtainer{
+		Config: auth.AndroidConfig,
+		Client: dialer.HTTPClient,
+	}.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
 		return nil, fmt.Errorf("request XBOX Live token: %w", err)
 	}
