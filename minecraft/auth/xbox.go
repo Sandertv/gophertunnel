@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
@@ -25,6 +26,9 @@ import (
 type XBLToken struct {
 	AuthorizationToken struct {
 		DisplayClaims struct {
+			// UserInfo is the user information from the authorization token.
+			// GamerTag and XUID are only populated on the "xboxlive.com" relying party.
+			// The rest only return UserHash.
 			UserInfo []struct {
 				GamerTag string `json:"gtg"`
 				XUID     string `json:"xid"`
@@ -96,6 +100,7 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*devic
 	if err != nil {
 		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
+	x.device = d
 	return d, nil
 }
 
@@ -170,27 +175,31 @@ func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Tok
 	}
 	defer c.CloseIdleConnections()
 
-	var d *deviceToken
-	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok {
-		// If the context has a value with XBLTokenCache, we re-use them.
-		var err error
-		d, err = cache.deviceToken(ctx, c)
-		if err != nil {
-			return nil, fmt.Errorf("obtain device token from cache: %w", err)
-		}
-	} else {
-		// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
-		// requests, and to sign these requests.
-		key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-		if err != nil {
-			return nil, fmt.Errorf("generating ECDSA key: %w", err)
-		}
-		d, err = conf.obtainDeviceToken(ctx, c, key)
-		if err != nil {
-			return nil, err
-		}
+	d, err := conf.getDeviceToken(ctx, c)
+	if err != nil {
+		return nil, fmt.Errorf("request device token: %w", err)
 	}
 	return conf.obtainXBLToken(ctx, c, liveToken, d, relyingParty)
+}
+
+// getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
+// a new device token using a new proof key.
+func (conf XBLConfig) getDeviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
+	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
+		if cache.config.DeviceType != conf.DeviceType || cache.config.Version != conf.Version {
+			return nil, errors.New("xbl token cache config mismatch")
+		}
+		return cache.deviceToken(ctx, c)
+	}
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generate proof key: %w", err)
+	}
+	d, err := conf.obtainDeviceToken(ctx, c, key)
+	if err != nil {
+		return nil, fmt.Errorf("obtain device token: %w", err)
+	}
+	return d, nil
 }
 
 func (conf XBLConfig) obtainXBLToken(ctx context.Context, c *http.Client, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
