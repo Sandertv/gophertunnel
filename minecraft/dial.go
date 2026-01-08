@@ -20,6 +20,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -28,6 +29,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/service"
 	"golang.org/x/oauth2"
 )
 
@@ -51,12 +53,12 @@ type Dialer struct {
 	// this field is used to obtain tokens which in turn are used to authenticate to XBOX Live.
 	// The minecraft/auth package provides an oauth2.TokenSource implementation (auth.tokenSource) to use
 	// device auth to login.
-	// If both TokenSource and Session are nil, the connection will not use authentication.
+	// If TokenSource is nil, the connection will not use authentication.
 	TokenSource oauth2.TokenSource
 
-	// AuthSession should be used in place of TokenSource if the session is already created. Using this over
-	// TokenSource will result in much faster logins, especially if you are reusing it.
-	AuthSession *auth.Session
+	// XBLToken should be used in place of TokenSource if the XBL token is already known, i.e through a different
+	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party.
+	XBLToken *auth.XBLToken
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
@@ -175,27 +177,35 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if err != nil {
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
 	}
-	var chainData string
-	var multiplayerToken string
-	if d.TokenSource != nil || d.AuthSession != nil {
-		session, err := getAuthSession(ctx, d)
+	var (
+		chainData, token string
+		verifier         *oidc.IDTokenVerifier
+	)
+	if d.TokenSource != nil || d.XBLToken != nil {
+		if d.TokenSource != nil && !d.EnableLegacyAuth {
+			verifier, err = oidcVerifier()
+			if err != nil {
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+			}
+
+			m, ok := d.TokenSource.(MultiplayerTokenSource)
+			if !ok {
+				m = &multiplayerTokenSource{d.TokenSource}
+			}
+			var err error
+			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
+			if err != nil {
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+			}
+		}
+		xblToken, err := getXBLToken(ctx, d)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
-		xblToken, err := session.LegacyMultiplayerXBL(ctx)
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
-		}
-		multiplayerTok, err := session.MultiplayerToken(ctx, key)
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
-		}
-		multiplayerToken = multiplayerTok.SignedToken
 		chainData, err = authChain(ctx, xblToken, key)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
-
 		identityData, err := readChainIdentityData([]byte(chainData))
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
@@ -234,22 +244,21 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
-	if d.TokenSource == nil && d.AuthSession == nil {
+	if d.TokenSource == nil && d.XBLToken == nil {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
 		if !d.KeepXBLIdentityData {
 			clearXBLIdentityData(&conn.identityData)
 		}
-		// Pass empty string for multiplayer token for offline logins
-		request = login.EncodeOffline(conn.identityData, conn.clientData, key, "", d.EnableLegacyAuth)
+		request = login.EncodeOffline(conn.identityData, conn.clientData, key, token, d.EnableLegacyAuth)
 	} else {
 		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
 		// we can't edit. We just enforce Android data for logging in.
 		setAndroidData(&conn.clientData)
 
-		request = login.Encode(chainData, multiplayerToken, conn.clientData, key, d.EnableLegacyAuth)
-		identityData, _, _, _ := login.Parse(request)
+		request = login.Encode(chainData, conn.clientData, key, token, d.EnableLegacyAuth)
+		identityData, _, _, _ := login.Parse(request, verifier)
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
 		// we are not aware of the identity data ourselves yet.
 		conn.identityData = identityData
@@ -288,6 +297,32 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return conn, nil
 		}
 	}
+}
+
+// MultiplayerTokenSource supplies a multiplayer token issued by the Minecraft authorization
+// service, which is newly introduced in 1.21.100. It is recommended to request tokens from
+// [service.AuthorizationToken.MultiplayerToken].
+type MultiplayerTokenSource interface {
+	// MultiplayerToken issues a JWT token to be used for OpenID authentication with
+	// multiplayer servers. The token must contain the public key in the 'cpk' claim in
+	// order for the server to verify client data with the same key.
+	MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (jwt string, err error)
+}
+
+// multiplayerTokenSource is an implementation of MultiplayerTokenSource
+// used by default, which uses the underlying [oauth2.TokenSource]
+// to sign in to the PlayFab account with Xbox Live.
+type multiplayerTokenSource struct {
+	oauth2.TokenSource
+}
+
+// MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
+func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
+	env, err := authEnv()
+	if err != nil {
+		return "", fmt.Errorf("obtain environment for auth: %w", err)
+	}
+	return env.MultiplayerToken(ctx, env.TokenSource(s.TokenSource, service.TokenConfig{}), key)
 }
 
 // readChainIdentityData reads a login.IdentityData from the Mojang chain
@@ -360,12 +395,22 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
-func getAuthSession(ctx context.Context, dialer Dialer) (*auth.Session, error) {
-	if dialer.AuthSession != nil {
-		return dialer.AuthSession, nil
+func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
+	if dialer.XBLToken != nil {
+		return dialer.XBLToken, nil
 	}
 
-	return auth.SessionFromTokenSource(dialer.TokenSource, auth.DeviceAndroid, ctx)
+	liveToken, err := dialer.TokenSource.Token()
+	if err != nil {
+		return nil, fmt.Errorf("request Live Connect token: %w", err)
+	}
+
+	xblToken, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
+	if err != nil {
+		return nil, fmt.Errorf("request XBOX Live token: %w", err)
+	}
+
+	return xblToken, nil
 }
 
 // authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded

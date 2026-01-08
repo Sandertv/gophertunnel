@@ -6,11 +6,6 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"log/slog"
 	"math"
 	"net"
@@ -18,6 +13,14 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/resource"
+	"github.com/sandertv/gophertunnel/minecraft/service"
 )
 
 // ListenConfig holds settings that may be edited to change behaviour of a Listener.
@@ -108,6 +111,10 @@ type Listener struct {
 	close    chan struct{}
 
 	key *ecdsa.PrivateKey
+	// verifier is used to verify the OpenID token issued by the authorization service
+	// for authenticating incoming connections. It will be nil if authentication is
+	// disabled on ListenConfig.
+	verifier *oidc.IDTokenVerifier
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -133,6 +140,15 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		cfg.MaxDecompressedLen = math.MaxInt
 	}
 
+	var verifier *oidc.IDTokenVerifier
+	if !cfg.AuthenticationDisabled {
+		var err error
+		verifier, err = oidcVerifier()
+		if err != nil {
+			return nil, fmt.Errorf("create default OIDC verifier: %w", err)
+		}
+	}
+
 	n, ok := networkByID(network, cfg.ErrorLog)
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id %v", network)
@@ -153,11 +169,46 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
 		key:      key,
+		verifier: verifier,
 	}
 
 	// Actually start listening.
 	go listener.listen()
 	return listener, nil
+}
+
+// oidcVerifier returns the OpenID token verifier that could be used for
+// authenticating new multiplayer tokens issued by the authorization service
+// of Minecraft.
+func oidcVerifier() (*oidc.IDTokenVerifier, error) {
+	e, err := authEnv()
+	if err != nil {
+		return nil, fmt.Errorf("obtain environment for authorization: %w", err)
+	}
+	// Verifier already caches the *oidc.IDTokenVerifier so we don't need to cache it here.
+	return e.Verifier()
+}
+
+// authEnvCache holds authorization environment used to issue or verify
+// the multiplayer token for OpenID authentication. It is cached by authEnv.
+var authEnvCache atomic.Pointer[service.AuthorizationEnvironment]
+
+// authEnv returns the authorization environment that can be used for issuing
+// or verifying the multiplayer token for OpenID authentication.
+func authEnv() (*service.AuthorizationEnvironment, error) {
+	if e := authEnvCache.Load(); e != nil {
+		return e, nil
+	}
+	discovery, err := service.Discover(service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
+	if err != nil {
+		return nil, fmt.Errorf("discover service endpoints: %w", err)
+	}
+	e := new(service.AuthorizationEnvironment)
+	if err := discovery.Environment(e); err != nil {
+		return nil, fmt.Errorf("decode environment for auth: %w", err)
+	}
+	authEnvCache.Store(e)
+	return e, nil
 }
 
 // Listen announces on the local network address. The network must be "tcp", "tcp4", "tcp6", "unix",
@@ -288,6 +339,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.fetchResourcePacks = listener.cfg.FetchResourcePacks
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
+	conn.verifier = listener.verifier
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"errors"
 	"log"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"golang.org/x/oauth2"
 )
 
 // The following program implements a proxy that forwards players from one local address to a remote address.
@@ -20,11 +20,6 @@ func main() {
 		panic(err)
 	}
 	src := auth.RefreshTokenSource(token)
-
-	session, err := auth.SessionFromTokenSource(src, auth.DeviceAndroid, context.Background())
-	if err != nil {
-		panic(err)
-	}
 
 	p, err := minecraft.NewForeignStatusProvider(config.Connection.RemoteAddress)
 	if err != nil {
@@ -42,14 +37,14 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		go handleConn(c.(*minecraft.Conn), listener, config, session)
+		go handleConn(c.(*minecraft.Conn), listener, config, src)
 	}
 }
 
 // handleConn handles a new incoming minecraft.Conn from the minecraft.Listener passed.
-func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, session *auth.Session) {
+func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, src oauth2.TokenSource) {
 	serverConn, err := minecraft.Dialer{
-		AuthSession: session,
+		TokenSource: src,
 		ClientData:  conn.ClientData(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
