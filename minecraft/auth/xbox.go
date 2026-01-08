@@ -41,27 +41,23 @@ type XBLToken struct {
 	}
 }
 
-// SetAuthHeader returns a string that may be used for the 'Authorization' header used for Minecraft
-// related endpoints that need an XBOX Live authenticated caller.
+// SetAuthHeader sets the 'Authorization' header used for Minecraft related endpoints that
+// need an XBOX Live authenticated caller.
 func (t XBLToken) SetAuthHeader(r *http.Request) {
 	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
 }
 
-// NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
-// in [RequestXBLToken].
-func (conf Config) NewTokenCache() *XBLTokenCache {
-	return &XBLTokenCache{
-		config: conf,
-	}
-}
-
-// WithXBLTokenCache returns a [context.Context] which contains the XBLTokenCache.
-// The returned [context.Context] can be used in [RequestXBLToken] for
-// re-using the device token as possible to avoid issuing too many device
-// tokens and incurring rate limiting from XASD (Xbox Authentication Service for
-// Devices).
-func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Context {
-	return context.WithValue(parent, tokenCacheContextKey, cache)
+// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
+type Config struct {
+	// ClientID is the ID used for the SISU authorization flow.
+	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
+	ClientID string
+	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
+	DeviceType string
+	// Version indicates the version of the authentication library used in the client.
+	Version string
+	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
+	UserAgent string
 }
 
 // contextKey is a type used for context key used to [context.WithValue].
@@ -83,6 +79,23 @@ type XBLTokenCache struct {
 	mu sync.Mutex
 }
 
+// NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
+// in [RequestXBLToken].
+func (conf Config) NewTokenCache() *XBLTokenCache {
+	return &XBLTokenCache{
+		config: conf,
+	}
+}
+
+// WithXBLTokenCache returns a [context.Context] which contains the XBLTokenCache.
+// The returned [context.Context] can be used in [RequestXBLToken] for
+// re-using the device token as possible to avoid issuing too many device
+// tokens and incurring rate limiting from XASD (Xbox Authentication Service for
+// Devices).
+func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Context {
+	return context.WithValue(parent, tokenCacheContextKey, cache)
+}
+
 // deviceToken returns the cached device token. If the device token is no longer
 // valid or has not yet been requested, it will request a device token with a new
 // proof key. The [http.Client] is used for requesting a new device token.
@@ -102,19 +115,6 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*devic
 	}
 	x.device = d
 	return d, nil
-}
-
-// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
-type Config struct {
-	// ClientID is the ID used for the SISU authorization flow.
-	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
-	ClientID string
-	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
-	DeviceType string
-	// Version indicates the version of the authentication library used in the client.
-	Version string
-	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
-	UserAgent string
 }
 
 var (
@@ -174,7 +174,6 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 			},
 		},
 	}
-	defer c.CloseIdleConnections()
 
 	d, err := conf.getDeviceToken(ctx, c)
 	if err != nil {
