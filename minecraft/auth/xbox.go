@@ -186,11 +186,14 @@ func (conf XBLConfig) RequestXBLToken(ctx context.Context, liveToken *oauth2.Tok
 // a new device token using a new proof key.
 func (conf XBLConfig) getDeviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
 	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
-		if cache.config.DeviceType != conf.DeviceType || cache.config.Version != conf.Version {
+		// If the context has a value with XBLTokenCache, we re-use them.
+		if cache.config != conf {
 			return nil, errors.New("xbl token cache config mismatch")
 		}
 		return cache.deviceToken(ctx, c)
 	}
+	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
+	// requests, and to sign these requests.
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
