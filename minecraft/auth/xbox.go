@@ -104,9 +104,10 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*devic
 	return d, nil
 }
 
-// Config specifies the configuration for authenticating with Xbox Live services.
+// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
 type Config struct {
 	// ClientID is the ID used for the SISU authorization flow.
+	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
 	ClientID string
 	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
 	DeviceType string

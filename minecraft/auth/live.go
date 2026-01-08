@@ -61,12 +61,27 @@ func RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
 	return RefreshTokenSourceWriter(t, os.Stdout)
 }
 
+// RefreshTokenSource returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
+// refreshes the token everytime it expires. Note that this function must be used over oauth2.ReuseTokenSource
+// due to that function not refreshing with the correct scopes.
+func (conf Config) RefreshTokenSource(t *oauth2.Token) oauth2.TokenSource {
+	return conf.RefreshTokenSourceWriter(t, os.Stdout)
+}
+
 // RefreshTokenSourceWriter returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
 // refreshes the token everytime it expires. It requests from io.Writer if the oauth2.Token is invalid.
 // Note that this function must be used over oauth2.ReuseTokenSource due to that
 // function not refreshing with the correct scopes.
 func RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
-	return oauth2.ReuseTokenSource(t, &tokenSource{w: w, t: t})
+	return AndroidConfig.RefreshTokenSourceWriter(t, w)
+}
+
+// RefreshTokenSourceWriter returns a new oauth2.TokenSource using the oauth2.Token passed that automatically
+// refreshes the token everytime it expires. It requests from io.Writer if the oauth2.Token is invalid.
+// Note that this function must be used over oauth2.ReuseTokenSource due to that
+// function not refreshing with the correct scopes.
+func (conf Config) RefreshTokenSourceWriter(t *oauth2.Token, w io.Writer) oauth2.TokenSource {
+	return oauth2.ReuseTokenSource(t, &tokenSource{w: w, t: t, conf: conf})
 }
 
 // RequestLiveToken does a login request for Microsoft Live Connect using device auth. A login URL will be
