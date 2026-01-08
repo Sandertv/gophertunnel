@@ -221,7 +221,9 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 	}
 
 	if r.Certificate != "" {
-		_ = json.Unmarshal([]byte(r.Certificate), &r.request.Certificate)
+		if err := json.Unmarshal([]byte(r.Certificate), &r.request.Certificate); err != nil {
+			return nil, fmt.Errorf("decode certificate: %w", err)
+		}
 	} else {
 		r.request.Certificate.Chain = r.Chain
 	}
