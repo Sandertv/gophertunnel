@@ -290,7 +290,7 @@ type deviceToken struct {
 
 // Valid returns whether the device token is valid.
 func (d *deviceToken) Valid() bool {
-	return time.Now().Before(d.NotAfter)
+	return time.Now().Before(d.NotAfter.Add(-expirationDelta))
 }
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
