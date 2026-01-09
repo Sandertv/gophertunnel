@@ -26,13 +26,16 @@ type IdentityData struct {
 	// DisplayName is the username of the player, which may be changed by the user. It should for that reason
 	// not be used as a key to store information.
 	DisplayName string `json:"displayName"`
-	// TitleID is a numerical ID present only if the user is logged into XBL. It holds the title ID (XBL
-	// related) of the version that the player is on. Some of these IDs may be found below.
+	// TitleID is a numerical ID present only if the user is logged into Xbox Live using the legacy chain. It holds
+	// the title ID (XBL related) of the version that the player is on. Some of these IDs may be found below:
 	// Win10: 896928775
 	// Mobile: 1739947436
 	// Nintendo: 2047319603
 	// Note that these IDs are protected using XBOX Live, making the spoofing of this data very difficult.
 	TitleID string `json:"titleId,omitempty"`
+	// PlayFabTitleID is the title ID specific to PlayFab, as found in the OIDC/multiplayer-token claim `tid`.
+	// It is typically "20CA2" for retail.
+	PlayFabTitleID string `json:"-"`
 	// PlayFabID is the unique ID of the player specific to PlayFab, which will remain consistent
 	// as long as they are logged in to the PlayFab account via Xbox Live and many other identity
 	// providers supported by PlayFab. It is specifically the ID for master player account, which

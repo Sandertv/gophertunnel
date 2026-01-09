@@ -387,9 +387,9 @@ type tokenClaims struct {
 	// It is the ID for the master player account of the player, which
 	// is shared across multiple PlayFab titles published by Mojang.
 	PlayFabID string `json:"mid"`
-	// TitleID is the title ID specific to PlayFab.
+	// PlayFabTitleID is the title ID specific to PlayFab.
 	// It is typically '20CA2' for the base version of the game.
-	TitleID string `json:"tid"`
+	PlayFabTitleID string `json:"tid"`
 	// ClientPublicKey is the public key of the client used to sign the client data
 	// and to initialise the encryption in the handshake.
 	ClientPublicKey string `json:"cpk"`
@@ -403,11 +403,11 @@ type tokenClaims struct {
 // used in the legacy chain so it can be backward compatible as it used to be.
 func (tc tokenClaims) identityData() IdentityData {
 	return IdentityData{
-		XUID:        tc.XUID,
-		Identity:    identityFromXUID(tc.XUID).String(),
-		DisplayName: tc.DisplayName,
-		TitleID:     tc.TitleID,
-		PlayFabID:   tc.PlayFabID,
+		XUID:           tc.XUID,
+		Identity:       identityFromXUID(tc.XUID).String(),
+		DisplayName:    tc.DisplayName,
+		PlayFabID:      tc.PlayFabID,
+		PlayFabTitleID: tc.PlayFabTitleID,
 	}
 }
 
