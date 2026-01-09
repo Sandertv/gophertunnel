@@ -373,6 +373,9 @@ func (data *ClientData) Validate() error {
 	if err := data.validatePersona(); err != nil {
 		return err
 	}
+	if format := data.DeviceID.Format(); format == DeviceIDFormatInvalid {
+		return fmt.Errorf("DeviceID is not a valid format: %v", data.DeviceID)
+	}
 	return nil
 }
 
