@@ -105,6 +105,9 @@ type XBLTokenCache struct {
 	config Config
 	// device caches the device token requested by XBLTokenCache.
 	device *deviceToken
+	// xsts caches the most recent XSTS tokens (XBLToken) issued for relying parties.
+	// The key is the relying party string.
+	xsts map[string]*XBLToken
 	// mu guards device from concurrent access.
 	mu sync.Mutex
 }
@@ -114,6 +117,7 @@ type XBLTokenCache struct {
 func (conf Config) NewTokenCache() *XBLTokenCache {
 	return &XBLTokenCache{
 		config: conf,
+		xsts:   make(map[string]*XBLToken),
 	}
 }
 
@@ -138,9 +142,6 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, conf Config) (*deviceTo
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
-	}
-	if x.config != conf {
-		return nil, errors.New("xbl token cache config mismatch")
 	}
 	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
@@ -202,11 +203,40 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
+
+	cache, _ := ctx.Value(tokenCacheContextKey).(*XBLTokenCache)
+	if cache != nil {
+		cache.mu.Lock()
+		if cache.config != conf {
+			cache.mu.Unlock()
+			return nil, errors.New("xbl token cache config mismatch")
+		}
+		if tok := cache.xsts[relyingParty]; tok != nil && tok.Valid() {
+			cache.mu.Unlock()
+			return tok, nil
+		}
+		cache.mu.Unlock()
+	}
+
 	d, err := conf.getDeviceToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("request device token: %w", err)
 	}
-	return conf.obtainXBLToken(ctx, liveToken, d, relyingParty)
+	xbl, err := conf.obtainXBLToken(ctx, liveToken, d, relyingParty)
+	if err != nil {
+		return nil, err
+	}
+
+	if cache != nil {
+		cache.mu.Lock()
+		if cache.xsts == nil {
+			cache.xsts = make(map[string]*XBLToken)
+		}
+		cache.xsts[relyingParty] = xbl
+		cache.mu.Unlock()
+	}
+
+	return xbl, nil
 }
 
 // getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
