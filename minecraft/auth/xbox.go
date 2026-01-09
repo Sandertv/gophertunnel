@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -195,6 +196,11 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 	return AndroidConfig.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 
+// normalizeRelyingPartyKey normalizes a relying party string for use as a cache key.
+func normalizeRelyingPartyKey(relyingParty string) string {
+	return strings.TrimRight(relyingParty, "/")
+}
+
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
 func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
 	if ctx == nil {
@@ -206,12 +212,13 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 
 	cache, _ := ctx.Value(tokenCacheContextKey).(*XBLTokenCache)
 	if cache != nil {
+		rpKey := normalizeRelyingPartyKey(relyingParty)
 		cache.mu.Lock()
 		if cache.config != conf {
 			cache.mu.Unlock()
 			return nil, errors.New("xbl token cache config mismatch")
 		}
-		if tok := cache.xsts[relyingParty]; tok != nil && tok.Valid() {
+		if tok := cache.xsts[rpKey]; tok != nil && tok.Valid() {
 			cache.mu.Unlock()
 			return tok, nil
 		}
@@ -228,11 +235,12 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 	}
 
 	if cache != nil {
+		rpKey := normalizeRelyingPartyKey(relyingParty)
 		cache.mu.Lock()
 		if cache.xsts == nil {
 			cache.xsts = make(map[string]*XBLToken)
 		}
-		cache.xsts[relyingParty] = xbl
+		cache.xsts[rpKey] = xbl
 		cache.mu.Unlock()
 	}
 
