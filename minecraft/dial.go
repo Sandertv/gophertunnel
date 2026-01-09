@@ -30,7 +30,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/minecraft/service"
 	"golang.org/x/oauth2"
 )
 
@@ -313,36 +312,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return conn, nil
 		}
 	}
-}
-
-// MultiplayerTokenSource supplies a multiplayer token issued by the Minecraft authorization
-// service, which is newly introduced in 1.21.100. It is recommended to request tokens from
-// [service.AuthorizationToken.MultiplayerToken].
-type MultiplayerTokenSource interface {
-	// MultiplayerToken issues a JWT token to be used for OpenID authentication with
-	// multiplayer servers. The token must contain the public key in the 'cpk' claim in
-	// order for the server to verify client data with the same key.
-	MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (jwt string, err error)
-}
-
-// multiplayerTokenSource is an implementation of MultiplayerTokenSource
-// used by default, which uses the underlying [oauth2.TokenSource]
-// to sign in to the PlayFab account with Xbox Live.
-type multiplayerTokenSource struct {
-	oauth2.TokenSource
-}
-
-// MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
-func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
-	var client *http.Client
-	if ctx != nil {
-		client, _ = ctx.Value(oauth2.HTTPClient).(*http.Client)
-	}
-	env, err := authEnv(client)
-	if err != nil {
-		return "", fmt.Errorf("obtain environment for auth: %w", err)
-	}
-	return env.MultiplayerToken(ctx, env.TokenSource(ctx, s.TokenSource, service.TokenConfig{}), key)
 }
 
 // readChainIdentityData reads a login.IdentityData from the Mojang chain
