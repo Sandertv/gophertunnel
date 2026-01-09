@@ -126,7 +126,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		// legacy Mojang chain. If the chain is present and valid, we verify it and use its title ID so callers
 		// can keep using IdentityData.TitleID.
 		if iData.XUID != "" {
-			if legacyID, _, legacyAuthed, err := parseVerifiedLegacyIdentityData(req.Certificate.Chain, t); err == nil && legacyAuthed {
+			if legacyID, _, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t); err == nil && legacyAuthed {
 				if legacyID.TitleID != "" && legacyID.XUID == iData.XUID {
 					iData.TitleID = legacyID.TitleID
 				}
@@ -136,7 +136,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
 	} else {
-		legacyID, legacyKey, legacyAuthed, err := parseVerifiedLegacyIdentityData(req.Certificate.Chain, t)
+		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
 			return iData, cData, res, err
 		}
@@ -159,10 +159,10 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
 }
 
-// parseVerifiedLegacyIdentityData verifies the legacy Mojang chain and returns IdentityData from extraData,
+// parseLegacyChain verifies the legacy Mojang chain and returns IdentityData from extraData,
 // the public key used for verification (and for client data), and a bool indicating if the chain was
 // authenticated by Xbox Live.
-func parseVerifiedLegacyIdentityData(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
+func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
 	key := &ecdsa.PublicKey{}
 	tok, err := jwt.ParseSigned(chain[0], []jose.SignatureAlgorithm{jose.ES384})
 	if err != nil {
