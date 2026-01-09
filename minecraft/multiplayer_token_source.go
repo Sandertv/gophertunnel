@@ -51,7 +51,6 @@ func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecds
 // such as oauth2.HTTPClient and auth.WithXBLTokenCache. Cancellation/deadlines are stripped from that context
 // so it remains usable after the first dial returns.
 type CachedMultiplayerTokenSource struct {
-	// TokenSource is the underlying oauth2.TokenSource.
 	oauth2.TokenSource
 
 	// TokenConfig is the configuration used when creating the cached [service.TokenSource].
