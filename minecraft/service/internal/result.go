@@ -3,6 +3,7 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 )
 
@@ -32,10 +33,15 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("minecraft/service: %s: %q (%s)", e.Code, e.Message, e.Namespace)
 }
 
-// Err decodes the response body as an Error if possible. Otherwise, the status code is returned.
+// Err decodes the response body as an Error if possible. Otherwise, the status code is returned
+// along with a truncated body for debugging.
 func Err(resp *http.Response) error {
+	body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
 	e := new(Error)
-	if err := json.NewDecoder(resp.Body).Decode(e); err != nil {
+	if err := json.Unmarshal(body, e); err != nil {
+		if len(body) > 0 {
+			return fmt.Errorf("%s %s: %s: %q", resp.Request.Method, resp.Request.URL, resp.Status, body)
+		}
 		return fmt.Errorf("%s %s: %s", resp.Request.Method, resp.Request.URL, resp.Status)
 	}
 	return e

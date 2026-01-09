@@ -16,6 +16,7 @@ import (
 	"math"
 	"math/rand"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -39,6 +40,11 @@ type Dialer struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of
 	// servers are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
+
+	// HTTPClient is the HTTP client used for outbound HTTP requests needed by the dialer,
+	// such as fetching OpenID configuration/JWKs when authentication is enabled.
+	// If nil, [http.DefaultClient] is used.
+	HTTPClient *http.Client
 
 	// ClientData is the client data used to login to the server with. It includes fields such as the skin,
 	// locale and UUIDs unique to the client. If empty, a default is sent produced using defaultClientData().
@@ -162,6 +168,9 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if d.ErrorLog == nil {
 		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -172,6 +181,11 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.FlushRate == 0 {
 		d.FlushRate = time.Second / 20
 	}
+	if d.HTTPClient != nil {
+		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
+		}
+	}
 
 	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 	if err != nil {
@@ -181,18 +195,18 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		chainData, token string
 		verifier         *oidc.IDTokenVerifier
 	)
-	if d.TokenSource != nil || d.XBLToken != nil {
+	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
-			verifier, err = oidcVerifier()
+			client, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
+			verifier, err = oidcVerifier(client)
 			if err != nil {
-				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				m = &multiplayerTokenSource{d.TokenSource}
+				m = &multiplayerTokenSource{TokenSource: d.TokenSource}
 			}
-			var err error
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
@@ -244,7 +258,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
-	if d.TokenSource == nil && d.XBLToken == nil {
+	if d.TokenSource == nil && (d.XBLToken == nil || !d.XBLToken.Valid()) {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
@@ -318,7 +332,11 @@ type multiplayerTokenSource struct {
 
 // MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
 func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
-	env, err := authEnv()
+	var client *http.Client
+	if ctx != nil {
+		client, _ = ctx.Value(oauth2.HTTPClient).(*http.Client)
+	}
+	env, err := authEnv(client)
 	if err != nil {
 		return "", fmt.Errorf("obtain environment for auth: %w", err)
 	}
@@ -395,8 +413,11 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	}
 }
 
+// getXBLToken obtains an XBOX Live token using the credentials passed.
+// If the Dialer contains a valid XBLToken, it is returned directly.
+// Otherwise a new token is requested using a default Android device config.
 func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
-	if dialer.XBLToken != nil {
+	if dialer.XBLToken != nil && dialer.XBLToken.Valid() {
 		return dialer.XBLToken, nil
 	}
 

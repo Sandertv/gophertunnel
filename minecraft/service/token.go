@@ -56,11 +56,23 @@ type AuthorizationEnvironment struct {
 	// account and to log in with some of the services for Education Edition.
 	EduPlayFabTitleID string `json:"eduPlayFabTitleId"`
 
+	// HTTPClient is the HTTP client used for requests made by AuthorizationEnvironment.
+	// If nil, [http.DefaultClient] is used.
+	HTTPClient *http.Client `json:"-"`
+
 	// verifier verifies OpenID Multiplayer Token issued by the authorization service.
 	// It is cached and kept by [Environment.Verifier] to reduce network time.
 	verifier *oidc.IDTokenVerifier
 	// verifierMu is a mutex that should be held when verifier is in access.
 	verifierMu sync.Mutex
+}
+
+// httpClient returns the HTTP client used for requests made by AuthorizationEnvironment.
+func (e *AuthorizationEnvironment) httpClient() *http.Client {
+	if e.HTTPClient != nil {
+		return e.HTTPClient
+	}
+	return http.DefaultClient
 }
 
 // ServiceName implements [service.Environment.ServiceName] and returns "auth".
@@ -120,7 +132,7 @@ func (e *AuthorizationEnvironment) Token(ctx context.Context, config TokenConfig
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -160,7 +172,7 @@ func (e *AuthorizationEnvironment) Renew(ctx context.Context, token *Token, user
 	req.Header.Set("Accept", "application/json")
 	token.SetAuthHeader(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -182,13 +194,20 @@ func (e *AuthorizationEnvironment) Renew(ctx context.Context, token *Token, user
 // token sent from clients in the Login packet to authenticate themselves with a remote
 // OpenID configuration.
 func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
+	return e.VerifierContext(context.Background())
+}
+
+// VerifierContext returns an [oidc.IDTokenVerifier] that can be used to verify the multiplayer
+// token sent from clients in the Login packet to authenticate themselves with a remote
+// OpenID configuration.
+func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.IDTokenVerifier, error) {
 	e.verifierMu.Lock()
 	defer e.verifierMu.Unlock()
 	if e.verifier != nil {
 		return e.verifier, nil
 	}
 
-	req, err := http.NewRequest(http.MethodGet, e.ServiceURI.JoinPath("/.well-known/openid-configuration").String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.ServiceURI.JoinPath("/.well-known/openid-configuration").String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
@@ -196,7 +215,7 @@ func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +228,7 @@ func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 
-	keys, err := e.publicKeys(config)
+	keys, err := e.publicKeys(ctx, config)
 	if err != nil {
 		return nil, fmt.Errorf("obtain public keys: %w", err)
 	}
@@ -227,8 +246,8 @@ func (e *AuthorizationEnvironment) Verifier() (*oidc.IDTokenVerifier, error) {
 
 // publicKeys resolves the public keys from the JWKs URL of the [oidc.ProviderConfig].
 // Those keys are used for verifying multiplayer tokens issued by the authorization service.
-func (e *AuthorizationEnvironment) publicKeys(config oidc.ProviderConfig) ([]crypto.PublicKey, error) {
-	req, err := http.NewRequest(http.MethodGet, config.JWKSURL, nil)
+func (e *AuthorizationEnvironment) publicKeys(ctx context.Context, config oidc.ProviderConfig) ([]crypto.PublicKey, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, config.JWKSURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
@@ -236,7 +255,7 @@ func (e *AuthorizationEnvironment) publicKeys(config oidc.ProviderConfig) ([]cry
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -269,32 +288,45 @@ func decodeKeySet(r io.Reader) (*jose.JSONWebKeySet, error) {
 		Keys: make([]jose.JSONWebKey, len(data.Keys)),
 	}
 	for i, key := range data.Keys {
-		x5u, ok := key["x5t"].(string)
+		x5t, ok := key["x5t"].(string)
 		if !ok {
 			return nil, errors.New("no x5t found in jwk")
 		}
-		// They use hex instead of base64 for the 'x5t' field, which
-		// is violating the JOSE spec.
-		fingerprint, err := hex.DecodeString(x5u)
-		if err != nil {
-			return nil, fmt.Errorf("decode x5t: %w", err)
+
+		// Microsoft uses hex instead of base64 for the 'x5t' field, which violates the JOSE spec.
+		// For a SHA-1 thumbprint (20 bytes), we expect either:
+		// - Hex: 40 chars
+		// - Base64URL (no padding): 27 chars
+		var fingerprint []byte
+		switch len(x5t) {
+		case 40:
+			var err error
+			fingerprint, err = hex.DecodeString(x5t)
+			if err != nil {
+				return nil, fmt.Errorf("decode x5t hex: %w", err)
+			}
+			key["x5t"] = base64.RawURLEncoding.EncodeToString(fingerprint)
+		case 27:
+			var err error
+			fingerprint, err = base64.RawURLEncoding.DecodeString(x5t)
+			if err != nil {
+				return nil, fmt.Errorf("decode x5t base64: %w", err)
+			}
+		default:
+			return nil, fmt.Errorf("invalid x5t length: %d", len(x5t))
 		}
 		if n := len(fingerprint); n != 20 {
 			return nil, fmt.Errorf("fingerprint is not 20 bytes long: %d", n)
 		}
-		// Re-encode the 'x5t' field to use BASE64URL.
-		key["x5t"] = base64.RawURLEncoding.EncodeToString(fingerprint)
 
-		// We might want to just decode the key as a struct that embeds
-		// the original [jose.JSONWebKey] with different x5t field, but
-		// it uses an UnmarshalJSON method to validate the key so we need
-		// to re-encode the reformatted jwk to bytes then decode it again.
+		// jose.JSONWebKey validates during JSON unmarshalling, so after patching x5t we re-encode the
+		// JWK and let the custom UnmarshalJSON validate and decode it.
 		b, err := json.Marshal(key)
 		if err != nil {
 			return nil, fmt.Errorf("encode reformatted jwk: %w", err)
 		}
 		var jwk jose.JSONWebKey
-		if err := json.Unmarshal(b, &jwk); err != nil {
+		if err := jwk.UnmarshalJSON(b); err != nil {
 			return nil, fmt.Errorf("decode reformatted jwk: %w", err)
 		}
 		set.Keys[i] = jwk
@@ -333,7 +365,7 @@ func (e *AuthorizationEnvironment) MultiplayerToken(ctx context.Context, src Tok
 	req.Header.Set("Accept", "application/json")
 	token.SetAuthHeader(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := e.httpClient().Do(req)
 	if err != nil {
 		return "", err
 	}

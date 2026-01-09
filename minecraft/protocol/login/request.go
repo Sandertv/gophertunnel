@@ -121,66 +121,26 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
 			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
 		}
-		iData, authenticated = claims.identityData(), true
+		iData, authenticated = claims.identityData(), iData.XUID != ""
+		// The OIDC token does not include the numerical XBL title ID (extraData.titleId) that is present in the
+		// legacy Mojang chain. If the chain is present and valid, we verify it and use its title ID so callers
+		// can keep using IdentityData.TitleID.
+		if iData.XUID != "" {
+			if legacyID, _, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t); err == nil && legacyAuthed {
+				if legacyID.TitleID != "" && legacyID.XUID == iData.XUID {
+					iData.TitleID = legacyID.TitleID
+				}
+			}
+		}
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
 	} else {
-		tok, err := jwt.ParseSigned(req.Certificate.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
+		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
-			return iData, cData, res, fmt.Errorf("parse token 0: %w", err)
+			return iData, cData, res, err
 		}
-
-		// The first token holds the client's public key in the x5u (it's self signed).
-		//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
-		raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
-		if err := parseAsKey(raw, key); err != nil {
-			return iData, cData, res, fmt.Errorf("parse x5u: %w", err)
-		}
-
-		var identityClaims identityClaims
-		iss := "Mojang"
-
-		switch len(req.Certificate.Chain) {
-		case 1:
-			// Player was not authenticated with XBOX Live, meaning the one token in here is self-signed.
-			if err := parseFullClaim(req.Certificate.Chain[0], key, &identityClaims); err != nil {
-				return iData, cData, res, err
-			}
-			if err := identityClaims.Validate(jwt.Expected{Time: t}); err != nil {
-				return iData, cData, res, fmt.Errorf("validate token 0: %w", err)
-			}
-		case 3:
-			// Player was (or should be) authenticated with XBOX Live, meaning the chain is exactly 3 tokens
-			// long.
-			var c jwt.Claims
-			if err := parseFullClaim(req.Certificate.Chain[0], key, &c); err != nil {
-				return iData, cData, res, fmt.Errorf("parse token 0: %w", err)
-			}
-			if err := c.Validate(jwt.Expected{Time: t}); err != nil {
-				return iData, cData, res, fmt.Errorf("validate token 0: %w", err)
-			}
-			authenticated = bytes.Equal(key.X.Bytes(), mojangKey.X.Bytes()) && bytes.Equal(key.Y.Bytes(), mojangKey.Y.Bytes())
-
-			if err := parseFullClaim(req.Certificate.Chain[1], key, &c); err != nil {
-				return iData, cData, res, fmt.Errorf("parse token 1: %w", err)
-			}
-			if err := c.Validate(jwt.Expected{Time: t, Issuer: iss}); err != nil {
-				return iData, cData, res, fmt.Errorf("validate token 1: %w", err)
-			}
-			if err := parseFullClaim(req.Certificate.Chain[2], key, &identityClaims); err != nil {
-				return iData, cData, res, fmt.Errorf("parse token 2: %w", err)
-			}
-			if err := identityClaims.Validate(jwt.Expected{Time: t, Issuer: iss}); err != nil {
-				return iData, cData, res, fmt.Errorf("validate token 2: %w", err)
-			}
-			if authenticated != (identityClaims.ExtraData.XUID != "") {
-				return iData, cData, res, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
-			}
-		default:
-			return iData, cData, res, fmt.Errorf("unexpected login chain length %v", len(req.Certificate.Chain))
-		}
-		iData = identityClaims.ExtraData
+		iData, key, authenticated = legacyID, legacyKey, legacyAuthed
 	}
 
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
@@ -197,6 +157,70 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
 	}
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
+}
+
+// parseLegacyChain verifies the legacy Mojang chain and returns IdentityData from extraData,
+// the public key used for verification (and for client data), and a bool indicating if the chain was
+// authenticated by Xbox Live.
+func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
+	key := &ecdsa.PublicKey{}
+	tok, err := jwt.ParseSigned(chain[0], []jose.SignatureAlgorithm{jose.ES384})
+	if err != nil {
+		return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
+	}
+
+	// The first token holds the client's public key in the x5u (it's self signed).
+	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
+	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	if err := parseAsKey(raw, key); err != nil {
+		return IdentityData{}, nil, false, fmt.Errorf("parse x5u: %w", err)
+	}
+
+	var (
+		identityClaims identityClaims
+		authenticated  bool
+	)
+	iss := "Mojang"
+
+	switch len(chain) {
+	case 1:
+		// Player was not authenticated with XBOX Live, meaning the one token in here is self-signed.
+		if err := parseFullClaim(chain[0], key, &identityClaims); err != nil {
+			return IdentityData{}, nil, false, err
+		}
+		if err := identityClaims.Validate(jwt.Expected{Time: now}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
+		}
+	case 3:
+		// Player was (or should be) authenticated with XBOX Live, meaning the chain is exactly 3 tokens long.
+		var c jwt.Claims
+		if err := parseFullClaim(chain[0], key, &c); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
+		}
+		if err := c.Validate(jwt.Expected{Time: now}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
+		}
+		authenticated = bytes.Equal(key.X.Bytes(), mojangKey.X.Bytes()) && bytes.Equal(key.Y.Bytes(), mojangKey.Y.Bytes())
+
+		if err := parseFullClaim(chain[1], key, &c); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 1: %w", err)
+		}
+		if err := c.Validate(jwt.Expected{Time: now, Issuer: iss}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 1: %w", err)
+		}
+		if err := parseFullClaim(chain[2], key, &identityClaims); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 2: %w", err)
+		}
+		if err := identityClaims.Validate(jwt.Expected{Time: now, Issuer: iss}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 2: %w", err)
+		}
+		if authenticated != (identityClaims.ExtraData.XUID != "") {
+			return IdentityData{}, nil, false, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
+		}
+	default:
+		return IdentityData{}, nil, false, fmt.Errorf("unexpected login chain length %v", len(chain))
+	}
+	return identityClaims.ExtraData, key, authenticated, nil
 }
 
 // parseLoginRequest parses the structure of a login request from the data passed and returns it.
@@ -221,7 +245,9 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 	}
 
 	if r.Certificate != "" {
-		_ = json.Unmarshal([]byte(r.Certificate), &r.request.Certificate)
+		if err := json.Unmarshal([]byte(r.Certificate), &r.request.Certificate); err != nil {
+			return nil, fmt.Errorf("decode certificate: %w", err)
+		}
 	} else {
 		r.request.Certificate.Chain = r.Chain
 	}
@@ -385,9 +411,9 @@ type tokenClaims struct {
 	// It is the ID for the master player account of the player, which
 	// is shared across multiple PlayFab titles published by Mojang.
 	PlayFabID string `json:"mid"`
-	// TitleID is the title ID specific to PlayFab.
+	// PlayFabTitleID is the title ID specific to PlayFab.
 	// It is typically '20CA2' for the base version of the game.
-	TitleID string `json:"tid"`
+	PlayFabTitleID string `json:"tid"`
 	// ClientPublicKey is the public key of the client used to sign the client data
 	// and to initialise the encryption in the handshake.
 	ClientPublicKey string `json:"cpk"`
@@ -397,15 +423,15 @@ type tokenClaims struct {
 	DisplayName string `json:"xname"`
 }
 
-// identityData converts the tokenClaims to the same format as the 'extraData'
-// used in the legacy chain so it can be backward compatible as it used to be.
+// identityData converts the OIDC tokenClaims into IdentityData.
+// Fields that exist in the legacy chain's extraData are filled to keep behavior consistent.
 func (tc tokenClaims) identityData() IdentityData {
 	return IdentityData{
-		XUID:        tc.XUID,
-		Identity:    identityFromXUID(tc.XUID).String(),
-		DisplayName: tc.DisplayName,
-		TitleID:     tc.TitleID,
-		PlayFabID:   tc.PlayFabID,
+		XUID:           tc.XUID,
+		Identity:       identityFromXUID(tc.XUID).String(),
+		DisplayName:    tc.DisplayName,
+		PlayFabID:      tc.PlayFabID,
+		PlayFabTitleID: tc.PlayFabTitleID,
 	}
 }
 

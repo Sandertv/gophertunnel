@@ -41,27 +41,54 @@ type XBLToken struct {
 	}
 }
 
-// SetAuthHeader returns a string that may be used for the 'Authorization' header used for Minecraft
-// related endpoints that need an XBOX Live authenticated caller.
+// SetAuthHeader sets the 'Authorization' header used for Minecraft related endpoints that
+// need an XBOX Live authenticated caller.
 func (t XBLToken) SetAuthHeader(r *http.Request) {
 	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
 }
 
-// NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
-// in [RequestXBLToken].
-func (conf Config) NewTokenCache() *XBLTokenCache {
-	return &XBLTokenCache{
-		config: conf,
-	}
+// expirationDelta is the amount of time before the token expires that it is considered valid.
+const expirationDelta = time.Minute
+
+// Valid returns whether the XBLToken is valid.
+func (t XBLToken) Valid() bool {
+	return time.Now().Before(t.AuthorizationToken.NotAfter.Add(-expirationDelta))
 }
 
-// WithXBLTokenCache returns a [context.Context] which contains the XBLTokenCache.
-// The returned [context.Context] can be used in [RequestXBLToken] for
-// re-using the device token as possible to avoid issuing too many device
-// tokens and incurring rate limiting from XASD (Xbox Authentication Service for
-// Devices).
-func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Context {
-	return context.WithValue(parent, tokenCacheContextKey, cache)
+// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
+type Config struct {
+	// ClientID is the ID used for the SISU authorization flow.
+	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
+	ClientID string
+	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
+	DeviceType string
+	// Version indicates the version of the authentication library used in the client.
+	Version string
+	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
+	UserAgent string
+}
+
+// defaultXBLHTTPClient is the default HTTP client used for requests made by Xbox Live auth helpers.
+var defaultXBLHTTPClient = &http.Client{
+	Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient,
+			InsecureSkipVerify: true,
+		},
+	},
+}
+
+// xblHTTPClient returns the HTTP client used for requests made by Xbox Live auth helpers.
+//
+// The HTTP client is obtained from the context via ctx.Value(oauth2.HTTPClient). If not present, a default
+// client is used.
+func xblHTTPClient(ctx context.Context) *http.Client {
+	if ctx != nil {
+		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && c != nil {
+			return c
+		}
+	}
+	return defaultXBLHTTPClient
 }
 
 // contextKey is a type used for context key used to [context.WithValue].
@@ -83,10 +110,27 @@ type XBLTokenCache struct {
 	mu sync.Mutex
 }
 
+// NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
+// in [RequestXBLToken].
+func (conf Config) NewTokenCache() *XBLTokenCache {
+	return &XBLTokenCache{
+		config: conf,
+	}
+}
+
+// WithXBLTokenCache returns a [context.Context] which contains the XBLTokenCache.
+// The returned [context.Context] can be used in [RequestXBLToken] for
+// re-using the device token as possible to avoid issuing too many device
+// tokens and incurring rate limiting from XASD (Xbox Authentication Service for
+// Devices).
+func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Context {
+	return context.WithValue(parent, tokenCacheContextKey, cache)
+}
+
 // deviceToken returns the cached device token. If the device token is no longer
 // valid or has not yet been requested, it will request a device token with a new
-// proof key. The [http.Client] is used for requesting a new device token.
-func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
+// proof key.
+func (x *XBLTokenCache) deviceToken(ctx context.Context, conf Config) (*deviceToken, error) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 	if x.device != nil && x.device.Valid() {
@@ -96,25 +140,15 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, c *http.Client) (*devic
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
 	}
-	d, err := x.config.obtainDeviceToken(ctx, c, key)
+	if x.config != conf {
+		return nil, errors.New("xbl token cache config mismatch")
+	}
+	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
 	x.device = d
 	return d, nil
-}
-
-// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
-type Config struct {
-	// ClientID is the ID used for the SISU authorization flow.
-	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
-	ClientID string
-	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
-	DeviceType string
-	// Version indicates the version of the authentication library used in the client.
-	Version string
-	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
-	UserAgent string
 }
 
 var (
@@ -163,35 +197,25 @@ func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty 
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
 func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	c := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Renegotiation:      tls.RenegotiateOnceAsClient,
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	defer c.CloseIdleConnections()
-
-	d, err := conf.getDeviceToken(ctx, c)
+	d, err := conf.getDeviceToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("request device token: %w", err)
 	}
-	return conf.obtainXBLToken(ctx, c, liveToken, d, relyingParty)
+	return conf.obtainXBLToken(ctx, liveToken, d, relyingParty)
 }
 
 // getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
 // a new device token using a new proof key.
-func (conf Config) getDeviceToken(ctx context.Context, c *http.Client) (*deviceToken, error) {
+func (conf Config) getDeviceToken(ctx context.Context) (*deviceToken, error) {
 	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
 		// If the context has a value with XBLTokenCache, we re-use them.
-		if cache.config != conf {
-			return nil, errors.New("xbl token cache config mismatch")
-		}
-		return cache.deviceToken(ctx, c)
+		return cache.deviceToken(ctx, conf)
 	}
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
@@ -199,14 +223,14 @@ func (conf Config) getDeviceToken(ctx context.Context, c *http.Client) (*deviceT
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
 	}
-	d, err := conf.obtainDeviceToken(ctx, c, key)
+	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
 	return d, nil
 }
 
-func (conf Config) obtainXBLToken(ctx context.Context, c *http.Client, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
+func (conf Config) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
 		"AppId":             conf.ClientID,
@@ -235,7 +259,7 @@ func (conf Config) obtainXBLToken(ctx context.Context, c *http.Client, liveToken
 	req.Header.Set("x-xbl-contract-version", "1")
 	sign(req, data, device.proofKey)
 
-	resp, err := c.Do(req)
+	resp, err := xblHTTPClient(ctx).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
@@ -272,7 +296,7 @@ func (d *deviceToken) Valid() bool {
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
-func (conf Config) obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
+func (conf Config) obtainDeviceToken(ctx context.Context, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
 	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
@@ -302,7 +326,7 @@ func (conf Config) obtainDeviceToken(ctx context.Context, c *http.Client, key *e
 	request.Header.Set("x-xbl-contract-version", "1")
 	sign(request, data, key)
 
-	resp, err := c.Do(request)
+	resp, err := xblHTTPClient(ctx).Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
