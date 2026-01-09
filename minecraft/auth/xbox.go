@@ -79,9 +79,8 @@ var defaultXBLHTTPClient = &http.Client{
 }
 
 // xblHTTPClient returns the HTTP client used for requests made by Xbox Live auth helpers.
-//
-// The HTTP client is obtained from the context via ctx.Value(oauth2.HTTPClient). If not present, a default
-// client is used.
+// The HTTP client is obtained from the context via ctx.Value(oauth2.HTTPClient).
+// If not present, a default client is used.
 func xblHTTPClient(ctx context.Context) *http.Client {
 	if ctx != nil {
 		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && c != nil {
