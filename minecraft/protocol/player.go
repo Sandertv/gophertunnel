@@ -1,8 +1,9 @@
 package protocol
 
 import (
-	"github.com/google/uuid"
 	"image/color"
+
+	"github.com/google/uuid"
 )
 
 const (
@@ -66,7 +67,7 @@ type PlayerListEntry struct {
 	// chat with each other.
 	PlatformChatID string
 	// BuildPlatform is the platform of the player as sent by that player in the Login packet.
-	BuildPlatform int32
+	BuildPlatform DeviceOS
 	// Skin is the skin of the player that should be added to the player list. Once sent here, it will not
 	// have to be sent again.
 	Skin Skin
@@ -89,7 +90,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.String(&x.Username)
 	r.String(&x.XUID)
 	r.String(&x.PlatformChatID)
-	r.Int32(&x.BuildPlatform)
+	r.Int32((*int32)(&x.BuildPlatform))
 	Single(r, &x.Skin)
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)

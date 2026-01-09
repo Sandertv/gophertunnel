@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 )
 
 // AddPlayer is sent by the server to the client to make a player entity show up client-side. It is one of the
@@ -58,10 +59,10 @@ type AddPlayer struct {
 	EntityLinks []protocol.EntityLink
 	// DeviceID is the device ID set in one of the files found in the storage of the device of the player. It
 	// may be changed freely, so it should not be relied on for anything.
-	DeviceID string
+	DeviceID login.DeviceID
 	// BuildPlatform is the build platform/device OS of the player that is about to be added, as it sent in
 	// the Login packet when joining.
-	BuildPlatform int32
+	BuildPlatform protocol.DeviceOS
 }
 
 // ID ...
@@ -85,6 +86,6 @@ func (pk *AddPlayer) Marshal(io protocol.IO) {
 	protocol.Single(io, &pk.EntityProperties)
 	protocol.Single(io, &pk.AbilityData)
 	protocol.Slice(io, &pk.EntityLinks)
-	io.String(&pk.DeviceID)
-	io.Int32(&pk.BuildPlatform)
+	io.String((*string)(&pk.DeviceID))
+	io.Int32((*int32)(&pk.BuildPlatform))
 }
