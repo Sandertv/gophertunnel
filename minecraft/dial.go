@@ -205,6 +205,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
+				// If a MultiplayerTokenSource was not provided, pass the oauth2.TokenSource to
+				// be used by our default implementation.
 				m = &multiplayerTokenSource{TokenSource: d.TokenSource}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
