@@ -121,7 +121,8 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
 			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
 		}
-		iData, authenticated = claims.identityData(), iData.XUID != ""
+		iData = claims.identityData()
+		authenticated = iData.XUID != ""
 		// The OIDC token does not include the numerical XBL title ID (extraData.titleId) that is present in the
 		// legacy Mojang chain. If the chain is present and valid, we verify it and use its title ID so callers
 		// can keep using IdentityData.TitleID.
