@@ -2,9 +2,9 @@ package login
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"net"
 	"regexp"
 	"strconv"
@@ -419,45 +419,51 @@ func base64DecLength(base64Data string, validLengths ...int) error {
 type DeviceID string
 
 // DeviceIDFormat describes the format of the DeviceID,
-// most devices use BigInt however the documented are below:
+// the documentation for each format is as follows:
 //
-//	TODO: change documentation to `DeviceOS to DeviceIDFormat`
-//	DeviceModel to DeviceIDFormat
-//		xbox_series_x -> Base64,
-//		xbox_series_s -> Base64,
-//		xbox_one_x -> Base64,
-//		playstation_5 -> GUID,
-//		playstation_5_emu -> GUID,
-//		Switch -> GUID,
-
+//	DeviceOS to DeviceIDFormat
+//		DeviceAndroid: DeviceIDFormatLowerHexString, // "a4f365bb1e04459bbe4cb3cbf9d546e0",
+//		DeviceIOS:  DeviceIDFormatUpperHexString, // "ADA3DFA4622F4E2FB2C14A496D52DB96",
+//		DeviceWin32: DeviceIDFormatLowerHexString, // "362b850f82493ec2719ea267dd25167f",
+//		DeviceOrbis: DeviceIDFormatUUID, // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
+//		DeviceXBOX: DeviceIDFormatBase64, // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
 type DeviceIDFormat uint8
 
 const (
-	DeviceIDFormatBigInt DeviceIDFormat = iota
+	DeviceIDFormatUpperHexString DeviceIDFormat = iota
+	DeviceIDFormatLowerHexString
 	DeviceIDFormatBase64
 	DeviceIDFormatUUID
-	DeviceIDFormatUnknown
+	DeviceIDFormatInvalid
 )
 
 func (dId DeviceID) Format() DeviceIDFormat {
 	deviceId := string(dId)
 
 	// This must be checked before UUID as these are valid UUIDs as well.
-	bigInt := new(big.Int)
-	_, ok := bigInt.SetString(deviceId, 16)
-	if ok {
-		return DeviceIDFormatBigInt
+	data, err := hex.DecodeString(deviceId)
+	if err == nil {
+		if len(data) != 32 {
+			return DeviceIDFormatInvalid
+		}
+
+		lowerMatch := regexp.MustCompile("[a-z0-9]")
+		if lowerMatch.MatchString(deviceId) {
+			return DeviceIDFormatLowerHexString
+		}
+
+		return DeviceIDFormatUpperHexString
 	}
 
-	_, err := uuid.Parse(deviceId)
+	_, err = uuid.Parse(deviceId)
 	if err == nil {
 		return DeviceIDFormatUUID
 	}
 
-	_, err = base64.StdEncoding.DecodeString(deviceId)
-	if err == nil {
+	data, err = base64.StdEncoding.DecodeString(deviceId)
+	if err == nil && len(data) == 32 {
 		return DeviceIDFormatBase64
 	}
 
-	return DeviceIDFormatUnknown
+	return DeviceIDFormatInvalid
 }
