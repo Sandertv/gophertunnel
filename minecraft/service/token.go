@@ -484,9 +484,11 @@ type Token struct {
 	TreatmentContext string `json:"treatmentContext"`
 }
 
+const expirationDelta = time.Minute
+
 // Valid returns a bool indicating if the Token is valid.
 func (t *Token) Valid() bool {
-	return t.AuthorizationHeader != "" && time.Now().Before(t.ValidUntil)
+	return t.AuthorizationHeader != "" && time.Now().Before(t.ValidUntil.Add(-expirationDelta))
 }
 
 // SetAuthHeader sets an 'Authorization' header of the request to [Token.AuthorizationHeader].
