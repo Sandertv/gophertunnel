@@ -340,7 +340,7 @@ func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecds
 	if err != nil {
 		return "", fmt.Errorf("obtain environment for auth: %w", err)
 	}
-	return env.MultiplayerToken(ctx, env.TokenSource(s.TokenSource, service.TokenConfig{}), key)
+	return env.MultiplayerToken(ctx, env.TokenSource(ctx, s.TokenSource, service.TokenConfig{}), key)
 }
 
 // readChainIdentityData reads a login.IdentityData from the Mojang chain

@@ -15,16 +15,21 @@ import (
 
 // TokenSource returns an implementation of TokenSource, which subsequently supplies the token
 // by either newly requesting or refreshing an existing, cached token.
-func (e *AuthorizationEnvironment) TokenSource(src oauth2.TokenSource, config TokenConfig) TokenSource {
+func (e *AuthorizationEnvironment) TokenSource(ctx context.Context, src oauth2.TokenSource, config TokenConfig) TokenSource {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	return &tokenSource{
 		identity: playfab.XBLIdentityProvider{
 			TokenSource: &xblTokenSource{
 				TokenSource:  src,
 				relyingParty: playfab.RelyingParty,
+				ctx:          ctx,
 			},
 		},
 		env:    e,
 		config: config,
+		ctx:    ctx,
 	}
 }
 
@@ -37,6 +42,7 @@ type tokenSource struct {
 
 	token *Token
 	mu    sync.Mutex
+	ctx   context.Context
 }
 
 // Token supplies a token by either re-using an already requested token, or
@@ -58,8 +64,12 @@ func (s *tokenSource) Token() (*Token, error) {
 	s.config.User.TokenType = TokenTypePlayFab
 	s.config.User.Token = identity.SessionTicket
 
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	defer cancel()
+	ctx := s.ctx
+	if _, ok := ctx.Deadline(); !ok {
+		var cancel context.CancelFunc
+		ctx, cancel = context.WithTimeout(ctx, time.Second*15)
+		defer cancel()
+	}
 	if s.token == nil {
 		s.token, err = s.env.Token(ctx, s.config)
 		if err != nil {
@@ -78,6 +88,7 @@ func (s *tokenSource) Token() (*Token, error) {
 type xblTokenSource struct {
 	oauth2.TokenSource
 	relyingParty string
+	ctx          context.Context
 }
 
 // Token requests an XSTS token that relies on the party specified in xblTokenSource.relyingParty.
@@ -87,7 +98,11 @@ func (x xblTokenSource) Token() (xsapi.Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request live token: %w", err)
 	}
-	xsts, err := auth.RequestXBLToken(context.Background(), token, x.relyingParty)
+	ctx := x.ctx
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	xsts, err := auth.RequestXBLToken(ctx, token, x.relyingParty)
 	if err != nil {
 		return nil, fmt.Errorf("request xsts token for %q: %w", x.relyingParty, err)
 	}
