@@ -168,6 +168,9 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if d.ErrorLog == nil {
 		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -177,6 +180,11 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	}
 	if d.FlushRate == 0 {
 		d.FlushRate = time.Second / 20
+	}
+	if d.HTTPClient != nil {
+		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
+		}
 	}
 
 	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
@@ -189,14 +197,15 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	)
 	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
-			verifier, err = oidcVerifier(d.HTTPClient)
+			client, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
+			verifier, err = oidcVerifier(client)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				m = &multiplayerTokenSource{TokenSource: d.TokenSource, client: d.HTTPClient}
+				m = &multiplayerTokenSource{TokenSource: d.TokenSource}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
 			if err != nil {
@@ -319,12 +328,15 @@ type MultiplayerTokenSource interface {
 // to sign in to the PlayFab account with Xbox Live.
 type multiplayerTokenSource struct {
 	oauth2.TokenSource
-	client *http.Client
 }
 
 // MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
 func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
-	env, err := authEnv(s.client)
+	var client *http.Client
+	if ctx != nil {
+		client, _ = ctx.Value(oauth2.HTTPClient).(*http.Client)
+	}
+	env, err := authEnv(client)
 	if err != nil {
 		return "", fmt.Errorf("obtain environment for auth: %w", err)
 	}
@@ -414,10 +426,7 @@ func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
 		return nil, fmt.Errorf("request Live Connect token: %w", err)
 	}
 
-	xblToken, err := auth.XBLTokenObtainer{
-		Config: auth.AndroidConfig,
-		Client: dialer.HTTPClient,
-	}.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
+	xblToken, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
 	if err != nil {
 		return nil, fmt.Errorf("request XBOX Live token: %w", err)
 	}

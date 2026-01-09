@@ -68,14 +68,7 @@ type Config struct {
 	UserAgent string
 }
 
-// XBLTokenObtainer requests XBL tokens using a specific Config and HTTP client.
-// If Client is nil, a default client is used.
-type XBLTokenObtainer struct {
-	Config Config
-	Client *http.Client
-}
-
-// defaultXBLHTTPClient is the default HTTP client used for requests made by XBLTokenObtainer.
+// defaultXBLHTTPClient is the default HTTP client used for requests made by Xbox Live auth helpers.
 var defaultXBLHTTPClient = &http.Client{
 	Transport: &http.Transport{
 		TLSClientConfig: &tls.Config{
@@ -85,10 +78,15 @@ var defaultXBLHTTPClient = &http.Client{
 	},
 }
 
-// httpClient returns the HTTP client used for requests made by XBLTokenObtainer.
-func (o XBLTokenObtainer) httpClient() *http.Client {
-	if o.Client != nil {
-		return o.Client
+// xblHTTPClient returns the HTTP client used for requests made by Xbox Live auth helpers.
+//
+// The HTTP client is obtained from the context via ctx.Value(oauth2.HTTPClient). If not present, a default
+// client is used.
+func xblHTTPClient(ctx context.Context) *http.Client {
+	if ctx != nil {
+		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && c != nil {
+			return c
+		}
 	}
 	return defaultXBLHTTPClient
 }
@@ -131,8 +129,8 @@ func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Con
 
 // deviceToken returns the cached device token. If the device token is no longer
 // valid or has not yet been requested, it will request a device token with a new
-// proof key, using the HTTP client from the obtainer.
-func (x *XBLTokenCache) deviceToken(ctx context.Context, o XBLTokenObtainer) (*deviceToken, error) {
+// proof key.
+func (x *XBLTokenCache) deviceToken(ctx context.Context, conf Config) (*deviceToken, error) {
 	x.mu.Lock()
 	defer x.mu.Unlock()
 	if x.device != nil && x.device.Valid() {
@@ -142,10 +140,10 @@ func (x *XBLTokenCache) deviceToken(ctx context.Context, o XBLTokenObtainer) (*d
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
 	}
-	if x.config != o.Config {
+	if x.config != conf {
 		return nil, errors.New("xbl token cache config mismatch")
 	}
-	d, err := o.obtainDeviceToken(ctx, key)
+	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
@@ -194,32 +192,30 @@ var (
 
 // RequestXBLToken calls [Config.RequestXBLToken] with the default device info.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
-	return XBLTokenObtainer{Config: AndroidConfig}.RequestXBLToken(ctx, liveToken, relyingParty)
+	return AndroidConfig.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 
 // RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
 func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
-	return XBLTokenObtainer{Config: conf}.RequestXBLToken(ctx, liveToken, relyingParty)
-}
-
-// RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
-func (o XBLTokenObtainer) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	d, err := o.getDeviceToken(ctx)
+	d, err := conf.getDeviceToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("request device token: %w", err)
 	}
-	return o.obtainXBLToken(ctx, liveToken, d, relyingParty)
+	return conf.obtainXBLToken(ctx, liveToken, d, relyingParty)
 }
 
 // getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
 // a new device token using a new proof key.
-func (o XBLTokenObtainer) getDeviceToken(ctx context.Context) (*deviceToken, error) {
+func (conf Config) getDeviceToken(ctx context.Context) (*deviceToken, error) {
 	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
 		// If the context has a value with XBLTokenCache, we re-use them.
-		return cache.deviceToken(ctx, o)
+		return cache.deviceToken(ctx, conf)
 	}
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
@@ -227,17 +223,17 @@ func (o XBLTokenObtainer) getDeviceToken(ctx context.Context) (*deviceToken, err
 	if err != nil {
 		return nil, fmt.Errorf("generate proof key: %w", err)
 	}
-	d, err := o.obtainDeviceToken(ctx, key)
+	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
 		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
 	return d, nil
 }
 
-func (o XBLTokenObtainer) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
+func (conf Config) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
-		"AppId":             o.Config.ClientID,
+		"AppId":             conf.ClientID,
 		"DeviceToken":       device.Token,
 		"Sandbox":           "RETAIL",
 		"UseModernGamertag": true,
@@ -263,7 +259,7 @@ func (o XBLTokenObtainer) obtainXBLToken(ctx context.Context, liveToken *oauth2.
 	req.Header.Set("x-xbl-contract-version", "1")
 	sign(req, data, device.proofKey)
 
-	resp, err := o.httpClient().Do(req)
+	resp, err := xblHTTPClient(ctx).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
@@ -300,15 +296,15 @@ func (d *deviceToken) Valid() bool {
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
-func (o XBLTokenObtainer) obtainDeviceToken(ctx context.Context, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
+func (conf Config) obtainDeviceToken(ctx context.Context, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
 	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
 		"Properties": map[string]any{
 			"AuthMethod": "ProofOfPossession",
 			"Id":         "{" + uuid.New().String() + "}",
-			"DeviceType": o.Config.DeviceType,
-			"Version":    o.Config.Version,
+			"DeviceType": conf.DeviceType,
+			"Version":    conf.Version,
 			"ProofKey": map[string]any{
 				"crv": "P-256",
 				"alg": "ES256",
@@ -330,7 +326,7 @@ func (o XBLTokenObtainer) obtainDeviceToken(ctx context.Context, key *ecdsa.Priv
 	request.Header.Set("x-xbl-contract-version", "1")
 	sign(request, data, key)
 
-	resp, err := o.httpClient().Do(request)
+	resp, err := xblHTTPClient(ctx).Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
