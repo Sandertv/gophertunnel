@@ -2,6 +2,7 @@ package login
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -116,7 +117,7 @@ type ClientData struct {
 	DeviceOS protocol.DeviceOS
 	// DeviceID is usually a UUID specific to the device. A different user will have the same UUID for this.
 	// DeviceID is not guaranteed to always be a UUID. It is a base64 encoded string under some circumstances.
-	DeviceID string `json:"DeviceId"`
+	DeviceID DeviceID `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.
 	GameVersion string
 	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 or -2 for a smaller
@@ -306,7 +307,7 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
-func (data ClientData) Validate() error {
+func (data *ClientData) Validate() error {
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
@@ -386,4 +387,56 @@ func base64DecLength(base64Data string, validLengths ...int) error {
 		}
 	}
 	return fmt.Errorf("invalid size: got %v, expected one of %v", actualLength, validLengths)
+}
+
+type DeviceID string
+
+// DeviceIDFormat describes the format of the DeviceID,
+// the documentation for each format is as follows:
+//
+//	DeviceOS to DeviceIDFormat
+//		DeviceAndroid: DeviceIDFormatLowerHexString, // "a4f365bb1e04459bbe4cb3cbf9d546e0",
+//		DeviceIOS:  DeviceIDFormatUpperHexString, // "ADA3DFA4622F4E2FB2C14A496D52DB96",
+//		DeviceWin32: DeviceIDFormatLowerHexString, // "362b850f82493ec2719ea267dd25167f",
+//		DeviceOrbis: DeviceIDFormatUUID, // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
+//		DeviceXBOX: DeviceIDFormatBase64, // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+type DeviceIDFormat uint8
+
+const (
+	DeviceIDFormatUpperHexString DeviceIDFormat = iota
+	DeviceIDFormatLowerHexString
+	DeviceIDFormatBase64
+	DeviceIDFormatUUID
+	DeviceIDFormatInvalid
+)
+
+func (dId DeviceID) Format() DeviceIDFormat {
+	deviceId := string(dId)
+
+	// This must be checked before UUID as these are valid UUIDs as well.
+	data, err := hex.DecodeString(deviceId)
+	if err == nil {
+		if len(data) != 32 {
+			return DeviceIDFormatInvalid
+		}
+
+		lowerMatch := regexp.MustCompile("[a-z0-9]")
+		if lowerMatch.MatchString(deviceId) {
+			return DeviceIDFormatLowerHexString
+		}
+
+		return DeviceIDFormatUpperHexString
+	}
+
+	_, err = uuid.Parse(deviceId)
+	if err == nil {
+		return DeviceIDFormatUUID
+	}
+
+	data, err = base64.StdEncoding.DecodeString(deviceId)
+	if err == nil && len(data) == 32 {
+		return DeviceIDFormatBase64
+	}
+
+	return DeviceIDFormatInvalid
 }
