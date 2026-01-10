@@ -442,7 +442,7 @@ func (w *Writer) Recipe(x *Recipe) {
 func (w *Writer) EventType(x *Event) {
 	var t int32
 	if !lookupEventType(*x, &t) {
-		w.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event type")
+		w.UnknownEnumOption(*x, "event packet event type")
 	}
 	w.Varint32(&t)
 }
@@ -451,7 +451,7 @@ func (w *Writer) EventType(x *Event) {
 func (w *Writer) EventOrdinal(x *Event) {
 	var ordinal uint32
 	if !lookupEventOrdinal(*x, &ordinal) {
-		w.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		w.UnknownEnumOption(*x, "event packet event ordinal")
 		return
 	}
 	w.Varuint32(&ordinal)
@@ -612,7 +612,7 @@ func (w *Writer) ShieldID() int32 {
 
 // UnknownEnumOption panics with an unknown enum option error.
 func (w *Writer) UnknownEnumOption(value any, enum string) {
-	w.panicf("unknown value '%v' for enum type '%v'", value, enum)
+	w.panicf("unknown value '%#v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an invalid value error.

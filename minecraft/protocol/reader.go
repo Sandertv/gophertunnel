@@ -574,7 +574,7 @@ func (r *Reader) EventType(x *Event) {
 func (r *Reader) EventOrdinal(x *Event) {
 	var ordinal uint32
 	if !lookupEventOrdinal(*x, &ordinal) {
-		r.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		r.UnknownEnumOption(*x, "event packet event ordinal")
 		return
 	}
 	r.Varuint32(&ordinal)
@@ -693,7 +693,7 @@ func (r *Reader) ShieldID() int32 {
 
 // UnknownEnumOption panics with an unknown enum option error.
 func (r *Reader) UnknownEnumOption(value any, enum string) {
-	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
+	r.panicf("unknown value '%#v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an error indicating that the value passed is not valid for a specific field.
