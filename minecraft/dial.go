@@ -196,8 +196,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	)
 	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
 		if d.TokenSource != nil && !d.EnableLegacyAuth {
-			client, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
-			verifier, err = oidcVerifier(client)
+			verifier, err = oidcVerifier(ctx)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}

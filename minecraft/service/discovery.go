@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -95,7 +96,7 @@ func (d *Discovery) Environment(env Environment) error {
 //
 // Discover caches the result and can be called multiple times by various
 // services without waiting for network latency each time if cache was hit.
-func Discover(appType, version string) (*Discovery, error) {
+func Discover(ctx context.Context, appType, version string) (*Discovery, error) {
 	discoveryCacheMu.Lock()
 	defer discoveryCacheMu.Unlock()
 
@@ -104,7 +105,7 @@ func Discover(appType, version string) (*Discovery, error) {
 		return d, nil
 	}
 
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}

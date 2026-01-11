@@ -23,6 +23,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/service"
+	"golang.org/x/oauth2"
 )
 
 // ListenConfig holds settings that may be edited to change behaviour of a Listener.
@@ -150,7 +151,11 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	var verifier *oidc.IDTokenVerifier
 	if !cfg.AuthenticationDisabled {
 		var err error
-		verifier, err = oidcVerifier(cfg.HTTPClient)
+		ctx := context.Background()
+		if cfg.HTTPClient != nil {
+			ctx = context.WithValue(ctx, oauth2.HTTPClient, cfg.HTTPClient)
+		}
+		verifier, err = oidcVerifier(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("create default OIDC verifier: %w", err)
 		}
@@ -201,11 +206,20 @@ var authEnvCache atomic.Pointer[service.AuthorizationEnvironment]
 
 // authEnv returns the authorization environment that can be used for issuing
 // or verifying the multiplayer token for OpenID authentication.
-func authEnv(client *http.Client) (*service.AuthorizationEnvironment, error) {
+// This method is only called once and cached globally which means it will
+// use the HTTP client from the first caller's context (oauth2.HTTPClient).
+func authEnv(ctx context.Context) (*service.AuthorizationEnvironment, error) {
 	if e := authEnvCache.Load(); e != nil {
 		return e, nil
 	}
-	discovery, err := service.Discover(service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	discovery, err := service.Discover(ctx, service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
 	if err != nil {
 		return nil, fmt.Errorf("discover service endpoints: %w", err)
 	}
@@ -213,7 +227,9 @@ func authEnv(client *http.Client) (*service.AuthorizationEnvironment, error) {
 	if err := discovery.Environment(e); err != nil {
 		return nil, fmt.Errorf("decode environment for auth: %w", err)
 	}
-	e.HTTPClient = client
+	if client, _ := ctx.Value(oauth2.HTTPClient).(*http.Client); client != nil {
+		e.HTTPClient = client
+	}
 	authEnvCache.Store(e)
 	return e, nil
 }
@@ -221,14 +237,19 @@ func authEnv(client *http.Client) (*service.AuthorizationEnvironment, error) {
 // oidcVerifier returns the OpenID token verifier that could be used for
 // authenticating new multiplayer tokens issued by the authorization service
 // of Minecraft.
-func oidcVerifier(client *http.Client) (*oidc.IDTokenVerifier, error) {
-	e, err := authEnv(client)
+func oidcVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+
+	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	e, err := authEnv(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("obtain environment for authorization: %w", err)
 	}
 	// Verifier already caches the *oidc.IDTokenVerifier so we don't need to cache it here.
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
-	defer cancel()
 	return e.VerifierContext(ctx)
 }
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"net/http"
 	"sync"
 
 	"github.com/sandertv/gophertunnel/minecraft/service"
@@ -31,11 +30,7 @@ type multiplayerTokenSource struct {
 
 // MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
 func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
-	var client *http.Client
-	if ctx != nil {
-		client, _ = ctx.Value(oauth2.HTTPClient).(*http.Client)
-	}
-	env, err := authEnv(client)
+	env, err := authEnv(ctx)
 	if err != nil {
 		return "", fmt.Errorf("obtain environment for auth: %w", err)
 	}
@@ -99,8 +94,7 @@ func (s *CachedMultiplayerTokenSource) tryInit(ctx context.Context) error {
 		return nil
 	}
 
-	client, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
-	env, err := authEnv(client)
+	env, err := authEnv(ctx)
 	if err != nil {
 		return fmt.Errorf("obtain environment for auth: %w", err)
 	}
