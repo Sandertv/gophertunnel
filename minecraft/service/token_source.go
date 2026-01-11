@@ -15,6 +15,13 @@ import (
 
 // TokenSource returns an implementation of TokenSource, which subsequently supplies the token
 // by either newly requesting or refreshing an existing, cached token.
+//
+// Note: The returned TokenSource captures ctx and reuses it for all subsequent refreshes.
+// If you intend to keep the returned TokenSource around after the initial operation completes
+// (for example, beyond a dial context that may be cancelled), pass a context stripped of
+// cancellation/deadlines such as context.WithoutCancel(ctx). This preserves context values
+// (like oauth2.HTTPClient or auth token caches) without future refresh failures due to ctx
+// cancellation.
 func (e *AuthorizationEnvironment) TokenSource(ctx context.Context, src oauth2.TokenSource, config TokenConfig) TokenSource {
 	if ctx == nil {
 		ctx = context.Background()
