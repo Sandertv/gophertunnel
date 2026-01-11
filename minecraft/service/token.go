@@ -207,7 +207,7 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 		return e.verifier, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.ServiceURI.JoinPath("/.well-known/openid-configuration").String(), nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.Issuer.JoinPath("/.well-known/openid-configuration").String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
 	}
