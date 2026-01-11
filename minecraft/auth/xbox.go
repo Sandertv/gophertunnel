@@ -57,6 +57,7 @@ func (t XBLToken) Valid() bool {
 }
 
 // Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
+// This struct should remain immutable.
 type Config struct {
 	// ClientID is the ID used for the SISU authorization flow.
 	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
