@@ -46,7 +46,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 
 	c, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
 	if c == nil {
-		c = http.DefaultClient
+		c = defaultXBLHTTPClient
 	}
 	resp, err := c.Do(request)
 	if err != nil {
