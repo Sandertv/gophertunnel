@@ -191,8 +191,14 @@ var (
 	}
 )
 
-// RequestXBLToken calls [Config.RequestXBLToken] with the default device info.
+// RequestXBLToken requests an Xbox Live token using a default device config.
+// If an [XBLTokenCache] is present in ctx (via [WithXBLTokenCache]), its Config is used instead.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	if ctx != nil {
+		if cache, _ := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); cache != nil {
+			return cache.config.RequestXBLToken(ctx, liveToken, relyingParty)
+		}
+	}
 	return AndroidConfig.RequestXBLToken(ctx, liveToken, relyingParty)
 }
 
