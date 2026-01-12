@@ -408,13 +408,19 @@ const (
 	DeviceIDFormatBase64
 	DeviceIDFormatUUID
 	DeviceIDFormatInvalid
+	DeviceIDFormatUnknown
 )
+
+func (format DeviceIDFormat) String() string {
+	return [...]string{"UpperHexString", "LowerHexString", "Base64", "UUID", "Invalid", "Unknown"}[format]
+}
 
 // Used to check the provided DeviceID contains only lower-case characters and digits.
 var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
 // Format determines the format of the DeviceID based on documented types,
-// if no format is determined, DeviceIDFormatInvalid is returned.
+// if no format is determined, DeviceIDFormatUnknown is returned;
+// if a format is found but the constraints aren't met DeviceIDFormatInvalid is returned.
 func (dId DeviceID) Format() DeviceIDFormat {
 	deviceId := string(dId)
 
@@ -437,9 +443,29 @@ func (dId DeviceID) Format() DeviceIDFormat {
 	}
 
 	data, err = base64.StdEncoding.DecodeString(deviceId)
-	if err == nil && len(data) == 32 {
+	if err == nil {
+		if len(data) != 32 {
+			return DeviceIDFormatInvalid
+		}
 		return DeviceIDFormatBase64
 	}
 
-	return DeviceIDFormatInvalid
+	return DeviceIDFormatUnknown
+}
+
+// Expected returns the expected format of the DeviceID based on the provided DeviceOS.
+func (dId DeviceID) Expected(os protocol.DeviceOS) DeviceIDFormat {
+	switch os {
+	case protocol.DeviceAndroid:
+		return DeviceIDFormatLowerHexString // "a4f365bb1e04459bbe4cb3cbf9d546e0",
+	case protocol.DeviceIOS:
+		return DeviceIDFormatUpperHexString // "ADA3DFA4622F4E2FB2C14A496D52DB96",
+	case protocol.DeviceWin32:
+		return DeviceIDFormatLowerHexString // "362b850f82493ec2719ea267dd25167f",
+	case protocol.DeviceOrbis:
+		return DeviceIDFormatUUID // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
+	case protocol.DeviceXBOX:
+		return DeviceIDFormatBase64 // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+	}
+	return DeviceIDFormatUnknown
 }
