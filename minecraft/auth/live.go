@@ -142,10 +142,11 @@ func (conf Config) RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 
 var (
 	serverTimeMu sync.Mutex
-	// serverTime represents the most recent server date received from Microsoft servers.
-	// It's used for the signed requests which can be blocked if the users device time is not synced.
-	// It uses the date received from the unsigned requests.
-	serverTime time.Time
+	// serverTimeDelta is the offset to add to time.Now() to approximate Microsoft's server time, based on the
+	// most recent Date header we received.
+	//
+	// Signed Xbox Live requests can be rejected if the client timestamp is too far from server time.
+	serverTimeDelta time.Duration
 )
 
 func updateServerTimeFromHeaders(headers http.Header) {
@@ -158,7 +159,7 @@ func updateServerTimeFromHeaders(headers http.Header) {
 		return
 	}
 	serverTimeMu.Lock()
-	serverTime = t
+	serverTimeDelta = time.Until(t)
 	serverTimeMu.Unlock()
 }
 

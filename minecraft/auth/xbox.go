@@ -389,12 +389,12 @@ func (conf Config) obtainDeviceToken(ctx context.Context, key *ecdsa.PrivateKey)
 // passed. If the request has a 'ProofKey' field in the Properties field, that key must be passed here.
 func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	serverTimeMu.Lock()
-	currentServerDate := serverTime
+	delta := serverTimeDelta
 	serverTimeMu.Unlock()
 	var currentTime int64
-	if !currentServerDate.IsZero() {
-		currentTime = windowsTimestamp(currentServerDate)
-	} else { // Should never happen
+	if delta != 0 {
+		currentTime = windowsTimestamp(time.Now().Add(delta))
+	} else {
 		currentTime = windowsTimestamp(time.Now())
 	}
 
