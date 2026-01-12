@@ -413,6 +413,8 @@ const (
 // Used to check the provided DeviceID contains only lower-case characters and digits.
 var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
+// Format determines the format of the DeviceID based on documented types,
+// if no format is determined, DeviceIDFormatInvalid is returned.
 func (dId DeviceID) Format() DeviceIDFormat {
 	deviceId := string(dId)
 
