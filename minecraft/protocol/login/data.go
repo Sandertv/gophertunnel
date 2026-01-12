@@ -454,8 +454,8 @@ func (dId DeviceID) Format() DeviceIDFormat {
 }
 
 // Expected returns the expected format of the DeviceID based on the provided DeviceOS.
-func (dId DeviceID) Expected(os protocol.DeviceOS) DeviceIDFormat {
-	switch os {
+func (data *ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
+	switch data.DeviceOS {
 	case protocol.DeviceAndroid:
 		return DeviceIDFormatLowerHexString // "a4f365bb1e04459bbe4cb3cbf9d546e0",
 	case protocol.DeviceIOS:
