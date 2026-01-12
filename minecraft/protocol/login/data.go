@@ -307,7 +307,7 @@ var checkVersion = regexp.MustCompile("[0-9.]").MatchString
 
 // Validate validates the client data. It returns an error if any of the fields checked did not carry a valid
 // value.
-func (data *ClientData) Validate() error {
+func (data ClientData) Validate() error {
 	if data.DeviceOS <= 0 || data.DeviceOS > 15 {
 		return fmt.Errorf("DeviceOS must carry a value between 1 and 15, but got %v", data.DeviceOS)
 	}
@@ -461,7 +461,7 @@ func (dId DeviceID) Format() DeviceIDFormat {
 }
 
 // Expected returns the expected format of the DeviceID based on the provided DeviceOS.
-func (data *ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
+func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
 	case protocol.DeviceAndroid:
 		return DeviceIDFormatLowerHexString // "a4f365bb1e04459bbe4cb3cbf9d546e0",

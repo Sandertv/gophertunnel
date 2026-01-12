@@ -229,8 +229,8 @@ func (conn *Conn) IdentityData() login.IdentityData {
 // ClientData returns the client data the client connected with. Note that this client data may be changed
 // during the session, so the data should only be used directly after connection, and should be updated after
 // that by the caller.
-func (conn *Conn) ClientData() *login.ClientData {
-	return &conn.clientData
+func (conn *Conn) ClientData() login.ClientData {
+	return conn.clientData
 }
 
 // Authenticated returns true if the connection was authenticated through XBOX Live services.
