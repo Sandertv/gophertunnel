@@ -11,9 +11,12 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"net/http"
+	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,54 +27,257 @@ import (
 type XBLToken struct {
 	AuthorizationToken struct {
 		DisplayClaims struct {
+			// UserInfo contains the user information claimed from the authorization token.
+			// GamerTag and XUID are only populated on the "xboxlive.com" relying party.
+			// The rest only return UserHash.
 			UserInfo []struct {
 				GamerTag string `json:"gtg"`
 				XUID     string `json:"xid"`
 				UserHash string `json:"uhs"`
 			} `json:"xui"`
 		}
-		Token string
+		IssueInstant time.Time
+		NotAfter     time.Time
+		Token        string
 	}
 }
 
-// SetAuthHeader returns a string that may be used for the 'Authorization' header used for Minecraft
-// related endpoints that need an XBOX Live authenticated caller.
+// SetAuthHeader sets the 'Authorization' header used for Minecraft related endpoints that
+// need an XBOX Live authenticated caller.
 func (t XBLToken) SetAuthHeader(r *http.Request) {
 	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
 }
 
-// RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
+// expirationDelta is the amount of time before the token expires that it is considered valid.
+const expirationDelta = time.Minute
+
+// Valid returns whether the XBLToken is valid.
+func (t XBLToken) Valid() bool {
+	return time.Now().Before(t.AuthorizationToken.NotAfter.Add(-expirationDelta))
+}
+
+// Config specifies the configuration for authenticating with Xbox Live and Microsoft services.
+// This struct should remain immutable.
+type Config struct {
+	// ClientID is the ID used for the SISU authorization flow.
+	// It is also used for the OAuth2 device code flow in [RequestLiveToken].
+	ClientID string
+	// DeviceType indicates the device type used for requesting device tokens in Xbox Live.
+	DeviceType string
+	// Version indicates the version of the authentication library used in the client.
+	Version string
+	// UserAgent is the 'User-Agent' header sent by the authentication library used in the client.
+	UserAgent string
+}
+
+// defaultXBLHTTPClient is the default HTTP client used for requests made by Xbox Live auth helpers.
+var defaultXBLHTTPClient = &http.Client{
+	Transport: &http.Transport{
+		TLSClientConfig: &tls.Config{
+			Renegotiation:      tls.RenegotiateOnceAsClient,
+			InsecureSkipVerify: true,
+		},
+	},
+}
+
+// xblHTTPClient returns the HTTP client used for requests made by Xbox Live auth helpers.
+// The HTTP client is obtained from the context via ctx.Value(oauth2.HTTPClient).
+// If not present, a default client is used.
+func xblHTTPClient(ctx context.Context) *http.Client {
+	if ctx != nil {
+		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && c != nil {
+			return c
+		}
+	}
+	return defaultXBLHTTPClient
+}
+
+// contextKey is a type used for context key used to [context.WithValue].
+type contextKey struct{}
+
+// tokenCacheContextKey is the context key used for holding an XBLTokenCache in [context.Context].
+var tokenCacheContextKey contextKey
+
+// XBLTokenCache caches device tokens for requesting Xbox Live tokens.
+// It may be created from [Config.NewTokenCache] and included to a
+// [context.Context] for re-using the device token in [RequestXBLToken].
+type XBLTokenCache struct {
+	// config is the Config used to request device tokens.
+	// It contains platform-specific values for logging in with different device types.
+	config Config
+	// device caches the device token requested by XBLTokenCache.
+	device *deviceToken
+	// xsts caches the most recent XSTS tokens (XBLToken) issued for relying parties.
+	// The key is the relying party string.
+	xsts map[string]*XBLToken
+	// mu guards device from concurrent access.
+	mu sync.Mutex
+}
+
+// NewTokenCache returns an XBLTokenCache that can be used to re-use XBL tokens
+// in [RequestXBLToken].
+func (conf Config) NewTokenCache() *XBLTokenCache {
+	return &XBLTokenCache{
+		config: conf,
+		xsts:   make(map[string]*XBLToken),
+	}
+}
+
+// WithXBLTokenCache returns a [context.Context] which contains the XBLTokenCache.
+// The returned [context.Context] can be used in [RequestXBLToken] for
+// re-using the device token as possible to avoid issuing too many device
+// tokens and incurring rate limiting from XASD (Xbox Authentication Service for
+// Devices).
+func WithXBLTokenCache(parent context.Context, cache *XBLTokenCache) context.Context {
+	return context.WithValue(parent, tokenCacheContextKey, cache)
+}
+
+// deviceToken returns the cached device token. If the device token is no longer
+// valid or has not yet been requested, it will request a device token with a new
+// proof key.
+func (x *XBLTokenCache) deviceToken(ctx context.Context, conf Config) (*deviceToken, error) {
+	x.mu.Lock()
+	defer x.mu.Unlock()
+	if x.device != nil && x.device.Valid() {
+		return x.device, nil
+	}
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, fmt.Errorf("generate proof key: %w", err)
+	}
+	d, err := conf.obtainDeviceToken(ctx, key)
+	if err != nil {
+		return nil, fmt.Errorf("obtain device token: %w", err)
+	}
+	x.device = d
+	return d, nil
+}
+
+var (
+	// AndroidConfig is the configuration used in Minecraft: Bedrock Edition for Android devices.
+	AndroidConfig = Config{
+		DeviceType: "Android",
+		ClientID:   "0000000048183522",
+		Version:    "8.0.0",
+		UserAgent:  "XAL Android 2020.07.20200714.000",
+	}
+	// IOSConfig is the configuration used in Minecraft: Bedrock Edition for iOS devices.
+	IOSConfig = Config{
+		DeviceType: "iOS",
+		ClientID:   "000000004c17c01a",
+		Version:    "15.6.1",
+		UserAgent:  "XAL iOS 2021.11.20211021.000",
+	}
+	// Win32Config is the configuration used in Minecraft: Bedrock Edition for Windows devices.
+	// Please note that the actual GDK/UWP build of the game requests the device token in more different way.
+	Win32Config = Config{
+		DeviceType: "Win32",
+		ClientID:   "0000000040159362",
+		Version:    "10.0.25398.4909",
+		UserAgent:  "XAL Win32 2021.11.20220411.002",
+	}
+	// NintendoConfig is the configuration used in Minecraft: Bedrock Edition for Nintendo Switch.
+	NintendoConfig = Config{
+		DeviceType: "Nintendo",
+		ClientID:   "00000000441cc96b",
+		Version:    "0.0.0",
+		UserAgent:  "XAL",
+	}
+	// PlayStationConfig is the configuration used in Minecraft: Bedrock Edition for PlayStation devices.
+	PlayStationConfig = Config{
+		DeviceType: "Playstation",
+		ClientID:   "000000004827c78e",
+		Version:    "10.0.0",
+		UserAgent:  "XAL",
+	}
+)
+
+// RequestXBLToken requests an Xbox Live token using a default device config.
+// If an [XBLTokenCache] is present in ctx (via [WithXBLTokenCache]), its Config is used instead.
 func RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	if ctx != nil {
+		if cache, _ := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); cache != nil {
+			return cache.config.RequestXBLToken(ctx, liveToken, relyingParty)
+		}
+	}
+	return AndroidConfig.RequestXBLToken(ctx, liveToken, relyingParty)
+}
+
+// normalizeRelyingPartyKey normalizes a relying party string for use as a cache key.
+func normalizeRelyingPartyKey(relyingParty string) string {
+	return strings.TrimRight(relyingParty, "/")
+}
+
+// RequestXBLToken requests an XBOX Live auth token using the passed Live token pair.
+func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token, relyingParty string) (*XBLToken, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
 	if !liveToken.Valid() {
 		return nil, fmt.Errorf("live token is no longer valid")
 	}
-	c := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Renegotiation:      tls.RenegotiateOnceAsClient,
-				InsecureSkipVerify: true,
-			},
-		},
-	}
-	defer c.CloseIdleConnections()
 
+	cache, _ := ctx.Value(tokenCacheContextKey).(*XBLTokenCache)
+	if cache != nil {
+		rpKey := normalizeRelyingPartyKey(relyingParty)
+		cache.mu.Lock()
+		if cache.config != conf {
+			cache.mu.Unlock()
+			return nil, errors.New("xbl token cache config mismatch")
+		}
+		if tok := cache.xsts[rpKey]; tok != nil && tok.Valid() {
+			cache.mu.Unlock()
+			return tok, nil
+		}
+		cache.mu.Unlock()
+	}
+
+	d, err := conf.getDeviceToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("request device token: %w", err)
+	}
+	xbl, err := conf.obtainXBLToken(ctx, liveToken, d, relyingParty)
+	if err != nil {
+		return nil, err
+	}
+
+	if cache != nil {
+		rpKey := normalizeRelyingPartyKey(relyingParty)
+		cache.mu.Lock()
+		if cache.xsts == nil {
+			cache.xsts = make(map[string]*XBLToken)
+		}
+		cache.xsts[rpKey] = xbl
+		cache.mu.Unlock()
+	}
+
+	return xbl, nil
+}
+
+// getDeviceToken attempts to use the cache from [context.Context], otherwise it will request
+// a new device token using a new proof key.
+func (conf Config) getDeviceToken(ctx context.Context) (*deviceToken, error) {
+	if cache, ok := ctx.Value(tokenCacheContextKey).(*XBLTokenCache); ok && cache != nil {
+		// If the context has a value with XBLTokenCache, we re-use them.
+		return cache.deviceToken(ctx, conf)
+	}
 	// We first generate an ECDSA private key which will be used to provide a 'ProofKey' to each of the
 	// requests, and to sign these requests.
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return nil, fmt.Errorf("generating ECDSA key: %w", err)
+		return nil, fmt.Errorf("generate proof key: %w", err)
 	}
-	deviceToken, err := obtainDeviceToken(ctx, c, key)
+	d, err := conf.obtainDeviceToken(ctx, key)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("obtain device token: %w", err)
 	}
-	return obtainXBLToken(ctx, c, key, liveToken, deviceToken, relyingParty)
+	return d, nil
 }
 
-func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
+func (conf Config) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, device *deviceToken, relyingParty string) (*XBLToken, error) {
 	data, err := json.Marshal(map[string]any{
 		"AccessToken":       "t=" + liveToken.AccessToken,
-		"AppId":             "0000000048183522",
+		"AppId":             conf.ClientID,
 		"DeviceToken":       device.Token,
 		"Sandbox":           "RETAIL",
 		"UseModernGamertag": true,
@@ -82,8 +288,8 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 			"alg": "ES256",
 			"use": "sig",
 			"kty": "EC",
-			"x":   base64.RawURLEncoding.EncodeToString(padTo32Bytes(key.PublicKey.X)),
-			"y":   base64.RawURLEncoding.EncodeToString(padTo32Bytes(key.PublicKey.Y)),
+			"x":   base64.RawURLEncoding.EncodeToString(padTo32Bytes(device.proofKey.PublicKey.X)),
+			"y":   base64.RawURLEncoding.EncodeToString(padTo32Bytes(device.proofKey.PublicKey.Y)),
 		},
 	})
 	if err != nil {
@@ -95,9 +301,9 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
 	req.Header.Set("x-xbl-contract-version", "1")
-	sign(req, data, key)
+	sign(req, data, device.proofKey)
 
-	resp, err := c.Do(req)
+	resp, err := xblHTTPClient(ctx).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://sisu.xboxlive.com/authorize", err)
 	}
@@ -119,20 +325,30 @@ func obtainXBLToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey, 
 // deviceToken is the token obtained by requesting a device token by posting to xblDeviceAuthURL. Its Token
 // field may be used in a request to obtain the XSTS token.
 type deviceToken struct {
-	Token string
+	IssueInstant time.Time `json:"IssueInstant"`
+	NotAfter     time.Time `json:"NotAfter"`
+	Token        string
+
+	// proofKey is the private key used to sign requests in Xbox Live.
+	proofKey *ecdsa.PrivateKey
+}
+
+// Valid returns whether the device token is valid.
+func (d *deviceToken) Valid() bool {
+	return time.Now().Before(d.NotAfter.Add(-expirationDelta))
 }
 
 // obtainDeviceToken sends a POST request to the device auth endpoint using the ECDSA private key passed to
 // sign the request.
-func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
+func (conf Config) obtainDeviceToken(ctx context.Context, key *ecdsa.PrivateKey) (token *deviceToken, err error) {
 	data, err := json.Marshal(map[string]any{
 		"RelyingParty": "http://auth.xboxlive.com",
 		"TokenType":    "JWT",
 		"Properties": map[string]any{
 			"AuthMethod": "ProofOfPossession",
 			"Id":         "{" + uuid.New().String() + "}",
-			"DeviceType": "Android",
-			"Version":    "10",
+			"DeviceType": conf.DeviceType,
+			"Version":    conf.Version,
 			"ProofKey": map[string]any{
 				"crv": "P-256",
 				"alg": "ES256",
@@ -154,7 +370,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 	request.Header.Set("x-xbl-contract-version", "1")
 	sign(request, data, key)
 
-	resp, err := c.Do(request)
+	resp, err := xblHTTPClient(ctx).Do(request)
 	if err != nil {
 		return nil, fmt.Errorf("POST %v: %w", "https://device.auth.xboxlive.com/device/authenticate", err)
 	}
@@ -165,7 +381,7 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("POST %v: %v", "https://device.auth.xboxlive.com/device/authenticate", resp.Status)
 	}
-	token = &deviceToken{}
+	token = &deviceToken{proofKey: key}
 	return token, json.NewDecoder(resp.Body).Decode(token)
 }
 
@@ -173,12 +389,12 @@ func obtainDeviceToken(ctx context.Context, c *http.Client, key *ecdsa.PrivateKe
 // passed. If the request has a 'ProofKey' field in the Properties field, that key must be passed here.
 func sign(request *http.Request, body []byte, key *ecdsa.PrivateKey) {
 	serverTimeMu.Lock()
-	currentServerDate := serverTime
+	delta := serverTimeDelta
 	serverTimeMu.Unlock()
 	var currentTime int64
-	if !currentServerDate.IsZero() {
-		currentTime = windowsTimestamp(currentServerDate)
-	} else { // Should never happen
+	if delta != 0 {
+		currentTime = windowsTimestamp(time.Now().Add(delta))
+	} else {
 		currentTime = windowsTimestamp(time.Now())
 	}
 

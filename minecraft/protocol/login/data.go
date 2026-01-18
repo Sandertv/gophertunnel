@@ -14,8 +14,11 @@ import (
 	"golang.org/x/text/language"
 )
 
-// IdentityData contains identity data of the player logged in. It is found in one of the JWT claims signed
-// by Mojang, and can thus be trusted.
+// IdentityData contains identity data of the player logged in.
+//
+// For legacy logins, it is found in the Mojang JWT chain (extraData) and can thus be trusted.
+// For newer logins using multiplayer tokens (OIDC), it is derived from the verified ID token issued by the
+// Minecraft authorization service, and may be augmented with legacy chain data when present.
 type IdentityData struct {
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
 	// logged in with the XBOX Live account. It is empty if the user is not logged into its XBL account.
@@ -26,13 +29,23 @@ type IdentityData struct {
 	// DisplayName is the username of the player, which may be changed by the user. It should for that reason
 	// not be used as a key to store information.
 	DisplayName string `json:"displayName"`
-	// TitleID is a numerical ID present only if the user is logged into XBL. It holds the title ID (XBL
-	// related) of the version that the player is on. Some of these IDs may be found below.
+	// TitleID is a numerical ID present only if the user is logged into XBOX Live using the legacy chain. It holds
+	// the title ID (XBL related) of the version that the player is on. Some of these IDs may be found below:
 	// Win10: 896928775
 	// Mobile: 1739947436
 	// Nintendo: 2047319603
 	// Note that these IDs are protected using XBOX Live, making the spoofing of this data very difficult.
 	TitleID string `json:"titleId,omitempty"`
+	// PlayFabTitleID is the title ID specific to PlayFab, as found in the OIDC/multiplayer-token claim `tid`.
+	// It is typically "20CA2" for retail.
+	PlayFabTitleID string `json:"-"`
+	// PlayFabID is the unique ID of the player specific to PlayFab, which will remain consistent
+	// as long as they are logged in to the PlayFab account via Xbox Live and many other identity
+	// providers supported by PlayFab. It is specifically the ID for master player account, which
+	// is shared across all titles published by Mojang. It is only present for newer login requests
+	// involving multiplayer tokens issued by the Minecraft service.
+	// Sometimes, PlayFabID is referred to Minecraft ID (MCID) or PFID in the game.
+	PlayFabID string `json:"-"`
 }
 
 // checkOfflineUsername is used to check if a username is valid for normal Minecraft client,
