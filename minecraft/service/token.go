@@ -3,15 +3,12 @@ package service
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -19,7 +16,6 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
-	"github.com/go-jose/go-jose/v4"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/service/internal"
@@ -59,6 +55,10 @@ type AuthorizationEnvironment struct {
 	// HTTPClient is the HTTP client used for requests made by AuthorizationEnvironment.
 	// If nil, [http.DefaultClient] is used.
 	HTTPClient *http.Client `json:"-"`
+
+	// KeyRefreshInterval controls how often public keys used for verifying multiplayer tokens may
+	// be refreshed. If zero, a default of 30 minutes is used.
+	KeyRefreshInterval time.Duration `json:"-"`
 
 	// verifier verifies OpenID Multiplayer Token issued by the authorization service.
 	// It is cached and kept by [Environment.Verifier] to reduce network time.
@@ -228,110 +228,19 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
 
-	keys, err := e.publicKeys(ctx, config)
-	if err != nil {
-		return nil, fmt.Errorf("obtain public keys: %w", err)
+	refreshInterval := e.KeyRefreshInterval
+	if refreshInterval <= 0 {
+		refreshInterval = 30 * time.Minute
 	}
+	keySet := newRefreshingKeySet(ctx, e, config.JWKSURL, refreshInterval, config.Algorithms)
 
 	// We need to append '/' on the issuer if not present.
 	issuer := e.Issuer.JoinPath().String()
-	e.verifier = oidc.NewVerifier(issuer, &oidc.StaticKeySet{
-		PublicKeys: keys,
-	}, &oidc.Config{
+	e.verifier = oidc.NewVerifier(issuer, keySet, &oidc.Config{
 		ClientID:             "api://auth-minecraft-services/multiplayer",
 		SupportedSigningAlgs: config.Algorithms,
 	})
 	return e.verifier, nil
-}
-
-// publicKeys resolves the public keys from the JWKs URL of the [oidc.ProviderConfig].
-// Those keys are used for verifying multiplayer tokens issued by the authorization service.
-func (e *AuthorizationEnvironment) publicKeys(ctx context.Context, config oidc.ProviderConfig) ([]crypto.PublicKey, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, config.JWKSURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("make request: %w", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("User-Agent", internal.UserAgent)
-
-	resp, err := e.httpClient().Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, internal.Err(resp)
-	}
-	keyset, err := decodeKeySet(resp.Body)
-	if err != nil {
-		return nil, fmt.Errorf("decode key set: %w", err)
-	}
-	keys := make([]crypto.PublicKey, len(keyset.Keys))
-	for i, key := range keyset.Keys {
-		keys[i] = key.Key
-	}
-	return keys, nil
-}
-
-// decodeKeySet decodes the key set obtained from the authorization service
-// with minor patches to support 'x5t' field being hex-encoded instead of
-// [base64.RawURLEncoding].
-func decodeKeySet(r io.Reader) (*jose.JSONWebKeySet, error) {
-	var data struct {
-		Keys []map[string]any `json:"keys"`
-	}
-	if err := json.NewDecoder(r).Decode(&data); err != nil {
-		return nil, err
-	}
-	set := &jose.JSONWebKeySet{
-		Keys: make([]jose.JSONWebKey, len(data.Keys)),
-	}
-	for i, key := range data.Keys {
-		x5t, ok := key["x5t"].(string)
-		if !ok {
-			return nil, errors.New("no x5t found in jwk")
-		}
-
-		// Microsoft uses hex instead of base64 for the 'x5t' field, which violates the JOSE spec.
-		// For a SHA-1 thumbprint (20 bytes), we expect either:
-		// - Hex: 40 chars
-		// - Base64URL (no padding): 27 chars
-		var fingerprint []byte
-		switch len(x5t) {
-		case 40:
-			var err error
-			fingerprint, err = hex.DecodeString(x5t)
-			if err != nil {
-				return nil, fmt.Errorf("decode x5t hex: %w", err)
-			}
-			key["x5t"] = base64.RawURLEncoding.EncodeToString(fingerprint)
-		case 27:
-			var err error
-			fingerprint, err = base64.RawURLEncoding.DecodeString(x5t)
-			if err != nil {
-				return nil, fmt.Errorf("decode x5t base64: %w", err)
-			}
-		default:
-			return nil, fmt.Errorf("invalid x5t length: %d", len(x5t))
-		}
-		if n := len(fingerprint); n != 20 {
-			return nil, fmt.Errorf("fingerprint is not 20 bytes long: %d", n)
-		}
-
-		// jose.JSONWebKey validates during JSON unmarshalling, so after patching x5t we re-encode the
-		// JWK and let the custom UnmarshalJSON validate and decode it.
-		b, err := json.Marshal(key)
-		if err != nil {
-			return nil, fmt.Errorf("encode reformatted jwk: %w", err)
-		}
-		var jwk jose.JSONWebKey
-		if err := jwk.UnmarshalJSON(b); err != nil {
-			return nil, fmt.Errorf("decode reformatted jwk: %w", err)
-		}
-		set.Keys[i] = jwk
-	}
-	return set, nil
 }
 
 // MultiplayerToken issues a token signed by the authorization service that can be used
