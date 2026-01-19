@@ -423,7 +423,7 @@ func (format DeviceIDFormat) String() string {
 	case DeviceIDFormatInvalid:
 		return "Invalid"
 	}
-	return "Unknown"
+	return "Invalid"
 }
 
 // Used to check the provided DeviceID contains only lower-case characters and digits.
