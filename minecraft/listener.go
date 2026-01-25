@@ -13,7 +13,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"log/slog"
 	"math"
-	"log"
 	"net"
 	"slices"
 	"sync"
@@ -113,8 +112,6 @@ type Listener struct {
 	close    chan struct{}
 
 	key *ecdsa.PrivateKey
-
-	ShouldAccept func(net.Conn) bool
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -275,10 +272,6 @@ func (listener *Listener) listen() {
 		if err != nil {
 			// The underlying listener was closed, meaning we should return immediately so this listener can
 			// close too.
-			return
-		}
-		if listener.ShouldAccept != nil && !listener.ShouldAccept(netConn) {
-			log.Println("listener: connection from", netConn.RemoteAddr(), "was rejected by ShouldAccept")
 			return
 		}
 		listener.createConn(netConn)
