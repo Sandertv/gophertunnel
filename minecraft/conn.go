@@ -125,12 +125,16 @@ type Conn struct {
 	deferredPackets []*packetData
 	readDeadline    <-chan time.Time
 
+	// sendMu protects bufferedSend/bufferedSendSpare.
 	sendMu sync.Mutex
-	encMu  sync.Mutex
+	// encMu serializes encoder state changes and network writes (enc.Encode).
+	// Lock order (when both are needed): encMu → sendMu.
+	encMu sync.Mutex
 	// bufferedSend is a slice of byte slices containing packets that are 'written'. They are buffered until
 	// they are sent each 20th of a second.
-	bufferedSend [][]byte
-	hdr          *packet.Header
+	bufferedSend      [][]byte
+	bufferedSendSpare [][]byte
+	hdr               *packet.Header
 
 	// readyToLogin is a bool indicating if the connection is ready to login. This is used to ensure that the client
 	// has received the relevant network settings before the login sequence starts.
@@ -494,28 +498,34 @@ func (conn *Conn) Flush() error {
 	default:
 	}
 
+	conn.encMu.Lock()
+	defer conn.encMu.Unlock()
+
 	conn.sendMu.Lock()
 	if len(conn.bufferedSend) == 0 {
 		conn.sendMu.Unlock()
 		return nil
 	}
-	toSend := append([][]byte(nil), conn.bufferedSend...)
-	// First manually clear out conn.bufferedSend so that re-using the slice after resetting its length to
-	// 0 doesn't result in an 'invisible' memory leak.
-	for i := range conn.bufferedSend {
-		conn.bufferedSend[i] = nil
-	}
-	// Slice the conn.bufferedSend to a length of 0 so we don't have to re-allocate space in this slice
-	// every time.
-	conn.bufferedSend = conn.bufferedSend[:0]
+	toSend := conn.bufferedSend
+	// Swap buffers so writers can keep appending while we encode, without reallocating bufferedSend.
+	conn.bufferedSend = conn.bufferedSendSpare[:0]
+	conn.bufferedSendSpare = nil
 	conn.sendMu.Unlock()
 
-	conn.encMu.Lock()
-	defer conn.encMu.Unlock()
 	if err := conn.enc.Encode(toSend); err != nil && !errors.Is(err, net.ErrClosed) {
 		// Should never happen.
 		panic(fmt.Errorf("error encoding packet batch: %w", err))
 	}
+
+	// Clear out toSend so that re-using the slice after resetting its length to 0 doesn't keep references
+	// to packet payloads alive, causing an 'invisible' memory leak.
+	for i := range toSend {
+		toSend[i] = nil
+	}
+
+	conn.sendMu.Lock()
+	conn.bufferedSendSpare = toSend[:0]
+	conn.sendMu.Unlock()
 	return nil
 }
 
