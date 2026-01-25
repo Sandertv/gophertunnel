@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log/slog"
 	"math"
-	"log"
 	"net"
 	"net/http"
 	"slices"
