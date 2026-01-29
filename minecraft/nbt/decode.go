@@ -25,6 +25,8 @@ type Decoder struct {
 	depth int
 }
 
+var mapStringAnyType = reflect.TypeOf(map[string]any(nil))
+
 // NewDecoder returns a new Decoder for the input stream reader passed.
 func NewDecoder(r io.Reader) *Decoder {
 	return &Decoder{Encoding: NetworkLittleEndian, r: newOffsetReader(r)}
@@ -39,7 +41,7 @@ func NewDecoderWithEncoding(r io.Reader, encoding Encoding) *Decoder {
 // See the Unmarshal docs for the conversion between NBT tags to Go types.
 func (d *Decoder) Decode(v any) error {
 	val := reflect.ValueOf(v)
-	if val.Kind() != reflect.Ptr {
+	if val.Kind() != reflect.Pointer {
 		return NonPointerTypeError{ActualType: val.Type()}
 	}
 	tagType, tagName, err := d.tag()
@@ -47,6 +49,15 @@ func (d *Decoder) Decode(v any) error {
 		return err
 	}
 	if tagType == tagEnd && d.AllowZero {
+		// Some implementations write an empty tree as a single TAG_End. When decoding into a map, make sure we
+		// clear it so callers don't accidentally keep stale data.
+		if m, ok := v.(*map[string]any); ok {
+			if *m == nil {
+				*m = make(map[string]any)
+			} else {
+				clear(*m)
+			}
+		}
 		return nil
 	}
 	return d.unmarshalTag(val.Elem(), tagType, tagName)
@@ -108,6 +119,32 @@ var fieldMapPool = sync.Pool{
 	New: func() any {
 		return map[string]reflect.Value{}
 	},
+}
+
+// unmarshalCompoundAny decodes a TAG_Compound into the map passed.
+func (d *Decoder) unmarshalCompoundAny(m map[string]any) error {
+	var v any
+	vVal := reflect.ValueOf(&v).Elem()
+	for {
+		nestedTagType, nestedTagName, err := d.tag()
+		if err != nil {
+			return err
+		}
+		if !nestedTagType.IsValid() {
+			return UnknownTagError{Off: d.r.off, Op: "Map", TagType: nestedTagType}
+		}
+		if nestedTagType == tagEnd {
+			// We reached the end of the compound.
+			break
+		}
+
+		v = nil
+		if err := d.unmarshalTag(vVal, nestedTagType, nestedTagName); err != nil {
+			return err
+		}
+		m[nestedTagName] = v
+	}
+	return nil
 }
 
 // unmarshalTag decodes a tag from the decoder's input stream into the reflect.Value passed, assuming the tag
@@ -394,11 +431,24 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			}
 			fieldMapPool.Put(fields)
 		case reflect.Interface, reflect.Map:
-			if vk := val.Kind(); vk == reflect.Interface && val.NumMethod() != 0 {
-				return InvalidTypeError{Off: d.r.off, FieldType: val.Type(), Field: tagName, TagType: t}
-			}
+			valKind := val.Kind()
 			valType := val.Type()
-			if val.Kind() == reflect.Map {
+			if valKind == reflect.Interface && val.NumMethod() != 0 {
+				return InvalidTypeError{Off: d.r.off, FieldType: valType, Field: tagName, TagType: t}
+			}
+
+			// Fast path for TAG_Compound into map[string]any and any(map[string]any), avoid heavy SetMapIndex.
+			// Always allocate a fresh map so callers can reuse structs across Decode calls safely.
+			if (valKind == reflect.Map && valType == mapStringAnyType) || (valKind == reflect.Interface && isAny(val)) {
+				m := make(map[string]any)
+				if err := d.unmarshalCompoundAny(m); err != nil {
+					return err
+				}
+				val.Set(reflect.ValueOf(m))
+				break
+			}
+
+			if valKind == reflect.Map {
 				valType = valType.Elem()
 			}
 			m := reflect.MakeMap(reflect.MapOf(stringType, valType))

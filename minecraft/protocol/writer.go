@@ -3,15 +3,16 @@ package protocol
 import (
 	"bytes"
 	"fmt"
-	"github.com/go-gl/mathgl/mgl32"
-	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"image/color"
 	"io"
 	"math/big"
 	"reflect"
 	"sort"
 	"unsafe"
+
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
 // Writer implements writing methods for data types from Minecraft packets. Each Packet implementation has one
@@ -441,9 +442,19 @@ func (w *Writer) Recipe(x *Recipe) {
 func (w *Writer) EventType(x *Event) {
 	var t int32
 	if !lookupEventType(*x, &t) {
-		w.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event type")
+		w.UnknownEnumOption(*x, "event packet event type")
 	}
 	w.Varint32(&t)
+}
+
+// EventOrdinal writes an Event ordinal to the writer.
+func (w *Writer) EventOrdinal(x *Event) {
+	var ordinal uint32
+	if !lookupEventOrdinal(*x, &ordinal) {
+		w.UnknownEnumOption(*x, "event packet event ordinal")
+		return
+	}
+	w.Varuint32(&ordinal)
 }
 
 // TransactionDataType writes an InventoryTransactionData type to the writer.
@@ -517,6 +528,21 @@ func (w *Writer) PackSetting(x *PackSetting) {
 	}
 }
 
+// ShapeData writes a ShapeData to the writer.
+func (w *Writer) ShapeData(x *ShapeData) {
+	var shapeDataType uint32
+	if !lookupShapeDataType(*x, &shapeDataType) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "debug shape data type")
+	}
+	w.Varuint32(&shapeDataType)
+	(*x).Marshal(w)
+}
+
+// StringConst writes a string to the writer.
+func (w *Writer) StringConst(x string) {
+	w.String(&x)
+}
+
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x
@@ -586,7 +612,7 @@ func (w *Writer) ShieldID() int32 {
 
 // UnknownEnumOption panics with an unknown enum option error.
 func (w *Writer) UnknownEnumOption(value any, enum string) {
-	w.panicf("unknown value '%v' for enum type '%v'", value, enum)
+	w.panicf("unknown value '%#v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an invalid value error.

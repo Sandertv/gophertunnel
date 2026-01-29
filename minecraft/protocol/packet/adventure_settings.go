@@ -19,15 +19,6 @@ const (
 )
 
 const (
-	CommandPermissionLevelNormal = iota
-	CommandPermissionLevelGameDirectors
-	CommandPermissionLevelAdmin
-	CommandPermissionLevelHost
-	CommandPermissionLevelOwner
-	CommandPermissionLevelInternal
-)
-
-const (
 	ActionPermissionMine = 1 << iota
 	ActionPermissionDoorsAndSwitches
 	ActionPermissionOpenContainers
