@@ -69,6 +69,9 @@ type ListenConfig struct {
 	// Compression is the packet.Compression to use for packets sent over this Conn. If set to nil, the compression
 	// will default to packet.flateCompression.
 	Compression packet.Compression // TODO: Change this to snappy once Windows crashes are resolved.
+	// CompressionSelector selects a compression algorithm per connection based on the protocol. If nil, it
+	// defaults to a function returning Compression.
+	CompressionSelector func(proto Protocol) packet.Compression
 	// CompressionThreshold specifies the minimum data size in bytes that triggers compression. Data smaller than this threshold
 	// will not be compressed. If zero, compression threshold will default to 256.
 	// A value of -1 disables compression entirely.
@@ -142,6 +145,11 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
+	}
+	if cfg.CompressionSelector == nil {
+		cfg.CompressionSelector = func(Protocol) packet.Compression {
+			return cfg.Compression
+		}
 	}
 	if cfg.FlushRate == 0 {
 		cfg.FlushRate = time.Second / 20
@@ -375,6 +383,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
+	conn.compressionSelector = listener.cfg.CompressionSelector
 	conn.compressionThreshold = listener.cfg.CompressionThreshold
 	conn.maxDecompressedLen = listener.cfg.MaxDecompressedLen
 	conn.pool = conn.proto.Packets(true)
