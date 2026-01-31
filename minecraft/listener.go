@@ -11,7 +11,6 @@ import (
 	"math"
 	"net"
 	"net/http"
-	"slices"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -19,9 +18,7 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
-	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"golang.org/x/oauth2"
 )
@@ -81,19 +78,6 @@ type ListenConfig struct {
 	// calls to `(*Conn).Write()` or `(*Conn).WritePacket()` to send the packets over network.
 	FlushRate time.Duration
 
-	// ResourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
-	// download these resource packs upon joining.
-	// Use Listener.AddResourcePack() to add a resource pack and Listener.RemoveResourcePack() to remove a resource pack
-	// after having called ListenConfig.Listen(). Note that these methods will not update resource packs for active connections.
-	ResourcePacks []*resource.Pack
-	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
-	// be able to join the server. If they don't accept, they can only leave the server.
-	TexturePacksRequired bool
-	// FetchResourcePacks determines which resource packs to send to a client based on its identity and client data.
-	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
-	// will be forwarded to the client in place of the Listener's current ones.
-	FetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
-
 	// PacketFunc is called whenever a packet is read from or written to a connection returned when using
 	// Listener.Accept. It includes packets that are otherwise covered in the connection sequence, such as the
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
@@ -112,9 +96,6 @@ type Listener struct {
 	cfg      ListenConfig
 	listener NetworkListener
 
-	packs   []*resource.Pack
-	packsMu sync.RWMutex
-
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount atomic.Int32
@@ -127,6 +108,22 @@ type Listener struct {
 	// for authenticating incoming connections. It will be nil if authentication is
 	// disabled on ListenConfig.
 	verifier *oidc.IDTokenVerifier
+}
+
+func (l *Listener) Listener() NetworkListener {
+	return l.listener
+}
+
+func NewListener(cfg ListenConfig, listener NetworkListener, key *ecdsa.PrivateKey, verifier *oidc.IDTokenVerifier) *Listener {
+	return &Listener{
+		cfg:         cfg,
+		listener:    listener,
+		playerCount: atomic.Int32{},
+		incoming:    make(chan *Conn),
+		close:       make(chan struct{}),
+		key:         key,
+		verifier:    verifier,
+	}
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -186,7 +183,6 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
-		packs:    slices.Clone(cfg.ResourcePacks),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
 		key:      key,
@@ -290,24 +286,6 @@ func (listener *Listener) Disconnect(conn *Conn, message string) error {
 	return conn.close(conn.closeErr(message))
 }
 
-// AddResourcePack adds a new resource pack to the listener's resource packs.
-// Note: This method will not update resource packs for active connections.
-func (listener *Listener) AddResourcePack(pack *resource.Pack) {
-	listener.packsMu.Lock()
-	defer listener.packsMu.Unlock()
-	listener.packs = append(listener.packs, pack)
-}
-
-// RemoveResourcePack removes a resource pack from the listener's configuration by its UUID.
-// Note: This method will not update resource packs for active connections.
-func (listener *Listener) RemoveResourcePack(uuid string) {
-	listener.packsMu.Lock()
-	listener.packs = slices.DeleteFunc(listener.packs, func(pack *resource.Pack) bool {
-		return pack.UUID().String() == uuid
-	})
-	listener.packsMu.Unlock()
-}
-
 // Addr returns the address of the underlying listener.
 func (listener *Listener) Addr() net.Addr {
 	return listener.listener.Addr()
@@ -368,10 +346,6 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	listener.packsMu.RLock()
-	packs := slices.Clone(listener.packs)
-	listener.packsMu.RUnlock()
-
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
@@ -380,9 +354,6 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.pool = conn.proto.Packets(true)
 
 	conn.packetFunc = listener.cfg.PacketFunc
-	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
-	conn.resourcePacks = packs
-	conn.fetchResourcePacks = listener.cfg.FetchResourcePacks
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 	conn.verifier = listener.verifier

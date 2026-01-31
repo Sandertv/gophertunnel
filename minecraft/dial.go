@@ -8,7 +8,6 @@ import (
 	cryptorand "crypto/rand"
 	_ "embed"
 	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -70,12 +69,6 @@ type Dialer struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
-
-	// DownloadResourcePack is called individually for every texture and behaviour pack sent by the connection when
-	// using Dialer.Dial(), and can be used to stop the pack from being downloaded. The function is called with the UUID
-	// and version of the resource pack, the number of the current pack being downloaded, and the total amount of packs.
-	// The boolean returned determines if the pack will be downloaded or not.
-	DownloadResourcePack func(id uuid.UUID, version string, current, total int) bool
 
 	// DisconnectOnUnknownPackets specifies if the connection should disconnect if packets received are not present
 	// in the packet pool. If true, such packets lead to the connection being closed immediately.
@@ -248,8 +241,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc
-	conn.downloadResourcePack = d.DownloadResourcePack
-	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 	conn.maxDecompressedLen = math.MaxInt
@@ -267,9 +258,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		}
 		request = login.EncodeOffline(conn.identityData, conn.clientData, key, token, d.EnableLegacyAuth)
 	} else {
-		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
-		// we can't edit. We just enforce Android data for logging in.
-		setAndroidData(&conn.clientData)
 
 		request = login.Encode(chainData, conn.clientData, key, token, d.EnableLegacyAuth)
 		identityData, _, _, _ := login.Parse(request, verifier)
@@ -438,7 +426,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.GameVersion = protocol.CurrentVersion
 	}
 	if d.ClientRandomID == 0 {
-		d.ClientRandomID = rand.Int63()
+		d.ClientRandomID = -rand.Int63()
 	}
 	if d.DeviceID == "" {
 		// This can be parsed as DeviceIDFormatLowerHexString and is standard on `most` devices including Android.
@@ -447,12 +435,6 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
 	}
-	if d.PlayFabID == "" {
-		id := make([]byte, 8)
-		_, _ = cryptorand.Read(id)
-		d.PlayFabID = hex.EncodeToString(id)
-	}
-
 	if d.AnimatedImageData == nil {
 		d.AnimatedImageData = make([]login.SkinAnimation, 0)
 	}
@@ -484,13 +466,6 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	}
 }
 
-// setAndroidData ensures the login.ClientData passed matches settings you would see on an Android device.
-func setAndroidData(data *login.ClientData) {
-	data.DeviceOS = protocol.DeviceAndroid
-	data.GameVersion = protocol.CurrentVersion
-}
-
-// clearXBLIdentityData clears data from the login.IdentityData that is only set when a player is logged into
 // XBOX Live.
 func clearXBLIdentityData(data *login.IdentityData) {
 	data.XUID = ""
