@@ -11,8 +11,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"os"
-	"slices"
 	"strings"
 	"sync"
 	"sync/atomic"
