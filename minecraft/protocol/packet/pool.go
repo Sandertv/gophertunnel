@@ -49,7 +49,6 @@ func init() {
 		IDLogin:                      func() Packet { return &Login{} },
 		IDPlayStatus:                 func() Packet { return &PlayStatus{} },
 		IDServerToClientHandshake:    func() Packet { return &ServerToClientHandshake{} },
-		IDClientToServerHandshake:    func() Packet { return &ClientToServerHandshake{} },
 		IDDisconnect:                 func() Packet { return &Disconnect{} },
 		IDResourcePacksInfo:          func() Packet { return &ResourcePacksInfo{} },
 		IDResourcePackStack:          func() Packet { return &ResourcePackStack{} },
