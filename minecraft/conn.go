@@ -195,6 +195,10 @@ func (conn *Conn) ClientData() login.ClientData {
 	return conn.clientData
 }
 
+func (conn *Conn) UpdateClientData(clientData login.ClientData) {
+	conn.clientData = clientData
+}
+
 // Authenticated returns true if the connection was authenticated through XBOX Live services.
 func (conn *Conn) Authenticated() bool {
 	return conn.IdentityData().XUID != ""
