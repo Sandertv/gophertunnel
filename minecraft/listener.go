@@ -110,8 +110,8 @@ type Listener struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-func (l *Listener) Listener() NetworkListener {
-	return l.listener
+func (listener *Listener) Listener() NetworkListener {
+	return listener.listener
 }
 
 func NewListener(cfg ListenConfig, listener NetworkListener, key *ecdsa.PrivateKey, verifier *oidc.IDTokenVerifier) *Listener {
