@@ -423,22 +423,6 @@ const (
 	DeviceIDFormatInvalid
 )
 
-func (format DeviceIDFormat) String() string {
-	switch format {
-	case DeviceIDFormatUpperHexString:
-		return "UpperHexString"
-	case DeviceIDFormatLowerHexString:
-		return "LowerHexString"
-	case DeviceIDFormatBase64:
-		return "Base64"
-	case DeviceIDFormatUUID:
-		return "UUID"
-	case DeviceIDFormatInvalid:
-		return "Invalid"
-	}
-	return "Invalid"
-}
-
 // Used to check the provided DeviceID contains only lower-case characters and digits.
 var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
@@ -473,7 +457,7 @@ func (dID DeviceID) Format() DeviceIDFormat {
 	return DeviceIDFormatInvalid
 }
 
-// Expected returns the expected format of the DeviceID based on the provided DeviceOS.
+// ExpectedDeviceIDFormat returns the expected format of the DeviceID based on the provided DeviceOS.
 func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
 	case protocol.DeviceAndroid:
