@@ -130,6 +130,8 @@ type ClientData struct {
 	DeviceOS protocol.DeviceOS
 	// DeviceID is usually a UUID specific to the device. A different user will have the same UUID for this.
 	// DeviceID is not guaranteed to always be a UUID. It is a base64 encoded string under some circumstances.
+	// This field is not automatically verified by default, because the format is different for each OS and
+	// not all have been verified.
 	DeviceID DeviceID `json:"DeviceId"`
 	// GameVersion is the game version of the player that attempted to join, for example '1.11.0'.
 	GameVersion string
@@ -426,8 +428,8 @@ const (
 // Used to check the provided DeviceID contains only lower-case characters and digits.
 var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
-// Format determines the format of the DeviceID based on documented types,
-// if no format is determined, DeviceIDFormatInvalid is returned.
+// Format determines the format of the DeviceID based on documented types.
+// If no format is determined, DeviceIDFormatInvalid is returned.
 func (dID DeviceID) Format() DeviceIDFormat {
 	deviceID := string(dID)
 
@@ -458,6 +460,7 @@ func (dID DeviceID) Format() DeviceIDFormat {
 }
 
 // ExpectedDeviceIDFormat returns the expected format of the DeviceID based on the provided DeviceOS.
+// For undocumented devices, DeviceIDFormatInvalid is returned. 
 func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
 	case protocol.DeviceAndroid:
