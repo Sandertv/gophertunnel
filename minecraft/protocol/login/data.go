@@ -465,11 +465,9 @@ func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
 	case protocol.DeviceIOS:
 		return DeviceIDFormatUpperHexString
-	case protocol.DeviceAndroid:
-	case protocol.DeviceWin32:
+	case protocol.DeviceAndroid, protocol.DeviceWin32:
 		return DeviceIDFormatLowerHexString
-	case protocol.DeviceNX:
-	case protocol.DeviceOrbis:
+	case protocol.DeviceNX, protocol.DeviceOrbis:
 		return DeviceIDFormatUUID
 	case protocol.DeviceXBOX:
 		return DeviceIDFormatBase64
