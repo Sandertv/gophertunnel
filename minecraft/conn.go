@@ -90,6 +90,7 @@ type Conn struct {
 	enc                  *packet.Encoder
 	dec                  *packet.Decoder
 	compression          packet.Compression
+	compressionSelector  func(proto Protocol) packet.Compression
 	compressionThreshold int
 	maxDecompressedLen   int
 	readerLimits         bool
@@ -762,6 +763,12 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		return fmt.Errorf("incompatible protocol version: expected %v, got %v", protocol.CurrentProtocol, pk.ClientProtocol)
+	}
+
+	if conn.compressionSelector != nil {
+		if c := conn.compressionSelector(conn.proto); c != nil {
+			conn.compression = c
+		}
 	}
 
 	conn.expect(packet.IDLogin)
