@@ -2,7 +2,7 @@ package protocol
 
 // DeviceOS is a device DeviceOS identifier. It holds a value of one of the constants below and may be found
 // in packets such as the Login packet.
-type DeviceOS int32
+type DeviceOS int
 
 const (
 	DeviceAndroid DeviceOS = iota + 1
