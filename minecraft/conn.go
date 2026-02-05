@@ -955,7 +955,8 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	conn.expect(packet.IDResourcePackStack)
 
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
-	return nil
+	// Process any deferred packets that might have arrived out of order.
+	return conn.processDeferredPackets()
 }
 
 // handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
@@ -970,7 +971,8 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 	}
 	conn.expect(packet.IDStartGame)
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
-	return nil
+	// Process any deferred packets that might have arrived out of order.
+	return conn.processDeferredPackets()
 }
 
 // hasPack checks if the connection has a resource pack downloaded with the UUID and version passed, provided
@@ -1174,6 +1176,8 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		if conn.packQueue.packAmount == 0 {
 			conn.expect(packet.IDResourcePackStack)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+			// Process any deferred packets that might have arrived out of order.
+			_ = conn.processDeferredPackets()
 		}
 	}()
 	return nil
@@ -1283,7 +1287,8 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		PropertyData:                 pk.PropertyData,
 	}
 	conn.expect(packet.IDItemRegistry)
-	return nil
+	// Process any deferred packets that might have arrived out of order.
+	return conn.processDeferredPackets()
 }
 
 // handleItemRegistry handles an incoming ItemRegistry packet. It contains the item definitions that the client
@@ -1298,7 +1303,8 @@ func (conn *Conn) handleItemRegistry(pk *packet.ItemRegistry) error {
 
 	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16, MaxChunkRadius: 16})
 	conn.expect(packet.IDChunkRadiusUpdated, packet.IDPlayStatus)
-	return nil
+	// Process any deferred packets that might have arrived out of order.
+	return conn.processDeferredPackets()
 }
 
 // handleRequestChunkRadius handles an incoming RequestChunkRadius packet. It sets the initial chunk radius
@@ -1335,7 +1341,8 @@ func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error 
 	conn.gameDataReceived.Store(true)
 
 	conn.tryFinaliseClientConn()
-	return nil
+	// Process any deferred packets that might have arrived out of order.
+	return conn.processDeferredPackets()
 }
 
 // handleSetLocalPlayerAsInitialised handles an incoming SetLocalPlayerAsInitialised packet. It is the final
@@ -1361,7 +1368,11 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		}
 		// The next packet we expect is the ResourcePacksInfo packet.
 		conn.expect(packet.IDResourcePacksInfo)
-		return conn.Flush()
+		if err := conn.Flush(); err != nil {
+			return err
+		}
+		// Process any deferred packets that might have arrived out of order.
+		return conn.processDeferredPackets()
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.close(conn.closeErr("client outdated"))
 		return fmt.Errorf("client outdated")
@@ -1447,6 +1458,46 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 // expect sets the packet IDs that are next expected to arrive.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
+}
+
+// processDeferredPackets checks if any deferred packets match the currently expected IDs
+// and handles them. This is necessary when packets arrive out of order due to network conditions.
+func (conn *Conn) processDeferredPackets() error {
+	toProcess := conn.extractMatchingDeferredPackets()
+	for _, pkData := range toProcess {
+		pks, err := pkData.decode(conn)
+		if err != nil {
+			return fmt.Errorf("decode deferred packet: %w", err)
+		}
+		if err := conn.handleMultiple(pks); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// extractMatchingDeferredPackets removes and returns all deferred packets that match the currently
+// expected packet IDs.
+func (conn *Conn) extractMatchingDeferredPackets() []*packetData {
+	conn.deferredPacketMu.Lock()
+	defer conn.deferredPacketMu.Unlock()
+
+	if len(conn.deferredPackets) == 0 {
+		return nil
+	}
+
+	expectedIDs := conn.expectedIDs.Load().([]uint32)
+	var toProcess, remaining []*packetData
+
+	for _, pkData := range conn.deferredPackets {
+		if slices.Contains(expectedIDs, pkData.h.PacketID) {
+			toProcess = append(toProcess, pkData)
+		} else {
+			remaining = append(remaining, pkData)
+		}
+	}
+	conn.deferredPackets = remaining
+	return toProcess
 }
 
 func (conn *Conn) close(cause error) error {
