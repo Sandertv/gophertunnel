@@ -444,28 +444,28 @@ var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
 // Format determines the format of the DeviceID based on documented types,
 // if no format is determined, DeviceIDFormatInvalid is returned.
-func (dId DeviceID) Format() DeviceIDFormat {
-	deviceId := string(dId)
+func (dID DeviceID) Format() DeviceIDFormat {
+	deviceID := string(dID)
 
 	// This must be checked before UUID as these are valid UUIDs as well.
-	data, err := hex.DecodeString(deviceId)
+	data, err := hex.DecodeString(deviceID)
 	if err == nil {
 		if len(data) != 16 {
 			return DeviceIDFormatInvalid
 		}
 
-		if lowerMatch.MatchString(deviceId) {
+		if lowerMatch.MatchString(deviceID) {
 			return DeviceIDFormatLowerHexString
 		}
 		return DeviceIDFormatUpperHexString
 	}
 
-	_, err = uuid.Parse(deviceId)
+	_, err = uuid.Parse(deviceID)
 	if err == nil {
 		return DeviceIDFormatUUID
 	}
 
-	data, err = base64.StdEncoding.DecodeString(deviceId)
+	data, err = base64.StdEncoding.DecodeString(deviceID)
 	if err == nil && len(data) == 32 {
 		return DeviceIDFormatBase64
 	}
