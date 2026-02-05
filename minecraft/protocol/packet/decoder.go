@@ -5,8 +5,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 // Decoder handles the decoding of Minecraft packets sent through an io.Reader. These packets in turn contain
@@ -21,10 +22,16 @@ type Decoder struct {
 	// NewDecoder implements the packetReader interface.
 	pr packetReader
 
+	// header holds the batch header that is expected on the beginning of input packet data.
+	header []byte
+
 	decompress         bool
 	compression        Compression
 	maxDecompressedLen int
 	encrypt            *encrypt
+	// disableEncryption indicates whether to prevent encryption from being enabled
+	// even if it is requested on handshake during login.
+	disableEncryption bool
 
 	checkPacketLimit bool
 }
@@ -38,19 +45,38 @@ type packetReader interface {
 // NewDecoder returns a new decoder decoding data from the io.Reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
+	var batch []byte
+	if b, ok := reader.(batchHeader); ok {
+		batch = b.BatchHeader()
+	} else {
+		batch = []byte{header}
+	}
+	var disableEncryption bool
+	if d, ok := reader.(encryptionDisabler); ok {
+		disableEncryption = d.DisableEncryption()
+	}
 	if pr, ok := reader.(packetReader); ok {
-		return &Decoder{checkPacketLimit: true, pr: pr}
+		return &Decoder{
+			checkPacketLimit:  true,
+			pr:                pr,
+			header:            batch,
+			disableEncryption: disableEncryption,
+		}
 	}
 	return &Decoder{
-		r:                reader,
-		buf:              make([]byte, 1024*1024*3),
-		checkPacketLimit: true,
+		r:                 reader,
+		buf:               make([]byte, 1024*1024*3),
+		checkPacketLimit:  true,
+		disableEncryption: disableEncryption,
 	}
 }
 
 // EnableEncryption enables encryption for the Decoder using the secret key bytes passed. Each packet received
 // will be decrypted.
 func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
+	if decoder.disableEncryption {
+		return
+	}
 	block, _ := aes.NewCipher(keyBytes[:])
 	first12 := append([]byte(nil), keyBytes[:12]...)
 	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
@@ -92,13 +118,15 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	if err != nil {
 		return nil, fmt.Errorf("read batch: %w", err)
 	}
+	h := data[:min(len(decoder.header), len(data))]
+	if !bytes.Equal(h, decoder.header) {
+		return nil, fmt.Errorf("decode batch: invalid header %x: expected %x", h, decoder.header)
+	}
+	data = data[len(decoder.header):]
+
 	if len(data) == 0 {
 		return nil, nil
 	}
-	if data[0] != header {
-		return nil, fmt.Errorf("decode batch: invalid header %x, expected %x", data[0], header)
-	}
-	data = data[1:]
 	if decoder.encrypt != nil {
 		decoder.encrypt.decrypt(data)
 		if err := decoder.encrypt.verify(data); err != nil {
