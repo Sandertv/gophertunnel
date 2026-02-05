@@ -460,19 +460,19 @@ func (dID DeviceID) Format() DeviceIDFormat {
 }
 
 // ExpectedDeviceIDFormat returns the expected format of the DeviceID based on the provided DeviceOS.
-// For undocumented devices, DeviceIDFormatInvalid is returned. 
+// For undocumented devices, DeviceIDFormatInvalid is returned.
 func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
-	case protocol.DeviceAndroid:
-		return DeviceIDFormatLowerHexString // "a4f365bb1e04459bbe4cb3cbf9d546e0",
 	case protocol.DeviceIOS:
-		return DeviceIDFormatUpperHexString // "ADA3DFA4622F4E2FB2C14A496D52DB96",
+		return DeviceIDFormatUpperHexString
+	case protocol.DeviceAndroid:
 	case protocol.DeviceWin32:
-		return DeviceIDFormatLowerHexString // "362b850f82493ec2719ea267dd25167f",
+		return DeviceIDFormatLowerHexString
+	case protocol.DeviceNX:
 	case protocol.DeviceOrbis:
-		return DeviceIDFormatUUID // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
+		return DeviceIDFormatUUID
 	case protocol.DeviceXBOX:
-		return DeviceIDFormatBase64 // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+		return DeviceIDFormatBase64
 	}
 	return DeviceIDFormatInvalid
 }
