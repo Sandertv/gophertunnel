@@ -89,6 +89,8 @@ type ListenConfig struct {
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
+	// ForceDisableVibrantVisuals specifies if the server should force disable vibrant visuals for all clients.
+	ForceDisableVibrantVisuals bool
 	// FetchResourcePacks determines which resource packs to send to a client based on its identity and client data.
 	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
 	// will be forwarded to the client in place of the Listener's current ones.
@@ -381,6 +383,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
+	conn.forceDisableVibrantVisuals = listener.cfg.ForceDisableVibrantVisuals
 	conn.resourcePacks = packs
 	conn.fetchResourcePacks = listener.cfg.FetchResourcePacks
 	conn.gameData.WorldName = listener.status().ServerName
