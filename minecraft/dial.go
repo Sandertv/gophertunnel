@@ -245,8 +245,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 	conn.maxDecompressedLen = math.MaxInt
 
-	defaultIdentityData(&conn.identityData)
-	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
+	//defaultIdentityData(&conn.identityData)
+	//defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
 	if d.TokenSource == nil && (d.XBLToken == nil || !d.XBLToken.Valid()) {

@@ -226,6 +226,16 @@ func (conn *Conn) Encoder() *packet.Encoder {
 	return conn.enc
 }
 
+// Compression returns the current compression algorithm being used by the connection.
+func (conn *Conn) Compression() packet.Compression {
+	return conn.compression
+}
+
+// CompressionThreshold returns the current compression threshold for the connection.
+func (conn *Conn) CompressionThreshold() int {
+	return conn.compressionThreshold
+}
+
 // LoggedIn returns the loggedIn field of the connection.
 func (conn *Conn) LoggedIn() bool {
 	return conn.loggedIn
@@ -707,6 +717,8 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 	if !ok {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
+	conn.compression = alg
+	conn.compressionThreshold = int(pk.CompressionThreshold)
 	conn.enc.EnableCompression(alg, int(pk.CompressionThreshold))
 	conn.dec.EnableCompression(alg, conn.maxDecompressedLen)
 	conn.readyToLogin = true
