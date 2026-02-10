@@ -36,8 +36,8 @@ func (x *VoxelShapeNameEntry) Marshal(r IO) {
 
 // SerializableVoxelShape represents a voxel shape with cells and coordinate axes.
 type SerializableVoxelShape struct {
-	// Cells is a list of voxel cell grids that make up the shape.
-	Cells []SerializableVoxelCells
+	// Cells is the grid of cells representing solid and empty regions.
+	Cells SerializableVoxelCells
 	// XCoordinates is a list of X axis coordinates for the shape.
 	XCoordinates []float32
 	// YCoordinates is a list of Y axis coordinates for the shape.
@@ -48,7 +48,7 @@ type SerializableVoxelShape struct {
 
 // Marshal encodes/decodes a SerializableVoxelShape.
 func (x *SerializableVoxelShape) Marshal(r IO) {
-	Slice(r, &x.Cells)
+	Single(r, &x.Cells)
 	FuncSlice(r, &x.XCoordinates, r.Float32)
 	FuncSlice(r, &x.YCoordinates, r.Float32)
 	FuncSlice(r, &x.ZCoordinates, r.Float32)

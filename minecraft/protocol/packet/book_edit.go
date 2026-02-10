@@ -17,16 +17,16 @@ const (
 type BookEdit struct {
 	// InventorySlot is the slot in which the book that was edited may be found. Typically, the server should
 	// check if this slot matches the held item slot of the player.
-	InventorySlot uint32
+	InventorySlot int32
 	// ActionType is the type of the book edit action. The data obtained depends on what type this is. The
 	// action type is one of the constants above.
 	ActionType uint32
 	// PageNumber is the number of the page that the book edit action concerns. It applies for all actions
 	// but the BookActionSign. In BookActionSwapPages, it is one of the pages that was swapped.
-	PageNumber uint32
+	PageNumber int32
 	// SecondaryPageNumber is the page number of the second page that the action concerned. It is only set for
 	// the BookActionSwapPages action, in which case it is the other page that is swapped.
-	SecondaryPageNumber uint32
+	SecondaryPageNumber int32
 	// Text is the text that was written in a particular page of the book. It applies for the
 	// BookActionAddPage and BookActionReplacePage only.
 	Text string
@@ -52,18 +52,18 @@ func (*BookEdit) ID() uint32 {
 }
 
 func (pk *BookEdit) Marshal(io protocol.IO) {
-	io.Varuint32(&pk.InventorySlot)
+	io.Varint32(&pk.InventorySlot)
 	io.Varuint32(&pk.ActionType)
 	switch pk.ActionType {
 	case BookActionReplacePage, BookActionAddPage:
-		io.Varuint32(&pk.PageNumber)
+		io.Varint32(&pk.PageNumber)
 		io.String(&pk.Text)
 		io.String(&pk.PhotoName)
 	case BookActionDeletePage:
-		io.Varuint32(&pk.PageNumber)
+		io.Varint32(&pk.PageNumber)
 	case BookActionSwapPages:
-		io.Varuint32(&pk.PageNumber)
-		io.Varuint32(&pk.SecondaryPageNumber)
+		io.Varint32(&pk.PageNumber)
+		io.Varint32(&pk.SecondaryPageNumber)
 	case BookActionSign:
 		io.String(&pk.Title)
 		io.String(&pk.Author)

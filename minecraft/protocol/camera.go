@@ -399,12 +399,16 @@ type CameraRotationOption struct {
 	Value mgl32.Vec3
 	// Time is the time for this rotation option.
 	Time float32
+	// EaseType is the optional easing function used to interpolate towards this rotation key frame.
+	// This is one of the EasingType constants.
+	EaseType Optional[uint8]
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
+	OptionalFunc(r, &x.EaseType, r.Uint8)
 }
 
 // CameraProgressOption represents a progress keyframe option for camera spline instructions.
@@ -413,23 +417,24 @@ type CameraProgressOption struct {
 	Value float32
 	// Time is the time for this progress option.
 	Time float32
-	// EaseType is the type of easing function used.
-	EaseType uint32
+	// EaseType is the optional easing function used to interpolate towards this progress key frame.
+	// This is one of the EasingType constants.
+	EaseType Optional[uint8]
 }
 
 // Marshal encodes/decodes a CameraProgressOption.
 func (x *CameraProgressOption) Marshal(r IO) {
 	r.Float32(&x.Value)
 	r.Float32(&x.Time)
-	r.Uint32(&x.EaseType)
+	OptionalFunc(r, &x.EaseType, r.Uint8)
 }
 
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.
 type CameraSplineInstruction struct {
 	// TotalTime is the total time for the spline animation.
 	TotalTime float32
-	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	// SplineType is the optional spline interpolation type. This is one of the SplineEaseType constants.
+	SplineType Optional[uint8]
 	// Curve is a list of points that define the spline curve.
 	Curve []mgl32.Vec3
 	// ProgressKeyFrames is a list of progress key frames for the spline.
@@ -441,7 +446,7 @@ type CameraSplineInstruction struct {
 // Marshal encodes/decodes a CameraSplineInstruction.
 func (x *CameraSplineInstruction) Marshal(r IO) {
 	r.Float32(&x.TotalTime)
-	r.Uint8(&x.EaseType)
+	OptionalFunc(r, &x.SplineType, r.Uint8)
 	FuncSlice(r, &x.Curve, r.Vec3)
 	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
@@ -464,19 +469,19 @@ func (x *CameraSplineDefinition) Marshal(r IO) {
 // CameraAimAssistActorPriorityData represents priority data for aim assist actor targeting.
 type CameraAimAssistActorPriorityData struct {
 	// PresetIndex is the index of the aim assist preset.
-	PresetIndex uint32
+	PresetIndex int32
 	// CategoryIndex is the index of the aim assist category.
-	CategoryIndex uint32
+	CategoryIndex int32
 	// ActorIndex is the index of the actor.
-	ActorIndex uint32
+	ActorIndex int32
 	// Priority is the priority value for this actor.
-	Priority uint32
+	Priority int32
 }
 
 // Marshal encodes/decodes a CameraAimAssistActorPriorityData.
 func (x *CameraAimAssistActorPriorityData) Marshal(r IO) {
-	r.Uint32(&x.PresetIndex)
-	r.Uint32(&x.CategoryIndex)
-	r.Uint32(&x.ActorIndex)
-	r.Uint32(&x.Priority)
+	r.Int32(&x.PresetIndex)
+	r.Int32(&x.CategoryIndex)
+	r.Int32(&x.ActorIndex)
+	r.Int32(&x.Priority)
 }
