@@ -36,23 +36,3 @@ type ServerJoinInformation struct {
 func (x *ServerJoinInformation) Marshal(r IO) {
 	OptionalMarshaler(r, &x.GatheringJoinInfo)
 }
-
-// ServerTelemetryData contains telemetry identifiers sent in the StartGame packet.
-type ServerTelemetryData struct {
-	// ServerID is the server identifier for telemetry.
-	ServerID string
-	// ScenarioID is the scenario identifier for telemetry.
-	ScenarioID string
-	// WorldID is the world identifier for telemetry.
-	WorldID string
-	// OwnerID is the owner identifier for telemetry.
-	OwnerID string
-}
-
-// Marshal encodes/decodes a ServerTelemetryData.
-func (x *ServerTelemetryData) Marshal(r IO) {
-	r.String(&x.ServerID)
-	r.String(&x.ScenarioID)
-	r.String(&x.WorldID)
-	r.String(&x.OwnerID)
-}

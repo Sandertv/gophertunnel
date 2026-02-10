@@ -660,24 +660,6 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// StringConst reads a string from the reader and matches its length against x.
-func (r *Reader) StringConst(x string) {
-	var length uint32
-	r.Varuint32(&length)
-	l := int(length)
-	if l != len(x) {
-		r.panicf("expected string with a length of %v, got %v", len(x), l)
-	}
-	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
-		r.panic(err)
-	}
-	input := *(*string)(unsafe.Pointer(&data))
-	if !strings.EqualFold(input, x) {
-		r.panicf("expected string to be %q, got %q", x, input)
-	}
-}
-
 // SliceLimit checks if the value passed is lower than the limit passed. If
 // not, the Reader panics.
 func (r *Reader) SliceLimit(value uint32, max uint32) {

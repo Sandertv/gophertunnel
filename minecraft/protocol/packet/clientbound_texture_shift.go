@@ -4,9 +4,17 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	TextureShiftActionInvalid = iota
+	TextureShiftActionInitialize
+	TextureShiftActionStart
+	TextureShiftActionSetEnabled
+	TextureShiftActionSync
+)
+
 // ClientBoundTextureShift is sent by the server to control texture shift animations on the client.
 type ClientBoundTextureShift struct {
-	// ActionID is the texture shift action to perform. It is one of the TextureShiftAction constants.
+	// ActionID is the texture shift action to perform. It is one of the constants above.
 	ActionID uint8
 	// CollectionName is the name of the texture shift collection.
 	CollectionName string

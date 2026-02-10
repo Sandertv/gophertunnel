@@ -1,7 +1,7 @@
 package protocol
 
-// SerializableVoxelCells represents a 3D grid of voxel cell data.
-type SerializableVoxelCells struct {
+// VoxelCells represents a 3D grid of voxel cell data.
+type VoxelCells struct {
 	// XSize is the size of the grid along the X axis.
 	XSize uint8
 	// YSize is the size of the grid along the Y axis.
@@ -12,8 +12,8 @@ type SerializableVoxelCells struct {
 	Storage []uint8
 }
 
-// Marshal encodes/decodes a SerializableVoxelCells.
-func (x *SerializableVoxelCells) Marshal(r IO) {
+// Marshal encodes/decodes a VoxelCells.
+func (x *VoxelCells) Marshal(r IO) {
 	r.Uint8(&x.XSize)
 	r.Uint8(&x.YSize)
 	r.Uint8(&x.ZSize)
@@ -34,10 +34,10 @@ func (x *VoxelShapeNameEntry) Marshal(r IO) {
 	r.Uint16(&x.ID)
 }
 
-// SerializableVoxelShape represents a voxel shape with cells and coordinate axes.
-type SerializableVoxelShape struct {
+// VoxelShape represents a voxel shape with cells and coordinate axes.
+type VoxelShape struct {
 	// Cells is the grid of cells representing solid and empty regions.
-	Cells SerializableVoxelCells
+	Cells VoxelCells
 	// XCoordinates is a list of X axis coordinates for the shape.
 	XCoordinates []float32
 	// YCoordinates is a list of Y axis coordinates for the shape.
@@ -46,8 +46,8 @@ type SerializableVoxelShape struct {
 	ZCoordinates []float32
 }
 
-// Marshal encodes/decodes a SerializableVoxelShape.
-func (x *SerializableVoxelShape) Marshal(r IO) {
+// Marshal encodes/decodes a VoxelShape.
+func (x *VoxelShape) Marshal(r IO) {
 	Single(r, &x.Cells)
 	FuncSlice(r, &x.XCoordinates, r.Float32)
 	FuncSlice(r, &x.YCoordinates, r.Float32)

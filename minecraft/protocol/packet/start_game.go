@@ -247,8 +247,14 @@ type StartGame struct {
 	ServerAuthoritativeSound bool
 	// ServerJoinInformation contains optional information about the server the player is joining.
 	ServerJoinInformation protocol.Optional[protocol.ServerJoinInformation]
-	// ServerTelemetryData contains telemetry identifiers for the server.
-	ServerTelemetryData protocol.ServerTelemetryData
+	// ServerID is the server identifier for telemetry.
+	ServerID string
+	// ScenarioID is the scenario identifier for telemetry.
+	ScenarioID string
+	// WorldID is the world identifier for telemetry.
+	WorldID string
+	// OwnerID is the owner identifier for telemetry.
+	OwnerID string
 }
 
 // ID ...
@@ -332,5 +338,8 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.UseBlockNetworkIDHashes)
 	io.Bool(&pk.ServerAuthoritativeSound)
 	protocol.OptionalMarshaler(io, &pk.ServerJoinInformation)
-	protocol.Single(io, &pk.ServerTelemetryData)
+	io.String(&pk.ServerID)
+	io.String(&pk.ScenarioID)
+	io.String(&pk.WorldID)
+	io.String(&pk.OwnerID)
 }
