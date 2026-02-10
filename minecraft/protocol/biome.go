@@ -213,6 +213,8 @@ type BiomeChunkGeneration struct {
 	LegacyRules Optional[[]BiomeConditionalTransformation]
 	// ReplacementsData is a list of biome replacement data.
 	ReplacementsData Optional[[]BiomeReplacementData]
+	// VillageType is the optional village type for the biome's chunk generation.
+	VillageType Optional[uint8]
 }
 
 func (x *BiomeChunkGeneration) Marshal(r IO) {
@@ -239,6 +241,7 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 	OptionalFunc(r, &x.ReplacementsData, func(s *[]BiomeReplacementData) {
 		Slice(r, s)
 	})
+	OptionalFunc(r, &x.VillageType, r.Uint8)
 }
 
 // BiomeClimate represents the climate of a biome, mainly for ambience but also defines certain behaviours.

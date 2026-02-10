@@ -307,6 +307,8 @@ type CameraAimAssistPriorities struct {
 	Blocks []CameraAimAssistPriority
 	// BlockTags is a list of priorities for specific block tags.
 	BlockTags []CameraAimAssistPriority
+	// EntityTypeFamilies is a list of priorities for specific entity type families.
+	EntityTypeFamilies []CameraAimAssistPriority
 	// EntityDefault is the default priority for entities.
 	EntityDefault Optional[int32]
 	// BlockDefault is the default priority for blocks.
@@ -318,6 +320,7 @@ func (x *CameraAimAssistPriorities) Marshal(r IO) {
 	Slice(r, &x.Entities)
 	Slice(r, &x.Blocks)
 	Slice(r, &x.BlockTags)
+	Slice(r, &x.EntityTypeFamilies)
 	OptionalFunc(r, &x.EntityDefault, r.Int32)
 	OptionalFunc(r, &x.BlockDefault, r.Int32)
 }
@@ -346,6 +349,8 @@ type CameraAimAssistPreset struct {
 	EntityExclusions []string
 	// BlockTagExclusions is a list of block tags that should be ignored by the aim assist.
 	BlockTagExclusions []string
+	// EntityTypeFamilyExclusions is a list of entity type families that should be ignored by the aim assist.
+	EntityTypeFamilyExclusions []string
 	// LiquidTargets is a list of entity identifiers that should be targetted when inside of a liquid.
 	LiquidTargets []string
 	// ItemSettings is a list of settings for specific item identifiers. If an item is not listed here, it
@@ -365,6 +370,7 @@ func (x *CameraAimAssistPreset) Marshal(r IO) {
 	FuncSlice(r, &x.BlockExclusions, r.String)
 	FuncSlice(r, &x.EntityExclusions, r.String)
 	FuncSlice(r, &x.BlockTagExclusions, r.String)
+	FuncSlice(r, &x.EntityTypeFamilyExclusions, r.String)
 	FuncSlice(r, &x.LiquidTargets, r.String)
 	Slice(r, &x.ItemSettings)
 	OptionalFunc(r, &x.DefaultItemSettings, r.String)
@@ -401,6 +407,23 @@ func (x *CameraRotationOption) Marshal(r IO) {
 	r.Float32(&x.Time)
 }
 
+// CameraProgressOption represents a progress keyframe option for camera spline instructions.
+type CameraProgressOption struct {
+	// Value is the progress value.
+	Value float32
+	// Time is the time for this progress option.
+	Time float32
+	// EaseType is the type of easing function used.
+	EaseType uint32
+}
+
+// Marshal encodes/decodes a CameraProgressOption.
+func (x *CameraProgressOption) Marshal(r IO) {
+	r.Float32(&x.Value)
+	r.Float32(&x.Time)
+	r.Uint32(&x.EaseType)
+}
+
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.
 type CameraSplineInstruction struct {
 	// TotalTime is the total time for the spline animation.
@@ -409,8 +432,8 @@ type CameraSplineInstruction struct {
 	EaseType uint8
 	// Curve is a list of points that define the spline curve.
 	Curve []mgl32.Vec3
-	// ProgressKeyFrames is a list of key frames for the progress of the spline.
-	ProgressKeyFrames []mgl32.Vec2
+	// ProgressKeyFrames is a list of progress key frames for the spline.
+	ProgressKeyFrames []CameraProgressOption
 	// RotationOptions is a list of rotation options for the spline.
 	RotationOptions []CameraRotationOption
 }
@@ -420,6 +443,40 @@ func (x *CameraSplineInstruction) Marshal(r IO) {
 	r.Float32(&x.TotalTime)
 	r.Uint8(&x.EaseType)
 	FuncSlice(r, &x.Curve, r.Vec3)
-	FuncSlice(r, &x.ProgressKeyFrames, r.Vec2)
+	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
+}
+
+// CameraSplineDefinition represents a named camera spline definition.
+type CameraSplineDefinition struct {
+	// Name is the name of the spline definition.
+	Name string
+	// Instruction is the spline instruction for this definition.
+	Instruction CameraSplineInstruction
+}
+
+// Marshal encodes/decodes a CameraSplineDefinition.
+func (x *CameraSplineDefinition) Marshal(r IO) {
+	r.String(&x.Name)
+	Single(r, &x.Instruction)
+}
+
+// CameraAimAssistActorPriorityData represents priority data for aim assist actor targeting.
+type CameraAimAssistActorPriorityData struct {
+	// PresetIndex is the index of the aim assist preset.
+	PresetIndex uint32
+	// CategoryIndex is the index of the aim assist category.
+	CategoryIndex uint32
+	// ActorIndex is the index of the actor.
+	ActorIndex uint32
+	// Priority is the priority value for this actor.
+	Priority uint32
+}
+
+// Marshal encodes/decodes a CameraAimAssistActorPriorityData.
+func (x *CameraAimAssistActorPriorityData) Marshal(r IO) {
+	r.Uint32(&x.PresetIndex)
+	r.Uint32(&x.CategoryIndex)
+	r.Uint32(&x.ActorIndex)
+	r.Uint32(&x.Priority)
 }

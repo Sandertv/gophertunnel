@@ -269,7 +269,14 @@ func init() {
 		IDClientBoundControlSchemeSet:  func() Packet { return &ClientBoundControlSchemeSet{} },
 		IDDebugDrawer:                  func() Packet { return &DebugDrawer{} },
 		IDServerBoundPackSettingChange: func() Packet { return &ServerBoundPackSettingChange{} },
-		IDGraphicsOverrideParameter:    func() Packet { return &GraphicsOverrideParameter{} },
+		IDGraphicsOverrideParameter:              func() Packet { return &GraphicsOverrideParameter{} },
+		IDClientBoundDataDrivenUIShowScreen:      func() Packet { return &ClientBoundDataDrivenUIShowScreen{} },
+		IDClientBoundDataDrivenUICloseAllScreens: func() Packet { return &ClientBoundDataDrivenUICloseAllScreens{} },
+		IDClientBoundDataDrivenUIReload:          func() Packet { return &ClientBoundDataDrivenUIReload{} },
+		IDClientBoundTextureShift:                func() Packet { return &ClientBoundTextureShift{} },
+		IDVoxelShapes:                            func() Packet { return &VoxelShapes{} },
+		IDCameraSpline:                           func() Packet { return &CameraSpline{} },
+		IDCameraAimAssistActorPriority:           func() Packet { return &CameraAimAssistActorPriority{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
