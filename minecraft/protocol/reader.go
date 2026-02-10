@@ -9,7 +9,6 @@ import (
 	"math"
 	"math/big"
 	"math/bits"
-	"strings"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
