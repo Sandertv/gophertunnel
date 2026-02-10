@@ -130,6 +130,17 @@ const (
 	DisconnectReasonNetherNetDataChannelClosed
 	DisconnectReasonDiscoveryEnvironmentMismatch
 	DisconnectReasonHostWithoutKeys
+	DisconnectReasonHostSignedOut
+	DisconnectReasonScriptWatchdogException
+	DisconnectReasonScriptMemoryLimitExceeded
+	DisconnectReasonStorageLowDuringGameplay
+	DisconnectReasonStorageFullDuringGameplay
+	DisconnectReasonLevelStorageCorruption
+	DisconnectReasonEditionMismatchVanillaToEdu
+	DisconnectReasonEditionMismatchEduToVanilla
+	DisconnectReasonEditorMismatchEditorToVanilla
+	DisconnectReasonEditorMismatchVanillaToEditor
+	DisconnectReasonDenyListed
 )
 
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the

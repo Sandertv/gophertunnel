@@ -298,7 +298,7 @@ func (x *CameraAimAssistCategory) Marshal(r IO) {
 	Single(r, &x.Priorities)
 }
 
-// CameraAimAssistPriorities represents the block and entity specific priorities for targetting. The aim
+// CameraAimAssistPriorities represents the block and entity specific priorities for targeting. The aim
 // assist will select the block or entity with the highest priority within the specified thresholds.
 type CameraAimAssistPriorities struct {
 	// Entities is a list of priorities for specific entity identifiers.
@@ -307,6 +307,8 @@ type CameraAimAssistPriorities struct {
 	Blocks []CameraAimAssistPriority
 	// BlockTags is a list of priorities for specific block tags.
 	BlockTags []CameraAimAssistPriority
+	// EntityTypeFamilies is a list of priorities for specific entity type families.
+	EntityTypeFamilies []CameraAimAssistPriority
 	// EntityDefault is the default priority for entities.
 	EntityDefault Optional[int32]
 	// BlockDefault is the default priority for blocks.
@@ -318,6 +320,7 @@ func (x *CameraAimAssistPriorities) Marshal(r IO) {
 	Slice(r, &x.Entities)
 	Slice(r, &x.Blocks)
 	Slice(r, &x.BlockTags)
+	Slice(r, &x.EntityTypeFamilies)
 	OptionalFunc(r, &x.EntityDefault, r.Int32)
 	OptionalFunc(r, &x.BlockDefault, r.Int32)
 }
@@ -346,6 +349,8 @@ type CameraAimAssistPreset struct {
 	EntityExclusions []string
 	// BlockTagExclusions is a list of block tags that should be ignored by the aim assist.
 	BlockTagExclusions []string
+	// EntityTypeFamilyExclusions is a list of entity type family identifiers that should be ignored by the aim assist.
+	EntityTypeFamilyExclusions []string
 	// LiquidTargets is a list of entity identifiers that should be targetted when inside of a liquid.
 	LiquidTargets []string
 	// ItemSettings is a list of settings for specific item identifiers. If an item is not listed here, it
@@ -365,6 +370,7 @@ func (x *CameraAimAssistPreset) Marshal(r IO) {
 	FuncSlice(r, &x.BlockExclusions, r.String)
 	FuncSlice(r, &x.EntityExclusions, r.String)
 	FuncSlice(r, &x.BlockTagExclusions, r.String)
+	FuncSlice(r, &x.EntityTypeFamilyExclusions, r.String)
 	FuncSlice(r, &x.LiquidTargets, r.String)
 	Slice(r, &x.ItemSettings)
 	OptionalFunc(r, &x.DefaultItemSettings, r.String)
@@ -401,16 +407,35 @@ func (x *CameraRotationOption) Marshal(r IO) {
 	r.Float32(&x.Time)
 }
 
+// CameraSplineProgressOption represents a single progress keyframe in a camera spline.
+// Added in protocol v924.
+type CameraSplineProgressOption struct {
+	// Value is the progress value at this keyframe.
+	Value float32
+	// Time is the time for this keyframe.
+	Time float32
+	// EasingFunc is the easing function index used for this keyframe.
+	EasingFunc uint8
+}
+
+// Marshal encodes/decodes a CameraSplineProgressOption.
+func (x *CameraSplineProgressOption) Marshal(r IO) {
+	r.Float32(&x.Value)
+	r.Float32(&x.Time)
+	r.Uint8(&x.EasingFunc)
+}
+
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.
+// Its layout matches the v924 protocol.
 type CameraSplineInstruction struct {
 	// TotalTime is the total time for the spline animation.
 	TotalTime float32
-	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	// Type is the type of spline. This is one of the SplineEaseType constants above.
+	Type uint8
 	// Curve is a list of points that define the spline curve.
 	Curve []mgl32.Vec3
 	// ProgressKeyFrames is a list of key frames for the progress of the spline.
-	ProgressKeyFrames []mgl32.Vec2
+	ProgressKeyFrames []CameraSplineProgressOption
 	// RotationOptions is a list of rotation options for the spline.
 	RotationOptions []CameraRotationOption
 }
@@ -418,8 +443,8 @@ type CameraSplineInstruction struct {
 // Marshal encodes/decodes a CameraSplineInstruction.
 func (x *CameraSplineInstruction) Marshal(r IO) {
 	r.Float32(&x.TotalTime)
-	r.Uint8(&x.EaseType)
+	r.Uint8(&x.Type)
 	FuncSlice(r, &x.Curve, r.Vec3)
-	FuncSlice(r, &x.ProgressKeyFrames, r.Vec2)
+	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
 }

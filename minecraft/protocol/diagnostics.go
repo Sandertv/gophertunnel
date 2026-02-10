@@ -1,0 +1,104 @@
+package protocol
+
+// MemoryCategoryCounter represents a per-category memory usage counter reported by the client.
+type MemoryCategoryCounter struct {
+	// Category is the memory category.
+	Category MemoryCategory
+	// CurrentBytes is the number of bytes currently used for this category.
+	CurrentBytes int64
+}
+
+// Marshal encodes/decodes a MemoryCategoryCounter.
+func (c *MemoryCategoryCounter) Marshal(r IO) {
+	r.Uint8((*uint8)(&c.Category))
+	r.Int64(&c.CurrentBytes)
+}
+
+// MemoryCategory enumerates the different memory categories a client can report diagnostics for.
+// The values are ordered to match the Bedrock protocol enum.
+type MemoryCategory uint8
+
+const (
+	MemoryCategoryUnknown MemoryCategory = iota
+	MemoryCategoryInvalidSizeUnknown
+	MemoryCategoryActor
+	MemoryCategoryActorAnimation
+	MemoryCategoryActorRendering
+	MemoryCategoryBalancer
+	MemoryCategoryBlockTickingQueues
+	MemoryCategoryBiomeStorage
+	MemoryCategoryCereal
+	MemoryCategoryCircuitSystem
+	MemoryCategoryClient
+	MemoryCategoryCommands
+	MemoryCategoryDBStorage
+	MemoryCategoryDebug
+	MemoryCategoryDocumentation
+	MemoryCategoryECSSystems
+	MemoryCategoryFMOD
+	MemoryCategoryFonts
+	MemoryCategoryIMGUI
+	MemoryCategoryInput
+	MemoryCategoryJSONUI
+	MemoryCategoryJSONUIControlFactoryJSON
+	MemoryCategoryJSONUIControlTree
+	MemoryCategoryJSONUIControlTreeControlElement
+	MemoryCategoryJSONUIControlTreePopulateDataBinding
+	MemoryCategoryJSONUIControlTreePopulateFocus
+	MemoryCategoryJSONUIControlTreePopulateLayout
+	MemoryCategoryJSONUIControlTreePopulateOther
+	MemoryCategoryJSONUIControlTreePopulateSprite
+	MemoryCategoryJSONUIControlTreePopulateText
+	MemoryCategoryJSONUIControlTreePopulateTTS
+	MemoryCategoryJSONUIControlTreeVisibility
+	MemoryCategoryJSONUICreateUI
+	MemoryCategoryJSONUIDefs
+	MemoryCategoryJSONUILayoutManager
+	MemoryCategoryJSONUILayoutManagerRemoveDependencies
+	MemoryCategoryJSONUILayoutManagerInitVariable
+	MemoryCategoryLanguages
+	MemoryCategoryLevel
+	MemoryCategoryLevelStructures
+	MemoryCategoryLevelChunk
+	MemoryCategoryLevelChunkGen
+	MemoryCategoryLevelChunkGenThreadLocal
+	MemoryCategoryNetwork
+	MemoryCategoryMarketplace
+	MemoryCategoryMaterialDragonCompiledDefinition
+	MemoryCategoryMaterialDragonMaterial
+	MemoryCategoryMaterialDragonResource
+	MemoryCategoryMaterialDragonUniformMap
+	MemoryCategoryMaterialRenderMaterial
+	MemoryCategoryMaterialRenderMaterialGroup
+	MemoryCategoryMaterialVariationManager
+	MemoryCategoryMolang
+	MemoryCategoryOREUI
+	MemoryCategoryPersona
+	MemoryCategoryPlayer
+	MemoryCategoryRenderChunk
+	MemoryCategoryRenderChunkIndexBuffer
+	MemoryCategoryRenderChunkVertexBuffer
+	MemoryCategoryRendering
+	MemoryCategoryRenderingLibrary
+	MemoryCategoryRequestLog
+	MemoryCategoryResourcePacks
+	MemoryCategorySound
+	MemoryCategorySubChunkBiomeData
+	MemoryCategorySubChunkBlockData
+	MemoryCategorySubChunkLightData
+	MemoryCategoryTextures
+	MemoryCategoryVR
+	MemoryCategoryWeatherRenderer
+	MemoryCategoryWorldGenerator
+	MemoryCategoryTasks
+	MemoryCategoryTest
+	MemoryCategoryScripting
+	MemoryCategoryScriptingRuntime
+	MemoryCategoryScriptingContext
+	MemoryCategoryScriptingContextBindingsMC
+	MemoryCategoryScriptingContextBindingsGT
+	MemoryCategoryScriptingContextRun
+	MemoryCategoryDataDrivenUI
+	MemoryCategoryDataDrivenUIDefs
+)
+

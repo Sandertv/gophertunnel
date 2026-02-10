@@ -32,6 +32,9 @@ type ServerBoundDiagnostics struct {
 	// AverageUnaccountedTimePercent is the average percentage of time that the client spends on
 	// unaccounted tasks.
 	AverageUnaccountedTimePercent float32
+	// MemoryCategoryValues contains memory usage counters for individual memory categories reported by the client.
+	// Added in protocol v924.
+	MemoryCategoryValues []protocol.MemoryCategoryCounter
 }
 
 // ID ...
@@ -49,4 +52,5 @@ func (pk *ServerBoundDiagnostics) Marshal(io protocol.IO) {
 	io.Float32(&pk.AverageEndFrameTime)
 	io.Float32(&pk.AverageRemainderTimePercent)
 	io.Float32(&pk.AverageUnaccountedTimePercent)
+	protocol.Slice(io, &pk.MemoryCategoryValues)
 }
