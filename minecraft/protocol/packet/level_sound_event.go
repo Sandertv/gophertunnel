@@ -585,6 +585,25 @@ const (
 	SoundEventImitateCamelHusk
 	SoundEventItemSpearUse
 	SoundEventItemWoodenSpearUse
+	SoundEventSaddleInWater
+	SoundEventItemStoneSpearAttackHit
+	SoundEventItemIronSpearAttackHit
+	SoundEventItemCopperSpearAttackHit
+	SoundEventItemGoldenSpearAttackHit
+	SoundEventItemDiamondSpearAttackHit
+	SoundEventItemNetheriteSpearAttackHit
+	SoundEventItemStoneSpearAttackMiss
+	SoundEventItemIronSpearAttackMiss
+	SoundEventItemCopperSpearAttackMiss
+	SoundEventItemGoldenSpearAttackMiss
+	SoundEventItemDiamondSpearAttackMiss
+	SoundEventItemNetheriteSpearAttackMiss
+	SoundEventItemStoneSpearUse
+	SoundEventItemIronSpearUse
+	SoundEventItemCopperSpearUse
+	SoundEventItemGoldenSpearUse
+	SoundEventItemDiamondSpearUse
+	SoundEventItemNetheriteSpearUse
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
