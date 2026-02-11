@@ -1,6 +1,7 @@
 package login
 
 import (
+	cryptorand "crypto/rand"
 	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
@@ -406,34 +407,26 @@ func base64DecLength(base64Data string, validLengths ...int) error {
 
 type DeviceID string
 
-// DeviceIDFormat describes the format of the DeviceID,
-// the documentation for each format is as follows:
-//
-//	DeviceOS to DeviceIDFormat
-//		DeviceAndroid: DeviceIDFormatLowerHexString, // "a4f365bb1e04459bbe4cb3cbf9d546e0",
-//		DeviceIOS:  DeviceIDFormatUpperHexString, // "ADA3DFA4622F4E2FB2C14A496D52DB96",
-//		DeviceWin32: DeviceIDFormatLowerHexString, // "362b850f82493ec2719ea267dd25167f",
-//		DeviceOrbis: DeviceIDFormatUUID, // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
-//		DeviceXBOX: DeviceIDFormatBase64, // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+// DeviceIDFormat describes the format of a DeviceID.
 type DeviceIDFormat uint8
 
 const (
-	DeviceIDFormatUpperHexString DeviceIDFormat = iota
-	DeviceIDFormatLowerHexString
-	DeviceIDFormatBase64
-	DeviceIDFormatUUID
+	DeviceIDFormatUpperHexString DeviceIDFormat = iota // "ADA3DFA4622F4E2FB2C14A496D52DB96" (iOS)
+	DeviceIDFormatLowerHexString                       // "a4f365bb1e04459bbe4cb3cbf9d546e0" (Android, Win32)
+	DeviceIDFormatBase64                               // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=" (XBOX)
+	DeviceIDFormatUUID                                 // "05601fd2-9c71-30b1-b174-5fa11b9de09f" (Orbis)
 	DeviceIDFormatInvalid
 )
 
-// Used to check the provided DeviceID contains only lower-case characters and digits.
+// lowerMatch checks that a string contains only lower-case hex characters and digits.
 var lowerMatch = regexp.MustCompile(`^[a-z0-9]+$`)
 
-// Format determines the format of the DeviceID based on documented types.
-// If no format is determined, DeviceIDFormatInvalid is returned.
+// Format determines the DeviceIDFormat of the DeviceID. If no format is
+// determined, DeviceIDFormatInvalid is returned.
 func (dID DeviceID) Format() DeviceIDFormat {
 	deviceID := string(dID)
 
-	// This must be checked before UUID as these are valid UUIDs as well.
+	// Hex must be checked before UUID, as hex strings are also valid UUIDs.
 	data, err := hex.DecodeString(deviceID)
 	if err == nil {
 		if len(data) != 16 {
@@ -459,20 +452,38 @@ func (dID DeviceID) Format() DeviceIDFormat {
 	return DeviceIDFormatInvalid
 }
 
-// ExpectedDeviceIDFormat returns the expected format of the DeviceID based on the provided DeviceOS.
-// For undocumented devices, DeviceIDFormatInvalid is returned. 
+// ExpectedDeviceIDFormat returns the expected DeviceIDFormat based on DeviceOS.
+// For undocumented devices, DeviceIDFormatInvalid is returned.
 func (data ClientData) ExpectedDeviceIDFormat() DeviceIDFormat {
 	switch data.DeviceOS {
 	case protocol.DeviceAndroid:
-		return DeviceIDFormatLowerHexString // "a4f365bb1e04459bbe4cb3cbf9d546e0",
+		return DeviceIDFormatLowerHexString
 	case protocol.DeviceIOS:
-		return DeviceIDFormatUpperHexString // "ADA3DFA4622F4E2FB2C14A496D52DB96",
+		return DeviceIDFormatUpperHexString
 	case protocol.DeviceWin32:
-		return DeviceIDFormatLowerHexString // "362b850f82493ec2719ea267dd25167f",
+		return DeviceIDFormatLowerHexString
 	case protocol.DeviceOrbis:
-		return DeviceIDFormatUUID // "05601fd2-9c71-30b1-b174-5fa11b9de09f",
+		return DeviceIDFormatUUID
 	case protocol.DeviceXBOX:
-		return DeviceIDFormatBase64 // "VlhnpI7TuWyfHiUx3WYwFvQQHbDkv505h6VVo40Cngw=",
+		return DeviceIDFormatBase64
 	}
 	return DeviceIDFormatInvalid
+}
+
+// Generate returns a randomly generated DeviceID in the format described by f.
+// For DeviceIDFormatInvalid or unknown formats, it falls back to
+// DeviceIDFormatLowerHexString.
+func (f DeviceIDFormat) Generate() DeviceID {
+	switch f {
+	case DeviceIDFormatUpperHexString:
+		return DeviceID(strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", "")))
+	case DeviceIDFormatUUID:
+		return DeviceID(uuid.NewString())
+	case DeviceIDFormatBase64:
+		b := make([]byte, 32)
+		_, _ = cryptorand.Read(b)
+		return DeviceID(base64.StdEncoding.EncodeToString(b))
+	default:
+		return DeviceID(strings.ReplaceAll(uuid.NewString(), "-", ""))
+	}
 }
