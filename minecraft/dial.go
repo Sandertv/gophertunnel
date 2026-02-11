@@ -441,8 +441,7 @@ func defaultClientData(address, username string, d *login.ClientData) {
 		d.ClientRandomID = rand.Int63()
 	}
 	if d.DeviceID == "" {
-		// This can be parsed as DeviceIDFormatLowerHexString and is standard on `most` devices including Android.
-		d.DeviceID = login.DeviceID(strings.ReplaceAll(uuid.NewString(), "-", ""))
+		d.DeviceID = d.ExpectedDeviceIDFormat().Generate()
 	}
 	if d.LanguageCode == "" {
 		d.LanguageCode = "en_GB"
