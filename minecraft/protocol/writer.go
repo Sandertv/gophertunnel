@@ -540,50 +540,298 @@ func (w *Writer) ShapeData(x *ShapeData) {
 
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
-	u := *x
-	ux := uint64(u) << 1
-	if u < 0 {
-		ux = ^ux
+	v := *x
+	u := uint64(v) << 1
+	if v < 0 {
+		u = ^u
 	}
-	for ux >= 0x80 {
-		_ = w.w.WriteByte(byte(ux) | 0x80)
-		ux >>= 7
+
+	if u < 1<<7 {
+		_ = w.w.WriteByte(byte(u))
+		return
 	}
-	_ = w.w.WriteByte(byte(ux))
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		_ = w.w.WriteByte(byte(u) | 0x80)
+		_ = w.w.WriteByte(byte(u >> 7))
+		return
+	}
+	if u < 1<<21 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		})
+		return
+	}
+	if u < 1<<28 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		})
+		return
+	}
+	if u < 1<<35 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u >> 28),
+		})
+		return
+	}
+	if u < 1<<42 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u >> 35),
+		})
+		return
+	}
+	if u < 1<<49 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u >> 42),
+		})
+		return
+	}
+	if u < 1<<56 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u >> 49),
+		})
+		return
+	}
+	if u < 1<<63 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u>>49) | 0x80,
+			byte(u >> 56),
+		})
+		return
+	}
+	_, _ = w.w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u>>28) | 0x80,
+		byte(u>>35) | 0x80,
+		byte(u>>42) | 0x80,
+		byte(u>>49) | 0x80,
+		byte(u>>56) | 0x80,
+		byte(u >> 63),
+	})
 }
 
 // Varuint64 writes a uint64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varuint64(x *uint64) {
 	u := *x
-	for u >= 0x80 {
-		_ = w.w.WriteByte(byte(u) | 0x80)
-		u >>= 7
+	if u < 1<<7 {
+		_ = w.w.WriteByte(byte(u))
+		return
 	}
-	_ = w.w.WriteByte(byte(u))
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		_ = w.w.WriteByte(byte(u) | 0x80)
+		_ = w.w.WriteByte(byte(u >> 7))
+		return
+	}
+	if u < 1<<21 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		})
+		return
+	}
+	if u < 1<<28 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		})
+		return
+	}
+	if u < 1<<35 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u >> 28),
+		})
+		return
+	}
+	if u < 1<<42 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u >> 35),
+		})
+		return
+	}
+	if u < 1<<49 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u >> 42),
+		})
+		return
+	}
+	if u < 1<<56 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u >> 49),
+		})
+		return
+	}
+	if u < 1<<63 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u>>49) | 0x80,
+			byte(u >> 56),
+		})
+		return
+	}
+	_, _ = w.w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u>>28) | 0x80,
+		byte(u>>35) | 0x80,
+		byte(u>>42) | 0x80,
+		byte(u>>49) | 0x80,
+		byte(u>>56) | 0x80,
+		byte(u >> 63),
+	})
 }
 
 // Varint32 writes an int32 as 1-5 bytes to the underlying buffer.
 func (w *Writer) Varint32(x *int32) {
-	u := *x
-	ux := uint32(u) << 1
-	if u < 0 {
-		ux = ^ux
+	v := *x
+	u := uint32(v) << 1
+	if v < 0 {
+		u = ^u
 	}
-	for ux >= 0x80 {
-		_ = w.w.WriteByte(byte(ux) | 0x80)
-		ux >>= 7
+
+	if u < 1<<7 {
+		_ = w.w.WriteByte(byte(u))
+		return
 	}
-	_ = w.w.WriteByte(byte(ux))
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		_ = w.w.WriteByte(byte(u) | 0x80)
+		_ = w.w.WriteByte(byte(u >> 7))
+		return
+	}
+	if u < 1<<21 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		})
+		return
+	}
+	if u < 1<<28 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		})
+		return
+	}
+	_, _ = w.w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u >> 28),
+	})
 }
 
 // Varuint32 writes a uint32 as 1-5 bytes to the underlying buffer.
 func (w *Writer) Varuint32(x *uint32) {
 	u := *x
-	for u >= 0x80 {
-		_ = w.w.WriteByte(byte(u) | 0x80)
-		u >>= 7
+	if u < 1<<7 {
+		_ = w.w.WriteByte(byte(u))
+		return
 	}
-	_ = w.w.WriteByte(byte(u))
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		_ = w.w.WriteByte(byte(u) | 0x80)
+		_ = w.w.WriteByte(byte(u >> 7))
+		return
+	}
+	if u < 1<<21 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		})
+		return
+	}
+	if u < 1<<28 {
+		_, _ = w.w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		})
+		return
+	}
+	_, _ = w.w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u >> 28),
+	})
 }
 
 // NBT writes a map as NBT to the underlying buffer using the encoding passed.

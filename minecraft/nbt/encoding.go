@@ -57,17 +57,55 @@ type networkLittleEndian struct{ littleEndian }
 
 // WriteInt32 ...
 func (networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
-	ux := uint32(x) << 1
+	u := uint32(x) << 1
 	if x < 0 {
-		ux = ^ux
+		u = ^u
 	}
-	for ux >= 0x80 {
-		if err := w.WriteByte(byte(ux) | 0x80); err != nil {
+
+	if u < 1<<7 {
+		if err := w.WriteByte(byte(u)); err != nil {
 			return FailedWriteError{Op: "WriteInt32", Off: w.off}
 		}
-		ux >>= 7
+		return nil
 	}
-	if err := w.WriteByte(byte(ux)); err != nil {
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		if err := w.WriteByte(byte(u) | 0x80); err != nil {
+			return FailedWriteError{Op: "WriteInt32", Off: w.off}
+		}
+		if err := w.WriteByte(byte(u >> 7)); err != nil {
+			return FailedWriteError{Op: "WriteInt32", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<21 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt32", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<28 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt32", Off: w.off}
+		}
+		return nil
+	}
+	if _, err := w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u >> 28),
+	}); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -75,17 +113,130 @@ func (networkLittleEndian) WriteInt32(w *offsetWriter, x int32) error {
 
 // WriteInt64 ...
 func (networkLittleEndian) WriteInt64(w *offsetWriter, x int64) error {
-	ux := uint64(x) << 1
+	u := uint64(x) << 1
 	if x < 0 {
-		ux = ^ux
+		u = ^u
 	}
-	for ux >= 0x80 {
-		if err := w.WriteByte(byte(ux) | 0x80); err != nil {
+
+	if u < 1<<7 {
+		if err := w.WriteByte(byte(u)); err != nil {
 			return FailedWriteError{Op: "WriteInt64", Off: w.off}
 		}
-		ux >>= 7
+		return nil
 	}
-	if err := w.WriteByte(byte(ux)); err != nil {
+	if u < 1<<14 {
+		// Two WriteByte() calls on bytes.Buffer is faster than a single Write() with []byte.
+		if err := w.WriteByte(byte(u) | 0x80); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		if err := w.WriteByte(byte(u >> 7)); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<21 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u >> 14),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<28 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u >> 21),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<35 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u >> 28),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<42 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u >> 35),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<49 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u >> 42),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<56 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u >> 49),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if u < 1<<63 {
+		if _, err := w.Write([]byte{
+			byte(u) | 0x80,
+			byte(u>>7) | 0x80,
+			byte(u>>14) | 0x80,
+			byte(u>>21) | 0x80,
+			byte(u>>28) | 0x80,
+			byte(u>>35) | 0x80,
+			byte(u>>42) | 0x80,
+			byte(u>>49) | 0x80,
+			byte(u >> 56),
+		}); err != nil {
+			return FailedWriteError{Op: "WriteInt64", Off: w.off}
+		}
+		return nil
+	}
+	if _, err := w.Write([]byte{
+		byte(u) | 0x80,
+		byte(u>>7) | 0x80,
+		byte(u>>14) | 0x80,
+		byte(u>>21) | 0x80,
+		byte(u>>28) | 0x80,
+		byte(u>>35) | 0x80,
+		byte(u>>42) | 0x80,
+		byte(u>>49) | 0x80,
+		byte(u>>56) | 0x80,
+		byte(u >> 63),
+	}); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
