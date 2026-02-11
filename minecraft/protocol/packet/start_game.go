@@ -239,20 +239,22 @@ type StartGame struct {
 	ChatRestrictionLevel uint8
 	// DisablePlayerInteractions is true if the client should ignore other players when interacting with the world.
 	DisablePlayerInteractions bool
-	// ServerID is always empty in vanilla and its usage is currently unknown.
-	ServerID string
-	// WorldID is always empty in vanilla and its usage is currently unknown.
-	WorldID string
-	// ScenarioID is always empty in vanilla and its usage is currently unknown.
-	ScenarioID string
-	// OwnerID is always empty in vanilla and its usage is currently unknown.
-	OwnerID string
 	// UseBlockNetworkIDHashes is true if the client should use the hash of a block's name as its network ID rather than
 	// its index in the expected block palette. This is useful for servers that wish to support multiple protocol versions
 	// and custom blocks, but it will result in extra bytes being written for every block in a sub chunk palette.
 	UseBlockNetworkIDHashes bool
 	// ServerAuthoritativeSound is currently unknown as to what it does.
 	ServerAuthoritativeSound bool
+	// ServerJoinInformation contains optional information about the server the player is joining.
+	ServerJoinInformation protocol.Optional[protocol.ServerJoinInformation]
+	// ServerID is the server identifier for telemetry.
+	ServerID string
+	// ScenarioID is the scenario identifier for telemetry.
+	ScenarioID string
+	// WorldID is the world identifier for telemetry.
+	WorldID string
+	// OwnerID is the owner identifier for telemetry.
+	OwnerID string
 }
 
 // ID ...
@@ -318,10 +320,6 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.ForceExperimentalGameplay)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)
-	io.String(&pk.ServerID)
-	io.String(&pk.WorldID)
-	io.String(&pk.ScenarioID)
-	io.String(&pk.OwnerID)
 	io.String(&pk.LevelID)
 	io.String(&pk.WorldName)
 	io.String(&pk.TemplateContentIdentity)
@@ -339,4 +337,9 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
 	io.Bool(&pk.ServerAuthoritativeSound)
+	protocol.OptionalMarshaler(io, &pk.ServerJoinInformation)
+	io.String(&pk.ServerID)
+	io.String(&pk.ScenarioID)
+	io.String(&pk.WorldID)
+	io.String(&pk.OwnerID)
 }
