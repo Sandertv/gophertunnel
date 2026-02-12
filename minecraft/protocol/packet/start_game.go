@@ -127,6 +127,7 @@ type StartGame struct {
 	// XBLBroadcastMode is the mode used to broadcast the joined game across Xbox Live.
 	// When set to 0, the 'Invite' button in the pause screen is grayed out and players
 	// cannot invite their friends to the Xbox Live multiplayer session they're currently in.
+	// It only applies to worlds and has no effect on external servers.
 	XBLBroadcastMode int32
 	// PlatformBroadcastMode is the mode used to broadcast the joined game across the platform.
 	PlatformBroadcastMode int32
