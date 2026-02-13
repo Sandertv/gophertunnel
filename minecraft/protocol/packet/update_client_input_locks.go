@@ -8,13 +8,24 @@ import (
 const (
 	ClientInputLockCamera = 1 << (iota + 1)
 	ClientInputLockMovement
+	_
+	ClientInputLockLateralMovement
+	ClientInputLockSneak
+	ClientInputLockJump
+	ClientInputLockMount
+	ClientInputLockDismount
+	ClientInputLockMoveForward
+	ClientInputLockMoveBackward
+	ClientInputLockMoveLeft
+	ClientInputLockMoveRight
 )
 
-// UpdateClientInputLocks is sent by the server to the client to lock either the camera or physical movement of the client.
+// UpdateClientInputLocks is sent by the server to the client to lock specific player inputs such as camera
+// rotation, movement, jumping, sneaking, mounting or individual directional movement.
 type UpdateClientInputLocks struct {
-	// Locks is a bitset that controls which locks are active. It is a combination of the constants above. If the camera
-	// is locked, then the player cannot change their pitch or yaw. If movement is locked, the player cannot move in any
-	// direction, they cannot jump, sneak or mount/dismount from any entities.
+	// Locks is a set of flags that specify which client inputs are disabled, such as whether the player can
+	// move, rotate the camera, jump, sneak or mount/dismount entities. It is a combination of the
+	// ClientInputLock constants above.
 	Locks uint32
 	// Position is the server's position of the client at the time the packet was sent. It is unclear what the exact
 	// purpose of this field is.
