@@ -756,12 +756,12 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	if !found {
 		status := packet.PlayStatusLoginFailedClient
-		if pk.ClientProtocol > protocol.CurrentProtocol {
+		if pk.ClientProtocol > conn.Proto().ID() {
 			// The server is outdated in this case, so we have to change the status we send.
 			status = packet.PlayStatusLoginFailedServer
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
-		return fmt.Errorf("incompatible protocol version: expected %v, got %v", protocol.CurrentProtocol, pk.ClientProtocol)
+		return fmt.Errorf("incompatible protocol version: expected %v, got %v", conn.proto.ID(), pk.ClientProtocol)
 	}
 
 	conn.expect(packet.IDLogin)
