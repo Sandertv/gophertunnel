@@ -228,7 +228,7 @@ type ClientData struct {
 	CompatibleWithClientSideChunkGen bool
 	// MaxViewDistance is the highest render distance that the client's hardware can handle.
 	MaxViewDistance int
-	// MemoryTier is the tier of memory that the client's hardware has. This is a number between 0 and 5. The
+	// MemoryTier is the tier of memory that the client's hardware has. This is a number between 0 and 4. The
 	// full calculation of this tier is currently unknown but the following is a rough estimate from a
 	// developer at Mojang:
 	// 0 - Super Low, less than ~1.5GB of memory
