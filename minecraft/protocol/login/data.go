@@ -231,12 +231,11 @@ type ClientData struct {
 	// MemoryTier is the tier of memory that the client's hardware has. This is a number between 0 and 5. The
 	// full calculation of this tier is currently unknown but the following is a rough estimate from a
 	// developer at Mojang:
-	// 0 - Undetermined
-	// 1 - Super Low, less than ~1.5GB of memory
-	// 2 - Low, less than ~2GB of memory
-	// 3 - Mid, less than ~4GB of memory
-	// 4 - High, less than ~8GB of memory
-	// 5 - Super High, more than ~8GB of memory
+	// 0 - Super Low, less than ~1.5GB of memory
+	// 1 - Low, less than ~2GB of memory
+	// 2 - Mid, less than ~4GB of memory
+	// 3 - High, less than ~8GB of memory
+	// 4 - Super High, more than ~8GB of memory
 	MemoryTier int
 	// PlatformType is the type of platform the client is running.
 	PlatformType int
