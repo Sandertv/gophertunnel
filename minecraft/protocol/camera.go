@@ -399,12 +399,34 @@ type CameraRotationOption struct {
 	Value mgl32.Vec3
 	// Time is the time for this rotation option.
 	Time float32
+	// EaseType is the optional easing function used to interpolate towards this rotation key frame.
+	// This is one of the EasingType constants.
+	EaseType Optional[uint8]
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
+	OptionalFunc(r, &x.EaseType, r.Uint8)
+}
+
+// CameraProgressOption represents a progress keyframe option for camera spline instructions.
+type CameraProgressOption struct {
+	// Value is the progress value.
+	Value float32
+	// Time is the time for this progress option.
+	Time float32
+	// EaseType is the optional easing function used to interpolate towards this progress key frame.
+	// This is one of the EasingType constants.
+	EaseType Optional[uint8]
+}
+
+// Marshal encodes/decodes a CameraProgressOption.
+func (x *CameraProgressOption) Marshal(r IO) {
+	r.Float32(&x.Value)
+	r.Float32(&x.Time)
+	OptionalFunc(r, &x.EaseType, r.Uint8)
 }
 
 // CameraSplineProgressOption represents a single progress keyframe in a camera spline.
@@ -447,4 +469,38 @@ func (x *CameraSplineInstruction) Marshal(r IO) {
 	FuncSlice(r, &x.Curve, r.Vec3)
 	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
+}
+
+// CameraSplineDefinition represents a named camera spline definition.
+type CameraSplineDefinition struct {
+	// Name is the name of the spline definition.
+	Name string
+	// Instruction is the spline instruction for this definition.
+	Instruction CameraSplineInstruction
+}
+
+// Marshal encodes/decodes a CameraSplineDefinition.
+func (x *CameraSplineDefinition) Marshal(r IO) {
+	r.String(&x.Name)
+	Single(r, &x.Instruction)
+}
+
+// CameraAimAssistActorPriorityData represents priority data for aim assist actor targeting.
+type CameraAimAssistActorPriorityData struct {
+	// PresetIndex is the index of the aim assist preset.
+	PresetIndex int32
+	// CategoryIndex is the index of the aim assist category.
+	CategoryIndex int32
+	// ActorIndex is the index of the actor.
+	ActorIndex int32
+	// Priority is the priority value for this actor.
+	Priority int32
+}
+
+// Marshal encodes/decodes a CameraAimAssistActorPriorityData.
+func (x *CameraAimAssistActorPriorityData) Marshal(r IO) {
+	r.Int32(&x.PresetIndex)
+	r.Int32(&x.CategoryIndex)
+	r.Int32(&x.ActorIndex)
+	r.Int32(&x.Priority)
 }

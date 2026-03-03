@@ -137,6 +137,9 @@ const (
 	EntityDataKeyEnterBedPosition
 	EntityDataKeySeatThirdPersonCameraRadius
 	EntityDataKeySeatCameraRelaxDistanceSmoothing
+	EntityDataKeyAimAssistPriorityPresetID
+	EntityDataKeyAimAssistPriorityCategoryID
+	EntityDataKeyAimAssistPriorityActorID
 )
 
 const (

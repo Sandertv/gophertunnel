@@ -9,7 +9,6 @@ import (
 	"math"
 	"math/big"
 	"math/bits"
-	"strings"
 	"unsafe"
 
 	"github.com/go-gl/mathgl/mgl32"
@@ -574,7 +573,7 @@ func (r *Reader) EventType(x *Event) {
 func (r *Reader) EventOrdinal(x *Event) {
 	var ordinal uint32
 	if !lookupEventOrdinal(*x, &ordinal) {
-		r.UnknownEnumOption(fmt.Sprintf("%T", x), "event packet event ordinal")
+		r.UnknownEnumOption(*x, "event packet event ordinal")
 		return
 	}
 	r.Varuint32(&ordinal)
@@ -660,24 +659,6 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// StringConst reads a string from the reader and matches its length against x.
-func (r *Reader) StringConst(x string) {
-	var length uint32
-	r.Varuint32(&length)
-	l := int(length)
-	if l != len(x) {
-		r.panicf("expected string with a length of %v, got %v", len(x), l)
-	}
-	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
-		r.panic(err)
-	}
-	input := *(*string)(unsafe.Pointer(&data))
-	if !strings.EqualFold(input, x) {
-		r.panicf("expected string to be %q, got %q", x, input)
-	}
-}
-
 // SliceLimit checks if the value passed is lower than the limit passed. If
 // not, the Reader panics.
 func (r *Reader) SliceLimit(value uint32, max uint32) {
@@ -693,7 +674,7 @@ func (r *Reader) ShieldID() int32 {
 
 // UnknownEnumOption panics with an unknown enum option error.
 func (r *Reader) UnknownEnumOption(value any, enum string) {
-	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
+	r.panicf("unknown value '%#v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an error indicating that the value passed is not valid for a specific field.

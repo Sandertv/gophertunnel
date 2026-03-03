@@ -1,8 +1,9 @@
 package protocol
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"image/color"
+
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 const (
@@ -149,8 +150,10 @@ const (
 type DebugDrawerShape struct {
 	// NetworkID is the network ID of the shape.
 	NetworkID uint64
-	// DimensionID is the dimension ID where the shape is rendered.
-	DimensionID int32
+	// DimensionID is the optional dimension ID where the shape is rendered.
+	DimensionID Optional[int32]
+	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
+	AttachedToEntityID Optional[uint64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
 	Type Optional[uint8]
@@ -177,6 +180,7 @@ func (x *DebugDrawerShape) Marshal(io IO) {
 	OptionalFunc(io, &x.Rotation, io.Vec3)
 	OptionalFunc(io, &x.TotalTimeLeft, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
-	io.Varint32(&x.DimensionID)
+	OptionalFunc(io, &x.DimensionID, io.Varint32)
+	OptionalFunc(io, &x.AttachedToEntityID, io.Varuint64)
 	io.ShapeData(&x.ExtraShapeData)
 }
