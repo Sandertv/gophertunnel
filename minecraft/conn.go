@@ -700,7 +700,7 @@ func (conn *Conn) handleClientCacheStatus(pk *packet.ClientCacheStatus) error {
 // version is not supported, otherwise sending back a NetworkSettings packet.
 func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings) error {
 	found := false
-	for _, pro := range conn.acceptedProto {
+	for _, pro := range append(conn.acceptedProto, DefaultProtocol) {
 		if pro.ID() == pk.ClientProtocol {
 			conn.proto = pro
 			conn.pool = pro.Packets(true)
