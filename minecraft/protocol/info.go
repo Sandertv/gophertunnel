@@ -2,7 +2,7 @@ package protocol
 
 const (
 	// CurrentProtocol is the current protocol version for the version below.
-	CurrentProtocol = 898
+	CurrentProtocol = 924
 	// CurrentVersion is the current version of Minecraft as supported by the `packet` package.
-	CurrentVersion = "1.21.130"
+	CurrentVersion = "1.26.0"
 )

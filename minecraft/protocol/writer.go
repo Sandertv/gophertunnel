@@ -538,11 +538,6 @@ func (w *Writer) ShapeData(x *ShapeData) {
 	(*x).Marshal(w)
 }
 
-// StringConst writes a string to the writer.
-func (w *Writer) StringConst(x string) {
-	w.String(&x)
-}
-
 // Varint64 writes an int64 as 1-10 bytes to the underlying buffer.
 func (w *Writer) Varint64(x *int64) {
 	u := *x

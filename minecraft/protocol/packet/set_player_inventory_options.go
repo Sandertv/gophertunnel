@@ -6,9 +6,9 @@ import (
 
 const (
 	InventoryLayoutNone = iota
-	InventoryLayoutSurvival
-	InventoryLayoutRecipeBook
-	InventoryLayoutCreative
+	InventoryLayoutInventoryOnly
+	InventoryLayoutDefault
+	InventoryLayoutRecipeBookOnly
 )
 
 const (

@@ -756,12 +756,12 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	}
 	if !found {
 		status := packet.PlayStatusLoginFailedClient
-		if pk.ClientProtocol > conn.Proto().ID() {
+		if pk.ClientProtocol > protocol.CurrentProtocol {
 			// The server is outdated in this case, so we have to change the status we send.
 			status = packet.PlayStatusLoginFailedServer
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
-		return fmt.Errorf("incompatible protocol version: expected %v, got %v", conn.proto.ID(), pk.ClientProtocol)
+		return fmt.Errorf("incompatible protocol version: expected %v, got %v", protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
 	conn.expect(packet.IDLogin)
@@ -1078,6 +1078,7 @@ func (conn *Conn) startGame() {
 		PlayerMovementSettings:       data.PlayerMovementSettings,
 		WorldGameMode:                data.WorldGameMode,
 		Hardcore:                     data.Hardcore,
+		XBLBroadcastMode:             data.XBLBroadcastMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		PlayerPermissions:            data.PlayerPermissions,
 		Experiments:                  data.Experiments,
@@ -1273,6 +1274,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		PlayerMovementSettings:       pk.PlayerMovementSettings,
 		WorldGameMode:                pk.WorldGameMode,
 		Hardcore:                     pk.Hardcore,
+		XBLBroadcastMode:             pk.XBLBroadcastMode,
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
 		PlayerPermissions:            pk.PlayerPermissions,
 		ChatRestrictionLevel:         pk.ChatRestrictionLevel,

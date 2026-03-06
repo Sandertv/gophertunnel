@@ -233,4 +233,11 @@ const (
 	_ // TODO: Implement client-bound data store
 	IDGraphicsOverrideParameter
 	_ // TODO: Implement server-bound data store
+	IDClientBoundDataDrivenUIShowScreen
+	IDClientBoundDataDrivenUICloseAllScreens
+	IDClientBoundDataDrivenUIReload
+	IDClientBoundTextureShift
+	IDVoxelShapes
+	IDCameraSpline
+	IDCameraAimAssistActorPriority
 )
