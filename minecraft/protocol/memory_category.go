@@ -6,7 +6,6 @@ const (
 	MemoryCategoryActor
 	MemoryCategoryActorAnimation
 	MemoryCategoryActorRendering
-	MemoryCategoryBalancer
 	MemoryCategoryBlockTickingQueues
 	MemoryCategoryBiomeStorage
 	MemoryCategoryCereal
@@ -44,6 +43,7 @@ const (
 	MemoryCategoryLevelChunk
 	MemoryCategoryLevelChunkGen
 	MemoryCategoryLevelChunkGenThreadLocal
+	MemoryCategoryLightVolumeManager
 	MemoryCategoryNetwork
 	MemoryCategoryMarketplace
 	MemoryCategoryMaterialDragonCompiledDefinition
@@ -82,6 +82,17 @@ const (
 	MemoryCategoryScriptingContextRun
 	MemoryCategoryDataDrivenUI
 	MemoryCategoryDataDrivenUIDefs
+	MemoryCategoryGameface
+	MemoryCategoryGamefaceSystem
+	MemoryCategoryGamefaceDOM
+	MemoryCategoryGamefaceCSS
+	MemoryCategoryGamefaceDisplay
+	MemoryCategoryGamefaceTempAllocator
+	MemoryCategoryGamefacePoolAllocator
+	MemoryCategoryGamefaceDump
+	MemoryCategoryGamefaceMedia
+	MemoryCategoryGamefaceJSON
+	MemoryCategoryGamefaceScriptEngine
 )
 
 // MemoryCategoryCounter represents a memory usage counter for a specific category.

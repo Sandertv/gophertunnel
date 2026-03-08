@@ -49,6 +49,7 @@ const (
 	EasingTypeInElastic
 	EasingTypeOutElastic
 	EasingTypeInOutElastic
+	EasingTypeInverseLerp
 )
 
 const (
@@ -441,6 +442,10 @@ type CameraSplineInstruction struct {
 	ProgressKeyFrames []CameraProgressOption
 	// RotationOptions is a list of rotation options for the spline.
 	RotationOptions []CameraRotationOption
+	// SplineIdentifier is an optional identifier for referencing the spline by name.
+	SplineIdentifier Optional[string]
+	// LoadFromJson optionally determines whether the spline should be loaded from a JSON definition.
+	LoadFromJson Optional[bool]
 }
 
 // Marshal encodes/decodes a CameraSplineInstruction.
@@ -450,6 +455,8 @@ func (x *CameraSplineInstruction) Marshal(r IO) {
 	FuncSlice(r, &x.Curve, r.Vec3)
 	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
+	OptionalFunc(r, &x.SplineIdentifier, r.String)
+	OptionalFunc(r, &x.LoadFromJson, r.Bool)
 }
 
 // CameraSplineDefinition represents a named camera spline definition.

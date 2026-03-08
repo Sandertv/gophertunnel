@@ -20,6 +20,7 @@ type IO interface {
 	Uint64(x *uint64)
 	Int64(x *int64)
 	Float32(x *float32)
+	Float64(x *float64)
 	Uint8(x *uint8)
 	Int8(x *int8)
 	Bool(x *bool)

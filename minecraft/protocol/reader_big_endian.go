@@ -79,3 +79,12 @@ func (r *Reader) Float32(x *float32) {
 	}
 	*x = math.Float32frombits(binary.BigEndian.Uint32(b))
 }
+
+// Float64 reads a little endian float64 from the underlying buffer.
+func (r *Reader) Float64(x *float64) {
+	b := make([]byte, 8)
+	if _, err := r.r.Read(b); err != nil {
+		r.panic(err)
+	}
+	*x = math.Float64frombits(binary.BigEndian.Uint64(b))
+}

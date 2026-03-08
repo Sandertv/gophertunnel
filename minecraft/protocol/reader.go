@@ -154,7 +154,7 @@ func (r *Reader) SubChunkPos(x *SubChunkPos) {
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
 func (r *Reader) SoundPos(x *mgl32.Vec3) {
 	var b BlockPos
-	r.UBlockPos(&b)
+	r.BlockPos(&b)
 	*x = mgl32.Vec3{float32(b[0]) / 8, float32(b[1]) / 8, float32(b[2]) / 8}
 }
 
@@ -279,7 +279,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(r, &x.Actions)
 	r.Varuint32(&x.ActionType)
 	r.Varuint32(&x.TriggerType)
-	r.UBlockPos(&x.BlockPosition)
+	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	r.ItemInstance(&x.HeldItem)
@@ -287,6 +287,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Varuint32(&x.ClientPrediction)
+	r.Varuint32(&x.ClientCooldownState)
 }
 
 // GameRule reads a GameRule x from the Reader.
