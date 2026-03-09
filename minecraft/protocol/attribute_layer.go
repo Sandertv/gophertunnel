@@ -54,11 +54,11 @@ type AttributeData struct {
 	// BoolValue is the boolean value if Type is AttributeDataTypeBool.
 	BoolValue bool
 	// BoolOperation is the optional operation for boolean attributes.
-	BoolOperation Optional[uint32]
+	BoolOperation Optional[int32]
 	// FloatValue is the float value if Type is AttributeDataTypeFloat.
 	FloatValue float32
 	// FloatOperation is the optional operation for float attributes.
-	FloatOperation Optional[uint32]
+	FloatOperation Optional[int32]
 	// FloatConstraintMin is the optional minimum constraint for float attributes.
 	FloatConstraintMin Optional[float32]
 	// FloatConstraintMax is the optional maximum constraint for float attributes.
@@ -66,7 +66,7 @@ type AttributeData struct {
 	// ColourValue is the colour value if Type is AttributeDataTypeColour.
 	ColourValue int32
 	// ColourOperation is the optional operation for colour attributes.
-	ColourOperation Optional[uint32]
+	ColourOperation Optional[int32]
 }
 
 // Marshal encodes/decodes an AttributeData.
@@ -75,15 +75,15 @@ func (x *AttributeData) Marshal(r IO) {
 	switch x.Type {
 	case AttributeDataTypeBool:
 		r.Bool(&x.BoolValue)
-		OptionalFunc(r, &x.BoolOperation, r.Varuint32)
+		OptionalFunc(r, &x.BoolOperation, r.Int32)
 	case AttributeDataTypeFloat:
 		r.Float32(&x.FloatValue)
-		OptionalFunc(r, &x.FloatOperation, r.Varuint32)
+		OptionalFunc(r, &x.FloatOperation, r.Int32)
 		OptionalFunc(r, &x.FloatConstraintMin, r.Float32)
 		OptionalFunc(r, &x.FloatConstraintMax, r.Float32)
 	case AttributeDataTypeColour:
 		r.Int32(&x.ColourValue)
-		OptionalFunc(r, &x.ColourOperation, r.Varuint32)
+		OptionalFunc(r, &x.ColourOperation, r.Int32)
 	default:
 		r.UnknownEnumOption(x.Type, "attribute data type")
 	}
