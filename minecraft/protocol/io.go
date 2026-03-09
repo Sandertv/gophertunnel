@@ -34,7 +34,6 @@ type IO interface {
 	Vec3(x *mgl32.Vec3)
 	Vec2(x *mgl32.Vec2)
 	BlockPos(x *BlockPos)
-	UBlockPos(x *BlockPos)
 	ChunkPos(x *ChunkPos)
 	SubChunkPos(x *SubChunkPos)
 	SoundPos(x *mgl32.Vec3)

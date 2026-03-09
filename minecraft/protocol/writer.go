@@ -101,14 +101,6 @@ func (w *Writer) BlockPos(x *BlockPos) {
 	w.Varint32(&x[2])
 }
 
-// UBlockPos writes a BlockPos as 2 varint32s and a varuint32 to the underlying buffer.
-func (w *Writer) UBlockPos(x *BlockPos) {
-	w.Varint32(&x[0])
-	y := uint32(x[1])
-	w.Varuint32(&y)
-	w.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[0])

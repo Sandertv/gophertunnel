@@ -129,15 +129,6 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// UBlockPos reads three varint32s, one unsigned for the y, into a BlockPos from the underlying buffer.
-func (r *Reader) UBlockPos(x *BlockPos) {
-	r.Varint32(&x[0])
-	var y uint32
-	r.Varuint32(&y)
-	x[1] = int32(y)
-	r.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
