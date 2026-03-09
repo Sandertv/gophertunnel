@@ -132,6 +132,11 @@ const (
 	ClientPredictionSuccess
 )
 
+const (
+	ClientCooldownStateOff = iota
+	ClientCooldownStateOn
+)
+
 // UseItemTransactionData represents an inventory transaction data object sent when the client uses an item on
 // a block.
 type UseItemTransactionData struct {
@@ -183,8 +188,9 @@ type UseItemTransactionData struct {
 	// ClientPrediction is the client's prediction on the output of the transaction. It is one of the client
 	// prediction found in the constants above.
 	ClientPrediction uint32
-	// ClientCooldownState is the client's cooldown state for the item used.
-	ClientCooldownState uint32
+	// ClientCooldownState is the client's cooldown state for the item used. It is one of the
+	// ClientCooldownState constants above.
+	ClientCooldownState byte
 }
 
 const (
@@ -250,7 +256,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
 	r.Varuint32(&data.ClientPrediction)
-	r.Varuint32(&data.ClientCooldownState)
+	r.Uint8(&data.ClientCooldownState)
 }
 
 // Marshal ...

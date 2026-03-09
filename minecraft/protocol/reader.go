@@ -278,7 +278,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Varuint32(&x.ClientPrediction)
-	r.Varuint32(&x.ClientCooldownState)
+	r.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule reads a GameRule x from the Reader.
