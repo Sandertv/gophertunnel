@@ -13,15 +13,15 @@ type SyncWorldClockStateData struct {
 	ClockID uint64
 	// Time is the current time of the clock.
 	Time int32
-	// IsPaused indicates if the clock is paused.
-	IsPaused bool
+	// Paused indicates if the clock is paused.
+	Paused bool
 }
 
 // Marshal encodes/decodes a SyncWorldClockStateData.
 func (x *SyncWorldClockStateData) Marshal(r IO) {
 	r.Varuint64(&x.ClockID)
 	r.Varint32(&x.Time)
-	r.Bool(&x.IsPaused)
+	r.Bool(&x.Paused)
 }
 
 // TimeMarkerData represents a time marker within a world clock.
@@ -52,8 +52,8 @@ type WorldClockData struct {
 	Name string
 	// Time is the current time of the clock.
 	Time int32
-	// IsPaused indicates if the clock is paused.
-	IsPaused bool
+	// Paused indicates if the clock is paused.
+	Paused bool
 	// TimeMarkers is a list of time markers for this clock.
 	TimeMarkers []TimeMarkerData
 }
@@ -63,6 +63,6 @@ func (x *WorldClockData) Marshal(r IO) {
 	r.Varuint64(&x.ID)
 	r.String(&x.Name)
 	r.Varint32(&x.Time)
-	r.Bool(&x.IsPaused)
+	r.Bool(&x.Paused)
 	Slice(r, &x.TimeMarkers)
 }
