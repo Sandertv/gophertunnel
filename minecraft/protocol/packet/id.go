@@ -243,7 +243,7 @@ const (
 	IDResourcePacksReadyForValidation
 	IDLocatorBar
 	IDPartyChanged
-	IDServerboundDataDrivenScreenClosed
+	IDServerBoundDataDrivenScreenClosed
 	IDSyncWorldClocks
 	IDClientBoundAttributeLayerSync
 )

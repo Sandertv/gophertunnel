@@ -373,7 +373,7 @@ func init() {
 		IDServerBoundDataStore:              func() Packet { return &ServerBoundDataStore{} },
 		IDResourcePacksReadyForValidation:   func() Packet { return &ResourcePacksReadyForValidation{} },
 		IDPartyChanged:                      func() Packet { return &PartyChanged{} },
-		IDServerboundDataDrivenScreenClosed: func() Packet { return &ServerboundDataDrivenScreenClosed{} },
+		IDServerBoundDataDrivenScreenClosed: func() Packet { return &ServerBoundDataDrivenScreenClosed{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
