@@ -4,10 +4,10 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// LocatorBar is sent by the server to synchronise waypoint/locator bar changes to the client.
+// LocatorBar is sent by the server to add, remove or update waypoints on the client's locator bar.
 type LocatorBar struct {
-	// Waypoints is a list of waypoint payloads to add, remove or update.
-	Waypoints []protocol.LocatorBarWaypointPayload
+	// Waypoints is a slice of waypoints to add, remove or update.
+	Waypoints []protocol.LocatorBarWaypoint
 }
 
 // ID ...
