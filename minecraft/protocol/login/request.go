@@ -150,6 +150,9 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
 		}
 		iData = claims.identityData()
+		if err := iData.Validate(); err != nil {
+			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
+		}
 	} else {
 		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
