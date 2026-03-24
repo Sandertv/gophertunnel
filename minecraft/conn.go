@@ -111,8 +111,7 @@ type Conn struct {
 	// connection. It is otherwise left unused.
 	salt []byte
 	// verifier verifies the OpenID token encapsulated in the first chain of
-	// the Login packet sent from the connection. If nil, the legacy chain will
-	// be instead used for authentication.
+	// the Login packet sent from the connection.
 	verifier *oidc.IDTokenVerifier
 
 	// packets is a channel of byte slices containing serialised packets that are coming in from the other
