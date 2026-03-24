@@ -22,9 +22,7 @@ const (
 )
 
 const (
-	_ = iota
-	_
-	WaypointTextureSquare
+	WaypointTextureSquare = iota + 2
 	WaypointTextureCircle
 	WaypointTextureSmallSquare
 	WaypointTextureSmallStar
