@@ -136,6 +136,20 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
+	} else if req.Token != "" {
+		// Parse the token without verification to extract identity and the public key for encryption.
+		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384})
+		if err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token: %w", err)
+		}
+		var claims tokenClaims
+		if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token claims: %w", err)
+		}
+		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
+			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
+		}
+		iData = claims.identityData()
 	} else {
 		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
