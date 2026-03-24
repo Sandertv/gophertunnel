@@ -56,6 +56,18 @@ func (r *request) MarshalJSON() ([]byte, error) {
 	})
 }
 
+func init() {
+	//noinspection SpellCheckingInspection
+	const mojangPublicKey = `MHYwEAYHKoZIzj0CAQYFK4EEACIDYgAECRXueJeTDqNRRgJi/vlRufByu/2G0i2Ebt6YMar5QX/R0DIIyrJMcUpruK4QveTfJSTp3Shlq4Gk34cD/4GUWwkv0DVuzeuB+tXija7HBxii03NHDbPAD0AKnLr2wdAp`
+
+	data, _ := base64.StdEncoding.DecodeString(mojangPublicKey)
+	publicKey, _ := x509.ParsePKIXPublicKey(data)
+	mojangKey = publicKey.(*ecdsa.PublicKey)
+}
+
+// mojangKey holds the parsed Mojang ecdsa.PublicKey used to verify legacy login chains.
+var mojangKey = new(ecdsa.PublicKey)
+
 // AuthResult is returned by a call to Parse. It holds the ecdsa.PublicKey of the client and a bool that
 // indicates if the player was logged in with XBOX Live.
 type AuthResult struct {
@@ -81,32 +93,52 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	if err != nil {
 		return iData, cData, res, fmt.Errorf("parse login request: %w", err)
 	}
-	if verifier == nil || req.Token == "" {
-		return iData, cData, res, fmt.Errorf("missing OIDC verifier or multiplayer token")
-	}
-
-	// The context here is used for making requests via remote key set, which does not normally
-	// occur in this case since we use a custom-made OIDC verifier that has already static key set included.
-	idt, err := verifier.Verify(context.Background(), req.Token)
-	if err != nil {
-		return iData, cData, res, fmt.Errorf("verify ID token: %w", err)
-	}
-
-	var claims tokenClaims
-	if err := idt.Claims(&claims); err != nil {
-		return iData, cData, res, fmt.Errorf("parse ID token: %w", err)
-	}
-	if err := claims.Validate(jwt.Expected{Time: time.Now()}); err != nil {
-		return iData, cData, res, fmt.Errorf("validate ID token: %w", err)
-	}
-	if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
-		return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
-	}
-
-	iData = claims.identityData()
-	authenticated := iData.XUID != ""
-	if err := iData.Validate(); err != nil {
-		return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
+	var authenticated bool
+	if verifier != nil && req.Token != "" {
+		// The context here is used for making requests via remote key set, which does not normally
+		// occur in this case since we use a custom-made OIDC verifier that has already static key set included.
+		idt, err := verifier.Verify(context.Background(), req.Token)
+		if err != nil {
+			return iData, cData, res, fmt.Errorf("verify ID token: %w", err)
+		}
+		var claims tokenClaims
+		if err := idt.Claims(&claims); err != nil {
+			return iData, cData, res, fmt.Errorf("parse ID token: %w", err)
+		}
+		if err := claims.Validate(jwt.Expected{Time: time.Now()}); err != nil {
+			return iData, cData, res, fmt.Errorf("validate ID token: %w", err)
+		}
+		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
+			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
+		}
+		iData = claims.identityData()
+		authenticated = iData.XUID != ""
+		if err := iData.Validate(); err != nil {
+			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
+		}
+	} else if req.Token != "" {
+		// No verifier (auth disabled), but the client sent a multiplayer token
+		// (e.g. a 1.26.10+ offline client). Parse the token without verification
+		// to extract identity and the public key for encryption.
+		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384})
+		if err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token: %w", err)
+		}
+		var claims tokenClaims
+		if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token claims: %w", err)
+		}
+		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
+			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
+		}
+		iData = claims.identityData()
+	} else {
+		// Legacy client without a multiplayer token. Parse the legacy Mojang
+		// chain to extract identity data and the public key for encryption.
+		iData, key, authenticated, err = parseLegacyChain(req.Certificate.Chain, time.Now())
+		if err != nil {
+			return iData, cData, res, err
+		}
 	}
 
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
@@ -123,6 +155,84 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
 	}
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
+}
+
+// parseLegacyChain verifies the legacy Mojang chain and returns IdentityData from extraData,
+// the public key used for verification (and for client data), and a bool indicating if the chain was
+// authenticated by Xbox Live. This is used for backwards compatibility with clients that do not send
+// a multiplayer token.
+func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
+	key := &ecdsa.PublicKey{}
+	tok, err := jwt.ParseSigned(chain[0], []jose.SignatureAlgorithm{jose.ES384})
+	if err != nil {
+		return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
+	}
+
+	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
+	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	if err := parseAsKey(raw, key); err != nil {
+		return IdentityData{}, nil, false, fmt.Errorf("parse x5u: %w", err)
+	}
+
+	var (
+		identityClaims identityClaims
+		authenticated  bool
+	)
+	iss := "Mojang"
+
+	switch len(chain) {
+	case 1:
+		if err := parseFullClaim(chain[0], key, &identityClaims); err != nil {
+			return IdentityData{}, nil, false, err
+		}
+		if err := identityClaims.Validate(jwt.Expected{Time: now}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
+		}
+	case 3:
+		var c jwt.Claims
+		if err := parseFullClaim(chain[0], key, &c); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
+		}
+		if err := c.Validate(jwt.Expected{Time: now}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
+		}
+		authenticated = bytes.Equal(key.X.Bytes(), mojangKey.X.Bytes()) && bytes.Equal(key.Y.Bytes(), mojangKey.Y.Bytes())
+
+		if err := parseFullClaim(chain[1], key, &c); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 1: %w", err)
+		}
+		if err := c.Validate(jwt.Expected{Time: now, Issuer: iss}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 1: %w", err)
+		}
+		if err := parseFullClaim(chain[2], key, &identityClaims); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("parse token 2: %w", err)
+		}
+		if err := identityClaims.Validate(jwt.Expected{Time: now, Issuer: iss}); err != nil {
+			return IdentityData{}, nil, false, fmt.Errorf("validate token 2: %w", err)
+		}
+		if authenticated != (identityClaims.ExtraData.XUID != "") {
+			return IdentityData{}, nil, false, fmt.Errorf("identity data must have an XUID when logged into XBOX Live only")
+		}
+	default:
+		return IdentityData{}, nil, false, fmt.Errorf("unexpected login chain length %v", len(chain))
+	}
+	return identityClaims.ExtraData, key, authenticated, nil
+}
+
+// identityClaims holds the claims for the last token in a legacy chain, which contains the IdentityData
+// of the player.
+type identityClaims struct {
+	jwt.Claims
+	ExtraData         IdentityData `json:"extraData"`
+	IdentityPublicKey string       `json:"identityPublicKey"`
+}
+
+// Validate validates the identity claims.
+func (c identityClaims) Validate(e jwt.Expected) error {
+	if err := c.Claims.Validate(e); err != nil {
+		return err
+	}
+	return c.ExtraData.Validate()
 }
 
 // parseLoginRequest parses the structure of a login request from the data passed and returns it.
