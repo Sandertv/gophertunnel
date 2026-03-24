@@ -34,13 +34,19 @@ type request struct {
 	Certificate certificate `json:"Certificate"`
 	// AuthenticationType is the authentication type of the request.
 	AuthenticationType uint8 `json:"AuthenticationType"`
-	// Token is the multiplayer token used for authentication.
+	// Token is an empty string, it's unclear what's used for.
 	Token string `json:"Token"`
 	// RawToken holds the raw token that follows the JWT chain, holding the ClientData.
 	RawToken string `json:"-"`
+	// Legacy specifies whether to use the legacy format of the request or not.
+	Legacy bool `json:"-"`
 }
 
 func (r *request) MarshalJSON() ([]byte, error) {
+	if r.Legacy {
+		return json.Marshal(r.Certificate)
+	}
+
 	cert, err := json.Marshal(r.Certificate)
 	if err != nil {
 		return nil, err
@@ -65,7 +71,7 @@ func init() {
 	mojangKey = publicKey.(*ecdsa.PublicKey)
 }
 
-// mojangKey holds the parsed Mojang ecdsa.PublicKey used to verify legacy login chains.
+// mojangKey holds the parsed Mojang ecdsa.PublicKey.
 var mojangKey = new(ecdsa.PublicKey)
 
 // AuthResult is returned by a call to Parse. It holds the ecdsa.PublicKey of the client and a bool that
@@ -93,7 +99,11 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	if err != nil {
 		return iData, cData, res, fmt.Errorf("parse login request: %w", err)
 	}
-	var authenticated bool
+
+	var (
+		authenticated bool
+		t             = time.Now()
+	)
 	if verifier != nil && req.Token != "" {
 		// The context here is used for making requests via remote key set, which does not normally
 		// occur in this case since we use a custom-made OIDC verifier that has already static key set included.
@@ -105,7 +115,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := idt.Claims(&claims); err != nil {
 			return iData, cData, res, fmt.Errorf("parse ID token: %w", err)
 		}
-		if err := claims.Validate(jwt.Expected{Time: time.Now()}); err != nil {
+		if err := claims.Validate(jwt.Expected{Time: t}); err != nil {
 			return iData, cData, res, fmt.Errorf("validate ID token: %w", err)
 		}
 		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
@@ -113,32 +123,25 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		}
 		iData = claims.identityData()
 		authenticated = iData.XUID != ""
+		// The OIDC token does not include the numerical XBL title ID (extraData.titleId) that is present in the
+		// legacy Mojang chain. If the chain is present and valid, we verify it and use its title ID so callers
+		// can keep using IdentityData.TitleID.
+		if iData.XUID != "" {
+			if legacyID, _, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t); err == nil && legacyAuthed {
+				if legacyID.TitleID != "" && legacyID.XUID == iData.XUID {
+					iData.TitleID = legacyID.TitleID
+				}
+			}
+		}
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
-	} else if req.Token != "" {
-		// No verifier (auth disabled), but the client sent a multiplayer token
-		// (e.g. a 1.26.10+ offline client). Parse the token without verification
-		// to extract identity and the public key for encryption.
-		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384})
-		if err != nil {
-			return iData, cData, res, fmt.Errorf("parse unverified token: %w", err)
-		}
-		var claims tokenClaims
-		if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
-			return iData, cData, res, fmt.Errorf("parse unverified token claims: %w", err)
-		}
-		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
-			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
-		}
-		iData = claims.identityData()
 	} else {
-		// Legacy client without a multiplayer token. Parse the legacy Mojang
-		// chain to extract identity data and the public key for encryption.
-		iData, key, authenticated, err = parseLegacyChain(req.Certificate.Chain, time.Now())
+		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
 			return iData, cData, res, err
 		}
+		iData, key, authenticated = legacyID, legacyKey, legacyAuthed
 	}
 
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
@@ -159,8 +162,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 
 // parseLegacyChain verifies the legacy Mojang chain and returns IdentityData from extraData,
 // the public key used for verification (and for client data), and a bool indicating if the chain was
-// authenticated by Xbox Live. This is used for backwards compatibility with clients that do not send
-// a multiplayer token.
+// authenticated by Xbox Live.
 func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
 	key := &ecdsa.PublicKey{}
 	tok, err := jwt.ParseSigned(chain[0], []jose.SignatureAlgorithm{jose.ES384})
@@ -168,6 +170,7 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 		return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
 	}
 
+	// The first token holds the client's public key in the x5u (it's self signed).
 	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
 	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
 	if err := parseAsKey(raw, key); err != nil {
@@ -182,6 +185,7 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 
 	switch len(chain) {
 	case 1:
+		// Player was not authenticated with XBOX Live, meaning the one token in here is self-signed.
 		if err := parseFullClaim(chain[0], key, &identityClaims); err != nil {
 			return IdentityData{}, nil, false, err
 		}
@@ -189,6 +193,7 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
 		}
 	case 3:
+		// Player was (or should be) authenticated with XBOX Live, meaning the chain is exactly 3 tokens long.
 		var c jwt.Claims
 		if err := parseFullClaim(chain[0], key, &c); err != nil {
 			return IdentityData{}, nil, false, fmt.Errorf("parse token 0: %w", err)
@@ -217,22 +222,6 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 		return IdentityData{}, nil, false, fmt.Errorf("unexpected login chain length %v", len(chain))
 	}
 	return identityClaims.ExtraData, key, authenticated, nil
-}
-
-// identityClaims holds the claims for the last token in a legacy chain, which contains the IdentityData
-// of the player.
-type identityClaims struct {
-	jwt.Claims
-	ExtraData         IdentityData `json:"extraData"`
-	IdentityPublicKey string       `json:"identityPublicKey"`
-}
-
-// Validate validates the identity claims.
-func (c identityClaims) Validate(e jwt.Expected) error {
-	if err := c.Claims.Validate(e); err != nil {
-		return err
-	}
-	return c.ExtraData.Validate()
 }
 
 // parseLoginRequest parses the structure of a login request from the data passed and returns it.
@@ -319,7 +308,7 @@ func parseAsKey(k any, pub *ecdsa.PublicKey) error {
 // Encode encodes a login request using the encoded login chain passed and the client data. The request's
 // client data token is signed using the private key passed. It must be the same as the one used to get the
 // login chain. The multiplayer token is used as the Token field in the connection request.
-func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token string) []byte {
+func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token string, legacy bool) []byte {
 	// We first decode the login chain we actually got in a new certificate.
 	cert := &certificate{}
 	_ = json.Unmarshal([]byte(loginChain), &cert)
@@ -350,7 +339,8 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token str
 			// We add our own claim at the start of the chain.
 			Chain: append(chain{firstJWT}, cert.Chain...),
 		},
-		Token: token,
+		Token:  token,
+		Legacy: legacy,
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
@@ -373,10 +363,13 @@ func encodeRequest(req *request) []byte {
 	return buf.Bytes()
 }
 
-// EncodeOffline creates a login request using the identity data and client data passed. The private key
-// passed will be used to self sign the JWTs. It produces a self-signed multiplayer token containing the
-// identity data in the OIDC token format.
-func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey) []byte {
+// EncodeOffline creates a login request using the identity data and client data passed.
+// The private key passed will be used to self-sign the JWTs.
+//
+// When legacy is true, a self-signed chain with extraData is produced for pre-1.26.10
+// servers. When false, a self-signed OIDC multiplayer token is produced with a dummy
+// certificate chain.
+func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
 	keyData := MarshalPublicKey(&key.PublicKey)
 	claims := jwt.Claims{
 		Expiry:    jwt.NewNumericDate(time.Now().Add(time.Hour * 6)),
@@ -386,25 +379,26 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	signer, _ := jose.NewSigner(jose.SigningKey{Key: key, Algorithm: jose.ES384}, &jose.SignerOptions{
 		ExtraHeaders: map[jose.HeaderKey]any{"x5u": keyData},
 	})
-	multiplayerToken, _ := jwt.Signed(signer).Claims(tokenClaims{
-		Claims:          claims,
-		ClientPublicKey: keyData,
-		XUID:            identityData.XUID,
-		DisplayName:     identityData.DisplayName,
-		PlayFabID:       identityData.PlayFabID,
-		PlayFabTitleID:  identityData.PlayFabTitleID,
-	}).Serialize()
-	chainJWT, _ := jwt.Signed(signer).Claims(identityPublicKeyClaims{
-		Claims:            claims,
-		IdentityPublicKey: keyData,
-	}).Serialize()
 
-	req := &request{
-		Certificate: certificate{
-			Chain: chain{chainJWT},
-		},
-		AuthenticationType: 2,
-		Token:              multiplayerToken,
+	req := &request{AuthenticationType: 2}
+	if legacy {
+		chainJWT, _ := jwt.Signed(signer).Claims(identityClaims{
+			Claims:            claims,
+			ExtraData:         identityData,
+			IdentityPublicKey: keyData,
+		}).Serialize()
+		req.Certificate = certificate{Chain: chain{chainJWT}}
+		req.Legacy = true
+	} else {
+		req.Certificate = certificate{Chain: chain{""}}
+		req.Token, _ = jwt.Signed(signer).Claims(tokenClaims{
+			Claims:          claims,
+			ClientPublicKey: keyData,
+			XUID:            identityData.XUID,
+			DisplayName:     identityData.DisplayName,
+			PlayFabID:       identityData.PlayFabID,
+			PlayFabTitleID:  identityData.PlayFabTitleID,
+		}).Serialize()
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
@@ -438,6 +432,7 @@ type tokenClaims struct {
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
+// Fields that exist in the legacy chain's extraData are filled to keep behavior consistent.
 func (tc tokenClaims) identityData() IdentityData {
 	return IdentityData{
 		XUID:           tc.XUID,
@@ -462,6 +457,26 @@ func identityFromXUID(xuid string) uuid.UUID {
 	id[6] = (id[6] & 0x0f) | 0x30 // Version 3
 	id[8] = (id[8] & 0x3f) | 0x80 // RFC 4122 variant
 	return id
+}
+
+// identityClaims holds the claims for the last token in the chain, which contains the IdentityData of the
+// player.
+type identityClaims struct {
+	jwt.Claims
+
+	// ExtraData holds the extra data of this claim, which is the IdentityData of the player.
+	ExtraData IdentityData `json:"extraData"`
+
+	IdentityPublicKey string `json:"identityPublicKey"`
+}
+
+// Validate validates the identity claims held by the struct and returns an error if any illegal data was
+// encountered.
+func (c identityClaims) Validate(e jwt.Expected) error {
+	if err := c.Claims.Validate(e); err != nil {
+		return err
+	}
+	return c.ExtraData.Validate()
 }
 
 // identityPublicKeyClaims holds the claims for a JWT that holds an identity public key.

@@ -106,11 +106,16 @@ type Dialer struct {
 	// transmitted every time, resulting in less network transmission.
 	EnableClientCache bool
 
-	// KeepXBLIdentityData, if set to true, enables passing XUID to the target server
+	// KeepXBLIdentityData, if set to true, enables passing XUID and title ID to the target server
 	// if the authentication token is not set. This is technically not valid and some servers might kick
 	// the client when an XUID is present without logging in.
 	// For getting this to work with BDS, authentication should be disabled.
 	KeepXBLIdentityData bool
+
+	// EnableLegacyAuth, if set to true, will use the legacy authentication behavior
+	// (pre-1.21.90) when connecting to the server. This should only be used for outdated
+	// servers, as enabling it will cause compatibility issues with updated servers.
+	EnableLegacyAuth bool
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -190,7 +195,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		verifier         *oidc.IDTokenVerifier
 	)
 	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
-		if d.TokenSource != nil {
+		if d.TokenSource != nil && !d.EnableLegacyAuth {
 			verifier, err = oidcVerifier(ctx)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
@@ -260,12 +265,13 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if !d.KeepXBLIdentityData {
 			clearXBLIdentityData(&conn.identityData)
 		}
-		request = login.EncodeOffline(conn.identityData, conn.clientData, key)
+		request = login.EncodeOffline(conn.identityData, conn.clientData, key, d.EnableLegacyAuth)
 	} else {
-		// We login as an Android device. We enforce Android data for logging in.
+		// We login as an Android device and this will show up in the 'titleId' field in the JWT chain, which
+		// we can't edit. We just enforce Android data for logging in.
 		setAndroidData(&conn.clientData)
 
-		request = login.Encode(chainData, conn.clientData, key, token)
+		request = login.Encode(chainData, conn.clientData, key, token, d.EnableLegacyAuth)
 		identityData, _, _, _ := login.Parse(request, verifier)
 		// If we got the identity data from Minecraft auth, we need to make sure we set it in the Conn too, as
 		// we are not aware of the identity data ourselves yet.
@@ -487,6 +493,7 @@ func setAndroidData(data *login.ClientData) {
 // XBOX Live.
 func clearXBLIdentityData(data *login.IdentityData) {
 	data.XUID = ""
+	data.TitleID = ""
 }
 
 // defaultIdentityData edits the IdentityData passed to have defaults set to all fields that were left
