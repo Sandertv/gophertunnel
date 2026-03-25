@@ -32,8 +32,8 @@ type TimeMarkerData struct {
 	Name string
 	// Time is the time at which the marker is set.
 	Time int32
-	// Period is the period for the time marker.
-	Period int32
+	// Period is the optional period for the time marker.
+	Period Optional[int32]
 }
 
 // Marshal encodes/decodes a TimeMarkerData.
@@ -41,7 +41,7 @@ func (x *TimeMarkerData) Marshal(r IO) {
 	r.Varuint64(&x.ID)
 	r.String(&x.Name)
 	r.Varint32(&x.Time)
-	r.Int32(&x.Period)
+	OptionalFunc(r, &x.Period, r.Int32)
 }
 
 // WorldClockData represents a complete world clock with its time markers.
