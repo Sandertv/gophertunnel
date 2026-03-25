@@ -86,5 +86,5 @@ func (r *Reader) Float64(x *float64) {
 	if _, err := r.r.Read(b); err != nil {
 		r.panic(err)
 	}
-	*x = math.Float64frombits(binary.BigEndian.Uint64(b))
+	*x = math.Float64frombits(binary.LittleEndian.Uint64(b))
 }
