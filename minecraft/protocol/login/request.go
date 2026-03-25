@@ -413,6 +413,7 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 			ClientPublicKey: keyData,
 			XUID:            identityData.XUID,
 			DisplayName:     identityData.DisplayName,
+			Identity:        identityData.Identity,
 			PlayFabID:       identityData.PlayFabID,
 			PlayFabTitleID:  identityData.PlayFabTitleID,
 		}).Serialize()
@@ -446,14 +447,21 @@ type tokenClaims struct {
 	XUID string `json:"xid"`
 	// DisplayName is the in-game name for the authenticated player.
 	DisplayName string `json:"xname"`
+	// Identity is the UUID of the player. It is only set for offline logins where
+	// the UUID cannot be derived from the XUID.
+	Identity string `json:"identity,omitempty"`
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
 // Fields that exist in the legacy chain's extraData are filled to keep behavior consistent.
 func (tc tokenClaims) identityData() IdentityData {
+	identity := tc.Identity
+	if identity == "" && tc.XUID != "" {
+		identity = identityFromXUID(tc.XUID).String()
+	}
 	return IdentityData{
 		XUID:           tc.XUID,
-		Identity:       identityFromXUID(tc.XUID).String(),
+		Identity:       identity,
 		DisplayName:    tc.DisplayName,
 		PlayFabID:      tc.PlayFabID,
 		PlayFabTitleID: tc.PlayFabTitleID,
