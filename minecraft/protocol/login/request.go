@@ -138,7 +138,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		}
 	} else if req.Token != "" {
 		// Parse the token without verification to extract identity and the public key for encryption.
-		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384})
+		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384, jose.RS256})
 		if err != nil {
 			return iData, cData, res, fmt.Errorf("parse unverified token: %w", err)
 		}
