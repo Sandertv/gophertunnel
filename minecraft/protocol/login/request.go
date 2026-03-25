@@ -456,8 +456,12 @@ type tokenClaims struct {
 // Fields that exist in the legacy chain's extraData are filled to keep behavior consistent.
 func (tc tokenClaims) identityData() IdentityData {
 	identity := tc.Identity
-	if identity == "" && tc.XUID != "" {
-		identity = identityFromXUID(tc.XUID).String()
+	if identity == "" {
+		if tc.XUID != "" {
+			identity = identityFromXUID(tc.XUID).String()
+		} else {
+			identity = uuid.New().String()
+		}
 	}
 	return IdentityData{
 		XUID:           tc.XUID,
