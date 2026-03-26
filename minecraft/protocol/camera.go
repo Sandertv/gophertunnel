@@ -55,7 +55,7 @@ const (
 // easingTypeFromString looks up an easing type from a string and writes the result to x.
 func easingTypeFromString(io IO, x *int32, s string) {
 	switch s {
-	case "linear", "unknown":
+	case "linear":
 		*x = EasingTypeLinear
 	case "spring":
 		*x = EasingTypeSpring
