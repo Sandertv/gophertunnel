@@ -19,43 +19,33 @@ const (
 const (
 	EasingTypeLinear       = "linear"
 	EasingTypeSpring       = "spring"
-
 	EasingTypeInSine       = "in_sine"
 	EasingTypeOutSine      = "out_sine"
 	EasingTypeInOutSine    = "in_out_sine"
-
 	EasingTypeInQuad       = "in_quad"
 	EasingTypeOutQuad      = "out_quad"
 	EasingTypeInOutQuad    = "in_out_quad"
-
 	EasingTypeInCubic      = "in_cubic"
 	EasingTypeOutCubic     = "out_cubic"
 	EasingTypeInOutCubic   = "in_out_cubic"
-
 	EasingTypeInQuart      = "in_quart"
 	EasingTypeOutQuart     = "out_quart"
 	EasingTypeInOutQuart   = "in_out_quart"
-
 	EasingTypeInQuint      = "in_quint"
 	EasingTypeOutQuint     = "out_quint"
 	EasingTypeInOutQuint   = "in_out_quint"
-
 	EasingTypeInExpo       = "in_expo"
 	EasingTypeOutExpo      = "out_expo"
 	EasingTypeInOutExpo    = "in_out_expo"
-
 	EasingTypeInCirc       = "in_circ"
 	EasingTypeOutCirc      = "out_circ"
 	EasingTypeInOutCirc    = "in_out_circ"
-
 	EasingTypeInBack       = "in_back"
 	EasingTypeOutBack      = "out_back"
 	EasingTypeInOutBack    = "in_out_back"
-
 	EasingTypeInElastic    = "in_elastic"
 	EasingTypeOutElastic   = "out_elastic"
 	EasingTypeInOutElastic = "in_out_elastic"
-
 	EasingTypeInBounce     = "in_bounce"
 	EasingTypeOutBounce    = "out_bounce"
 	EasingTypeInOutBounce  = "in_out_bounce"
