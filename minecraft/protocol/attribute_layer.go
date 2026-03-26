@@ -104,7 +104,7 @@ type EnvironmentAttributeData struct {
 	// TotalTransitionTicks is the total number of ticks for the transition.
 	TotalTransitionTicks uint32
 	// EaseType is the easing function used for the transition. It is one of the EasingType constants.
-	EaseType int32
+	EaseType string
 }
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
@@ -115,7 +115,7 @@ func (x *EnvironmentAttributeData) Marshal(r IO) {
 	OptionalMarshaler(r, &x.ToAttribute)
 	r.Uint32(&x.CurrentTransitionTicks)
 	r.Uint32(&x.TotalTransitionTicks)
-	r.Int32(&x.EaseType)
+	r.String(&x.EaseType)
 }
 
 // AttributeLayerSettings represents settings for an attribute layer.
