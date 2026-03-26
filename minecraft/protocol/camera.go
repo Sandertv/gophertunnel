@@ -161,7 +161,7 @@ type CameraInstructionFieldOfView struct {
 	// EaseTime is the time in seconds that the easing function should take.
 	EaseTime float32
 	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	EaseType string
 	// Clear can be set to true to clear the current instruction.
 	Clear bool
 }
@@ -170,7 +170,7 @@ type CameraInstructionFieldOfView struct {
 func (x *CameraInstructionFieldOfView) Marshal(r IO) {
 	r.Float32(&x.FieldOfView)
 	r.Float32(&x.EaseTime)
-	r.Uint8(&x.EaseType)
+	r.String(&x.EaseType)
 	r.Bool(&x.Clear)
 }
 
