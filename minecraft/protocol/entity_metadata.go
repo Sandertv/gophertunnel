@@ -140,6 +140,9 @@ const (
 	EntityDataKeyAimAssistPriorityPresetID
 	EntityDataKeyAimAssistPriorityCategoryID
 	EntityDataKeyAimAssistPriorityActorID
+	EntityDataKeyArrowShooterID
+	EntityDataKeyFireworkDirection
+	EntityDataKeyFireworkShooterID
 )
 
 const (

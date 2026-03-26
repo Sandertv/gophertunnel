@@ -49,11 +49,12 @@ const (
 	EasingTypeInElastic
 	EasingTypeOutElastic
 	EasingTypeInOutElastic
+	EasingTypeInverseLerp
 )
 
 const (
-	SplineEaseTypeCatmullRom = iota
-	SplineEaseTypeLinear
+	SplineTypeCatmullRom = "catmullrom"
+	SplineTypeLinear     = "linear"
 )
 
 // CameraEase represents an easing function that can be used by a CameraInstructionSet.
@@ -399,16 +400,15 @@ type CameraRotationOption struct {
 	Value mgl32.Vec3
 	// Time is the time for this rotation option.
 	Time float32
-	// EaseType is the optional easing function used to interpolate towards this rotation key frame.
-	// This is one of the EasingType constants.
-	EaseType Optional[uint8]
+	// EaseType is the optional easing function name used to interpolate towards this rotation key frame.
+	EaseType Optional[string]
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.Uint8)
+	OptionalFunc(r, &x.EaseType, r.String)
 }
 
 // CameraProgressOption represents a progress keyframe option for camera spline instructions.
@@ -417,23 +417,22 @@ type CameraProgressOption struct {
 	Value float32
 	// Time is the time for this progress option.
 	Time float32
-	// EaseType is the optional easing function used to interpolate towards this progress key frame.
-	// This is one of the EasingType constants.
-	EaseType Optional[uint8]
+	// EaseType is the optional easing function name used to interpolate towards this progress key frame.
+	EaseType Optional[string]
 }
 
 // Marshal encodes/decodes a CameraProgressOption.
 func (x *CameraProgressOption) Marshal(r IO) {
 	r.Float32(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.Uint8)
+	OptionalFunc(r, &x.EaseType, r.String)
 }
 
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.
 type CameraSplineInstruction struct {
 	// TotalTime is the total time for the spline animation.
 	TotalTime float32
-	// SplineType is the optional spline interpolation type. This is one of the SplineEaseType constants.
+	// SplineType is the optional spline interpolation type.
 	SplineType Optional[uint8]
 	// Curve is a list of points that define the spline curve.
 	Curve []mgl32.Vec3
@@ -441,6 +440,10 @@ type CameraSplineInstruction struct {
 	ProgressKeyFrames []CameraProgressOption
 	// RotationOptions is a list of rotation options for the spline.
 	RotationOptions []CameraRotationOption
+	// SplineIdentifier is an optional identifier for referencing the spline by name.
+	SplineIdentifier Optional[string]
+	// LoadFromJson optionally determines whether the spline should be loaded from a JSON definition.
+	LoadFromJson Optional[bool]
 }
 
 // Marshal encodes/decodes a CameraSplineInstruction.
@@ -450,20 +453,34 @@ func (x *CameraSplineInstruction) Marshal(r IO) {
 	FuncSlice(r, &x.Curve, r.Vec3)
 	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
+	OptionalFunc(r, &x.SplineIdentifier, r.String)
+	OptionalFunc(r, &x.LoadFromJson, r.Bool)
 }
 
 // CameraSplineDefinition represents a named camera spline definition.
 type CameraSplineDefinition struct {
 	// Name is the name of the spline definition.
 	Name string
-	// Instruction is the spline instruction for this definition.
-	Instruction CameraSplineInstruction
+	// TotalTime is the total time for the spline animation.
+	TotalTime float32
+	// SplineType is the optional spline interpolation type.
+	SplineType Optional[string]
+	// ControlPoints is a list of points that define the spline curve.
+	ControlPoints []mgl32.Vec3
+	// ProgressKeyFrames is a list of progress key frames for the spline.
+	ProgressKeyFrames []CameraProgressOption
+	// RotationKeyFrames is a list of rotation key frames for the spline.
+	RotationKeyFrames []CameraRotationOption
 }
 
 // Marshal encodes/decodes a CameraSplineDefinition.
 func (x *CameraSplineDefinition) Marshal(r IO) {
 	r.String(&x.Name)
-	Single(r, &x.Instruction)
+	r.Float32(&x.TotalTime)
+	OptionalFunc(r, &x.SplineType, r.String)
+	FuncSlice(r, &x.ControlPoints, r.Vec3)
+	Slice(r, &x.ProgressKeyFrames)
+	Slice(r, &x.RotationKeyFrames)
 }
 
 // CameraAimAssistActorPriorityData represents priority data for aim assist actor targeting.

@@ -136,6 +136,23 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
+	} else if req.Token != "" {
+		// Parse the token without verification to extract identity and the public key for encryption.
+		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384, jose.RS256})
+		if err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token: %w", err)
+		}
+		var claims tokenClaims
+		if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
+			return iData, cData, res, fmt.Errorf("parse unverified token claims: %w", err)
+		}
+		if err := ParsePublicKey(claims.ClientPublicKey, key); err != nil {
+			return iData, cData, res, fmt.Errorf("parse cpk: %w", err)
+		}
+		iData = claims.identityData()
+		if err := iData.Validate(); err != nil {
+			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
+		}
 	} else {
 		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
@@ -363,13 +380,13 @@ func encodeRequest(req *request) []byte {
 	return buf.Bytes()
 }
 
-// EncodeOffline creates a login request using the identity data and client data passed. The private key
-// passed will be used to self sign the JWTs.
-// Unlike Encode, EncodeOffline does not have a token signed by the Mojang key. It consists of only one JWT
-// which holds the identity data of the player.
-// The token parameter is optional and can be an empty string for offline logins that don't require
-// a multiplayer token.
-func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, token string, legacy bool) []byte {
+// EncodeOffline creates a login request using the identity data and client data passed.
+// The private key passed will be used to self-sign the JWTs.
+//
+// When legacy is true, a self-signed chain with extraData is produced for pre-1.26.10
+// servers. When false, a self-signed OIDC multiplayer token is produced with a dummy
+// certificate chain.
+func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.PrivateKey, legacy bool) []byte {
 	keyData := MarshalPublicKey(&key.PublicKey)
 	claims := jwt.Claims{
 		Expiry:    jwt.NewNumericDate(time.Now().Add(time.Hour * 6)),
@@ -379,19 +396,27 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 	signer, _ := jose.NewSigner(jose.SigningKey{Key: key, Algorithm: jose.ES384}, &jose.SignerOptions{
 		ExtraHeaders: map[jose.HeaderKey]any{"x5u": keyData},
 	})
-	firstJWT, _ := jwt.Signed(signer).Claims(identityClaims{
-		Claims:            claims,
-		ExtraData:         identityData,
-		IdentityPublicKey: keyData,
-	}).Serialize()
 
-	req := &request{
-		Certificate: certificate{
-			Chain: chain{firstJWT},
-		},
-		AuthenticationType: 2,
-		Token:              token,
-		Legacy:             legacy,
+	req := &request{AuthenticationType: 2}
+	if legacy {
+		chainJWT, _ := jwt.Signed(signer).Claims(identityClaims{
+			Claims:            claims,
+			ExtraData:         identityData,
+			IdentityPublicKey: keyData,
+		}).Serialize()
+		req.Certificate = certificate{Chain: chain{chainJWT}}
+		req.Legacy = true
+	} else {
+		req.Certificate = certificate{Chain: chain{""}}
+		req.Token, _ = jwt.Signed(signer).Claims(tokenClaims{
+			Claims:          claims,
+			ClientPublicKey: keyData,
+			XUID:            identityData.XUID,
+			DisplayName:     identityData.DisplayName,
+			Identity:        identityData.Identity,
+			PlayFabID:       identityData.PlayFabID,
+			PlayFabTitleID:  identityData.PlayFabTitleID,
+		}).Serialize()
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
@@ -422,14 +447,25 @@ type tokenClaims struct {
 	XUID string `json:"xid"`
 	// DisplayName is the in-game name for the authenticated player.
 	DisplayName string `json:"xname"`
+	// Identity is the UUID of the player. It is only set for offline logins where
+	// the UUID cannot be derived from the XUID.
+	Identity string `json:"identity,omitempty"`
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
 // Fields that exist in the legacy chain's extraData are filled to keep behavior consistent.
 func (tc tokenClaims) identityData() IdentityData {
+	identity := tc.Identity
+	if identity == "" {
+		if tc.XUID != "" {
+			identity = identityFromXUID(tc.XUID).String()
+		} else {
+			identity = uuid.New().String()
+		}
+	}
 	return IdentityData{
 		XUID:           tc.XUID,
-		Identity:       identityFromXUID(tc.XUID).String(),
+		Identity:       identity,
 		DisplayName:    tc.DisplayName,
 		PlayFabID:      tc.PlayFabID,
 		PlayFabTitleID: tc.PlayFabTitleID,

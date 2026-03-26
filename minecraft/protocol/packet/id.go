@@ -230,14 +230,20 @@ const (
 	IDClientBoundControlSchemeSet
 	IDDebugDrawer
 	IDServerBoundPackSettingChange
-	_ // TODO: Implement client-bound data store
+	IDClientBoundDataStore
 	IDGraphicsOverrideParameter
-	_ // TODO: Implement server-bound data store
+	IDServerBoundDataStore
 	IDClientBoundDataDrivenUIShowScreen
-	IDClientBoundDataDrivenUICloseAllScreens
+	IDClientBoundDataDrivenUICloseScreen
 	IDClientBoundDataDrivenUIReload
 	IDClientBoundTextureShift
 	IDVoxelShapes
 	IDCameraSpline
 	IDCameraAimAssistActorPriority
+	IDResourcePacksReadyForValidation
+	IDLocatorBar
+	IDPartyChanged
+	IDServerBoundDataDrivenScreenClosed
+	IDSyncWorldClocks
+	IDClientBoundAttributeLayerSync
 )

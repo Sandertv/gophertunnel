@@ -129,15 +129,6 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// UBlockPos reads three varint32s, one unsigned for the y, into a BlockPos from the underlying buffer.
-func (r *Reader) UBlockPos(x *BlockPos) {
-	r.Varint32(&x[0])
-	var y uint32
-	r.Varuint32(&y)
-	x[1] = int32(y)
-	r.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
@@ -154,7 +145,7 @@ func (r *Reader) SubChunkPos(x *SubChunkPos) {
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
 func (r *Reader) SoundPos(x *mgl32.Vec3) {
 	var b BlockPos
-	r.UBlockPos(&b)
+	r.BlockPos(&b)
 	*x = mgl32.Vec3{float32(b[0]) / 8, float32(b[1]) / 8, float32(b[2]) / 8}
 }
 
@@ -279,7 +270,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(r, &x.Actions)
 	r.Varuint32(&x.ActionType)
 	r.Varuint32(&x.TriggerType)
-	r.UBlockPos(&x.BlockPosition)
+	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	r.ItemInstance(&x.HeldItem)
@@ -287,6 +278,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Varuint32(&x.ClientPrediction)
+	r.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule reads a GameRule x from the Reader.

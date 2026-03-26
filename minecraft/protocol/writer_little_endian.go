@@ -55,3 +55,9 @@ func (w *Writer) Float32(x *float32) {
 	data := *(*[4]byte)(unsafe.Pointer(x))
 	_, _ = w.w.Write(data[:])
 }
+
+// Float64 writes a little endian float64 to the underlying buffer.
+func (w *Writer) Float64(x *float64) {
+	data := *(*[8]byte)(unsafe.Pointer(x))
+	_, _ = w.w.Write(data[:])
+}

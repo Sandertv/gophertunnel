@@ -10,6 +10,8 @@ type VoxelShapes struct {
 	Shapes []protocol.VoxelShape
 	// NameMap is a map of shape names to IDs.
 	NameMap []protocol.VoxelShapeNameEntry
+	// CustomShapeCount is the number of custom shapes.
+	CustomShapeCount uint16
 }
 
 // ID ...
@@ -20,4 +22,5 @@ func (*VoxelShapes) ID() uint32 {
 func (pk *VoxelShapes) Marshal(io protocol.IO) {
 	protocol.Slice(io, &pk.Shapes)
 	protocol.Slice(io, &pk.NameMap)
+	io.Uint16(&pk.CustomShapeCount)
 }

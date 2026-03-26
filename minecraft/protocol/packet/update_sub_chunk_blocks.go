@@ -18,7 +18,7 @@ func (*UpdateSubChunkBlocks) ID() uint32 {
 }
 
 func (pk *UpdateSubChunkBlocks) Marshal(io protocol.IO) {
-	io.UBlockPos(&pk.Position)
+	io.BlockPos(&pk.Position)
 	protocol.Slice(io, &pk.Blocks)
 	protocol.Slice(io, &pk.Extra)
 }

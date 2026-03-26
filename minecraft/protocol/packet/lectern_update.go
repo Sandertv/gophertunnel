@@ -24,5 +24,5 @@ func (*LecternUpdate) ID() uint32 {
 func (pk *LecternUpdate) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Page)
 	io.Uint8(&pk.PageCount)
-	io.UBlockPos(&pk.Position)
+	io.BlockPos(&pk.Position)
 }
