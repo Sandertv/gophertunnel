@@ -53,7 +53,7 @@ const (
 )
 
 // easingTypeFromString looks up an easing type from a string and writes the result to x.
-func easingTypeFromString(io IO, x *uint8, s string) {
+func easingTypeFromString(io IO, x *int32, s string) {
 	switch s {
 	case "linear":
 		*x = EasingTypeLinear
@@ -127,7 +127,7 @@ func easingTypeFromString(io IO, x *uint8, s string) {
 }
 
 // easingTypeToString looks up an easing type constant and returns the string representation.
-func easingTypeToString(x uint8) string {
+func easingTypeToString(x int32) string {
 	switch x {
 	case EasingTypeLinear:
 		return "linear"
@@ -309,7 +309,7 @@ type CameraInstructionFieldOfView struct {
 	// EaseTime is the time in seconds that the easing function should take.
 	EaseTime float32
 	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	EaseType int32
 	// Clear can be set to true to clear the current instruction.
 	Clear bool
 }
@@ -554,7 +554,7 @@ type CameraRotationOption struct {
 	// Time is the time for this rotation option.
 	Time float32
 	// EaseType is the optional easing function name used to interpolate towards this rotation key frame.
-	EaseType uint8
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
@@ -576,7 +576,7 @@ type CameraProgressOption struct {
 	// Time is the time for this progress option.
 	Time float32
 	// EaseType is the optional easing function name used to interpolate towards this progress key frame.
-	EaseType uint8
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraProgressOption.

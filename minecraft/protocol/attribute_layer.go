@@ -104,7 +104,7 @@ type EnvironmentAttributeData struct {
 	// TotalTransitionTicks is the total number of ticks for the transition.
 	TotalTransitionTicks uint32
 	// EaseType is the easing function used for the transition. It is one of the EasingType constants.
-	EaseType uint8
+	EaseType int32
 }
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
