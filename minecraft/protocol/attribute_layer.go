@@ -109,10 +109,7 @@ type EnvironmentAttributeData struct {
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
 func (x *EnvironmentAttributeData) Marshal(r IO) {
-	var easingType string
-	if x.EaseType != 0 {
-		easingType = easingTypeToString(x.EaseType)
-	}
+	easingType := easingTypeToString(x.EaseType)
 	r.String(&x.AttributeName)
 	OptionalMarshaler(r, &x.FromAttribute)
 	Single(r, &x.Attribute)

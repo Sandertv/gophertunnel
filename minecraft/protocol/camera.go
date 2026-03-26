@@ -17,7 +17,7 @@ const (
 )
 
 const (
-	EasingTypeLinear = iota + 1
+	EasingTypeLinear = iota
 	EasingTypeSpring
 	EasingTypeInQuad
 	EasingTypeOutQuad
@@ -55,7 +55,7 @@ const (
 // easingTypeFromString looks up an easing type from a string and writes the result to x.
 func easingTypeFromString(io IO, x *int32, s string) {
 	switch s {
-	case "linear":
+	case "linear", "unknown":
 		*x = EasingTypeLinear
 	case "spring":
 		*x = EasingTypeSpring
@@ -316,10 +316,7 @@ type CameraInstructionFieldOfView struct {
 
 // Marshal encodes/decodes a CameraInstructionFieldOfView.
 func (x *CameraInstructionFieldOfView) Marshal(r IO) {
-	var easingType string
-	if x.EaseType != 0 {
-		easingType = easingTypeToString(x.EaseType)
-	}
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.FieldOfView)
 	r.Float32(&x.EaseTime)
 	r.String(&easingType)
@@ -559,10 +556,7 @@ type CameraRotationOption struct {
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
-	var easingType string
-	if x.EaseType != 0 {
-		easingType = easingTypeToString(x.EaseType)
-	}
+	easingType := easingTypeToString(x.EaseType)
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
 	r.String(&easingType)
@@ -581,10 +575,7 @@ type CameraProgressOption struct {
 
 // Marshal encodes/decodes a CameraProgressOption.
 func (x *CameraProgressOption) Marshal(r IO) {
-	var easingType string
-	if x.EaseType != 0 {
-		easingType = easingTypeToString(x.EaseType)
-	}
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.Value)
 	r.Float32(&x.Time)
 	r.String(&easingType)
