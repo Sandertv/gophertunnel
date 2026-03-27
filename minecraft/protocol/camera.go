@@ -52,6 +52,154 @@ const (
 	EasingTypeInverseLerp
 )
 
+// easingTypeFromString looks up an easing type from a string and writes the result to x.
+func easingTypeFromString(io IO, x *int32, s string) {
+	switch s {
+	case "linear":
+		*x = EasingTypeLinear
+	case "spring":
+		*x = EasingTypeSpring
+	case "in_quad":
+		*x = EasingTypeInQuad
+	case "out_quad":
+		*x = EasingTypeOutQuad
+	case "in_out_quad":
+		*x = EasingTypeInOutQuad
+	case "in_cubic":
+		*x = EasingTypeInCubic
+	case "out_cubic":
+		*x = EasingTypeOutCubic
+	case "in_out_cubic":
+		*x = EasingTypeInOutCubic
+	case "in_quart":
+		*x = EasingTypeInQuart
+	case "out_quart":
+		*x = EasingTypeOutQuart
+	case "in_out_quart":
+		*x = EasingTypeInOutQuart
+	case "in_quint":
+		*x = EasingTypeInQuint
+	case "out_quint":
+		*x = EasingTypeOutQuint
+	case "in_out_quint":
+		*x = EasingTypeInOutQuint
+	case "in_sine":
+		*x = EasingTypeInSine
+	case "out_sine":
+		*x = EasingTypeOutSine
+	case "in_out_sine":
+		*x = EasingTypeInOutSine
+	case "in_expo":
+		*x = EasingTypeInExpo
+	case "out_expo":
+		*x = EasingTypeOutExpo
+	case "in_out_expo":
+		*x = EasingTypeInOutExpo
+	case "in_circ":
+		*x = EasingTypeInCirc
+	case "out_circ":
+		*x = EasingTypeOutCirc
+	case "in_out_circ":
+		*x = EasingTypeInOutCirc
+	case "in_back":
+		*x = EasingTypeInBack
+	case "out_back":
+		*x = EasingTypeOutBack
+	case "in_out_back":
+		*x = EasingTypeInOutBack
+	case "in_elastic":
+		*x = EasingTypeInElastic
+	case "out_elastic":
+		*x = EasingTypeOutElastic
+	case "in_out_elastic":
+		*x = EasingTypeInOutElastic
+	case "in_bounce":
+		*x = EasingTypeInBounce
+	case "out_bounce":
+		*x = EasingTypeOutBounce
+	case "in_out_bounce":
+		*x = EasingTypeInOutBounce
+	case "inverse_lerp":
+		*x = EasingTypeInverseLerp
+	default:
+		io.InvalidValue(s, "easingType", "unknown easing type")
+	}
+}
+
+// easingTypeToString looks up an easing type constant and returns the string representation.
+func easingTypeToString(x int32) string {
+	switch x {
+	case EasingTypeLinear:
+		return "linear"
+	case EasingTypeSpring:
+		return "spring"
+	case EasingTypeInQuad:
+		return "in_quad"
+	case EasingTypeOutQuad:
+		return "out_quad"
+	case EasingTypeInOutQuad:
+		return "in_out_quad"
+	case EasingTypeInCubic:
+		return "in_cubic"
+	case EasingTypeOutCubic:
+		return "out_cubic"
+	case EasingTypeInOutCubic:
+		return "in_out_cubic"
+	case EasingTypeInQuart:
+		return "in_quart"
+	case EasingTypeOutQuart:
+		return "out_quart"
+	case EasingTypeInOutQuart:
+		return "in_out_quart"
+	case EasingTypeInQuint:
+		return "in_quint"
+	case EasingTypeOutQuint:
+		return "out_quint"
+	case EasingTypeInOutQuint:
+		return "in_out_quint"
+	case EasingTypeInSine:
+		return "in_sine"
+	case EasingTypeOutSine:
+		return "out_sine"
+	case EasingTypeInOutSine:
+		return "in_out_sine"
+	case EasingTypeInExpo:
+		return "in_expo"
+	case EasingTypeOutExpo:
+		return "out_expo"
+	case EasingTypeInOutExpo:
+		return "in_out_expo"
+	case EasingTypeInCirc:
+		return "in_circ"
+	case EasingTypeOutCirc:
+		return "out_circ"
+	case EasingTypeInOutCirc:
+		return "in_out_circ"
+	case EasingTypeInBack:
+		return "in_back"
+	case EasingTypeOutBack:
+		return "out_back"
+	case EasingTypeInOutBack:
+		return "in_out_back"
+	case EasingTypeInElastic:
+		return "in_elastic"
+	case EasingTypeOutElastic:
+		return "out_elastic"
+	case EasingTypeInOutElastic:
+		return "in_out_elastic"
+	case EasingTypeInBounce:
+		return "in_bounce"
+	case EasingTypeOutBounce:
+		return "out_bounce"
+	case EasingTypeInOutBounce:
+		return "in_out_bounce"
+	case EasingTypeInverseLerp:
+		return "inverse_lerp"
+	default:
+		return "unknown"
+	}
+}
+
 const (
 	SplineTypeCatmullRom = "catmullrom"
 	SplineTypeLinear     = "linear"
@@ -161,16 +309,18 @@ type CameraInstructionFieldOfView struct {
 	// EaseTime is the time in seconds that the easing function should take.
 	EaseTime float32
 	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	EaseType int32
 	// Clear can be set to true to clear the current instruction.
 	Clear bool
 }
 
 // Marshal encodes/decodes a CameraInstructionFieldOfView.
 func (x *CameraInstructionFieldOfView) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.FieldOfView)
 	r.Float32(&x.EaseTime)
-	r.Uint8(&x.EaseType)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 	r.Bool(&x.Clear)
 }
 
@@ -401,14 +551,16 @@ type CameraRotationOption struct {
 	// Time is the time for this rotation option.
 	Time float32
 	// EaseType is the optional easing function name used to interpolate towards this rotation key frame.
-	EaseType Optional[string]
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.String)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 }
 
 // CameraProgressOption represents a progress keyframe option for camera spline instructions.
@@ -418,14 +570,16 @@ type CameraProgressOption struct {
 	// Time is the time for this progress option.
 	Time float32
 	// EaseType is the optional easing function name used to interpolate towards this progress key frame.
-	EaseType Optional[string]
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraProgressOption.
 func (x *CameraProgressOption) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.String)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 }
 
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.

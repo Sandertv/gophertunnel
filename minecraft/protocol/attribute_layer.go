@@ -109,13 +109,15 @@ type EnvironmentAttributeData struct {
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
 func (x *EnvironmentAttributeData) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.String(&x.AttributeName)
 	OptionalMarshaler(r, &x.FromAttribute)
 	Single(r, &x.Attribute)
 	OptionalMarshaler(r, &x.ToAttribute)
 	r.Uint32(&x.CurrentTransitionTicks)
 	r.Uint32(&x.TotalTransitionTicks)
-	r.Int32(&x.EaseType)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 }
 
 // AttributeLayerSettings represents settings for an attribute layer.
