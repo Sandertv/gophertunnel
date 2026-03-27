@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
@@ -336,8 +337,13 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	}
 
 	w.Varint32(&x.BlockRuntimeID)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
 
-	buf := new(bytes.Buffer)
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -376,8 +382,13 @@ func (w *Writer) Item(x *ItemStack) {
 	w.Varuint32(&x.MetadataValue)
 	w.Varint32(&x.BlockRuntimeID)
 
-	var extraData []byte
-	buf := bytes.NewBuffer(extraData)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
+
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -400,7 +411,7 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int64(&blockingTick)
 	}
 
-	extraData = buf.Bytes()
+	extraData := buf.Bytes()
 	w.ByteSlice(&extraData)
 }
 
