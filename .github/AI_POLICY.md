@@ -10,8 +10,8 @@ Thank you for your interest in contributing to Gophertunnel. When working with A
 - Keep pull requests focused on the relevant change or changes. Excessive whitespace changes or edits outside the scope
   of the pull request are not allowed.
 
-Excessive or inappropriate use of AI tools may result in pull requests being closed or restrictions on contributing to
-the Gophertunnel repository, including being permanently blocked. We understand that the codebase can be challenging for
+Repeated violations or inappropriate use of AI tools may result in pull requests being closed or restrictions on contributing
+to the Gophertunnel repository, including being permanently blocked. We understand that the codebase can be challenging for
 newcomers, and we are happy to help those who are genuinely interested in contributing.
 
 Thank you.
