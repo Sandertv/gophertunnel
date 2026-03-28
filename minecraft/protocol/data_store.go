@@ -34,7 +34,7 @@ type DataStoreChangeEntry struct {
 
 // Marshal encodes/decodes a DataStoreChangeEntry.
 func (x *DataStoreChangeEntry) Marshal(r IO) {
-	r.Uint32(&x.ChangeType)
+	r.Varuint32(&x.ChangeType)
 	switch x.ChangeType {
 	case DataStoreChangeTypeUpdate:
 		Single(r, &x.Update)
@@ -77,7 +77,7 @@ func (x *DataStoreUpdate) Marshal(r IO) {
 	r.String(&x.DataStoreName)
 	r.String(&x.Property)
 	r.String(&x.Path)
-	r.Uint32(&x.ControlType)
+	r.Varuint32(&x.ControlType)
 	switch x.ControlType {
 	case DataStoreControlDouble:
 		r.Float64(&x.DoubleValue)
