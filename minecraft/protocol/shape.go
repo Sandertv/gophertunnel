@@ -137,7 +137,7 @@ func (shape *ArrowShape) Marshal(io IO) {
 }
 
 const (
-	DebugDrawerShapeLine = iota
+	DebugDrawerShapeLine uint8 = iota
 	DebugDrawerShapeBox
 	DebugDrawerShapeSphere
 	DebugDrawerShapeCircle
