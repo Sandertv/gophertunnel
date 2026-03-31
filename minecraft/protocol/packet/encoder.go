@@ -5,8 +5,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"fmt"
-	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"io"
+
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
@@ -14,20 +15,62 @@ import (
 type Encoder struct {
 	w io.Writer
 
+	// header holds the batch header that should be present at the beginning on each produced packet data
+	// held in a single batch packet.
+	header               []byte
 	compressionThreshold int
 	compression          Compression
 	encrypt              *encrypt
+	// disableEncryption indicates whether to prevent encryption from being enabled
+	// even if it is requested on handshake during login.
+	disableEncryption bool
 }
 
 // NewEncoder returns a new Encoder for the io.Writer passed. Each final packet produced by the Encoder is
 // sent with a single call to io.Writer.Write().
 func NewEncoder(w io.Writer) *Encoder {
-	return &Encoder{w: w}
+	var batch []byte
+	if b, ok := w.(batchHeader); ok {
+		batch = b.BatchHeader()
+	} else {
+		batch = []byte{header}
+	}
+	var disableEncryption bool
+	if d, ok := w.(encryptionDisabler); ok {
+		disableEncryption = d.DisableEncryption()
+	}
+	return &Encoder{
+		w:                 w,
+		header:            batch,
+		disableEncryption: disableEncryption,
+	}
+}
+
+// batchHeader can be implemented by underlying transport connection provided to Encoder and Decoder
+// to specify the initial bytes that should appear at the beginning of packet data in wire.
+type batchHeader interface {
+	// BatchHeader returns initial bytes that should be appended to the produced data
+	// in Encoder and Decoder. It can be an empty slice if nothing is expected at the beginning.
+	BatchHeader() []byte
+}
+
+// encryptionDisabler may be implemented by the underlying transport connection to
+// prevent encryption from being enabled in Encoder and Decoder.
+//
+// Disabling encryption is strongly discouraged, as it removes protection against
+// replay attacks during login. Use only if you fully understand the implications.
+type encryptionDisabler interface {
+	// DisableEncryption reports whether encryption should be disabled for both
+	// Encoder and Decoder.
+	DisableEncryption() bool
 }
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
 // after encryption is enabled will be encrypted.
 func (encoder *Encoder) EnableEncryption(keyBytes [32]byte) {
+	if encoder.disableEncryption {
+		return
+	}
 	block, _ := aes.NewCipher(keyBytes[:])
 	first12 := append([]byte(nil), keyBytes[:12]...)
 	stream := cipher.NewCTR(block, append(first12, 0, 0, 0, 2))
@@ -62,7 +105,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
-	prepend := []byte{header}
+	prepend := encoder.header
 
 	if compression := encoder.compression; compression != nil {
 		if len(data) < encoder.compressionThreshold {
