@@ -3,6 +3,7 @@ package realms
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -18,6 +19,13 @@ type Client struct {
 	xblToken   *auth.XBLToken
 	httpClient *http.Client
 }
+
+const realmsBaseURL = "https://pocket.realms.minecraft.net"
+
+var (
+	ErrPlayerNotInRealm = errors.New("player not in realm")
+	ErrRealmNotFound    = errors.New("realm not found")
+)
 
 // NewClient returns a new Client instance with the supplied token source for authentication.
 // If httpClient is nil, http.DefaultClient will be used to request the realms api.
@@ -98,37 +106,72 @@ type Realm struct {
 	client *Client
 }
 
-// Address requests the address and port to connect to this realm from the api,
-// will wait for the realm to start if it is currently offline.
-func (r *Realm) Address(ctx context.Context) (address string, err error) {
+// RealmAddress contains the address returned by the Realms join endpoint along
+// with the signalling protocol used for connecting to it.
+type RealmAddress struct {
+	NetworkProtocol string
+	Address         string
+}
+
+// Address requests the address and protocol used to connect to this realm.
+// It will wait for the realm to start if it is currently offline.
+func (r *Realm) Address(ctx context.Context) (RealmAddress, error) {
+	if r.client == nil {
+		return RealmAddress{}, fmt.Errorf("realm client is nil")
+	}
+	return r.client.RealmAddress(ctx, r.ID)
+}
+
+// RealmAddress requests the address and protocol used to connect to a realm
+// from the api, and waits for the realm to start if it is currently offline.
+func (r *Client) RealmAddress(ctx context.Context, realmID int) (RealmAddress, error) {
 	ticker := time.NewTicker(time.Second * 3)
 	defer ticker.Stop()
-	for range ticker.C {
-		body, status, err := r.client.request(ctx, fmt.Sprintf("/worlds/%d/join", r.ID))
-		if err != nil {
-			if status == 503 && ctx.Err() == nil {
-				continue
+	for {
+		select {
+		case <-ctx.Done():
+			return RealmAddress{}, ctx.Err()
+		case <-ticker.C:
+			body, status, err := r.request(ctx, fmt.Sprintf("/worlds/%d/join", realmID))
+			if err != nil {
+				switch status {
+				case 503:
+					// Retry on service unavailable
+					continue
+				case 404:
+					return RealmAddress{}, ErrRealmNotFound
+				case 403:
+					return RealmAddress{}, ErrPlayerNotInRealm
+				}
+				return RealmAddress{}, err
 			}
-			return "", err
-		}
 
-		var data struct {
-			Address       string `json:"address"`
-			PendingUpdate bool   `json:"pendingUpdate"`
+			var data struct {
+				Address         string `json:"address"`
+				NetworkProtocol string `json:"networkProtocol"`
+			}
+			if err := json.Unmarshal(body, &data); err != nil {
+				return RealmAddress{}, err
+			}
+			return RealmAddress{
+				NetworkProtocol: data.NetworkProtocol,
+				Address:         data.Address,
+			}, nil
 		}
-		if err := json.Unmarshal(body, &data); err != nil {
-			return "", err
-		}
-		return data.Address, nil
 	}
-	panic("unreachable")
 }
 
 // OnlinePlayers gets all the players currently on this realm,
 // Returns a 403 error if the current user is not the owner of the Realm.
 func (r *Realm) OnlinePlayers(ctx context.Context) (players []Player, err error) {
-	body, _, err := r.client.request(ctx, fmt.Sprintf("/worlds/%d", r.ID))
+	body, status, err := r.client.request(ctx, fmt.Sprintf("/worlds/%d", r.ID))
 	if err != nil {
+		switch status {
+		case 403:
+			return nil, ErrPlayerNotInRealm
+		case 404:
+			return nil, ErrRealmNotFound
+		}
 		return nil, err
 	}
 
@@ -142,8 +185,11 @@ func (r *Realm) OnlinePlayers(ctx context.Context) (players []Player, err error)
 
 // xboxToken returns the xbox token used for the api.
 func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
-	if r.xblToken != nil {
+	if r.xblToken != nil && r.xblToken.Valid() {
 		return r.xblToken, nil
+	}
+	if r.tokenSrc == nil {
+		return nil, fmt.Errorf("token source is nil")
 	}
 
 	t, err := r.tokenSrc.Token()
@@ -151,16 +197,19 @@ func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
 		return nil, err
 	}
 
-	r.xblToken, err = auth.RequestXBLToken(ctx, t, "https://pocket.realms.minecraft.net/")
+	r.xblToken, err = auth.RequestXBLToken(ctx, t, realmsBaseURL+"/")
 	return r.xblToken, err
 }
 
 // request sends an http get request to path with the right headers for the api set.
 func (r *Client) request(ctx context.Context, path string) (body []byte, status int, err error) {
-	if string(path[0]) != "/" {
+	if path == "" {
+		return nil, 0, fmt.Errorf("path is empty")
+	}
+	if path[0] != '/' {
 		path = "/" + path
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("https://pocket.realms.minecraft.net%s", path), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s%s", realmsBaseURL, path), nil)
 	if err != nil {
 		return nil, 0, err
 	}
