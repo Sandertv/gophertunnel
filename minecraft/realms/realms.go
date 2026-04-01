@@ -202,7 +202,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s%s", realmsBaseURL, path), nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", realmsBaseURL+path, nil)
 	if err != nil {
 		return nil, 0, err
 	}
