@@ -109,8 +109,8 @@ type Realm struct {
 // RealmAddress contains the address returned by the Realms join endpoint along
 // with the signalling protocol used for connecting to it.
 type RealmAddress struct {
-	NetworkProtocol string
-	Address         string
+	NetworkProtocol string `json:"networkProtocol"`
+	Address         string `json:"address"`
 }
 
 // Address requests the address and protocol used to connect to this realm.
@@ -136,7 +136,6 @@ func (r *Client) RealmAddress(ctx context.Context, realmID int) (RealmAddress, e
 			if err != nil {
 				switch status {
 				case 503:
-					// Retry on service unavailable
 					continue
 				case 404:
 					return RealmAddress{}, ErrRealmNotFound
@@ -146,17 +145,11 @@ func (r *Client) RealmAddress(ctx context.Context, realmID int) (RealmAddress, e
 				return RealmAddress{}, err
 			}
 
-			var data struct {
-				Address         string `json:"address"`
-				NetworkProtocol string `json:"networkProtocol"`
-			}
-			if err := json.Unmarshal(body, &data); err != nil {
+			var address RealmAddress
+			if err := json.Unmarshal(body, &address); err != nil {
 				return RealmAddress{}, err
 			}
-			return RealmAddress{
-				NetworkProtocol: data.NetworkProtocol,
-				Address:         data.Address,
-			}, nil
+			return address, nil
 		}
 	}
 }
