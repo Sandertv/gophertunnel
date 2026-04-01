@@ -231,7 +231,7 @@ func (w *Writer) GameRuleLegacy(x *GameRule) {
 }
 
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
-func (w *Writer) EntityMetadata(x *map[uint32]any) {
+func (w *Writer) EntityMetadata(x *EntityMetadata) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
 
