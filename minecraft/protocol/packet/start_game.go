@@ -200,8 +200,8 @@ type StartGame struct {
 	NewNether bool
 	// EducationSharedResourceURI is an education edition feature that transmits education resource settings to clients.
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
-	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
-	// should always be set to false.
+	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled/disabled. For servers this
+	// should always be empty.
 	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
