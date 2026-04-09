@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/oauth2"
 )
 
@@ -20,7 +21,10 @@ type Client struct {
 	httpClient *http.Client
 }
 
-const realmsBaseURL = "https://pocket.realms.minecraft.net"
+const (
+	realmsBaseURL      = "https://bedrock.frontendlegacy.realms.minecraft-services.net"
+	realmsRelyingParty = "https://pocket.realms.minecraft.net/"
+)
 
 var (
 	ErrPlayerNotInRealm = errors.New("player not in realm")
@@ -190,7 +194,7 @@ func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
 		return nil, err
 	}
 
-	r.xblToken, err = auth.RequestXBLToken(ctx, t, realmsBaseURL+"/")
+	r.xblToken, err = auth.RequestXBLToken(ctx, t, realmsRelyingParty)
 	return r.xblToken, err
 }
 
@@ -207,7 +211,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 		return nil, 0, err
 	}
 	req.Header.Set("User-Agent", "MCPE/UWP")
-	req.Header.Set("Client-Version", "1.10.1")
+	req.Header.Set("Client-Version", protocol.CurrentVersion)
 	xbl, err := r.xboxToken(ctx)
 	if err != nil {
 		return nil, 0, err
