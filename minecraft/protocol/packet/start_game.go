@@ -13,6 +13,14 @@ const (
 )
 
 const (
+	XBLBroadcastModeNoMultiPlay = iota
+	XBLBroadcastModeInviteOnly
+	XBLBroadcastModeFriendsOnly
+	XBLBroadcastModeFriendsOfFriends
+	XBLBroadcastModePublic
+)
+
+const (
 	ChatRestrictionLevelNone     = 0
 	ChatRestrictionLevelDropped  = 1
 	ChatRestrictionLevelDisabled = 2
@@ -116,7 +124,10 @@ type StartGame struct {
 	MultiPlayerGame bool
 	// LANBroadcastEnabled specifies if LAN broadcast was intended to be enabled for the world.
 	LANBroadcastEnabled bool
-	// XBLBroadcastMode is the mode used to broadcast the joined game across XBOX Live.
+	// XBLBroadcastMode is the mode used to broadcast the joined game across Xbox Live.
+	// When set to 0, the 'Invite' button in the pause screen is grayed out and players
+	// cannot invite their friends to the Xbox Live multiplayer session they're currently in.
+	// It only applies to worlds and has no effect on external servers.
 	XBLBroadcastMode int32
 	// PlatformBroadcastMode is the mode used to broadcast the joined game across the platform.
 	PlatformBroadcastMode int32
@@ -189,9 +200,9 @@ type StartGame struct {
 	NewNether bool
 	// EducationSharedResourceURI is an education edition feature that transmits education resource settings to clients.
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
-	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
-	// should always be set to false.
-	ForceExperimentalGameplay bool
+	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled/disabled. For servers this
+	// should always be empty.
+	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -277,7 +288,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.WorldGameMode)
 	io.Bool(&pk.Hardcore)
 	io.Varint32(&pk.Difficulty)
-	io.UBlockPos(&pk.WorldSpawn)
+	io.BlockPos(&pk.WorldSpawn)
 	io.Bool(&pk.AchievementsDisabled)
 	io.Varint32(&pk.EditorWorldType)
 	io.Bool(&pk.CreatedInEditor)
@@ -317,7 +328,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Int32(&pk.LimitedWorldDepth)
 	io.Bool(&pk.NewNether)
 	protocol.Single(io, &pk.EducationSharedResourceURI)
-	io.Bool(&pk.ForceExperimentalGameplay)
+	protocol.OptionalFunc(io, &pk.ForceExperimentalGameplay, io.Bool)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)
 	io.String(&pk.LevelID)

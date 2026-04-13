@@ -256,7 +256,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if !d.KeepXBLIdentityData {
 			clearXBLIdentityData(&conn.identityData)
 		}
-		request = login.EncodeOffline(conn.identityData, conn.clientData, key, token, d.EnableLegacyAuth)
+		request = login.EncodeOffline(conn.identityData, conn.clientData, key, d.EnableLegacyAuth)
 	} else {
 
 		request = login.Encode(chainData, conn.clientData, key, token, d.EnableLegacyAuth)

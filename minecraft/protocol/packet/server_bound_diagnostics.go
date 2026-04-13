@@ -51,5 +51,5 @@ func (pk *ServerBoundDiagnostics) Marshal(io protocol.IO) {
 	io.Float32(&pk.AverageEndFrameTime)
 	io.Float32(&pk.AverageRemainderTimePercent)
 	io.Float32(&pk.AverageUnaccountedTimePercent)
-	protocol.SliceUint32Length(io, &pk.MemoryCategoryValues)
+	protocol.Slice(io, &pk.MemoryCategoryValues)
 }

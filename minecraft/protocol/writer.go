@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
@@ -101,14 +102,6 @@ func (w *Writer) BlockPos(x *BlockPos) {
 	w.Varint32(&x[2])
 }
 
-// UBlockPos writes a BlockPos as 2 varint32s and a varuint32 to the underlying buffer.
-func (w *Writer) UBlockPos(x *BlockPos) {
-	w.Varint32(&x[0])
-	y := uint32(x[1])
-	w.Varuint32(&y)
-	w.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[0])
@@ -125,7 +118,7 @@ func (w *Writer) SubChunkPos(x *SubChunkPos) {
 // SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
 func (w *Writer) SoundPos(x *mgl32.Vec3) {
 	b := BlockPos{int32((*x)[0] * 8), int32((*x)[1] * 8), int32((*x)[2] * 8)}
-	w.UBlockPos(&b)
+	w.BlockPos(&b)
 }
 
 // RGB writes a color.RGBA x as 3 float32s to the underlying buffer.
@@ -180,7 +173,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
 	w.Varuint32(&x.TriggerType)
-	w.UBlockPos(&x.BlockPosition)
+	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
 	w.ItemInstance(&x.HeldItem)
@@ -188,6 +181,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
 	w.Varuint32(&x.ClientPrediction)
+	w.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule writes a GameRule x to the Writer.
@@ -343,8 +337,13 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	}
 
 	w.Varint32(&x.BlockRuntimeID)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
 
-	buf := new(bytes.Buffer)
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -383,8 +382,13 @@ func (w *Writer) Item(x *ItemStack) {
 	w.Varuint32(&x.MetadataValue)
 	w.Varint32(&x.BlockRuntimeID)
 
-	var extraData []byte
-	buf := bytes.NewBuffer(extraData)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
+
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -407,7 +411,7 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int64(&blockingTick)
 	}
 
-	extraData = buf.Bytes()
+	extraData := buf.Bytes()
 	w.ByteSlice(&extraData)
 }
 

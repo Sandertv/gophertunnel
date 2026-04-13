@@ -65,6 +65,9 @@ const (
 	ContainerSmithingTableTemplate
 	ContainerCrafterLevelEntity
 	ContainerDynamic
+	ContainerRecipeFood
+	ContainerRecipeBlocks
+	ContainerRecipeFurnaceItems
 )
 
 const (

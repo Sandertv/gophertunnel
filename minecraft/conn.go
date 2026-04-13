@@ -47,6 +47,7 @@ type Conn struct {
 	enc                  *packet.Encoder
 	dec                  *packet.Decoder
 	compression          packet.Compression
+	compressionSelector  func(proto Protocol) packet.Compression
 	compressionThreshold int
 	maxDecompressedLen   int
 	readerLimits         bool
@@ -718,6 +719,12 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 		return fmt.Errorf("incompatible protocol version: expected %v, got %v", protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
+	if conn.compressionSelector != nil {
+		if c := conn.compressionSelector(conn.proto); c != nil {
+			conn.compression = c
+		}
+	}
+
 	conn.expect(packet.IDLogin)
 	if err := conn.WritePacket(&packet.NetworkSettings{
 		CompressionThreshold: uint16(conn.compressionThreshold),
@@ -740,8 +747,6 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
 	conn.encMu.Lock()
-	conn.compression = alg
-	conn.compressionThreshold = int(pk.CompressionThreshold)
 	conn.enc.EnableCompression(alg, int(pk.CompressionThreshold))
 	conn.encMu.Unlock()
 	conn.dec.EnableCompression(alg, conn.maxDecompressedLen)
@@ -882,6 +887,7 @@ func (conn *Conn) startGame() {
 		PlayerMovementSettings:       data.PlayerMovementSettings,
 		WorldGameMode:                data.WorldGameMode,
 		Hardcore:                     data.Hardcore,
+		XBLBroadcastMode:             data.XBLBroadcastMode,
 		ServerAuthoritativeInventory: data.ServerAuthoritativeInventory,
 		PlayerPermissions:            data.PlayerPermissions,
 		Experiments:                  data.Experiments,
@@ -927,6 +933,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		PlayerMovementSettings:       pk.PlayerMovementSettings,
 		WorldGameMode:                pk.WorldGameMode,
 		Hardcore:                     pk.Hardcore,
+		XBLBroadcastMode:             pk.XBLBroadcastMode,
 		ServerAuthoritativeInventory: pk.ServerAuthoritativeInventory,
 		PlayerPermissions:            pk.PlayerPermissions,
 		ChatRestrictionLevel:         pk.ChatRestrictionLevel,
