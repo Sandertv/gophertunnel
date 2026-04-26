@@ -362,8 +362,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
-		var blockingTick int64
-		bufWriter.Int64(&blockingTick)
+		bufWriter.Int64(&x.BlockingTick)
 	}
 
 	b := buf.Bytes()
@@ -407,8 +406,7 @@ func (w *Writer) Item(x *ItemStack) {
 	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
-		var blockingTick int64
-		bufWriter.Int64(&blockingTick)
+		bufWriter.Int64(&x.BlockingTick)
 	}
 
 	extraData := buf.Bytes()
