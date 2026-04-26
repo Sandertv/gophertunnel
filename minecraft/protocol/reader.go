@@ -467,8 +467,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
-		var blockingTick int64
-		bufReader.Int64(&blockingTick)
+		bufReader.Int64(&x.BlockingTick)
 	}
 }
 
@@ -517,8 +516,7 @@ func (r *Reader) Item(x *ItemStack) {
 	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
-		var blockingTick int64
-		bufReader.Int64(&blockingTick)
+		bufReader.Int64(&x.BlockingTick)
 	}
 }
 

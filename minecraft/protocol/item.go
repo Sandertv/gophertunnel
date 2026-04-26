@@ -36,6 +36,8 @@ type ItemStack struct {
 	CanBreak []string
 	// HasNetworkID ...
 	HasNetworkID bool
+	// BlockingTick is the tick at which a shield started blocking. It is only used for shield items.
+	BlockingTick int64
 }
 
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually
