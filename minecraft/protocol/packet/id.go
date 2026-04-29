@@ -228,7 +228,7 @@ const (
 	IDPlayerUpdateEntityOverrides
 	IDPlayerLocation
 	IDClientBoundControlSchemeSet
-	IDDebugDrawer
+	IDPrimitiveShapes
 	IDServerBoundPackSettingChange
 	IDClientBoundDataStore
 	IDGraphicsOverrideParameter

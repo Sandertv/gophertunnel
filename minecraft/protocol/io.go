@@ -50,6 +50,7 @@ type IO interface {
 	EntityMetadata(x *map[uint32]any)
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
+	ItemInstanceNew(i *ItemInstance)
 	ItemDescriptorCount(i *ItemDescriptorCount)
 	StackRequestAction(x *StackRequestAction)
 	MaterialReducer(x *MaterialReducer)

@@ -267,7 +267,7 @@ func init() {
 		IDPlayerUpdateEntityOverrides:        func() Packet { return &PlayerUpdateEntityOverrides{} },
 		IDPlayerLocation:                     func() Packet { return &PlayerLocation{} },
 		IDClientBoundControlSchemeSet:        func() Packet { return &ClientBoundControlSchemeSet{} },
-		IDDebugDrawer:                        func() Packet { return &DebugDrawer{} },
+		IDPrimitiveShapes:                    func() Packet { return &PrimitiveShapes{} },
 		IDServerBoundPackSettingChange:       func() Packet { return &ServerBoundPackSettingChange{} },
 		IDGraphicsOverrideParameter:          func() Packet { return &GraphicsOverrideParameter{} },
 		IDClientBoundDataDrivenUIShowScreen:  func() Packet { return &ClientBoundDataDrivenUIShowScreen{} },

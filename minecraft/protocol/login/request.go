@@ -126,7 +126,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		// The OIDC token does not include the numerical XBL title ID (extraData.titleId) that is present in the
 		// legacy Mojang chain. If the chain is present and valid, we verify it and use its title ID so callers
 		// can keep using IdentityData.TitleID.
-		if iData.XUID != "" {
+		if authenticated && len(req.Certificate.Chain) > 0 {
 			if legacyID, _, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t); err == nil && legacyAuthed {
 				if legacyID.TitleID != "" && legacyID.XUID == iData.XUID {
 					iData.TitleID = legacyID.TitleID
@@ -268,11 +268,6 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 		}
 	} else {
 		r.request.Certificate.Chain = r.Chain
-	}
-
-	// First check if the chain actually has any elements in it.
-	if len(r.request.Certificate.Chain) == 0 {
-		return nil, fmt.Errorf("decode chain: no elements")
 	}
 
 	// Then check if the authentication type is guest mode.
