@@ -332,8 +332,8 @@ func (r *Reader) GameRuleLegacy(x *GameRule) {
 }
 
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
-func (r *Reader) EntityMetadata(x *map[uint32]any) {
-	*x = map[uint32]any{}
+func (r *Reader) EntityMetadata(x *EntityMetadata) {
+	*x = EntityMetadata{}
 
 	var count uint32
 	r.Varuint32(&count)

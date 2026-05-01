@@ -47,7 +47,7 @@ type IO interface {
 	ARGB(x *color.RGBA)
 	BEARGB(x *color.RGBA)
 	VarRGBA(x *color.RGBA)
-	EntityMetadata(x *map[uint32]any)
+	EntityMetadata(x *EntityMetadata)
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
 	ItemDescriptorCount(i *ItemDescriptorCount)

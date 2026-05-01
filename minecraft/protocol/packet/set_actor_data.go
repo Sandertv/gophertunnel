@@ -13,7 +13,7 @@ type SetActorData struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]any
+	EntityMetadata protocol.EntityMetadata
 	// EntityProperties is a list of properties that the entity inhibits. These properties define and alter specific
 	// attributes of the entity.
 	EntityProperties protocol.EntityProperties
