@@ -500,6 +500,8 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	r.ByteSlice(&extraData)
 
 	if len(extraData) == 0 {
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
+		x.BlockingTick = 0
 		return
 	}
 
@@ -512,7 +514,6 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	switch length {
 	case 0:
 		x.NBTData = nil
-		return
 	case -1:
 		var version uint8
 		bufReader.Uint8(&version)
@@ -532,8 +533,9 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
-		var blockingTick int64
-		bufReader.Int64(&blockingTick)
+		bufReader.Int64(&x.BlockingTick)
+	} else {
+		x.BlockingTick = 0
 	}
 }
 
