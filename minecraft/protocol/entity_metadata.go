@@ -143,6 +143,8 @@ const (
 	EntityDataKeyArrowShooterID
 	EntityDataKeyFireworkDirection
 	EntityDataKeyFireworkShooterID
+	EntityDataKeyReserved139
+	EntityDataKeyNameplateRenderDistanceMax
 )
 
 const (
@@ -273,6 +275,9 @@ const (
 	EntityDataFlagBodyRotationAlwaysFollowsHead
 	EntityDataFlagCanUseVerticalMovementAction
 	EntityDataFlagRotationLockedToVehicle
+	EntityDataFlagUsesLegacyFriction
+	EntityDataFlagUsesUniformAirDrag
+	EntityDataFlagNameplateDepthTested
 	EntityDataFlagCount
 )
 
