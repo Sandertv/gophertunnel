@@ -54,6 +54,9 @@ const (
 	GraphicsOverrideParameterTypeFlashIlluminance
 	GraphicsOverrideParameterTypeAmbientColor
 	GraphicsOverrideParameterTypeAmbientIlluminance
+	GraphicsOverrideParameterTypeEmissiveDesaturation
+	GraphicsOverrideParameterTypeSkyIntensity
+	GraphicsOverrideParameterTypeOrbitalOffsetDegrees
 )
 
 // ParameterKeyframeValue represents a keyframe value for graphics parameters.
