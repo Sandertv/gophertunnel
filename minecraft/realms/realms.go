@@ -113,8 +113,13 @@ type Realm struct {
 // RealmAddress contains the address returned by the Realms join endpoint along
 // with the signalling protocol used for connecting to it.
 type RealmAddress struct {
-	NetworkProtocol string `json:"networkProtocol"`
-	Address         string `json:"address"`
+	Address           string `json:"address"`
+	NetworkProtocol   string `json:"networkProtocol"`
+	PendingUpdate     bool   `json:"pendingUpdate"`
+	SessionRegionData struct {
+		RegionName     string `json:"regionName"`
+		ServiceQuality int    `json:"serviceQuality"`
+	} `json:"sessionRegionData"`
 }
 
 // Address requests the address and protocol used to connect to this realm.
