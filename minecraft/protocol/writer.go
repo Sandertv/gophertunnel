@@ -369,6 +369,66 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	w.ByteSlice(&b)
 }
 
+// ItemInstanceNew writes an ItemInstance i to the underlying buffer in the new format.
+func (w *Writer) ItemInstanceNew(i *ItemInstance) {
+	x := &i.Stack
+	id := int16(x.NetworkID)
+	w.Int16(&id)
+
+	w.Uint16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+
+	hasNetID := i.StackNetworkID != 0
+	w.Bool(&hasNetID)
+
+	if hasNetID {
+		var zero uint32
+		w.Varuint32(&zero)
+		w.Varint32(&i.StackNetworkID)
+	}
+
+	runtimeID := uint32(x.BlockRuntimeID)
+	w.Varuint32(&runtimeID)
+
+	if x.NetworkID == 0 {
+		var zero uint32
+		w.Varuint32(&zero)
+		return
+	}
+
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
+
+	bufWriter := NewWriter(buf, w.shieldID)
+
+	var length int16
+	if len(x.NBTData) != 0 {
+		length = int16(-1)
+		version := uint8(1)
+
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
+	} else {
+		bufWriter.Int16(&length)
+	}
+
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
+
+	if x.NetworkID == bufWriter.shieldID {
+		var blockingTick int64
+		bufWriter.Int64(&blockingTick)
+	}
+
+	b := buf.Bytes()
+	w.ByteSlice(&b)
+}
+
 // Item writes an ItemStack x to the underlying buffer.
 func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)

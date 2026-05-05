@@ -920,6 +920,8 @@ func (conn *Conn) handlePacket(pk packet.Packet) error {
 		return conn.handleItemRegistry(pk)
 	case *packet.ChunkRadiusUpdated:
 		return conn.handleChunkRadiusUpdated(pk)
+	case *packet.DimensionData:
+		return conn.handleDimensionData(pk)
 	}
 	return nil
 }
@@ -1181,7 +1183,7 @@ func (conn *Conn) handleResourcePackStack(pk *packet.ResourcePackStack) error {
 			return fmt.Errorf("texture pack (UUID=%v, version=%v) not downloaded", pack.UUID, pack.Version)
 		}
 	}
-	conn.expect(packet.IDStartGame)
+	conn.expect(packet.IDDimensionData, packet.IDStartGame)
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 	return nil
 }
@@ -1260,6 +1262,18 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 // startGame sends a StartGame packet using the game data of the connection.
 func (conn *Conn) startGame() {
 	data := conn.gameData
+	if len(data.Dimensions) > 0 {
+		_ = conn.WritePacket(&packet.DimensionData{Definitions: data.Dimensions})
+	}
+	_ = conn.WritePacket(&packet.JigsawStructureData{
+		StructureData: map[string]any{
+			"processors":     make([]map[string]any, 0),
+			"template_pools": make([]map[string]any, 0),
+			"jigsaws":        make([]map[string]any, 0),
+			"structure_sets": make([]map[string]any, 0),
+		},
+	})
+	_ = conn.WritePacket(&packet.VoxelShapes{})
 	_ = conn.WritePacket(&packet.StartGame{
 		Difficulty:                   data.Difficulty,
 		EntityUniqueID:               data.EntityUniqueID,
@@ -1457,6 +1471,11 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	return nil
 }
 
+func (conn *Conn) handleDimensionData(pk *packet.DimensionData) error {
+	conn.gameData.Dimensions = pk.Definitions
+	return nil
+}
+
 var hiveRegex = regexp.MustCompile(`.*\.hivebedrock\.network.*`)
 
 // handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
@@ -1465,7 +1484,13 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 	if hiveRegex.MatchString(conn.clientData.ServerAddress) {
 		pk.BaseGameVersion = "1.17.0" // temp fix for hive
 	}
+
+	// We store dimensions in the conn through handleDimensionData, so we need to
+	// restore it after building GameData from the StartGame packet.
+	dimensions := conn.gameData.Dimensions
 	conn.gameData = GameDataFromStartGame(pk)
+	conn.gameData.Dimensions = dimensions
+
 	_ = conn.WritePacket(&packet.RequestChunkRadius{ChunkRadius: 16, MaxChunkRadius: 16})
 	conn.expect(packet.IDItemRegistry, packet.IDResourcePackStack)
 	return nil
@@ -1506,6 +1531,7 @@ func GameDataFromStartGame(pk *packet.StartGame) GameData {
 		ClientSideGeneration:         pk.ClientSideGeneration,
 		Experiments:                  pk.Experiments,
 		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
+		PropertyData:                 pk.PropertyData,
 	}
 }
 
