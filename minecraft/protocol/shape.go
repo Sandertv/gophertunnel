@@ -154,7 +154,7 @@ func (shape *ArrowShape) Marshal(io IO) {
 }
 
 const (
-	PrimitiveShapeLine = iota
+	PrimitiveShapeLine uint8 = iota
 	PrimitiveShapeBox
 	PrimitiveShapeSphere
 	PrimitiveShapeCircle
