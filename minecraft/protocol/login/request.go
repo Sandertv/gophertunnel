@@ -181,6 +181,9 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 // the public key used for verification (and for client data), and a bool indicating if the chain was
 // authenticated by Xbox Live.
 func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.PublicKey, bool, error) {
+	if len(chain) == 0 {
+		return IdentityData{}, nil, false, fmt.Errorf("decode chain: no elements")
+	}
 	key := &ecdsa.PublicKey{}
 	tok, err := jwt.ParseSigned(chain[0], []jose.SignatureAlgorithm{jose.ES384})
 	if err != nil {
