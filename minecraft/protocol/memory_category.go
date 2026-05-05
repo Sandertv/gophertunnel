@@ -108,3 +108,43 @@ func (x *MemoryCategoryCounter) Marshal(r IO) {
 	r.Uint8(&x.Category)
 	r.Uint64(&x.Bytes)
 }
+
+// EntityDiagnosticTimingInfo represents diagnostics for a specific entity type.
+type EntityDiagnosticTimingInfo struct {
+	// DisplayName is the name to display for this timing entry.
+	DisplayName string
+	// Entity is the identifier of the entity that is being timed.
+	Entity string
+	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
+	PercentOfTotal byte
+	// DurationNanos is whole long the timing entry has lasted, in nanoseconds.
+	DurationNanos uint64
+}
+
+// Marshal encodes/decodes a EntityDiagnosticTimingInfo.
+func (x *EntityDiagnosticTimingInfo) Marshal(r IO) {
+	r.String(&x.DisplayName)
+	r.String(&x.Entity)
+	r.Uint8(&x.PercentOfTotal)
+	r.Uint64(&x.DurationNanos)
+}
+
+// SystemDiagnosticTimingInfo represents diagnostics for a specific system index.
+type SystemDiagnosticTimingInfo struct {
+	// DisplayName is the name to display for this timing entry.
+	DisplayName string
+	// SystemIndex is the index of the system that is being timed.
+	SystemIndex uint64
+	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
+	PercentOfTotal byte
+	// DurationNanos is whole long the timing entry has lasted, in nanoseconds.
+	DurationNanos uint64
+}
+
+// Marshal encodes/decodes a SystemDiagnosticTimingInfo.
+func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
+	r.String(&x.DisplayName)
+	r.Uint64(&x.SystemIndex)
+	r.Uint8(&x.PercentOfTotal)
+	r.Uint64(&x.DurationNanos)
+}

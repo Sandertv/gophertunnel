@@ -281,6 +281,8 @@ func init() {
 		IDLocatorBar:                         func() Packet { return &LocatorBar{} },
 		IDSyncWorldClocks:                    func() Packet { return &SyncWorldClocks{} },
 		IDClientBoundAttributeLayerSync:      func() Packet { return &ClientBoundAttributeLayerSync{} },
+		IDServerStoreInfo:                    func() Packet { return &ServerStoreInfo{} },
+		IDServerPresenceInfo:                 func() Packet { return &ServerPresenceInfo{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)

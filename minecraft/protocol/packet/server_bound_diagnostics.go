@@ -34,6 +34,10 @@ type ServerBoundDiagnostics struct {
 	AverageUnaccountedTimePercent float32
 	// MemoryCategoryValues is a list of memory category counters sent by the client.
 	MemoryCategoryValues []protocol.MemoryCategoryCounter
+	// EntityDiagnostics is a list of entity timing entries sent by the client.
+	EntityDiagnostics []protocol.EntityDiagnosticTimingInfo
+	// SystemDiagnostics is a list of system timing entries sent by the client.
+	SystemDiagnostics []protocol.SystemDiagnosticTimingInfo
 }
 
 // ID ...
@@ -52,4 +56,6 @@ func (pk *ServerBoundDiagnostics) Marshal(io protocol.IO) {
 	io.Float32(&pk.AverageRemainderTimePercent)
 	io.Float32(&pk.AverageUnaccountedTimePercent)
 	protocol.Slice(io, &pk.MemoryCategoryValues)
+	protocol.Slice(io, &pk.EntityDiagnostics)
+	protocol.Slice(io, &pk.SystemDiagnostics)
 }

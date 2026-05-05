@@ -246,4 +246,6 @@ const (
 	IDServerBoundDataDrivenScreenClosed
 	IDSyncWorldClocks
 	IDClientBoundAttributeLayerSync
+	IDServerStoreInfo
+	IDServerPresenceInfo
 )

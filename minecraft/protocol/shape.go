@@ -170,7 +170,7 @@ type PrimitiveShape struct {
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
 	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
-	AttachedToEntityID Optional[uint64]
+	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
 	Type Optional[uint8]
@@ -201,6 +201,6 @@ func (x *PrimitiveShape) Marshal(io IO) {
 	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.Varuint64)
+	OptionalFunc(io, &x.AttachedToEntityID, io.Varint64)
 	io.ShapeData(&x.ExtraShapeData)
 }
