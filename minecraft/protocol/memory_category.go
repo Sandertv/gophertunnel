@@ -115,18 +115,18 @@ type EntityDiagnosticTimingInfo struct {
 	DisplayName string
 	// Entity is the identifier of the entity that is being timed.
 	Entity string
-	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
-	PercentOfTotal byte
 	// DurationNanos is whole long the timing entry has lasted, in nanoseconds.
 	DurationNanos uint64
+	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
+	PercentOfTotal byte
 }
 
 // Marshal encodes/decodes a EntityDiagnosticTimingInfo.
 func (x *EntityDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.DisplayName)
 	r.String(&x.Entity)
-	r.Uint8(&x.PercentOfTotal)
 	r.Uint64(&x.DurationNanos)
+	r.Uint8(&x.PercentOfTotal)
 }
 
 // SystemDiagnosticTimingInfo represents diagnostics for a specific system index.
@@ -135,16 +135,16 @@ type SystemDiagnosticTimingInfo struct {
 	DisplayName string
 	// SystemIndex is the index of the system that is being timed.
 	SystemIndex uint64
-	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
-	PercentOfTotal byte
 	// DurationNanos is whole long the timing entry has lasted, in nanoseconds.
 	DurationNanos uint64
+	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
+	PercentOfTotal byte
 }
 
 // Marshal encodes/decodes a SystemDiagnosticTimingInfo.
 func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.DisplayName)
 	r.Uint64(&x.SystemIndex)
-	r.Uint8(&x.PercentOfTotal)
 	r.Uint64(&x.DurationNanos)
+	r.Uint8(&x.PercentOfTotal)
 }
