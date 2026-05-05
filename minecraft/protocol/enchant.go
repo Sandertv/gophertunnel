@@ -4,7 +4,7 @@ package protocol
 type EnchantmentOption struct {
 	// Cost is the cost of the option. This is the amount of XP levels required to select this enchantment
 	// option.
-	Cost uint32
+	Cost uint8
 	// Enchantments holds the enchantments that will be applied to the item when this option is clicked.
 	Enchantments ItemEnchantments
 	// Name is a name that will be translated to the 'Standard Galactic Alphabet'
@@ -24,7 +24,7 @@ type EnchantmentOption struct {
 
 // Marshal encodes/decodes an EnchantmentOption.
 func (x *EnchantmentOption) Marshal(r IO) {
-	r.Varuint32(&x.Cost)
+	r.Uint8(&x.Cost)
 	Single(r, &x.Enchantments)
 	r.String(&x.Name)
 	r.Varuint32(&x.RecipeNetworkID)

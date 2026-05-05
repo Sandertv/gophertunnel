@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -71,6 +72,7 @@ const (
 	ActorEventDrinkMilk
 	ActorEventWetnessStop
 	ActorEventKineticDamageDealt
+	ActorEventHurtWithoutReceivingDamage
 )
 
 // ActorEvent is sent by the server when a particular event happens that has to do with an entity. Some of
@@ -85,6 +87,9 @@ type ActorEvent struct {
 	// EventData is optional data associated with a particular event. The data has a different function for
 	// different events, however most events don't use this field at all.
 	EventData int32
+	// FireAtPosition is the position in the same world at which the event should fire. If this is not present,
+	// the position entity will be used instead.
+	FireAtPosition protocol.Optional[mgl32.Vec3]
 }
 
 // ID ...
@@ -96,4 +101,5 @@ func (pk *ActorEvent) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.EntityRuntimeID)
 	io.Uint8(&pk.EventType)
 	io.Varint32(&pk.EventData)
+	protocol.OptionalFunc(io, &pk.FireAtPosition, io.Vec3)
 }

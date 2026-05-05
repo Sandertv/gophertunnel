@@ -242,6 +242,10 @@ type ClientData struct {
 	PlatformType int
 	// GraphicsMode is the graphics mode the client is running.
 	GraphicsMode int
+	// PartyId is the identifier of the client's party, or empty if they are not in a party.
+	PartyId string
+	// IsPartyLeader is if the client is the leader of the party they are in.
+	IsPartyLeader bool
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
