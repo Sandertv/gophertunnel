@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/auth"
@@ -352,8 +353,27 @@ func (c *Client) request(ctx context.Context, method string, path string, body [
 	}
 
 	if resp.StatusCode >= 400 {
-		return responseBody, resp.StatusCode, fmt.Errorf("HTTP Error: %d", resp.StatusCode)
+		return responseBody, resp.StatusCode, httpResponseError(resp.StatusCode, responseBody)
 	}
 
 	return responseBody, resp.StatusCode, nil
+}
+
+const maxHTTPErrorBodyPreview = 512
+
+// httpResponseError builds an error for an HTTP status >= 400, including a trimmed, truncated body preview when present.
+func httpResponseError(statusCode int, body []byte) error {
+	preview := body
+	truncated := len(preview) > maxHTTPErrorBodyPreview
+	if truncated {
+		preview = preview[:maxHTTPErrorBodyPreview]
+	}
+	snippet := strings.TrimSpace(string(preview))
+	if truncated {
+		snippet += "..."
+	}
+	if snippet != "" {
+		return fmt.Errorf("HTTP Error: %d: %s", statusCode, snippet)
+	}
+	return fmt.Errorf("HTTP Error: %d", statusCode)
 }
