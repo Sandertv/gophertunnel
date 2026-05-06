@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/service/internal"
 )
 
@@ -83,6 +84,14 @@ func (d *Discovery) Environment(env Environment) error {
 		return fmt.Errorf("minecraft/service: %q is not present on %q in ServiceEnvironments", "prod", env.ServiceName())
 	}
 	return json.Unmarshal(m2, env)
+}
+
+// Default obtains a Discovery using [ApplicationTypeMinecraftPE] and
+// [protocol.CurrentVersion] as the application type and version. It is
+// a convenience wrapper around [Discover] for callers that do not need
+// to specify these parameters explicitly.
+func Default(ctx context.Context) (*Discovery, error) {
+	return Discover(ctx, ApplicationTypeMinecraftPE, protocol.CurrentVersion)
 }
 
 // Discover obtains a Discover for the specific version for the specific
