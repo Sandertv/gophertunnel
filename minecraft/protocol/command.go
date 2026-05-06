@@ -91,7 +91,7 @@ const (
 	CommandArgTypeRawText         = 70
 	CommandArgTypeJSON            = 74
 	CommandArgTypeBlockStates     = 83
-	CommandArgTypeCommand         = 86
+	CommandArgTypeCommand         = 87
 )
 
 const (

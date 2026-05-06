@@ -228,7 +228,7 @@ const (
 	IDPlayerUpdateEntityOverrides
 	IDPlayerLocation
 	IDClientBoundControlSchemeSet
-	IDDebugDrawer
+	IDPrimitiveShapes
 	IDServerBoundPackSettingChange
 	IDClientBoundDataStore
 	IDGraphicsOverrideParameter
@@ -246,4 +246,6 @@ const (
 	IDServerBoundDataDrivenScreenClosed
 	IDSyncWorldClocks
 	IDClientBoundAttributeLayerSync
+	IDServerStoreInfo
+	IDServerPresenceInfo
 )

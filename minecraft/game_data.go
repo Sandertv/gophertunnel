@@ -120,4 +120,8 @@ type GameData struct {
 	// such as gophertunnel:example or gophertunnel:custom_property, which can be used by resource packs
 	// to change skins, models, or other player behaviors at runtime.
 	PropertyData map[string]any
+
+	// Dimensions is a list of dimension definitions sent by the DimensionData packet. This can include overriding
+	// the height of vanilla dimensions or registering new dimensions.
+	Dimensions []protocol.DimensionDefinition
 }

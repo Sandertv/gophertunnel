@@ -14,10 +14,10 @@ type GatheringJoinInfo struct {
 	ExperienceWorldName string
 	// CreatorID is the ID of the creator.
 	CreatorID string
-	// UnknownUUID1 is an unknown UUID field.
-	UnknownUUID1 uuid.UUID
-	// UnknownUUID2 is an unknown UUID field.
-	UnknownUUID2 uuid.UUID
+	// TargetID is the session ID of the experience.
+	TargetID uuid.UUID
+	// ScenarioID is the scenario ID of experience.
+	ScenarioID string
 	// ServerID is the server identifier.
 	ServerID string
 }
@@ -29,8 +29,8 @@ func (x *GatheringJoinInfo) Marshal(r IO) {
 	r.UUID(&x.ExperienceWorldID)
 	r.String(&x.ExperienceWorldName)
 	r.String(&x.CreatorID)
-	r.UUID(&x.UnknownUUID1)
-	r.UUID(&x.UnknownUUID2)
+	r.UUID(&x.TargetID)
+	r.String(&x.ScenarioID)
 	r.String(&x.ServerID)
 }
 
