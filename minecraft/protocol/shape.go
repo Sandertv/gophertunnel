@@ -87,28 +87,29 @@ func (shape *LineShape) Marshal(io IO) {
 type TextShape struct {
 	// Text is the text of the debug text shape.
 	Text string
-	// UseRotation is if the text should rotate to always face the camera or not. This is true by default.
-	UseRotation Optional[bool]
+	// UseRotation is if the text should use the provided rotation, meaning it will be static and does not follow the
+	// camera. Use false for default behaviour.
+	UseRotation bool
 	// BackgroundColour is the RGBA colour to use for the text background. This is a translucent black colour by default.
 	BackgroundColour Optional[color.RGBA]
-	// DepthTest is whether the text should show through walls. This is false by default.
-	DepthTest Optional[bool]
-	// ShowBackface is if the background should render on the back side of the shape. This is true by default and has no
-	// visible effect if UseRotation is true.
-	ShowBackface Optional[bool]
-	// ShowBackfaceText is if the text should render on the back side of the shape. This is true by default and has no
-	// visible effect if UseRotation is true.
-	ShowBackfaceText Optional[bool]
+	// DepthTest is whether the text should show through walls. Use true for default behaviour.
+	DepthTest bool
+	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackface bool
+	// ShowBackfaceText is if the text should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackfaceText bool
 }
 
 // Marshal ...
 func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
-	OptionalFunc(io, &shape.UseRotation, io.Bool)
+	io.Bool(&shape.UseRotation)
 	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
-	OptionalFunc(io, &shape.DepthTest, io.Bool)
-	OptionalFunc(io, &shape.ShowBackface, io.Bool)
-	OptionalFunc(io, &shape.ShowBackfaceText, io.Bool)
+	io.Bool(&shape.DepthTest)
+	io.Bool(&shape.ShowBackface)
+	io.Bool(&shape.ShowBackfaceText)
 }
 
 // BoxShape represents a box debug shape.
