@@ -95,6 +95,7 @@ func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config confi
 				}
 				return
 			}
+			
 			if err := conn.WritePacket(pk); err != nil {
 				return
 			}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -28,6 +29,35 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
 	}
 	return &packetData{h: header, full: data, payload: buf}, nil
+}
+
+type PacketData struct {
+	*packetData
+}
+
+func (pkData *PacketData) Header() *packet.Header {
+	return pkData.h
+}
+
+func (pkData *PacketData) Full() []byte {
+	return pkData.full
+}
+
+func (pkData *PacketData) Payload() *bytes.Buffer {
+	return pkData.payload
+}
+
+func (pkData *PacketData) Decode(conn *Conn) (pks []packet.Packet, err error) {
+	return pkData.decode(conn)
+}
+
+// ParseData parses the packet data slice passed into a PacketData struct.
+func ParseData(data []byte, conn *Conn) (*PacketData, error) {
+	pkData, err := parseData(data, conn)
+	if err != nil {
+		return nil, err
+	}
+	return &PacketData{packetData: pkData}, nil
 }
 
 type unknownPacketError struct {
