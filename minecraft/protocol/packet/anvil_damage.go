@@ -20,5 +20,5 @@ func (*AnvilDamage) ID() uint32 {
 
 func (pk *AnvilDamage) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Damage)
-	io.UBlockPos(&pk.AnvilPosition)
+	io.BlockPos(&pk.AnvilPosition)
 }

@@ -32,6 +32,6 @@ func (*ContainerOpen) ID() uint32 {
 func (pk *ContainerOpen) Marshal(io protocol.IO) {
 	io.Uint8(&pk.WindowID)
 	io.Uint8(&pk.ContainerType)
-	io.UBlockPos(&pk.ContainerPosition)
+	io.BlockPos(&pk.ContainerPosition)
 	io.Varint64(&pk.ContainerEntityUniqueID)
 }

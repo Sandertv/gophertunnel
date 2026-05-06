@@ -62,3 +62,10 @@ func (w *Writer) Float32(x *float32) {
 	binary.LittleEndian.PutUint32(data, math.Float32bits(*x))
 	_, _ = w.w.Write(data)
 }
+
+// Float64 writes a little endian float64 to the underlying buffer.
+func (w *Writer) Float64(x *float64) {
+	data := make([]byte, 8)
+	binary.LittleEndian.PutUint64(data, math.Float64bits(*x))
+	_, _ = w.w.Write(data)
+}

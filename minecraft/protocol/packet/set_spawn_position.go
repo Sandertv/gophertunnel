@@ -35,7 +35,7 @@ func (*SetSpawnPosition) ID() uint32 {
 
 func (pk *SetSpawnPosition) Marshal(io protocol.IO) {
 	io.Varint32(&pk.SpawnType)
-	io.UBlockPos(&pk.Position)
+	io.BlockPos(&pk.Position)
 	io.Varint32(&pk.Dimension)
-	io.UBlockPos(&pk.SpawnPosition)
+	io.BlockPos(&pk.SpawnPosition)
 }

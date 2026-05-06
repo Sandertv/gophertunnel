@@ -15,11 +15,11 @@ type InventorySlot struct {
 	// index.
 	Slot uint32
 	// Container is the protocol.FullContainerName that describes the container that the content is for.
-	Container protocol.FullContainerName
+	Container protocol.Optional[protocol.FullContainerName]
 	// StorageItem is the item that is acting as the storage container for the inventory. If the inventory is
 	// not a dynamic container then this field should be left empty. When set, only the item type is used by
 	// the client and none of the other stack info.
-	StorageItem protocol.ItemInstance
+	StorageItem protocol.Optional[protocol.ItemInstance]
 	// NewItem is the item to be put in the slot at Slot. It will overwrite any item that may currently
 	// be present in that slot.
 	NewItem protocol.ItemInstance
@@ -33,7 +33,7 @@ func (*InventorySlot) ID() uint32 {
 func (pk *InventorySlot) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.WindowID)
 	io.Varuint32(&pk.Slot)
-	protocol.Single(io, &pk.Container)
-	io.ItemInstance(&pk.StorageItem)
-	io.ItemInstance(&pk.NewItem)
+	protocol.OptionalMarshaler(io, &pk.Container)
+	protocol.OptionalFunc(io, &pk.StorageItem, io.ItemInstanceNew)
+	io.ItemInstanceNew(&pk.NewItem)
 }

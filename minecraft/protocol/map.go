@@ -56,7 +56,7 @@ func (x *MapTrackedObject) Marshal(r IO) {
 	case MapObjectTypeEntity:
 		r.Varint64(&x.EntityUniqueID)
 	case MapObjectTypeBlock:
-		r.UBlockPos(&x.BlockPosition)
+		r.BlockPos(&x.BlockPosition)
 	default:
 		r.UnknownEnumOption(x.Type, "map tracked object type")
 	}

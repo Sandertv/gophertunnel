@@ -87,11 +87,29 @@ func (shape *LineShape) Marshal(io IO) {
 type TextShape struct {
 	// Text is the text of the debug text shape.
 	Text string
+	// UseRotation is if the text should use the provided rotation, meaning it will be static and does not follow the
+	// camera. Use false for default behaviour.
+	UseRotation bool
+	// BackgroundColour is the RGBA colour to use for the text background. This is a translucent black colour by default.
+	BackgroundColour Optional[color.RGBA]
+	// DepthTest is whether the text should show through walls. Use true for default behaviour.
+	DepthTest bool
+	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackface bool
+	// ShowBackfaceText is if the text should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackfaceText bool
 }
 
 // Marshal ...
 func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
+	io.Bool(&shape.UseRotation)
+	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
+	io.Bool(&shape.DepthTest)
+	io.Bool(&shape.ShowBackface)
+	io.Bool(&shape.ShowBackfaceText)
 }
 
 // BoxShape represents a box debug shape.
@@ -137,23 +155,23 @@ func (shape *ArrowShape) Marshal(io IO) {
 }
 
 const (
-	DebugDrawerShapeLine = iota
-	DebugDrawerShapeBox
-	DebugDrawerShapeSphere
-	DebugDrawerShapeCircle
-	DebugDrawerShapeText
-	DebugDrawerShapeArrow
+	PrimitiveShapeLine uint8 = iota
+	PrimitiveShapeBox
+	PrimitiveShapeSphere
+	PrimitiveShapeCircle
+	PrimitiveShapeText
+	PrimitiveShapeArrow
 )
 
-// DebugDrawerShape defines a single debug shape to be rendered on the client.
-// Each shape has a unique NetworkID and a set of optional parameters depending on its type.
-type DebugDrawerShape struct {
+// PrimitiveShape defines a single shape to be rendered on the client. Each shape has a unique NetworkID and a set of
+// optional parameters depending on its type.
+type PrimitiveShape struct {
 	// NetworkID is the network ID of the shape.
 	NetworkID uint64
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
 	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
-	AttachedToEntityID Optional[uint64]
+	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
 	Type Optional[uint8]
@@ -165,6 +183,8 @@ type DebugDrawerShape struct {
 	Rotation Optional[mgl32.Vec3]
 	// TotalTimeLeft is the total time left of the shape.
 	TotalTimeLeft Optional[float32]
+	// MaxRenderDistance is the maximum distance the shape should render from the camera.
+	MaxRenderDistance Optional[float32]
 	// Colour is the ARGB colour of the shape.
 	Colour Optional[color.RGBA]
 	// ExtraShapeData holding data specific to the type of shape (such as text string for the text shape).
@@ -172,15 +192,16 @@ type DebugDrawerShape struct {
 }
 
 // Marshal ...
-func (x *DebugDrawerShape) Marshal(io IO) {
+func (x *PrimitiveShape) Marshal(io IO) {
 	io.Varuint64(&x.NetworkID)
 	OptionalFunc(io, &x.Type, io.Uint8)
 	OptionalFunc(io, &x.Location, io.Vec3)
 	OptionalFunc(io, &x.Scale, io.Float32)
 	OptionalFunc(io, &x.Rotation, io.Vec3)
 	OptionalFunc(io, &x.TotalTimeLeft, io.Float32)
+	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.Varuint64)
+	OptionalFunc(io, &x.AttachedToEntityID, io.Varint64)
 	io.ShapeData(&x.ExtraShapeData)
 }

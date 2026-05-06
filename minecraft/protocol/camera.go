@@ -49,11 +49,160 @@ const (
 	EasingTypeInElastic
 	EasingTypeOutElastic
 	EasingTypeInOutElastic
+	EasingTypeInverseLerp
 )
 
+// easingTypeFromString looks up an easing type from a string and writes the result to x.
+func easingTypeFromString(io IO, x *int32, s string) {
+	switch s {
+	case "linear":
+		*x = EasingTypeLinear
+	case "spring":
+		*x = EasingTypeSpring
+	case "in_quad":
+		*x = EasingTypeInQuad
+	case "out_quad":
+		*x = EasingTypeOutQuad
+	case "in_out_quad":
+		*x = EasingTypeInOutQuad
+	case "in_cubic":
+		*x = EasingTypeInCubic
+	case "out_cubic":
+		*x = EasingTypeOutCubic
+	case "in_out_cubic":
+		*x = EasingTypeInOutCubic
+	case "in_quart":
+		*x = EasingTypeInQuart
+	case "out_quart":
+		*x = EasingTypeOutQuart
+	case "in_out_quart":
+		*x = EasingTypeInOutQuart
+	case "in_quint":
+		*x = EasingTypeInQuint
+	case "out_quint":
+		*x = EasingTypeOutQuint
+	case "in_out_quint":
+		*x = EasingTypeInOutQuint
+	case "in_sine":
+		*x = EasingTypeInSine
+	case "out_sine":
+		*x = EasingTypeOutSine
+	case "in_out_sine":
+		*x = EasingTypeInOutSine
+	case "in_expo":
+		*x = EasingTypeInExpo
+	case "out_expo":
+		*x = EasingTypeOutExpo
+	case "in_out_expo":
+		*x = EasingTypeInOutExpo
+	case "in_circ":
+		*x = EasingTypeInCirc
+	case "out_circ":
+		*x = EasingTypeOutCirc
+	case "in_out_circ":
+		*x = EasingTypeInOutCirc
+	case "in_back":
+		*x = EasingTypeInBack
+	case "out_back":
+		*x = EasingTypeOutBack
+	case "in_out_back":
+		*x = EasingTypeInOutBack
+	case "in_elastic":
+		*x = EasingTypeInElastic
+	case "out_elastic":
+		*x = EasingTypeOutElastic
+	case "in_out_elastic":
+		*x = EasingTypeInOutElastic
+	case "in_bounce":
+		*x = EasingTypeInBounce
+	case "out_bounce":
+		*x = EasingTypeOutBounce
+	case "in_out_bounce":
+		*x = EasingTypeInOutBounce
+	case "inverse_lerp":
+		*x = EasingTypeInverseLerp
+	default:
+		io.InvalidValue(s, "easingType", "unknown easing type")
+	}
+}
+
+// easingTypeToString looks up an easing type constant and returns the string representation.
+func easingTypeToString(x int32) string {
+	switch x {
+	case EasingTypeLinear:
+		return "linear"
+	case EasingTypeSpring:
+		return "spring"
+	case EasingTypeInQuad:
+		return "in_quad"
+	case EasingTypeOutQuad:
+		return "out_quad"
+	case EasingTypeInOutQuad:
+		return "in_out_quad"
+	case EasingTypeInCubic:
+		return "in_cubic"
+	case EasingTypeOutCubic:
+		return "out_cubic"
+	case EasingTypeInOutCubic:
+		return "in_out_cubic"
+	case EasingTypeInQuart:
+		return "in_quart"
+	case EasingTypeOutQuart:
+		return "out_quart"
+	case EasingTypeInOutQuart:
+		return "in_out_quart"
+	case EasingTypeInQuint:
+		return "in_quint"
+	case EasingTypeOutQuint:
+		return "out_quint"
+	case EasingTypeInOutQuint:
+		return "in_out_quint"
+	case EasingTypeInSine:
+		return "in_sine"
+	case EasingTypeOutSine:
+		return "out_sine"
+	case EasingTypeInOutSine:
+		return "in_out_sine"
+	case EasingTypeInExpo:
+		return "in_expo"
+	case EasingTypeOutExpo:
+		return "out_expo"
+	case EasingTypeInOutExpo:
+		return "in_out_expo"
+	case EasingTypeInCirc:
+		return "in_circ"
+	case EasingTypeOutCirc:
+		return "out_circ"
+	case EasingTypeInOutCirc:
+		return "in_out_circ"
+	case EasingTypeInBack:
+		return "in_back"
+	case EasingTypeOutBack:
+		return "out_back"
+	case EasingTypeInOutBack:
+		return "in_out_back"
+	case EasingTypeInElastic:
+		return "in_elastic"
+	case EasingTypeOutElastic:
+		return "out_elastic"
+	case EasingTypeInOutElastic:
+		return "in_out_elastic"
+	case EasingTypeInBounce:
+		return "in_bounce"
+	case EasingTypeOutBounce:
+		return "out_bounce"
+	case EasingTypeInOutBounce:
+		return "in_out_bounce"
+	case EasingTypeInverseLerp:
+		return "inverse_lerp"
+	default:
+		return "unknown"
+	}
+}
+
 const (
-	SplineEaseTypeCatmullRom = iota
-	SplineEaseTypeLinear
+	SplineTypeCatmullRom = "catmullrom"
+	SplineTypeLinear     = "linear"
 )
 
 // CameraEase represents an easing function that can be used by a CameraInstructionSet.
@@ -160,16 +309,18 @@ type CameraInstructionFieldOfView struct {
 	// EaseTime is the time in seconds that the easing function should take.
 	EaseTime float32
 	// EaseType is the type of easing function used. This is one of the constants above.
-	EaseType uint8
+	EaseType int32
 	// Clear can be set to true to clear the current instruction.
 	Clear bool
 }
 
 // Marshal encodes/decodes a CameraInstructionFieldOfView.
 func (x *CameraInstructionFieldOfView) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.FieldOfView)
 	r.Float32(&x.EaseTime)
-	r.Uint8(&x.EaseType)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 	r.Bool(&x.Clear)
 }
 
@@ -399,16 +550,17 @@ type CameraRotationOption struct {
 	Value mgl32.Vec3
 	// Time is the time for this rotation option.
 	Time float32
-	// EaseType is the optional easing function used to interpolate towards this rotation key frame.
-	// This is one of the EasingType constants.
-	EaseType Optional[uint8]
+	// EaseType is the optional easing function name used to interpolate towards this rotation key frame.
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraRotationOption.
 func (x *CameraRotationOption) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Vec3(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.Uint8)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 }
 
 // CameraProgressOption represents a progress keyframe option for camera spline instructions.
@@ -417,23 +569,24 @@ type CameraProgressOption struct {
 	Value float32
 	// Time is the time for this progress option.
 	Time float32
-	// EaseType is the optional easing function used to interpolate towards this progress key frame.
-	// This is one of the EasingType constants.
-	EaseType Optional[uint8]
+	// EaseType is the optional easing function name used to interpolate towards this progress key frame.
+	EaseType int32
 }
 
 // Marshal encodes/decodes a CameraProgressOption.
 func (x *CameraProgressOption) Marshal(r IO) {
+	easingType := easingTypeToString(x.EaseType)
 	r.Float32(&x.Value)
 	r.Float32(&x.Time)
-	OptionalFunc(r, &x.EaseType, r.Uint8)
+	r.String(&easingType)
+	easingTypeFromString(r, &x.EaseType, easingType)
 }
 
 // CameraSplineInstruction represents a camera instruction that creates a spline path for the camera to follow.
 type CameraSplineInstruction struct {
 	// TotalTime is the total time for the spline animation.
 	TotalTime float32
-	// SplineType is the optional spline interpolation type. This is one of the SplineEaseType constants.
+	// SplineType is the optional spline interpolation type.
 	SplineType Optional[uint8]
 	// Curve is a list of points that define the spline curve.
 	Curve []mgl32.Vec3
@@ -441,6 +594,10 @@ type CameraSplineInstruction struct {
 	ProgressKeyFrames []CameraProgressOption
 	// RotationOptions is a list of rotation options for the spline.
 	RotationOptions []CameraRotationOption
+	// SplineIdentifier is an optional identifier for referencing the spline by name.
+	SplineIdentifier Optional[string]
+	// LoadFromJson optionally determines whether the spline should be loaded from a JSON definition.
+	LoadFromJson Optional[bool]
 }
 
 // Marshal encodes/decodes a CameraSplineInstruction.
@@ -450,20 +607,34 @@ func (x *CameraSplineInstruction) Marshal(r IO) {
 	FuncSlice(r, &x.Curve, r.Vec3)
 	Slice(r, &x.ProgressKeyFrames)
 	Slice(r, &x.RotationOptions)
+	OptionalFunc(r, &x.SplineIdentifier, r.String)
+	OptionalFunc(r, &x.LoadFromJson, r.Bool)
 }
 
 // CameraSplineDefinition represents a named camera spline definition.
 type CameraSplineDefinition struct {
 	// Name is the name of the spline definition.
 	Name string
-	// Instruction is the spline instruction for this definition.
-	Instruction CameraSplineInstruction
+	// TotalTime is the total time for the spline animation.
+	TotalTime float32
+	// SplineType is the optional spline interpolation type.
+	SplineType Optional[string]
+	// ControlPoints is a list of points that define the spline curve.
+	ControlPoints []mgl32.Vec3
+	// ProgressKeyFrames is a list of progress key frames for the spline.
+	ProgressKeyFrames []CameraProgressOption
+	// RotationKeyFrames is a list of rotation key frames for the spline.
+	RotationKeyFrames []CameraRotationOption
 }
 
 // Marshal encodes/decodes a CameraSplineDefinition.
 func (x *CameraSplineDefinition) Marshal(r IO) {
 	r.String(&x.Name)
-	Single(r, &x.Instruction)
+	r.Float32(&x.TotalTime)
+	OptionalFunc(r, &x.SplineType, r.String)
+	FuncSlice(r, &x.ControlPoints, r.Vec3)
+	Slice(r, &x.ProgressKeyFrames)
+	Slice(r, &x.RotationKeyFrames)
 }
 
 // CameraAimAssistActorPriorityData represents priority data for aim assist actor targeting.

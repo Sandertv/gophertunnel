@@ -113,6 +113,9 @@ func (x xblTokenSource) Token() (xsapi.Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("request xsts token for %q: %w", x.relyingParty, err)
 	}
+	if len(xsts.AuthorizationToken.DisplayClaims.UserInfo) == 0 {
+		return nil, fmt.Errorf("request xsts token for %q: no user info in display claims", x.relyingParty)
+	}
 	return &xstsToken{xsts}, nil
 }
 

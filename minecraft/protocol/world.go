@@ -19,6 +19,9 @@ type DimensionDefinition struct {
 	// Generator is the variant of generator that exists in the provided dimension. These can be one of the constants
 	// defined above. If this is set to GeneratorLegacy, the legacy horizontal world limits will be enforced.
 	Generator int32
+	// DimensionType is the numeric identifier of the dimension. This cannot override a vanilla dimension (0-2), but
+	// custom dimensions should start from 1000 like vanilla.
+	DimensionType int32
 }
 
 // Marshal encodes/decodes a DimensionDefinition.
@@ -27,6 +30,7 @@ func (x *DimensionDefinition) Marshal(r IO) {
 	r.Varint32(&x.Range[0])
 	r.Varint32(&x.Range[1])
 	r.Varint32(&x.Generator)
+	r.Varint32(&x.DimensionType)
 }
 
 // GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.

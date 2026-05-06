@@ -12,6 +12,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
 )
 
@@ -101,14 +102,6 @@ func (w *Writer) BlockPos(x *BlockPos) {
 	w.Varint32(&x[2])
 }
 
-// UBlockPos writes a BlockPos as 2 varint32s and a varuint32 to the underlying buffer.
-func (w *Writer) UBlockPos(x *BlockPos) {
-	w.Varint32(&x[0])
-	y := uint32(x[1])
-	w.Varuint32(&y)
-	w.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[0])
@@ -125,7 +118,7 @@ func (w *Writer) SubChunkPos(x *SubChunkPos) {
 // SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
 func (w *Writer) SoundPos(x *mgl32.Vec3) {
 	b := BlockPos{int32((*x)[0] * 8), int32((*x)[1] * 8), int32((*x)[2] * 8)}
-	w.UBlockPos(&b)
+	w.BlockPos(&b)
 }
 
 // RGB writes a color.RGBA x as 3 float32s to the underlying buffer.
@@ -180,7 +173,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(w, &x.Actions)
 	w.Varuint32(&x.ActionType)
 	w.Varuint32(&x.TriggerType)
-	w.UBlockPos(&x.BlockPosition)
+	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
 	w.ItemInstance(&x.HeldItem)
@@ -188,6 +181,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
 	w.Varuint32(&x.ClientPrediction)
+	w.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule writes a GameRule x to the Writer.
@@ -237,7 +231,7 @@ func (w *Writer) GameRuleLegacy(x *GameRule) {
 }
 
 // EntityMetadata writes an entity metadata map x to the underlying buffer.
-func (w *Writer) EntityMetadata(x *map[uint32]any) {
+func (w *Writer) EntityMetadata(x *EntityMetadata) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
 
@@ -343,8 +337,13 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	}
 
 	w.Varint32(&x.BlockRuntimeID)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
 
-	buf := new(bytes.Buffer)
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -363,8 +362,66 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
-		var blockingTick int64
-		bufWriter.Int64(&blockingTick)
+		bufWriter.Int64(&x.BlockingTick)
+	}
+
+	b := buf.Bytes()
+	w.ByteSlice(&b)
+}
+
+// ItemInstanceNew writes an ItemInstance i to the underlying buffer in the new format.
+func (w *Writer) ItemInstanceNew(i *ItemInstance) {
+	x := &i.Stack
+	id := int16(x.NetworkID)
+	w.Int16(&id)
+
+	w.Uint16(&x.Count)
+	w.Varuint32(&x.MetadataValue)
+
+	hasNetID := i.StackNetworkID != 0
+	w.Bool(&hasNetID)
+
+	if hasNetID {
+		var zero uint32
+		w.Varuint32(&zero)
+		w.Varint32(&i.StackNetworkID)
+	}
+
+	runtimeID := uint32(x.BlockRuntimeID)
+	w.Varuint32(&runtimeID)
+
+	if x.NetworkID == 0 {
+		var zero uint32
+		w.Varuint32(&zero)
+		return
+	}
+
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
+
+	bufWriter := NewWriter(buf, w.shieldID)
+
+	var length int16
+	if len(x.NBTData) != 0 {
+		length = int16(-1)
+		version := uint8(1)
+
+		bufWriter.Int16(&length)
+		bufWriter.Uint8(&version)
+		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
+	} else {
+		bufWriter.Int16(&length)
+	}
+
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
+
+	if x.NetworkID == bufWriter.shieldID {
+		bufWriter.Int64(&x.BlockingTick)
 	}
 
 	b := buf.Bytes()
@@ -383,8 +440,13 @@ func (w *Writer) Item(x *ItemStack) {
 	w.Varuint32(&x.MetadataValue)
 	w.Varint32(&x.BlockRuntimeID)
 
-	var extraData []byte
-	buf := bytes.NewBuffer(extraData)
+	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	defer func() {
+		buf.Reset()
+		internal.BufferPool.Put(buf)
+	}()
+
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
@@ -403,11 +465,10 @@ func (w *Writer) Item(x *ItemStack) {
 	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
-		var blockingTick int64
-		bufWriter.Int64(&blockingTick)
+		bufWriter.Int64(&x.BlockingTick)
 	}
 
-	extraData = buf.Bytes()
+	extraData := buf.Bytes()
 	w.ByteSlice(&extraData)
 }
 
