@@ -99,6 +99,7 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		OnCallback: func(ctx context.Context, request *jrpc2.Request) (v any, err error) {
 			defer func() {
 				if err2 := recover(); err2 != nil {
+					d.Log.Error("callback handler panicked", slog.Any("error", err2))
 					v, err = nil, nil
 				}
 			}()
