@@ -65,7 +65,11 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	if err != nil {
 		return fmt.Errorf("signaling/messaging: recipient ID must be a UUID: %q", signal.NetworkID)
 	}
+
 	id := uuid.New()
+	ch := conn.expect(id)
+	defer conn.release(id)
+	
 	if err := conn.send(ctx, id, map[string]any{
 		"params": map[string]any{
 			"netherNetId": conn.d.NetworkID,
@@ -76,9 +80,6 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	}, messagingID); err != nil {
 		return err
 	}
-
-	ch := conn.expect(id)
-	defer conn.release(id)
 
 	select {
 	case <-ctx.Done():
