@@ -138,9 +138,10 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 	}
 
 	s.worldMu.Lock()
+	defer s.worldMu.Unlock()
+
 	s.world = world
 	s.connection = world.SupportedConnections[0]
-	s.worldMu.Unlock()
 
 	if s.nonce == "" {
 		// If the caller's nonce has not yet known or has not been published by the host,
