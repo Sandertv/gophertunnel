@@ -64,8 +64,16 @@ type Dialer struct {
 	// If TokenSource is nil, the connection will not use authentication.
 	TokenSource oauth2.TokenSource
 
+	// XBLClient is the Xbox Live API Client used during authenticated login. It is used to request the legacy
+	// Minecraft authentication chain data. When [Dialer.EnableLegacyAuth] is false and [Dialer.PlayFabClient]
+	// is nil, it is also used to log in to PlayFab. If nil, one is created from TokenSource when authentication
+	// is enabled.
 	XBLClient *xsapi.Client
 
+	// PlayFabClient is the PlayFab client used to log in to Minecraft network services and request multiplayer
+	// tokens when [Dialer.EnableLegacyAuth] is set to true. To log in to Minecraft network services correctly,
+	// it must be authenticated with a PlayFab account in the title ID '20CA2' that has Xbox Live account linked.
+	// If nil, one is created from [Dialer.XBLClient] when required for authenticated login.
 	PlayFabClient *playfab.Client
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using

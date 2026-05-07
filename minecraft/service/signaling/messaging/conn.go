@@ -234,6 +234,10 @@ func (conn *Conn) NetworkID() string {
 	return conn.pmid.String()
 }
 
+func (conn *Conn) PlayerMessagingID() uuid.UUID {
+	return conn.pmid
+}
+
 // Close closes the Conn and unregisters any notifiers. It ensures that the Conn is closed only once.
 // It unregisters all notifiers registered on the Conn with notifying [nethernet.ErrSignalingStopped].
 func (conn *Conn) Close() (err error) {

@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"slices"
@@ -117,7 +118,9 @@ func (u *User) login(ctx context.Context) (err error) {
 		return fmt.Errorf("resolve environment for %q: %w", u.authEnv.ServiceName(), err)
 	}
 
-	u.xsapi, err = xsapi.NewClient(u.session)
+	u.xsapi, err = xsapi.ClientConfig{
+		Logger: slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})).With("src", "xsapi"),
+	}.New(ctx, u.session)
 	if err != nil {
 		return fmt.Errorf("login to xbox live network services: %w", err)
 	}
@@ -183,14 +186,14 @@ func (u *User) Cache() *UserCache {
 
 func (u *User) Close() (err error) {
 	if u.xsapi != nil {
-		if err := u.xsapi.Close(); err != nil {
-			err = errors.Join(err, fmt.Errorf("close XSAPI client: %w", err))
+		if err2 := u.xsapi.Close(); err2 != nil {
+			err = errors.Join(err, fmt.Errorf("close XSAPI client: %w", err2))
 		}
 	}
 	if u.playfab != nil {
 		// stop refreshing entity tokens
-		if err := u.playfab.Close(); err != nil {
-			err = errors.Join(err, fmt.Errorf("close playfab client: %w", err))
+		if err2 := u.playfab.Close(); err2 != nil {
+			err = errors.Join(err, fmt.Errorf("close playfab client: %w", err2))
 		}
 	}
 	return err

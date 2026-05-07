@@ -1,15 +1,19 @@
 package hitasuradebug
 
 import (
+	"encoding/json"
 	"log/slog"
 	"math/rand"
 	"testing"
+	"time"
 
 	"github.com/df-mc/go-nethernet"
+	"github.com/df-mc/go-xsapi/v2/mpsd"
 	"github.com/google/uuid"
 	"github.com/pion/webrtc/v4"
 	"github.com/sandertv/gophertunnel/minecraft"
 	"github.com/sandertv/gophertunnel/minecraft/p2p"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling/messaging"
 	"github.com/sandertv/gophertunnel/minecraft/service/test"
@@ -30,6 +34,8 @@ func TestDialP2P(t *testing.T) {
 
 	world := worlds[0]
 	connection := world.SupportedConnections[0]
+
+	t.Logf("%#v", world)
 
 	var s nethernet.Signaling
 	switch connection.Type {
@@ -57,17 +63,41 @@ func TestDialP2P(t *testing.T) {
 		return minecraft.NetherNet{Signaling: s, Log: l}
 	})
 
+	session, err := user.XSAPI().MPSD().Join(t.Context(), world.HandleID(), mpsd.JoinConfig{})
+	if err != nil {
+		t.Fatalf("error joining session: %s", err)
+	}
+
+	// TODO: Wait until the host generates nonce for the user.
+	time.Sleep(time.Second * 15)
+
+	t.Log(string(session.Properties().Custom))
+
+	if err := json.Unmarshal(session.Properties().Custom, &world); err != nil {
+		t.Fatalf("error decoding world: %s", err)
+	}
+
+	nonce, ok := world.Nonces[user.XSAPI().UserInfo().XUID]
+	t.Log(nonce, ok)
+
 	conn, err := minecraft.Dialer{
 		XBLClient: user.XSAPI(),
+		ClientData: login.ClientData{
+			Nonce: nonce,
+		},
 	}.DialContext(t.Context(), "nethernet", connection.Address())
 	if err != nil {
 		t.Fatalf("error dialing: %s", err)
 	}
 	defer conn.Close()
 
+	t.Log(conn.IdentityData())
+
 	if err := conn.DoSpawn(); err != nil {
 		t.Fatal(err)
 	}
+
+	time.Sleep(time.Minute)
 }
 
 func TestInvalidNetworkID(t *testing.T) {

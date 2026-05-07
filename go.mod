@@ -8,7 +8,6 @@ require (
 	github.com/creachadair/jrpc2 v1.3.5
 	github.com/df-mc/go-nethernet v1.0.8
 	github.com/df-mc/go-playfab v1.0.0
-	github.com/df-mc/go-xsapi v1.0.1
 	github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361
 	github.com/df-mc/jsonc v1.0.5
 	github.com/go-gl/mathgl v1.1.0
@@ -16,6 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.1
 	github.com/pelletier/go-toml v1.9.5
+	github.com/pion/webrtc/v4 v4.2.10-0.20260224155637-aa3b95c72dd2
 	github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6
 	golang.org/x/net v0.50.0
 	golang.org/x/oauth2 v0.36.0
@@ -39,7 +39,6 @@ require (
 	github.com/pion/stun/v3 v3.1.1 // indirect
 	github.com/pion/transport/v4 v4.0.1 // indirect
 	github.com/pion/turn/v4 v4.1.4 // indirect
-	github.com/pion/webrtc/v4 v4.2.10-0.20260224155637-aa3b95c72dd2 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/image v0.21.0 // indirect
