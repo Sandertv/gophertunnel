@@ -16,14 +16,23 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/service"
 )
 
+// Dialer specifies options for connecting to the signaling service.
 type Dialer struct {
+	// Environment is the environment used for connecting to the signaling service.
+	// If nil, it will be automatically resolved from the discovery data returned from [service.Default].
 	Environment *Environment
-	HTTPClient  *http.Client
-	Log         *slog.Logger
-	NetworkID   string
+	// HTTPClient is the HTTP client used during WebSocket handshake.
+	HTTPClient *http.Client
+	// Log is the logger used to log messages at various levels.
+	// If nil, it will be set from [slog.Default].
+	Log *slog.Logger
+	// NetworkID specifies a unique ID for the network. If zero, a random value will
+	// be automatically set from [rand.Uint64]. It is included in the URI for establishing
+	// a WebSocket connection.
+	NetworkID string
 }
 
-// Dial connects to the signaling service.
+// Dial connects to the signaling service with a 15 seconds timeout.
 func (d Dialer) Dial(src service.TokenSource) (*Conn, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
 	defer cancel()
