@@ -57,6 +57,9 @@ type Conn struct {
 // Signal sends a [nethernet.Signal] to a network.
 func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	id := uuid.New()
+	ch := conn.expect(id)
+	defer conn.release(id)
+
 	if err := conn.write(Message{
 		Type: MessageTypeSignal,
 		To:   signal.NetworkID,
@@ -65,9 +68,6 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	}); err != nil {
 		return err
 	}
-
-	ch := conn.expect(id)
-	defer conn.release(id)
 
 	select {
 	case <-ctx.Done():
