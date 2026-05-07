@@ -171,6 +171,10 @@ type notifier struct {
 	stop chan struct{}
 }
 
+// expect registers interest in the completion of the outbound signaling
+// message identified by id.
+// The returned channel is resolved by [Conn.complete] when the matching
+// delivery notification is received.
 func (conn *Conn) expect(id uuid.UUID) <-chan error {
 	c := make(chan error)
 	conn.expectedMu.Lock()
@@ -179,6 +183,10 @@ func (conn *Conn) expect(id uuid.UUID) <-chan error {
 	return c
 }
 
+// release stops tracking the outbound signaling message identified by id
+// and closes its expectation channel if it is still registered.
+// It is typically deferred after [Conn.expect] once waiting is no longer
+// needed.
 func (conn *Conn) release(id uuid.UUID) {
 	conn.expectedMu.Lock()
 	ch, ok := conn.expected[id]
@@ -189,6 +197,11 @@ func (conn *Conn) release(id uuid.UUID) {
 	conn.expectedMu.Unlock()
 }
 
+// complete resolves the expectation registered for the outbound signaling
+// message identified by id.
+// It is called when the matching JSON-RPC callback indicates that the
+// remote side has acknowledged the message, or when message processing
+// needs to report an error for that ID.
 func (conn *Conn) complete(id uuid.UUID, err error) {
 	conn.expectedMu.Lock()
 	ch, ok := conn.expected[id]
@@ -224,6 +237,7 @@ func (conn *Conn) Credentials(ctx context.Context) (*nethernet.Credentials, erro
 	return conn.credentials, nil
 }
 
+// PongData ...
 func (conn *Conn) PongData(b []byte) {
 }
 
@@ -234,6 +248,7 @@ func (conn *Conn) NetworkID() string {
 	return conn.pmid.String()
 }
 
+// PlayerMessagingID returns the player messaging ID of the current authenticated user.
 func (conn *Conn) PlayerMessagingID() uuid.UUID {
 	return conn.pmid
 }
@@ -267,6 +282,8 @@ func (conn *Conn) close(cause error) (err error) {
 	return err
 }
 
+// handleCallback handles an JSON-RPC request method called by the server.
+// It is used as the [jrpc2.ClientOptions.OnCallback] handler in the client.
 func (conn *Conn) handleCallback(ctx context.Context, request *jrpc2.Request) (any, error) {
 	switch request.Method() {
 	case MethodSystemPong:
@@ -278,6 +295,9 @@ func (conn *Conn) handleCallback(ctx context.Context, request *jrpc2.Request) (a
 	}
 }
 
+// handleMessage handles a message received from the server.
+// It decodes every batch message included in the given request
+// and calls handleInnerMessage.
 func (conn *Conn) handleMessage(ctx context.Context, request *jrpc2.Request) (v any, err error) {
 	var params []*envelope
 	if err := request.UnmarshalParams(&params); err != nil {
@@ -295,12 +315,19 @@ func (conn *Conn) handleMessage(ctx context.Context, request *jrpc2.Request) (v 
 	return nil, err
 }
 
+// envelope wraps a JSON-RPC message delivered through Player Messaging.
 type envelope struct {
-	From    uuid.UUID
+	// From identifies the Player Messaging ID of the sender.
+	From uuid.UUID
+	// Message is the inner JSON-RPC request sent by the remote network.
 	Message *jrpc2.ParsedRequest
-	ID      uuid.UUID `json:"Id"`
+	// ID is the unique message ID associated to this message.
+	// It is used to track the delivery status of a message.
+	ID uuid.UUID `json:"Id"`
 }
 
+// UnmarshalJSON decodes an envelope whose Message field is encoded on the
+// wire as a JSON string containing a nested JSON-RPC request.
 func (m *envelope) UnmarshalJSON(b []byte) error {
 	type Alias envelope
 	data := struct {
@@ -316,6 +343,7 @@ func (m *envelope) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// handleInnerMessage handles an inner message encapsulated in the given envelope.
 func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) error {
 	switch envelope.Message.Method {
 	case MethodSignalingDeliveryNotification:
@@ -358,7 +386,7 @@ func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) er
 				"messageId": envelope.ID,
 			},
 			"jsonrpc": "2.0",
-			"method":  "Signaling_DeliveryNotification_V1_0",
+			"method":  MethodSignalingDeliveryNotification,
 		}, envelope.From); err != nil {
 			return fmt.Errorf("acknowledge message: %w", err)
 		}
@@ -389,32 +417,29 @@ func (conn *Conn) ping() {
 }
 
 const (
-	// MethodSystemPing is called by the client in 50 seconds interval to ping the server.
-	// It is called to keep the connection alive.
+	// MethodSystemPing is the JSON-RPC method name used by the client to
+	// ping the server and keep the connection alive.
 	MethodSystemPing = "System_Ping_v1_0"
 	// MethodSystemPong is called by the server in response to [MethodSystemPing] to ping the client.
 	// The client must respond with a nil value in order to complete the request.
 	MethodSystemPong = "System_Pong_v1_0"
 
-	// MethodSignalingCredentials is called by the client to request ICE credentials required
-	// to gather candidates using Microsoft's STUN/TURN servers.
-	// The server must respond with [nethernet.Credentials].
+	// MethodSignalingCredentials is the JSON-RPC method name used by the
+	// client to request [nethernet.Credentials] for Microsoft's STUN/TURN
+	// servers.
 	MethodSignalingCredentials = "Signaling_TurnAuth_v1_0"
-	// MethodSignalingReceiveMessage is called by the server to receive message from the remote
-	// network. The client may respond with a [MethodSignalingDeliveryNotification] encapsulated
-	// in [MethodSignalingSendMessage]. The request parameters contain a JSON-RPC message encapsulated
-	// in an envelope describing the identifiers of the recipient.
+	// MethodSignalingReceiveMessage is the JSON-RPC method name used by
+	// the server to deliver one or more envelopes received from remote peers.
 	MethodSignalingReceiveMessage = "Signaling_ReceiveMessage_v1_0"
-	// MethodSignalingSendMessage is called by the client to send the message to a remote network.
-	// The request parameters contain a JSON-RPC message encapsulated in envelopes describing the
-	// recipient.
+	// MethodSignalingSendMessage is the JSON-RPC method name used by the
+	// client to send an inner signaling message to a remote peer.
 	MethodSignalingSendMessage = "Signaling_SendClientMessage_v1_0"
 
-	// MethodSignalingDeliveryNotification is used as the type for JSON-RPC message encapsulated
-	// in an envelope. It is used to notify that a remote network has correctly received the message.
-	// If the message content cannot be parsed or is invalid, the client may not send this message.
+	// MethodSignalingDeliveryNotification is the JSON-RPC method name used
+	// by an inner message to acknowledge receipt of an earlier message identified
+	// by its outer envelope ID.
 	MethodSignalingDeliveryNotification = "Signaling_DeliveryNotification_V1_0"
-	// MethodSignalingWebRTC is used as the type for JSON-RPC message encapsulated in an envelope.
-	// It is used for WebRTC signaling used to negotiate a NetherNet peer connection.
+	// MethodSignalingWebRTC is the JSON-RPC method name used by an inner
+	// message that carries a NetherNet WebRTC signaling payload.
 	MethodSignalingWebRTC = "Signaling_WebRtc_v1_0"
 )

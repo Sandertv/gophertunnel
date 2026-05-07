@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 
 	"github.com/df-mc/go-xsapi/v2/mpsd"
 	"github.com/google/uuid"
@@ -102,7 +103,16 @@ type World struct {
 	client *Client
 }
 
-func (w *World) HandleID() uuid.UUID {
+// clone clones the World so that can be returned to user without worrying about
+// race conditions.
+func (w World) clone() World {
+	w2 := w
+	w2.Nonces = maps.Clone(w.Nonces)
+	return w2
+}
+
+// HandleID returns the identifier for the Xbox Live multiplayer session handle associated with the World.
+func (w World) HandleID() uuid.UUID {
 	return w.handleID
 }
 
@@ -151,7 +161,7 @@ func (c *Connection) UnmarshalJSON(b []byte) error {
 }
 
 // Address returns a string that can be used as the address when dialing a new Conn.
-func (c *Connection) Address() string {
+func (c Connection) Address() string {
 	switch c.Type {
 	case ConnectionTypeSignalingOverWebSocket:
 		return c.NetherNetID.String()

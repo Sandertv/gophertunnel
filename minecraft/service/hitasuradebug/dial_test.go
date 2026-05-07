@@ -19,6 +19,72 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/service/test"
 )
 
+func TestDialJoin(t *testing.T) {
+	user := test.PleaseRemoveThisBeforePRingSebWontAllowThis(t)
+
+	client := p2p.NewClient(user.XSAPI())
+	worlds, err := client.Worlds(t.Context())
+	if err != nil {
+		t.Fatalf("error searching for open worlds: %s", err)
+	}
+	t.Log(worlds)
+	if len(worlds) == 0 {
+		t.Fatalf("no open worlds")
+	}
+
+	world := worlds[0]
+	session, err := world.Join(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer session.Close()
+
+	t.Logf("%q", session.Nonce())
+
+	var s nethernet.Signaling
+	switch session.Connection().Type {
+	case p2p.ConnectionTypeSignalingOverJSONRPC:
+		var d messaging.Dialer
+		conn, err := d.DialContext(t.Context(), user.Minecraft())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		s = conn
+	case p2p.ConnectionTypeSignalingOverWebSocket:
+		var d signaling.Dialer
+		conn, err := d.DialContext(t.Context(), user.Minecraft())
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer conn.Close()
+		s = conn
+	default:
+		t.Fatalf("invalid connection type: %d", session.Connection().Type)
+	}
+
+	minecraft.RegisterNetwork("nethernet", func(l *slog.Logger) minecraft.Network {
+		return minecraft.NetherNet{Signaling: s, Log: l}
+	})
+
+	conn, err := minecraft.Dialer{
+		XBLClient: user.XSAPI(),
+		ClientData: login.ClientData{
+			Nonce: session.Nonce(),
+		},
+	}.DialContext(t.Context(), "nethernet", session.Connection().Address())
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	t.Log(conn.IdentityData())
+
+	if err := conn.DoSpawn(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestDialP2P(t *testing.T) {
 	user := test.PleaseRemoveThisBeforePRingSebWontAllowThis(t)
 

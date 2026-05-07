@@ -143,6 +143,11 @@ type notifier struct {
 	stop chan struct{}
 }
 
+// expect registers interest in the completion of the outbound Message with
+// the given ID and returns a channel that is completed by [Conn.complete].
+// The channel receives nil when the signaling service reports
+// [MessageTypeDelivered], or a non-nil error when it reports
+// [MessageTypeError].
 func (conn *Conn) expect(id uuid.UUID) <-chan error {
 	c := make(chan error)
 	conn.expectedMu.Lock()
@@ -151,6 +156,10 @@ func (conn *Conn) expect(id uuid.UUID) <-chan error {
 	return c
 }
 
+// release stops tracking the outbound Message with the given ID and closes
+// its expectation channel if it is still registered.
+// It is typically deferred after [Conn.expect] once waiting for delivery is
+// no longer needed.
 func (conn *Conn) release(id uuid.UUID) {
 	conn.expectedMu.Lock()
 	ch, ok := conn.expected[id]
@@ -161,6 +170,10 @@ func (conn *Conn) release(id uuid.UUID) {
 	conn.expectedMu.Unlock()
 }
 
+// complete resolves the expectation registered for the outbound Message with
+// the given ID.
+// It is called when the signaling service sends a completion frame for that
+// message ID, such as [MessageTypeDelivered] or [MessageTypeError].
 func (conn *Conn) complete(id uuid.UUID, err error) {
 	conn.expectedMu.Lock()
 	ch, ok := conn.expected[id]
