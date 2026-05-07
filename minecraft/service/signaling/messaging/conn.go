@@ -190,11 +190,11 @@ func (conn *Conn) expect(id uuid.UUID) <-chan error {
 func (conn *Conn) release(id uuid.UUID) {
 	conn.expectedMu.Lock()
 	ch, ok := conn.expected[id]
+	delete(conn.expected, id)
+	conn.expectedMu.Unlock()
 	if ok {
 		close(ch)
 	}
-	delete(conn.expected, id)
-	conn.expectedMu.Unlock()
 }
 
 // complete resolves the expectation registered for the outbound signaling
@@ -211,8 +211,11 @@ func (conn *Conn) complete(id uuid.UUID, err error) {
 			slog.String("id", id.String())))
 		return
 	}
-	ch <- err
+	delete(conn.expected, id)
 	conn.expectedMu.Unlock()
+
+	ch <- err
+	close(ch)
 }
 
 // Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
@@ -222,7 +225,7 @@ func (conn *Conn) Credentials(ctx context.Context) (*nethernet.Credentials, erro
 	conn.credentialsMu.Lock()
 	defer conn.credentialsMu.Unlock()
 
-	if conn.credentials != nil && conn.credentialsExpiry.Before(time.Now()) {
+	if conn.credentials != nil && time.Now().Before(conn.credentialsExpiry) {
 		return conn.credentials, nil
 	}
 
