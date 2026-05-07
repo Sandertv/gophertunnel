@@ -945,6 +945,7 @@ func (conn *Conn) handleRequestNetworkSettings(pk *packet.RequestNetworkSettings
 	// } else {
 	// 	found = true // just allow all
 	// }
+	pk.ClientProtocol = protocol.CurrentProtocol
 
 	if !found {
 		status := packet.PlayStatusLoginFailedClient
