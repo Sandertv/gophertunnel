@@ -251,7 +251,7 @@ type ClientData struct {
 	// the connection and the host validates it against the value it generated.
 	// This prevents unauthorized clients from connecting using only the host's connection details,
 	// such as its Player Messaging ID.
-	Nonce string
+	Nonce string `json:",omitempty"`
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
