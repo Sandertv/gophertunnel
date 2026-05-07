@@ -30,7 +30,6 @@ type tokenSource struct {
 
 	token *Token
 	mu    sync.Mutex
-	ctx   context.Context
 }
 
 // ServiceToken supplies a token by either re-using an already requested token, or
