@@ -24,8 +24,8 @@ github.com/klauspost/compress v1.18.1 h1:bcSGx7UbpBqMChDtsF28Lw6v/G94LPrrbMbdC3J
 github.com/klauspost/compress v1.18.1/go.mod h1:ZQFFVG+MdnR0P+l6wpXgIL4NTtwiKIdBnrBd8Nrxr+0=
 github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29 h1:JKb3ULJGGx/QqyoO0F1tebZKk1eOR83v/nDNszKqmps=
 github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
-github.com/lactyy/go-playfab v0.0.0-20260417110255-367e4912dee9 h1:A8/uWsQBc1Fei9Vk4vS2v4gf2wAyJENfIJ7wrQ0PyKM=
-github.com/lactyy/go-playfab v0.0.0-20260417110255-367e4912dee9/go.mod h1:dWWt6MAbasm00x6uTqAO2HZt0tUiEGZw2F62PkRbDkk=
+github.com/lactyy/go-playfab v0.0.0-20260509123725-05bbc202c9b2 h1:mUQKOkmT1JOkEkcnVCHA+aBcSLqIWXxob9QOtextGcU=
+github.com/lactyy/go-playfab v0.0.0-20260509123725-05bbc202c9b2/go.mod h1:dWWt6MAbasm00x6uTqAO2HZt0tUiEGZw2F62PkRbDkk=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=
 github.com/pelletier/go-toml v1.9.5/go.mod h1:u1nR/EPcESfeI/szUZKdtJ0xRNbUoANCkoOuaOx1Y+c=
 github.com/pion/datachannel v1.6.0 h1:XecBlj+cvsxhAMZWFfFcPyUaDZtd7IJvrXqlXD/53i0=

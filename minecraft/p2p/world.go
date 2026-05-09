@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"maps"
+	"slices"
 
 	"github.com/df-mc/go-xsapi/v2/mpsd"
 	"github.com/google/uuid"
@@ -108,6 +109,7 @@ type World struct {
 func (w World) clone() World {
 	w2 := w
 	w2.Nonces = maps.Clone(w.Nonces)
+	w2.SupportedConnections = slices.Clone(w.SupportedConnections)
 	return w2
 }
 

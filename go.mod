@@ -49,5 +49,5 @@ require (
 
 replace (
 	github.com/df-mc/go-nethernet => github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29
-	github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20260417110255-367e4912dee9
+	github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20260509123725-05bbc202c9b2
 )
