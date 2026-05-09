@@ -14,6 +14,7 @@ import (
 	"github.com/coder/websocket/wsjson"
 	"github.com/df-mc/go-nethernet"
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
 )
 
 // Conn implements a [nethernet.Signaling] over a WebSocket connection.
@@ -36,29 +37,16 @@ type Conn struct {
 	ctx    context.Context
 	cancel context.CancelCauseFunc
 
-	// notifyCount counts the total notifiers registered for the Conn.
-	// It is increased when a [nethernet.Notifier] is registered and used
-	// and used as the ID for [nethernet.Notifier] for storing them to notifiers.
-	notifyCount uint32
-	// notifiers is a map whose keys are the IDs and whose values are [nethernet.Notifier]
-	// registered for use in the Conn from [Conn.Notify] when dialing or listening.
-	notifiers map[uint32]notifier
-	// notifiersMu guards notifyCount and notifiers to ensure concurrent safety on [Conn.Notify].
-	notifiersMu sync.Mutex
+	notifier *internal.Notifier
 
-	// expected is a map whose keys are IDs associated with messages sent to the remote network, and whose
-	// values are channels that may be used to signal an error when a message of MessageTypeError or
-	// MessageTypeDelivered is received.
-	expected map[uuid.UUID]chan error
-	// expectedMu should be held when expected is in access for ensuring concurrent safety.
-	expectedMu sync.Mutex
+	pending *internal.PendingMap
 }
 
 // Signal sends a [nethernet.Signal] to a network.
 func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	id := uuid.New()
-	ch := conn.expect(id)
-	defer conn.release(id)
+	ch := conn.pending.Add(id)
+	defer conn.pending.Remove(id)
 
 	if err := conn.write(Message{
 		Type: MessageTypeSignal,
@@ -84,90 +72,7 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 // The returned stop function unregisters the channel and closes it. Callers must not close
 // the channel themselves.
 func (conn *Conn) Notify(signals chan<- *nethernet.Signal) (stop func()) {
-	conn.notifiersMu.Lock()
-	i := conn.notifyCount
-	n := notifier{
-		// Buffer notifications so packet handling never blocks under lock.
-		in:   make(chan *nethernet.Signal, 64),
-		out:  signals,
-		stop: make(chan struct{}),
-	}
-	conn.notifiers[i] = n
-	conn.notifyCount++
-	conn.notifiersMu.Unlock()
-
-	go func() {
-		defer close(signals)
-		for {
-			select {
-			case <-n.stop:
-				return
-			case sig, ok := <-n.in:
-				if !ok {
-					return
-				}
-				select {
-				case <-n.stop:
-					return
-				case n.out <- sig:
-				}
-			}
-		}
-	}()
-
-	return func() {
-		conn.notifiersMu.Lock()
-		conn.stop(i)
-		conn.notifiersMu.Unlock()
-	}
-}
-
-// stop stops notifying signals on the notifier with the corresponding ID. The ID
-// is internally assigned for the notifier and contained in the stop function returned
-// by [Conn.Notify]. It should not be called by anywhere else.
-func (conn *Conn) stop(i uint32) {
-	n, ok := conn.notifiers[i]
-	if !ok {
-		return
-	}
-	delete(conn.notifiers, i)
-	close(n.stop)
-	close(n.in)
-}
-
-// notifier holds a buffered input channel and a caller-provided output
-// channel for relaying incoming signals to a [nethernet.Listener].
-type notifier struct {
-	in   chan *nethernet.Signal
-	out  chan<- *nethernet.Signal
-	stop chan struct{}
-}
-
-// expect registers interest in the completion of the outbound Message with
-// the given ID and returns a channel that is completed by [Conn.complete].
-// The channel receives nil when the signaling service reports
-// [MessageTypeDelivered], or a non-nil error when it reports
-// [MessageTypeError].
-func (conn *Conn) expect(id uuid.UUID) <-chan error {
-	c := make(chan error)
-	conn.expectedMu.Lock()
-	conn.expected[id] = c
-	conn.expectedMu.Unlock()
-	return c
-}
-
-// release stops tracking the outbound Message with the given ID and closes
-// its expectation channel if it is still registered.
-// It is typically deferred after [Conn.expect] once waiting for delivery is
-// no longer needed.
-func (conn *Conn) release(id uuid.UUID) {
-	conn.expectedMu.Lock()
-	ch, ok := conn.expected[id]
-	delete(conn.expected, id)
-	conn.expectedMu.Unlock()
-	if ok {
-		close(ch)
-	}
+	return conn.notifier.Register(signals)
 }
 
 // complete resolves the expectation registered for the outbound Message with
@@ -175,19 +80,9 @@ func (conn *Conn) release(id uuid.UUID) {
 // It is called when the signaling service sends a completion frame for that
 // message ID, such as [MessageTypeDelivered] or [MessageTypeError].
 func (conn *Conn) complete(id uuid.UUID, err error) {
-	conn.expectedMu.Lock()
-	ch, ok := conn.expected[id]
-	if !ok {
-		conn.expectedMu.Unlock()
-		conn.d.Log.Warn("unexpected message ID", slog.Group("message",
-			slog.String("id", id.String())))
-		return
+	if !conn.pending.Done(id, err) {
+		conn.d.Log.Warn("unexpected message ID", slog.String("id", id.String()), slog.Any("result", err))
 	}
-	delete(conn.expected, id)
-	conn.expectedMu.Unlock()
-
-	ch <- err
-	close(ch)
 }
 
 // Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
@@ -230,11 +125,7 @@ func (conn *Conn) close(cause error) (err error) {
 	conn.once.Do(func() {
 		conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
 
-		conn.notifiersMu.Lock()
-		for i := range conn.notifiers {
-			conn.stop(i)
-		}
-		conn.notifiersMu.Unlock()
+		_ = conn.notifier.Close()
 
 		conn.cancel(cause)
 		err = conn.conn.Close(websocket.StatusNormalClosure, "")
@@ -302,16 +193,7 @@ func (conn *Conn) read() {
 			}
 			signal.NetworkID = message.From
 
-			conn.notifiersMu.Lock()
-			for _, n := range conn.notifiers {
-				select {
-				case n.in <- signal:
-				default:
-					// Drop when notifier is backed up to avoid deadlocks and keep packet processing moving.
-					log.Debug("dropping signal due to notifier being backed up", slog.String("signal", signal.String()))
-				}
-			}
-			conn.notifiersMu.Unlock()
+			conn.notifier.Signal(signal)
 		case MessageTypeError:
 			err := &Error{}
 			if err2 := json.Unmarshal([]byte(message.Data), err); err2 != nil {

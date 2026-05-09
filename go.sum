@@ -8,8 +8,6 @@ github.com/creachadair/mds v0.26.1 h1:CQG8f4cueHX/c20q5Sy/Ubk8Bvy+aRzVgbpxVieMBA
 github.com/creachadair/mds v0.26.1/go.mod h1:dMBTCSy3iS3dwh4Rb1zxeZz2d7K8+N24GCTsayWtQRI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/df-mc/go-nethernet v1.0.8 h1:4upLkeDmu+J9A9Ihv5Q7+EM4jyk7oPIWTWDysmPEMms=
-github.com/df-mc/go-nethernet v1.0.8/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
 github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361 h1:Xt3YzTRiiR+UAzpX11lEedzOLMitprr8n9kSQhY3Q0s=
 github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
 github.com/df-mc/jsonc v1.0.5 h1:O7oh07kbS5AYY+l2Fji6l4h0iHcdjKbxCtK5VlZlLMU=
@@ -24,6 +22,8 @@ github.com/google/uuid v1.6.0 h1:NIvaJDMOsjHA8n1jAhLSgzrAzy1Hgr+hNrb57e+94F0=
 github.com/google/uuid v1.6.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+yHo=
 github.com/klauspost/compress v1.18.1 h1:bcSGx7UbpBqMChDtsF28Lw6v/G94LPrrbMbdC3JH2co=
 github.com/klauspost/compress v1.18.1/go.mod h1:ZQFFVG+MdnR0P+l6wpXgIL4NTtwiKIdBnrBd8Nrxr+0=
+github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29 h1:JKb3ULJGGx/QqyoO0F1tebZKk1eOR83v/nDNszKqmps=
+github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
 github.com/lactyy/go-playfab v0.0.0-20260417110255-367e4912dee9 h1:A8/uWsQBc1Fei9Vk4vS2v4gf2wAyJENfIJ7wrQ0PyKM=
 github.com/lactyy/go-playfab v0.0.0-20260417110255-367e4912dee9/go.mod h1:dWWt6MAbasm00x6uTqAO2HZt0tUiEGZw2F62PkRbDkk=
 github.com/pelletier/go-toml v1.9.5 h1:4yBQzkHv+7BHq2PQUZF3Mx0IYxG7LsP222s7Agd3ve8=

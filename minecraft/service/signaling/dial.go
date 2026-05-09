@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
-	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/service"
+	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
 )
 
 // Dialer specifies options for connecting to the signaling service.
@@ -86,8 +86,8 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 
 		credentialsReceived: make(chan struct{}),
 
-		notifiers: make(map[uint32]notifier),
-		expected:  make(map[uuid.UUID]chan error),
+		notifier: internal.NewNotifier(d.Log),
+		pending:  internal.NewPendingMap(),
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	go conn.read()

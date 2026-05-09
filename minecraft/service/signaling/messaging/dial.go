@@ -11,9 +11,9 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/creachadair/jrpc2"
-	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling"
+	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
 )
 
 // Dialer specifies options for connecting to the messaging service.
@@ -82,8 +82,8 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		d:    d,
 		pmid: token.Claims.PlayerMessagingID,
 
-		notifiers: make(map[uint32]notifier),
-		expected:  make(map[uuid.UUID]chan error),
+		notifier: internal.NewNotifier(d.Log),
+		pending:  internal.NewPendingMap(),
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	conn.client = jrpc2.NewClient(&websocketChannel{c}, &jrpc2.ClientOptions{
