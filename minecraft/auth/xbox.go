@@ -238,7 +238,7 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 		}
 		cache.sessionMu.Lock()
 		if cache.session == nil {
-			cache.session = AndroidConfig.New(AndroidConfig.TokenSource(context.Background(), liveToken), &sisu.SessionConfig{
+			cache.session = conf.New(conf.TokenSource(context.Background(), liveToken), &sisu.SessionConfig{
 				DeviceTokenSource: cache.device,
 			})
 		}
@@ -247,7 +247,7 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 	} else {
 		// If the cache storage does not exist, we request a new session every time
 		// which may cause rate-limiting issues.
-		s = AndroidConfig.New(AndroidConfig.TokenSource(context.Background(), liveToken), nil)
+		s = conf.New(conf.TokenSource(context.Background(), liveToken), nil)
 	}
 	token, err := s.XSTSToken(ctx, relyingParty)
 	if err != nil {
