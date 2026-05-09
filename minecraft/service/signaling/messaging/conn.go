@@ -106,14 +106,6 @@ func (conn *Conn) Notify(signals chan<- *nethernet.Signal) (stop func()) {
 	return conn.notifier.Register(signals)
 }
 
-// notifier holds a buffered input channel and a caller-provided output
-// channel for relaying incoming signals to a [nethernet.Listener].
-type notifier struct {
-	in   chan *nethernet.Signal
-	out  chan<- *nethernet.Signal
-	stop chan struct{}
-}
-
 // Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
 // is done. It returns a [nethernet.Credentials] or an error if the Conn is closed or the [context.Context]
 // is canceled or exceeded a deadline.
