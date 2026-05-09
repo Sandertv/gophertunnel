@@ -69,11 +69,18 @@ func (c *Client) Worlds(ctx context.Context) ([]World, error) {
 
 // Join joins the multiplayer session on Xbox Live using the given handle ID
 // and wait until the host publishes a nonce for the caller.
-func (c *Client) Join(ctx context.Context, handleID uuid.UUID) (*Session, error) {
+func (c *Client) Join(ctx context.Context, handleID uuid.UUID) (_ *Session, err error) {
 	s, err := c.client.MPSD().Join(ctx, handleID, mpsd.JoinConfig{})
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		if err != nil {
+			if err2 := s.Close(); err2 != nil {
+				err = errors.Join(err, fmt.Errorf("cleanup session: %w", err2))
+			}
+		}
+	}()
 	session := &Session{
 		client:  c,
 		session: s,
