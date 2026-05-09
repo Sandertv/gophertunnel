@@ -206,11 +206,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		verifier         *oidc.IDTokenVerifier
 	)
 	if d.TokenSource != nil || d.XBLClient != nil {
-		e, err := authEnv(ctx)
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request authorization environment: %w", err)}
-		}
-
 		if d.XBLClient == nil {
 			x, ok := d.TokenSource.(xsapi.TokenSource)
 			if !ok {
@@ -226,6 +221,10 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			d.XBLClient = client
 		}
 		if !d.EnableLegacyAuth {
+			e, err := authEnv(ctx)
+			if err != nil {
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request authorization environment: %w", err)}
+			}
 			verifier, err = e.VerifierContext(ctx)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
