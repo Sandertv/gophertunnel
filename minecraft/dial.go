@@ -209,7 +209,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		if d.XBLClient == nil {
 			x, ok := d.TokenSource.(xsapi.TokenSource)
 			if !ok {
-				x = auth.AndroidConfig.New(d.TokenSource, nil)
+				x = auth.ContextSession(ctx, d.TokenSource)
 			}
 			client, err := xsapi.ClientConfig{
 				HTTPClient: d.HTTPClient,
