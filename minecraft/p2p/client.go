@@ -167,6 +167,9 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 // This is a convenience method for obtaining a connection without validating
 // for slices boundary.
 func (s *Session) Connection() Connection {
+	s.worldMu.RLock()
+	defer s.worldMu.RUnlock()
+
 	return s.connection
 }
 
@@ -174,6 +177,9 @@ func (s *Session) Connection() Connection {
 // [github.com/sandertv/gophertunnel/minecraft/protocol/login.ClientData.Nonce]
 // field.
 func (s *Session) Nonce() string {
+	s.worldMu.RLock()
+	defer s.worldMu.RUnlock()
+
 	return s.nonce
 }
 
