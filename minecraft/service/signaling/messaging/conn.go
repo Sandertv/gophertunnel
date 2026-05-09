@@ -229,7 +229,7 @@ func (m *envelope) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal([]byte(data.Message), &m.Message); err != nil {
 		return fmt.Errorf("decode message: %w", err)
 	}
-	data.RawMessage = data.Message
+	m.RawMessage = data.Message
 	return nil
 }
 
