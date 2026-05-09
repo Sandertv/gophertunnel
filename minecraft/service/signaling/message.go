@@ -124,6 +124,6 @@ type MessageStatus struct {
 	DeliveredOn time.Time `json:"DeliveredOn"`
 	// AcceptedOn is the time that the message has accepted
 	// on the signaling service. It is only included in Messages
-	// with MessageTypeDelivered.
+	// with MessageTypeAccepted.
 	AcceptedOn time.Time `json:"AcceptedOn"`
 }
