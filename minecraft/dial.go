@@ -71,7 +71,7 @@ type Dialer struct {
 	XBLClient *xsapi.Client
 
 	// PlayFabClient is the PlayFab client used to log in to Minecraft network services and request multiplayer
-	// tokens when [Dialer.EnableLegacyAuth] is set to true. To log in to Minecraft network services correctly,
+	// tokens when [Dialer.EnableLegacyAuth] is set to false. To log in to Minecraft network services correctly,
 	// it must be authenticated with a PlayFab account in the title ID '20CA2' that has Xbox Live account linked.
 	// If nil, one is created from [Dialer.XBLClient] when required for authenticated login.
 	PlayFabClient *playfab.Client
