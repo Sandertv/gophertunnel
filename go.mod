@@ -6,8 +6,8 @@ require (
 	github.com/coder/websocket v1.8.14
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/creachadair/jrpc2 v1.3.5
-	github.com/df-mc/go-nethernet v1.0.8
-	github.com/df-mc/go-playfab v1.0.0
+	github.com/df-mc/go-nethernet v1.0.10
+	github.com/df-mc/go-playfab/v2 v2.0.1
 	github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361
 	github.com/df-mc/jsonc v1.0.5
 	github.com/go-gl/mathgl v1.1.0
@@ -45,9 +45,4 @@ require (
 	golang.org/x/sync v0.20.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
-)
-
-replace (
-	github.com/df-mc/go-nethernet => github.com/lactyy/go-nethernet v1.0.0-alpha.4.0.20260508124421-440f4d501a29
-	github.com/df-mc/go-playfab => github.com/lactyy/go-playfab v0.0.0-20260509123725-05bbc202c9b2
 )

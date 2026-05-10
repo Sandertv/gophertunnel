@@ -151,19 +151,18 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 	s.connection = world.SupportedConnections[0]
 
 	if s.nonce == "" {
-		// If the caller's nonce has not yet known or has not been published by the host,
-		// we check if the nonces field contains a nonce for the caller's XUID.
+		// If the host has not yet generated or published a nonce for the caller, check if
+		// one has been added to the Nonces field since the last update.
 		xuid := s.client.client.UserInfo().XUID
 		if nonces := world.Nonces; nonces != nil {
 			nonce, ok := nonces[xuid]
 			if ok {
 				if nonce == "" {
 					return errors.New("host published empty-nonce for caller")
-				} else {
-					s.log.Debug("resolved nonce for caller", slog.String("xuid", xuid), slog.String("nonce", nonce))
-					s.nonce = nonce
-					close(s.nonceReceived)
 				}
+				s.log.Debug("received nonce from host", slog.String("xuid", xuid), slog.String("nonce", nonce))
+				s.nonce = nonce
+				close(s.nonceReceived)
 			}
 		}
 	}

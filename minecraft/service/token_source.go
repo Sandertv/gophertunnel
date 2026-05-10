@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/df-mc/go-playfab"
+	"github.com/df-mc/go-playfab/v2"
 )
 
 // TokenSource returns an implementation of TokenSource, which subsequently supplies the token

@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/df-mc/go-nethernet"
-	"github.com/df-mc/go-playfab"
+	"github.com/df-mc/go-playfab/v2"
 	"github.com/df-mc/go-xsapi/v2"
 	"github.com/df-mc/go-xsapi/v2/xal/sisu"
 	"github.com/sandertv/gophertunnel/minecraft"

@@ -331,7 +331,7 @@ const (
 
 	// MethodSignalingDeliveryNotification is the JSON-RPC method name used
 	// by an inner message to acknowledge receipt of an earlier message identified
-	// by its outer envelope ID.
+	// by its outer envelope ID. Note the capitalized 'V' on the version.
 	MethodSignalingDeliveryNotification = "Signaling_DeliveryNotification_V1_0"
 	// MethodSignalingWebRTC is the JSON-RPC method name used by an inner
 	// message that carries a NetherNet WebRTC signaling payload.
