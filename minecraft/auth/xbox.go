@@ -79,7 +79,9 @@ func ContextSession(ctx context.Context, src oauth2.TokenSource) *sisu.Session {
 		cache.sessionMu.Lock()
 		defer cache.sessionMu.Unlock()
 		if cache.session == nil {
-			cache.session = cache.conf.New(src, nil)
+			cache.session = cache.conf.New(src, &sisu.SessionConfig{
+				DeviceTokenSource: cache.device,
+			})
 		}
 		return cache.session
 	}
