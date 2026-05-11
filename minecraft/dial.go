@@ -243,8 +243,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				// If a MultiplayerTokenSource was not provided, pass the oauth2.TokenSource to
-				// be used by our default implementation.
+				// If a MultiplayerTokenSource was not provided, use our default implementation instead.
 				m = &multiplayerTokenSource{src: e.TokenSource(d.PlayFabClient, service.TokenConfig{}), env: e}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
