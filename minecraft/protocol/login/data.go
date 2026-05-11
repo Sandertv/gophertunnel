@@ -139,6 +139,8 @@ type ClientData struct {
 	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 or -2 for a smaller
 	// GUI scale than usual.
 	GUIScale int `json:"GuiScale"`
+	// FilterProfanity indicates if the client has profanity filtering enabled.
+	FilterProfanity bool
 	// IsEditorMode is a value to dictate if the player is in editor mode.
 	IsEditorMode bool
 	// LanguageCode is the language code of the player. It looks like 'en_UK'. It follows the ISO language
