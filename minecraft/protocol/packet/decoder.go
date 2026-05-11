@@ -140,6 +140,9 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 	}
 
 	if decoder.decompress {
+		if len(data) == 0 {
+			return nil, fmt.Errorf("decompress batch: missing compression algorithm")
+		}
 		if data[0] == 0xff {
 			data = data[1:]
 		} else {
@@ -163,10 +166,16 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 		if err := protocol.Varuint32(b, &length); err != nil {
 			return nil, fmt.Errorf("decode batch: read packet length: %w", err)
 		}
+		if length == 0 {
+			return nil, fmt.Errorf("decode batch: empty packet")
+		}
+		if length > uint32(b.Len()) {
+			return nil, fmt.Errorf("decode batch: packet length %v exceeds remaining %v", length, b.Len())
+		}
+		if len(packets) >= maximumInBatch && decoder.checkPacketLimit {
+			return nil, fmt.Errorf("decode batch: number of packets exceeds max=%v", maximumInBatch)
+		}
 		packets = append(packets, b.Next(int(length)))
-	}
-	if len(packets) > maximumInBatch && decoder.checkPacketLimit {
-		return nil, fmt.Errorf("decode batch: number of packets %v exceeds max=%v", len(packets), maximumInBatch)
 	}
 	return packets, nil
 }
