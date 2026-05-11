@@ -104,6 +104,9 @@ func (c *Client) Join(ctx context.Context, handleID uuid.UUID) (_ *Session, err 
 // Join joins the multiplayer session associated with the World on Xbox Live
 // and wait until the host publishes a nonce for the caller.
 func (w *World) Join(ctx context.Context) (*Session, error) {
+	if w.client == nil {
+		return nil, errors.New("minecraft/p2p: client is not bound to world")
+	}
 	return w.client.Join(ctx, w.handleID)
 }
 
