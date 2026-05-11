@@ -229,21 +229,23 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
-			if d.PlayFabClient == nil {
-				client, err := playfab.LoginWithXbox(ctx, e.PlayFabTitleID, d.XBLClient, playfab.ClientConfig{
-					HTTPClient:    d.HTTPClient,
-					CreateAccount: true,
-				})
-				if err != nil {
-					return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("login to playfab: %w", err)}
-				}
-				defer client.Close()
-				d.PlayFabClient = client
-			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				// If a MultiplayerTokenSource was not provided, use our default implementation instead.
+				// If a MultiplayerTokenSource was not provided, log in to PlayFab
+				// account and use a default implementation instead.
+				if d.PlayFabClient == nil {
+					client, err := playfab.LoginWithXbox(ctx, e.PlayFabTitleID, d.XBLClient, playfab.ClientConfig{
+						HTTPClient:    d.HTTPClient,
+						CreateAccount: true,
+					})
+					if err != nil {
+						return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("login to playfab: %w", err)}
+					}
+					defer client.Close()
+
+					d.PlayFabClient = client
+				}
 				m = &multiplayerTokenSource{src: e.TokenSource(d.PlayFabClient, service.TokenConfig{}), env: e}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
