@@ -30,7 +30,7 @@ func (t XBLToken) SetAuthHeader(r *http.Request) {
 
 // Valid returns whether the XBLToken is valid.
 func (t XBLToken) Valid() bool {
-	return t.AuthorizationToken.Valid()
+	return t.AuthorizationToken != nil && t.AuthorizationToken.Valid()
 }
 
 // contextKey is a type used for context key used to [context.WithValue].
