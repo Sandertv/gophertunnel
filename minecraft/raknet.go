@@ -28,14 +28,21 @@ func (r RakNet) PingContext(ctx context.Context, address string) (response []byt
 
 // Listen ...
 func (r RakNet) Listen(address string) (NetworkListener, error) {
-	return raknet.ListenConfig{ErrorLog: r.l.With("net origin", "raknet")}.Listen(address)
+	return raknet.ListenConfig{ErrorLog: r.logger().With("net origin", "raknet")}.Listen(address)
 }
 
 func (r RakNet) dialer() raknet.Dialer {
 	return raknet.Dialer{
-		ErrorLog:       r.l.With("net origin", "raknet"),
+		ErrorLog:       r.logger().With("net origin", "raknet"),
 		UpstreamDialer: r.UpstreamDialer,
 	}
+}
+
+func (r RakNet) logger() *slog.Logger {
+	if r.l != nil {
+		return r.l
+	}
+	return slog.Default()
 }
 
 // init registers the RakNet network.
