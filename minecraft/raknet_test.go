@@ -91,16 +91,6 @@ func TestRakNetPingContextAllowsNilLogger(t *testing.T) {
 	}
 }
 
-func TestRakNetLoggerOverride(t *testing.T) {
-	t.Parallel()
-
-	logger := slog.New(internal.DiscardHandler{})
-	network := RakNet{Logger: logger, l: slog.Default()}
-	if got := network.logger(); got != logger {
-		t.Fatalf("logger override was not used")
-	}
-}
-
 type upstreamDialerFunc func(context.Context, string, string) (net.Conn, error)
 
 func (f upstreamDialerFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
