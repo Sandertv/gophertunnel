@@ -11,21 +11,31 @@ import (
 // RakNet is an implementation of a RakNet v10 Network.
 type RakNet struct {
 	l *slog.Logger
+	// UpstreamDialer overrides the dialer used for outbound UDP connections.
+	// If nil, RakNet uses the default net.Dialer.
+	UpstreamDialer raknet.UpstreamDialer
 }
 
 // DialContext ...
 func (r RakNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
-	return raknet.Dialer{ErrorLog: r.l.With("net origin", "raknet")}.DialContext(ctx, address)
+	return r.dialer().DialContext(ctx, address)
 }
 
 // PingContext ...
 func (r RakNet) PingContext(ctx context.Context, address string) (response []byte, err error) {
-	return raknet.Dialer{ErrorLog: r.l.With("net origin", "raknet")}.PingContext(ctx, address)
+	return r.dialer().PingContext(ctx, address)
 }
 
 // Listen ...
 func (r RakNet) Listen(address string) (NetworkListener, error) {
 	return raknet.ListenConfig{ErrorLog: r.l.With("net origin", "raknet")}.Listen(address)
+}
+
+func (r RakNet) dialer() raknet.Dialer {
+	return raknet.Dialer{
+		ErrorLog:       r.l.With("net origin", "raknet"),
+		UpstreamDialer: r.UpstreamDialer,
+	}
 }
 
 // init registers the RakNet network.
