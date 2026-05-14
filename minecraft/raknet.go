@@ -11,6 +11,9 @@ import (
 // RakNet is an implementation of a RakNet v10 Network.
 type RakNet struct {
 	l *slog.Logger
+	// Logger overrides the logger used for RakNet dial and listen errors.
+	// If nil, the logger passed by RegisterNetwork is used.
+	Logger *slog.Logger
 	// UpstreamDialer overrides the dialer used for outbound UDP connections.
 	// If nil, RakNet uses the default net.Dialer.
 	UpstreamDialer raknet.UpstreamDialer
@@ -39,6 +42,9 @@ func (r RakNet) dialer() raknet.Dialer {
 }
 
 func (r RakNet) logger() *slog.Logger {
+	if r.Logger != nil {
+		return r.Logger
+	}
 	if r.l != nil {
 		return r.l
 	}
