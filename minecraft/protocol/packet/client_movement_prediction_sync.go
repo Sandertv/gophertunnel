@@ -34,8 +34,8 @@ type ClientMovementPredictionSync struct {
 	Bounciness float32
 	// AirDragModifier is the air drag modifier movement attribute.
 	AirDragModifier float32
-	// EntityRuntimeID is the runtime ID of the entity that the prediction data applies to.
-	EntityRuntimeID uint64
+	// EntityUniqueID is the unique ID of the entity that the prediction data applies to.
+	EntityUniqueID int64
 	// Flying specifies if the client is currently flying.
 	Flying bool
 }
@@ -59,6 +59,6 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.FrictionModifier)
 	io.Float32(&pk.Bounciness)
 	io.Float32(&pk.AirDragModifier)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.Varint64(&pk.EntityUniqueID)
 	io.Bool(&pk.Flying)
 }
