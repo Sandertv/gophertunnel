@@ -28,12 +28,12 @@ type ClientMovementPredictionSync struct {
 	Health float32
 	// Hunger is the hunger attribute or 0 if not set.
 	Hunger float32
-	// UnknownAttribute1 is a movement attribute that is currently unknown.
-	UnknownAttribute1 float32
-	// UnknownAttribute2 is a movement attribute that is currently unknown.
-	UnknownAttribute2 float32
-	// UnknownAttribute3 is a movement attribute that is currently unknown.
-	UnknownAttribute3 float32
+	// FrictionModifier is the friction modifier movement attribute or 0 if not set.
+	FrictionModifier float32
+	// Bounciness is the bounciness movement attribute or 0 if not set.
+	Bounciness float32
+	// AirDragModifier is the air drag modifier movement attribute or 0 if not set.
+	AirDragModifier float32
 	// EntityRuntimeID is the runtime ID of the entity that the prediction data applies to.
 	EntityRuntimeID uint64
 	// Flying specifies if the client is currently flying.
@@ -56,9 +56,9 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.JumpStrength)
 	io.Float32(&pk.Health)
 	io.Float32(&pk.Hunger)
-	io.Float32(&pk.UnknownAttribute1)
-	io.Float32(&pk.UnknownAttribute2)
-	io.Float32(&pk.UnknownAttribute3)
+	io.Float32(&pk.FrictionModifier)
+	io.Float32(&pk.Bounciness)
+	io.Float32(&pk.AirDragModifier)
 	io.Varuint64(&pk.EntityRuntimeID)
 	io.Bool(&pk.Flying)
 }
