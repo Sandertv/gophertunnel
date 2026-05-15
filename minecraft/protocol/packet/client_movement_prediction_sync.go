@@ -28,11 +28,11 @@ type ClientMovementPredictionSync struct {
 	Health float32
 	// Hunger is the hunger attribute or 0 if not set.
 	Hunger float32
-	// FrictionModifier is the friction modifier movement attribute or 0 if not set.
+	// FrictionModifier is the friction modifier movement attribute.
 	FrictionModifier float32
-	// Bounciness is the bounciness movement attribute or 0 if not set.
+	// Bounciness is the bounciness movement attribute.
 	Bounciness float32
-	// AirDragModifier is the air drag modifier movement attribute or 0 if not set.
+	// AirDragModifier is the air drag modifier movement attribute.
 	AirDragModifier float32
 	// EntityRuntimeID is the runtime ID of the entity that the prediction data applies to.
 	EntityRuntimeID uint64
