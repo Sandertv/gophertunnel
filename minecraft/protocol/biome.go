@@ -231,6 +231,10 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 		Slice(r, s)
 	})
 	OptionalMarshaler(r, &x.OverworldRules)
+	OptionalMarshaler(r, &x.MultiNoiseRules)
+	OptionalFunc(r, &x.LegacyRules, func(s *[]BiomeConditionalTransformation) {
+		Slice(r, s)
+	})
 	OptionalFunc(r, &x.ReplacementsData, func(s *[]BiomeReplacementData) {
 		Slice(r, s)
 	})
