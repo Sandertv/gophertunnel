@@ -154,10 +154,11 @@ type Disconnect struct {
 	// disconnection screen and is one of the constants above.
 	Reason int32
 	// HideDisconnectionScreen specifies if the disconnection screen should be hidden when the client is
-	// disconnected, meaning it will be sent directly to the main menu.
+	// disconnected, meaning it will be sent directly to the main menu. In v975, this maps to a skipped
+	// disconnect message variant.
 	HideDisconnectionScreen bool
 	// Message is an optional message to show when disconnected. This message is only written if the
-	// HideDisconnectionScreen field is set to true.
+	// HideDisconnectionScreen field is set to false.
 	Message string
 	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
 	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
