@@ -34,8 +34,10 @@ type ClientMovementPredictionSync struct {
 	UnknownAttribute2 float32
 	// UnknownAttribute3 is a movement attribute that is currently unknown.
 	UnknownAttribute3 float32
-	// EntityUniqueID is the unique ID of the entity. The unique ID is a value that remains consistent across
-	// different sessions of the same world.
+	// EntityRuntimeID is the runtime ID of the entity that the prediction data applies to.
+	EntityRuntimeID uint64
+	// EntityUniqueID is kept for backwards compatibility. If EntityRuntimeID is not set when writing, this value is
+	// used as the runtime ID.
 	EntityUniqueID int64
 	// Flying specifies if the client is currently flying.
 	Flying bool
@@ -60,6 +62,10 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.UnknownAttribute1)
 	io.Float32(&pk.UnknownAttribute2)
 	io.Float32(&pk.UnknownAttribute3)
-	io.Varint64(&pk.EntityUniqueID)
+	if pk.EntityRuntimeID == 0 && pk.EntityUniqueID != 0 {
+		pk.EntityRuntimeID = uint64(pk.EntityUniqueID)
+	}
+	io.Varuint64(&pk.EntityRuntimeID)
+	pk.EntityUniqueID = int64(pk.EntityRuntimeID)
 	io.Bool(&pk.Flying)
 }
