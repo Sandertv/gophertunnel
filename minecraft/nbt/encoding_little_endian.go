@@ -12,8 +12,9 @@ type littleEndian struct{}
 
 // WriteInt16 ...
 func (littleEndian) WriteInt16(w *offsetWriter, x int16) error {
-	b := *(*[2]byte)(unsafe.Pointer(&x))
-	if _, err := w.Write(b[:]); err != nil {
+	b := w.buf[:2]
+	binary.LittleEndian.PutUint16(b, uint16(x))
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
 	}
 	return nil
@@ -21,8 +22,9 @@ func (littleEndian) WriteInt16(w *offsetWriter, x int16) error {
 
 // WriteInt32 ...
 func (littleEndian) WriteInt32(w *offsetWriter, x int32) error {
-	b := *(*[4]byte)(unsafe.Pointer(&x))
-	if _, err := w.Write(b[:]); err != nil {
+	b := w.buf[:4]
+	binary.LittleEndian.PutUint32(b, uint32(x))
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -30,8 +32,9 @@ func (littleEndian) WriteInt32(w *offsetWriter, x int32) error {
 
 // WriteInt64 ...
 func (littleEndian) WriteInt64(w *offsetWriter, x int64) error {
-	b := *(*[8]byte)(unsafe.Pointer(&x))
-	if _, err := w.Write(b[:]); err != nil {
+	b := w.buf[:8]
+	binary.LittleEndian.PutUint64(b, uint64(x))
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
@@ -39,8 +42,9 @@ func (littleEndian) WriteInt64(w *offsetWriter, x int64) error {
 
 // WriteFloat32 ...
 func (littleEndian) WriteFloat32(w *offsetWriter, x float32) error {
-	b := *(*[4]byte)(unsafe.Pointer(&x))
-	if _, err := w.Write(b[:]); err != nil {
+	b := w.buf[:4]
+	binary.LittleEndian.PutUint32(b, math.Float32bits(x))
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
 	}
 	return nil
@@ -48,8 +52,9 @@ func (littleEndian) WriteFloat32(w *offsetWriter, x float32) error {
 
 // WriteFloat64 ...
 func (littleEndian) WriteFloat64(w *offsetWriter, x float64) error {
-	b := *(*[8]byte)(unsafe.Pointer(&x))
-	if _, err := w.Write(b[:]); err != nil {
+	b := w.buf[:8]
+	binary.LittleEndian.PutUint64(b, math.Float64bits(x))
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
 	}
 	return nil
@@ -73,47 +78,47 @@ func (e littleEndian) WriteString(w *offsetWriter, x string) error {
 
 // Int16 ...
 func (littleEndian) Int16(r *offsetReader) (int16, error) {
-	b := make([]byte, 2)
+	b := r.buf[:2]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Int16"}
 	}
-	return *(*int16)(unsafe.Pointer(&b[0])), nil
+	return int16(binary.LittleEndian.Uint16(b)), nil
 }
 
 // Int32 ...
 func (littleEndian) Int32(r *offsetReader) (int32, error) {
-	b := make([]byte, 4)
+	b := r.buf[:4]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Int32"}
 	}
-	return *(*int32)(unsafe.Pointer(&b[0])), nil
+	return int32(binary.LittleEndian.Uint32(b)), nil
 }
 
 // Int64 ...
 func (littleEndian) Int64(r *offsetReader) (int64, error) {
-	b := make([]byte, 8)
+	b := r.buf[:8]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float64"}
 	}
-	return *(*int64)(unsafe.Pointer(&b[0])), nil
+	return int64(binary.LittleEndian.Uint64(b)), nil
 }
 
 // Float32 ...
 func (littleEndian) Float32(r *offsetReader) (float32, error) {
-	b := make([]byte, 4)
+	b := r.buf[:4]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float32"}
 	}
-	return *(*float32)(unsafe.Pointer(&b[0])), nil
+	return math.Float32frombits(binary.LittleEndian.Uint32(b)), nil
 }
 
 // Float64 ...
 func (littleEndian) Float64(r *offsetReader) (float64, error) {
-	b := make([]byte, 8)
+	b := r.buf[:8]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float64"}
 	}
-	return *(*float64)(unsafe.Pointer(&b[0])), nil
+	return math.Float64frombits(binary.LittleEndian.Uint64(b)), nil
 }
 
 // String ...
@@ -165,7 +170,7 @@ type bigEndian struct{}
 
 // WriteInt16 ...
 func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
-	b := make([]byte, 2)
+	b := w.buf[:2]
 	binary.BigEndian.PutUint16(b, uint16(x))
 	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt16", Off: w.off}
@@ -175,7 +180,7 @@ func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
 
 // WriteInt32 ...
 func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
-	b := make([]byte, 4)
+	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, uint32(x))
 	if _, err := w.Write(b[:]); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
@@ -185,7 +190,7 @@ func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 
 // WriteInt64 ...
 func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
-	b := make([]byte, 8)
+	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, uint64(x))
 	if _, err := w.Write(b[:]); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
@@ -195,7 +200,7 @@ func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 
 // WriteFloat32 ...
 func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
-	b := make([]byte, 4)
+	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, math.Float32bits(x))
 	if _, err := w.Write(b[:]); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
@@ -205,7 +210,7 @@ func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 
 // WriteFloat64 ...
 func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
-	b := make([]byte, 8)
+	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, math.Float64bits(x))
 	if _, err := w.Write(b[:]); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
@@ -231,7 +236,7 @@ func (e bigEndian) WriteString(w *offsetWriter, x string) error {
 
 // Int16 ...
 func (bigEndian) Int16(r *offsetReader) (int16, error) {
-	b := make([]byte, 2)
+	b := r.buf[:2]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Int16"}
 	}
@@ -240,7 +245,7 @@ func (bigEndian) Int16(r *offsetReader) (int16, error) {
 
 // Int32 ...
 func (bigEndian) Int32(r *offsetReader) (int32, error) {
-	b := make([]byte, 4)
+	b := r.buf[:4]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Int32"}
 	}
@@ -249,7 +254,7 @@ func (bigEndian) Int32(r *offsetReader) (int32, error) {
 
 // Int64 ...
 func (bigEndian) Int64(r *offsetReader) (int64, error) {
-	b := make([]byte, 8)
+	b := r.buf[:8]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float64"}
 	}
@@ -258,7 +263,7 @@ func (bigEndian) Int64(r *offsetReader) (int64, error) {
 
 // Float32 ...
 func (bigEndian) Float32(r *offsetReader) (float32, error) {
-	b := make([]byte, 4)
+	b := r.buf[:4]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float32"}
 	}
@@ -267,7 +272,7 @@ func (bigEndian) Float32(r *offsetReader) (float32, error) {
 
 // Float64 ...
 func (bigEndian) Float64(r *offsetReader) (float64, error) {
-	b := make([]byte, 8)
+	b := r.buf[:8]
 	if _, err := r.Read(b); err != nil {
 		return 0, BufferOverrunError{Op: "Float64"}
 	}
