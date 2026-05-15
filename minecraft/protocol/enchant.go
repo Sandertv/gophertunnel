@@ -66,6 +66,8 @@ type EnchantmentInstance struct {
 
 // Marshal encodes/decodes an EnchantmentInstance.
 func (x *EnchantmentInstance) Marshal(r IO) {
-	r.Uint8(&x.Type)
+	enchantmentType := uint32(x.Type)
+	r.Varuint32(&enchantmentType)
+	x.Type = byte(enchantmentType)
 	r.Uint8(&x.Level)
 }

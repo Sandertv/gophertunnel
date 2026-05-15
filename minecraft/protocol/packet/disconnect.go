@@ -157,7 +157,7 @@ type Disconnect struct {
 	// disconnected, meaning it will be sent directly to the main menu.
 	HideDisconnectionScreen bool
 	// Message is an optional message to show when disconnected. This message is only written if the
-	// HideDisconnectionScreen field is set to true.
+	// HideDisconnectionScreen field is set to false.
 	Message string
 	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
 	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
@@ -171,7 +171,12 @@ func (*Disconnect) ID() uint32 {
 
 func (pk *Disconnect) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Reason)
-	io.Bool(&pk.HideDisconnectionScreen)
+	messageSkipped := uint32(0)
+	if pk.HideDisconnectionScreen {
+		messageSkipped = 1
+	}
+	io.Varuint32(&messageSkipped)
+	pk.HideDisconnectionScreen = messageSkipped != 0
 	if !pk.HideDisconnectionScreen {
 		io.String(&pk.Message)
 		io.String(&pk.FilteredMessage)
