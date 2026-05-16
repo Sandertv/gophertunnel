@@ -73,99 +73,99 @@ const (
 	CommandArgSuffixed = 0x1000000
 	CommandArgSoftEnum = 0x4000000
 
-	CommandArgTypeInt                       = 1
-	CommandArgTypeFloat                     = 2
-	CommandArgTypeValue                     = 3
-	CommandArgTypeRValue                    = 4
-	CommandArgTypeWildcardInt               = 5
-	CommandArgTypeOperator                  = 6
-	CommandArgTypeCompareOperator           = 7
-	CommandArgTypeTarget                    = 8
-	CommandArgTypeStandaloneTarget          = 9
-	CommandArgTypeWildcardTarget            = 10
-	CommandArgTypeNonIDTarget               = 11
-	CommandArgTypeScoreArg                  = 12
-	CommandArgTypeScoreArgs                 = 13
-	CommandArgTypeScoreSelectParam          = 14
-	CommandArgTypeScoreSelector             = 15
-	CommandArgTypeTagSelector               = 16
-	CommandArgTypeFilepath                  = 17
-	CommandArgTypeFilePathVal               = 18
-	CommandArgTypeFilePathCont              = 19
-	CommandArgTypeIntRangeVal               = 20
-	CommandArgTypeIntRangePostVal           = 21
-	CommandArgTypeIntRange                  = 22
-	CommandArgTypeIntegerRange              = 23
-	CommandArgTypeRationalRangeVal          = 24
-	CommandArgTypeRationalRangePostVal      = 25
-	CommandArgTypeRationalRange             = 26
-	CommandArgTypeRationalRangeFull         = 27
-	CommandArgTypeSelectionArgs             = 28
-	CommandArgTypeArgs                      = 29
-	CommandArgTypeArg                       = 30
-	CommandArgTypeMArg                      = 31
-	CommandArgTypeMValue                    = 32
-	CommandArgTypeName                      = 33
-	CommandArgTypeType                      = 34
-	CommandArgTypeFamily                    = 35
-	CommandArgTypePermission                = 36
-	CommandArgTypePermissions               = 37
-	CommandArgTypePermissionSelector        = 38
-	CommandArgTypePermissionElement         = 39
-	CommandArgTypePermissionElements        = 40
-	CommandArgTypeTag                       = 41
-	CommandArgTypeHasItemElement            = 42
-	CommandArgTypeHasItemElements           = 43
-	CommandArgTypeHasItem                   = 44
-	CommandArgTypeHasItems                  = 45
-	CommandArgTypeHasItemSelector           = 46
-	CommandArgTypeEquipmentSlots            = 47
-	CommandArgTypePropertyValue             = 48
-	CommandArgTypeHasPropertyParamValue     = 49
-	CommandArgTypeHasPropertyParamEnumValue = 50
-	CommandArgTypeHasPropertyArg            = 51
-	CommandArgTypeHasPropertyArgs           = 52
-	CommandArgTypeHasPropertyElement        = 53
-	CommandArgTypeHasPropertyElements       = 54
-	CommandArgTypeHasPropertySelector       = 55
-	CommandArgTypeString                    = 56
-	CommandArgTypeIDContinuation            = 57
-	CommandArgTypeCoordXInt                 = 58
-	CommandArgTypeCoordYInt                 = 59
-	CommandArgTypeCoordZInt                 = 60
-	CommandArgTypeCoordXFloat               = 61
-	CommandArgTypeCoordYFloat               = 62
-	CommandArgTypeCoordZFloat               = 63
-	CommandArgTypeBlockPosition             = 64
-	CommandArgTypePosition                  = 65
-	CommandArgTypeMessageXP                 = 66
-	CommandArgTypeMessage                   = 67
-	CommandArgTypeMessageRoot               = 68
-	CommandArgTypePostSelector              = 69
-	CommandArgTypeRawText                   = 70
-	CommandArgTypeTextContinuation          = 71
-	CommandArgTypeJSONValue                 = 72
-	CommandArgTypeJSONField                 = 73
-	CommandArgTypeJSON                      = 74
-	CommandArgTypeJSONObjectFields          = 75
-	CommandArgTypeJSONObjectCont            = 76
-	CommandArgTypeJSONArray                 = 77
-	CommandArgTypeJSONArrayValues           = 78
-	CommandArgTypeJSONArrayCont             = 79
-	CommandArgTypeBlockState                = 80
-	CommandArgTypeBlockStateKey             = 81
-	CommandArgTypeBlockStateValue           = 82
-	CommandArgTypeBlockStateValues          = 83
-	CommandArgTypeBlockStates               = 84
-	CommandArgTypeBlockStatesCont           = 85
-	CommandArgTypeClockTimeMarker           = 86
-	CommandArgTypeCommand                   = 87
-	CommandArgTypeSlashCommand              = 88
-	CommandArgTypeCodeBuilderArg            = 89
-	CommandArgTypeCodeBuilderArgs           = 90
-	CommandArgTypeCodeBuilderSelectParam    = 91
-	CommandArgTypeCodeBuilderSelector       = 92
-	CommandArgTypeChainedCommand            = 0x8000000
+	CommandArgTypeInt = iota + 1
+	CommandArgTypeFloat
+	CommandArgTypeValue
+	CommandArgTypeRValue
+	CommandArgTypeWildcardInt
+	CommandArgTypeOperator
+	CommandArgTypeCompareOperator
+	CommandArgTypeTarget
+	CommandArgTypeStandaloneTarget
+	CommandArgTypeWildcardTarget
+	CommandArgTypeNonIDTarget
+	CommandArgTypeScoreArg
+	CommandArgTypeScoreArgs
+	CommandArgTypeScoreSelectParam
+	CommandArgTypeScoreSelector
+	CommandArgTypeTagSelector
+	CommandArgTypeFilepath
+	CommandArgTypeFilePathVal
+	CommandArgTypeFilePathCont
+	CommandArgTypeIntRangeVal
+	CommandArgTypeIntRangePostVal
+	CommandArgTypeIntRange
+	CommandArgTypeIntegerRange
+	CommandArgTypeRationalRangeVal
+	CommandArgTypeRationalRangePostVal
+	CommandArgTypeRationalRange
+	CommandArgTypeRationalRangeFull
+	CommandArgTypeSelectionArgs
+	CommandArgTypeArgs
+	CommandArgTypeArg
+	CommandArgTypeMArg
+	CommandArgTypeMValue
+	CommandArgTypeName
+	CommandArgTypeType
+	CommandArgTypeFamily
+	CommandArgTypePermission
+	CommandArgTypePermissions
+	CommandArgTypePermissionSelector
+	CommandArgTypePermissionElement
+	CommandArgTypePermissionElements
+	CommandArgTypeTag
+	CommandArgTypeHasItemElement
+	CommandArgTypeHasItemElements
+	CommandArgTypeHasItem
+	CommandArgTypeHasItems
+	CommandArgTypeHasItemSelector
+	CommandArgTypeEquipmentSlots
+	CommandArgTypePropertyValue
+	CommandArgTypeHasPropertyParamValue
+	CommandArgTypeHasPropertyParamEnumValue
+	CommandArgTypeHasPropertyArg
+	CommandArgTypeHasPropertyArgs
+	CommandArgTypeHasPropertyElement
+	CommandArgTypeHasPropertyElements
+	CommandArgTypeHasPropertySelector
+	CommandArgTypeString
+	CommandArgTypeIDContinuation
+	CommandArgTypeCoordXInt
+	CommandArgTypeCoordYInt
+	CommandArgTypeCoordZInt
+	CommandArgTypeCoordXFloat
+	CommandArgTypeCoordYFloat
+	CommandArgTypeCoordZFloat
+	CommandArgTypeBlockPosition
+	CommandArgTypePosition
+	CommandArgTypeMessageXP
+	CommandArgTypeMessage
+	CommandArgTypeMessageRoot
+	CommandArgTypePostSelector
+	CommandArgTypeRawText
+	CommandArgTypeTextContinuation
+	CommandArgTypeJSONValue
+	CommandArgTypeJSONField
+	CommandArgTypeJSON
+	CommandArgTypeJSONObjectFields
+	CommandArgTypeJSONObjectCont
+	CommandArgTypeJSONArray
+	CommandArgTypeJSONArrayValues
+	CommandArgTypeJSONArrayCont
+	CommandArgTypeBlockState
+	CommandArgTypeBlockStateKey
+	CommandArgTypeBlockStateValue
+	CommandArgTypeBlockStateValues
+	CommandArgTypeBlockStates
+	CommandArgTypeBlockStatesCont
+	CommandArgTypeClockTimeMarker
+	CommandArgTypeCommand
+	CommandArgTypeSlashCommand
+	CommandArgTypeCodeBuilderArg
+	CommandArgTypeCodeBuilderArgs
+	CommandArgTypeCodeBuilderSelectParam
+	CommandArgTypeCodeBuilderSelector
+	CommandArgTypeChainedCommand = 0x8000000
 )
 
 const (
