@@ -165,7 +165,7 @@ const (
 	CommandArgTypeCodeBuilderArgs           = 90
 	CommandArgTypeCodeBuilderSelectParam    = 91
 	CommandArgTypeCodeBuilderSelector       = 92
-	CommandArgTypeChainedCommand            = 134217728
+	CommandArgTypeChainedCommand            = 0x8000000
 )
 
 const (
