@@ -165,6 +165,7 @@ const (
 	CommandArgTypeCodeBuilderArgs
 	CommandArgTypeCodeBuilderSelectParam
 	CommandArgTypeCodeBuilderSelector
+
 	CommandArgTypeChainedCommand = 0x8000000
 )
 
