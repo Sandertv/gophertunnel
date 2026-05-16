@@ -9,6 +9,7 @@ import (
 type offsetReader struct {
 	io.Reader
 	off int64
+	buf [8]byte
 
 	// ReadByte is a function provided by offsetReader if the io.Reader does not implement io.ByteReader.
 	ReadByte func() (byte, error)
