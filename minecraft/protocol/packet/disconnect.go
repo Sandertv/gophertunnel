@@ -171,12 +171,7 @@ func (*Disconnect) ID() uint32 {
 
 func (pk *Disconnect) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Reason)
-	messageSkipped := uint32(0)
-	if pk.HideDisconnectionScreen {
-		messageSkipped = 1
-	}
-	io.Varuint32(&messageSkipped)
-	pk.HideDisconnectionScreen = messageSkipped != 0
+	io.Bool(&pk.HideDisconnectionScreen)
 	if !pk.HideDisconnectionScreen {
 		io.String(&pk.Message)
 		io.String(&pk.FilteredMessage)

@@ -60,14 +60,12 @@ func (x *ItemEnchantments) Marshal(r IO) {
 // EnchantmentInstance represents a single enchantment instance with the type of the enchantment and its
 // level.
 type EnchantmentInstance struct {
-	Type  byte
+	Type  uint32
 	Level byte
 }
 
 // Marshal encodes/decodes an EnchantmentInstance.
 func (x *EnchantmentInstance) Marshal(r IO) {
-	enchantmentType := uint32(x.Type)
-	r.Varuint32(&enchantmentType)
-	x.Type = byte(enchantmentType)
+	r.Varuint32(&x.Type)
 	r.Uint8(&x.Level)
 }
