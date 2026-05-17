@@ -1,0 +1,7 @@
+interface:
+  display_name: "Gophertunnel Protocol Update"
+  short_description: "Update gophertunnel Bedrock protocols"
+  default_prompt: "Use $gophertunnel-protocol-update to update or debug gophertunnel for a Minecraft Bedrock protocol version with source-backed evidence."
+
+policy:
+  allow_implicit_invocation: true
