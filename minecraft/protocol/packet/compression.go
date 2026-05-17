@@ -25,6 +25,7 @@ type Compression interface {
 
 type appendCompression interface {
 	CompressAppend(dst, decompressed []byte) ([]byte, error)
+	MaxCompressedLen(decompressedLen int) int
 }
 
 var (
@@ -179,6 +180,10 @@ func (snappyCompression) CompressAppend(dst, decompressed []byte) ([]byte, error
 	dst = slices.Grow(dst, n)
 	encoded := s2.EncodeSnappy(dst[offset:offset:cap(dst)], decompressed)
 	return dst[:offset+len(encoded)], nil
+}
+
+func (snappyCompression) MaxCompressedLen(decompressedLen int) int {
+	return s2.MaxEncodedLen(decompressedLen)
 }
 
 // Decompress ...

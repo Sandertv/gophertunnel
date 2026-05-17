@@ -127,11 +127,15 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 			compressedBuf = internal.BufferPool.Get().(*bytes.Buffer)
 			_, _ = compressedBuf.Write(encoder.header)
 			_ = compressedBuf.WriteByte(byte(compression.EncodeCompression()))
-			dst := compressedBuf.Bytes()
 			var err error
 			if appender, ok := compression.(appendCompression); ok {
+				if n := appender.MaxCompressedLen(len(batch)); n > 0 {
+					compressedBuf.Grow(n)
+				}
+				dst := compressedBuf.Bytes()
 				data, err = appender.CompressAppend(dst, batch)
 			} else {
+				dst := compressedBuf.Bytes()
 				var compressed []byte
 				compressed, err = compression.Compress(batch)
 				data = append(dst, compressed...)
