@@ -26,6 +26,7 @@ type Writer struct {
 		io.ByteWriter
 	}
 	shieldID int32
+	buf      [8]byte
 }
 
 // NewWriter creates a new initialised Writer with an underlying io.ByteWriter to write to.
