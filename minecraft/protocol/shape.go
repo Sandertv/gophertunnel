@@ -170,7 +170,7 @@ type PrimitiveShape struct {
 	NetworkID uint64
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
-	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
+	// AttachedToEntityID is the optional unique ID of the entity the shape is attached to.
 	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
