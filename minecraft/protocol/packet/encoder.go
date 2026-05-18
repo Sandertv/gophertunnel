@@ -125,7 +125,6 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		if len(batch) < encoder.compressionThreshold {
 			data[len(encoder.header)] = byte(NopCompression.EncodeCompression())
 		} else {
-			data[len(encoder.header)] = byte(compression.EncodeCompression())
 			compressedBuf = internal.BufferPool.Get().(*bytes.Buffer)
 			_, _ = compressedBuf.Write(encoder.header)
 			_ = compressedBuf.WriteByte(byte(compression.EncodeCompression()))
