@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"sync"
 
 	"github.com/klauspost/compress/flate"
@@ -20,6 +21,11 @@ type Compression interface {
 	Compress(decompressed []byte) ([]byte, error)
 	// Decompress decompresses the given data and returns the decompressed data.
 	Decompress(compressed []byte, limit int) ([]byte, error)
+}
+
+type appendCompression interface {
+	CompressAppend(dst, decompressed []byte) ([]byte, error)
+	MaxCompressedLen(decompressedLen int) int
 }
 
 var (
@@ -161,6 +167,23 @@ func (snappyCompression) Compress(decompressed []byte) ([]byte, error) {
 	// EncodeSnappyBetter, which trades more CPU and retained scratch memory for a
 	// smaller output size.
 	return s2.EncodeSnappy(nil, decompressed), nil
+}
+
+func (snappyCompression) CompressAppend(dst, decompressed []byte) ([]byte, error) {
+	// Append into the caller-provided output buffer so Encoder can keep the
+	// batch header and compression ID in the same allocation as the payload.
+	n := s2.MaxEncodedLen(len(decompressed))
+	if n < 0 {
+		panic(s2.ErrTooLarge)
+	}
+	offset := len(dst)
+	dst = slices.Grow(dst, n)
+	encoded := s2.EncodeSnappy(dst[offset:offset:cap(dst)], decompressed)
+	return dst[:offset+len(encoded)], nil
+}
+
+func (snappyCompression) MaxCompressedLen(decompressedLen int) int {
+	return s2.MaxEncodedLen(decompressedLen)
 }
 
 // Decompress ...

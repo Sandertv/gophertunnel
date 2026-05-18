@@ -11,6 +11,8 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
+const maxPooledEncoderBufferCap = 1 << 20
+
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
 type Encoder struct {
@@ -93,7 +95,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		// Reset the buffer, so we can return it to the buffer pool safely.
 		buf.Reset()
 		internal.BufferPool.Put(buf)
-		if compressedBuf != nil {
+		if compressedBuf != nil && compressedBuf.Cap() <= maxPooledEncoderBufferCap {
 			compressedBuf.Reset()
 			internal.BufferPool.Put(compressedBuf)
 		}
@@ -123,18 +125,25 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 		if len(batch) < encoder.compressionThreshold {
 			data[len(encoder.header)] = byte(NopCompression.EncodeCompression())
 		} else {
-			compressed, err := compression.Compress(batch)
-			if err != nil {
-				return fmt.Errorf("compress batch: %w", err)
-			}
-
 			compressedBuf = internal.BufferPool.Get().(*bytes.Buffer)
 			_, _ = compressedBuf.Write(encoder.header)
 			_ = compressedBuf.WriteByte(byte(compression.EncodeCompression()))
-			if _, err := compressedBuf.Write(compressed); err != nil {
-				return fmt.Errorf("compress batch: write compressed payload: %w", err)
+			var err error
+			if appender, ok := compression.(appendCompression); ok {
+				if n := appender.MaxCompressedLen(len(batch)); n > 0 {
+					compressedBuf.Grow(n)
+				}
+				dst := compressedBuf.Bytes()
+				data, err = appender.CompressAppend(dst, batch)
+			} else {
+				dst := compressedBuf.Bytes()
+				var compressed []byte
+				compressed, err = compression.Compress(batch)
+				data = append(dst, compressed...)
 			}
-			data = compressedBuf.Bytes()
+			if err != nil {
+				return fmt.Errorf("compress batch: %w", err)
+			}
 		}
 	}
 
