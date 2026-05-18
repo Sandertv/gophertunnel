@@ -8,6 +8,8 @@ import (
 const (
 	MoveFlagOnGround = 1 << iota
 	MoveFlagTeleport
+	MoveFlagForceMove
+	MoveFlagForceCompletion
 )
 
 // MoveActorAbsolute is sent by the server to move an entity to an absolute position. It is typically used

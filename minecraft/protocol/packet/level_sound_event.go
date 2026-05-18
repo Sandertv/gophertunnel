@@ -608,6 +608,7 @@ const (
 	SoundEventResetGrowth
 	SoundEventPushedByPlayer
 	SoundEventBounce
+	SoundEventUndefined
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
