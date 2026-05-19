@@ -96,7 +96,7 @@ func (c *Client) ParseFeaturedServer(item catalog.Item) (*FeaturedServer, error)
 // SearchItems performs search for catalog items that describe experiences or
 // featured servers.
 //
-// This method is similar to[catalog.Client.SearchItems], but the gatherings
+// This method is similar to [catalog.Client.SearchItems], but the gatherings
 // service may return items that are not visible to regular player entities.
 // The endpoint appears to return the same result regardless of the provided
 // filter, so this method is only useful for listing gatherings experiences
