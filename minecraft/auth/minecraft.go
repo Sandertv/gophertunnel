@@ -8,22 +8,33 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 
+	"github.com/df-mc/go-xsapi/v2"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
-	"golang.org/x/oauth2"
 )
 
 // minecraftAuthURL is the URL that an authentication request is made to to get an encoded JWT claim chain.
-const minecraftAuthURL = `https://multiplayer.minecraft.net/authentication`
+var minecraftAuthURL = &url.URL{
+	Scheme: "https",
+	Host:   "multiplayer.minecraft.net",
+	Path:   "/authentication",
+} // https://multiplayer.minecraft.net/authentication
 
 // RequestMinecraftChain requests a fully processed Minecraft JWT chain using the XSTS token passed, and the
 // ECDSA private key of the client. This key will later be used to initialise encryption, and must be saved
 // for when packets need to be decrypted/encrypted.
-func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.PrivateKey) (string, error) {
+func RequestMinecraftChain(ctx context.Context, client *xsapi.Client, key *ecdsa.PrivateKey) (string, error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+
+	token, _, err := client.TokenAndSignature(ctx, minecraftAuthURL)
+	if err != nil {
+		return "", fmt.Errorf("request token and signature: %w", err)
+	}
+
 	data, err := x509.MarshalPKIXPublicKey(&key.PublicKey)
 	if err != nil {
 		return "", fmt.Errorf("marshal public key: %w", err)
@@ -32,7 +43,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 	// The body of the requests holds a JSON object with one key in it, the 'identityPublicKey', which holds
 	// the public key data of the private key passed.
 	body := `{"identityPublicKey":"` + base64.StdEncoding.EncodeToString(data) + `"}`
-	request, err := http.NewRequestWithContext(ctx, "POST", minecraftAuthURL, strings.NewReader(body))
+	request, err := http.NewRequestWithContext(ctx, "POST", minecraftAuthURL.String(), strings.NewReader(body))
 	if err != nil {
 		return "", fmt.Errorf("POST %v: %w", minecraftAuthURL, err)
 	}
@@ -44,11 +55,7 @@ func RequestMinecraftChain(ctx context.Context, token *XBLToken, key *ecdsa.Priv
 	request.Header.Set("Client-Version", protocol.CurrentVersion)
 	request.Header.Set("Content-Type", "application/json")
 
-	c, _ := ctx.Value(oauth2.HTTPClient).(*http.Client)
-	if c == nil {
-		c = defaultXBLHTTPClient
-	}
-	resp, err := c.Do(request)
+	resp, err := client.HTTPClient().Do(request)
 	if err != nil {
 		return "", fmt.Errorf("POST %v: %w", minecraftAuthURL, err)
 	}
