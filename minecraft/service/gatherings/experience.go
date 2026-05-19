@@ -135,6 +135,8 @@ func (a Address) String() string {
 	return net.JoinHostPort(a.IPv4Address, strconv.Itoa(int(a.Port)))
 }
 
+// Constants for [Address.NetworkProtcol] so that other transport layers
+// such as NetherNet can be added in the future.
 const (
 	// NetworkProtocolDefault indicates that the experience should be
 	// contacted using the default transport of the Bedrock Edition, RakNet.
