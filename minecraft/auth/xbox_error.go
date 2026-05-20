@@ -1,8 +1,10 @@
 package auth
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -22,6 +24,30 @@ type XboxError struct {
 	ResponseBody string
 	// Underlying is the underlying error that caused this (network errors, etc.)
 	Underlying error
+}
+
+// AccountCreationRequiredError is returned when the Microsoft account has no Xbox profile.
+// SignupURL opens Microsoft's hosted flow that creates and links the Xbox profile to the
+// already-authenticated Microsoft account.
+type AccountCreationRequiredError struct {
+	*XboxError
+	SignupURL *url.URL
+}
+
+// Error implements the error interface.
+func (e *AccountCreationRequiredError) Error() string {
+	if e == nil || e.XboxError == nil {
+		return "Xbox account creation required"
+	}
+	return e.XboxError.Error()
+}
+
+// Unwrap returns the underlying Xbox error for errors.As compatibility.
+func (e *AccountCreationRequiredError) Unwrap() error {
+	if e == nil {
+		return nil
+	}
+	return e.XboxError
 }
 
 // Error implements the error interface.
@@ -95,6 +121,66 @@ func newXboxHTTPError(method, url string, resp *http.Response, responseBody []by
 	}
 
 	return xboxErr
+}
+
+func newAccountCreationRequiredError(xboxErr *XboxError, header http.Header, responseBody []byte, device *deviceToken) (*AccountCreationRequiredError, error) {
+	if xboxErr == nil || xboxErr.XboxErrorCode != "2148916233" {
+		return nil, fmt.Errorf("Xbox error is not account creation required")
+	}
+	sessionID := header.Get("X-SessionId")
+	if sessionID == "" {
+		return nil, fmt.Errorf("X-SessionId header is absent from authorization response")
+	}
+	if device == nil || device.proofKey == nil {
+		return nil, fmt.Errorf("device token or proof key is absent")
+	}
+	deviceID := device.DisplayClaims.DeviceInfo.DeviceID
+	if deviceID == "" {
+		return nil, fmt.Errorf("device ID is absent from device token")
+	}
+
+	var r struct {
+		WebPage string `json:"WebPage"`
+	}
+	if err := json.Unmarshal(responseBody, &r); err != nil {
+		return nil, fmt.Errorf("decode authorization response: %w", err)
+	}
+	if r.WebPage == "" {
+		return nil, fmt.Errorf("account creation page URL is absent from authorization response")
+	}
+
+	signingURL := (&url.URL{
+		Scheme: "https",
+		Host:   "sisu.xboxlive.com",
+		Path:   "/proxy",
+	}).String()
+	signingRequest, err := http.NewRequest(http.MethodPost, signingURL+"?sessionid="+url.QueryEscape(sessionID), nil)
+	if err != nil {
+		return nil, fmt.Errorf("make request for computing signature: %w", err)
+	}
+	if err := sign(signingRequest, nil, device.proofKey); err != nil {
+		return nil, fmt.Errorf("sign account creation request: %w", err)
+	}
+	signature := signingRequest.Header.Get("Signature")
+	if signature == "" {
+		return nil, fmt.Errorf("signature is absent from account creation request")
+	}
+
+	signupURL, err := url.Parse(r.WebPage)
+	if err != nil {
+		return nil, fmt.Errorf("parse account creation page URL: %w", err)
+	}
+	query := signupURL.Query()
+	query.Set("sig", signature)
+	query.Set("did", "0x"+deviceID)
+	query.Set("redirect", "https://sisu.xboxlive.com/sisu_desktop.srf")
+	query.Set("sid", sessionID)
+	signupURL.RawQuery = query.Encode()
+
+	return &AccountCreationRequiredError{
+		XboxError: xboxErr,
+		SignupURL: signupURL,
+	}, nil
 }
 
 // parseXboxError returns the message associated with an Xbox Live error code.

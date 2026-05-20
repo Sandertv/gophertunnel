@@ -49,6 +49,15 @@ type DisplayClaims struct {
 	UserInfo []UserInfo `json:"xui"`
 }
 
+type DeviceDisplayClaims struct {
+	DeviceInfo DeviceInfo `json:"xdi"`
+}
+
+type DeviceInfo struct {
+	DeviceID string `json:"did"`
+	DCS      string `json:"dcs"`
+}
+
 // UserInfo is the user claims structure used by XSAPI and also used in XSTS token display claims.
 type UserInfo = xsapi.DisplayClaims
 
@@ -469,7 +478,11 @@ func (conf Config) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, 
 
 	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
-		return nil, newXboxHTTPError("POST", sisuAuthUrl, resp, body)
+		xboxErr := newXboxHTTPError("POST", sisuAuthUrl, resp, body)
+		if accountErr, err := newAccountCreationRequiredError(xboxErr, resp.Header, body, device); err == nil {
+			return nil, accountErr
+		}
+		return nil, xboxErr
 	}
 	info := new(XBLToken)
 	if err := json.NewDecoder(resp.Body).Decode(info); err != nil {
@@ -482,9 +495,10 @@ func (conf Config) obtainXBLToken(ctx context.Context, liveToken *oauth2.Token, 
 // deviceToken is the token obtained by requesting a device token by posting to xblDeviceAuthURL. Its Token
 // field may be used in a request to obtain the XSTS token.
 type deviceToken struct {
-	IssueInstant time.Time `json:"IssueInstant"`
-	NotAfter     time.Time `json:"NotAfter"`
-	Token        string
+	DisplayClaims DeviceDisplayClaims `json:"DisplayClaims"`
+	IssueInstant  time.Time           `json:"IssueInstant"`
+	NotAfter      time.Time           `json:"NotAfter"`
+	Token         string
 
 	// proofKey is the private key used to sign requests in Xbox Live.
 	proofKey *ecdsa.PrivateKey
