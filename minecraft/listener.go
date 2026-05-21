@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"net"
 	"net/http"
 	"slices"
@@ -113,7 +114,7 @@ type ListenConfig struct {
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
 	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
-	// the default value is 16 MiB. Setting this to a negative integer disables the limit.
+	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
 
 	// IPv4Port and IPv6Port specify the ports to advertise in the pong data for LAN discovery.
@@ -174,7 +175,11 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	} else if cfg.CompressionThreshold < 0 {
 		cfg.CompressionThreshold = 0
 	}
-	cfg.MaxDecompressedLen = normalizeMaxDecompressedLen(cfg.MaxDecompressedLen)
+	if cfg.MaxDecompressedLen == 0 {
+		cfg.MaxDecompressedLen = 16 * 1024 * 1024 // 16MB
+	} else if cfg.MaxDecompressedLen < 0 {
+		cfg.MaxDecompressedLen = math.MaxInt
+	}
 
 	var verifier *oidc.IDTokenVerifier
 	if !cfg.AuthenticationDisabled {

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -93,10 +94,6 @@ type Dialer struct {
 
 	// DisablePacketHandling, if set to true, disables automatic packet handling for the connection.
 	DisablePacketHandling bool
-
-	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
-	// the default value is 16 MiB. Setting this to a negative integer disables the limit.
-	MaxDecompressedLen int
 
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
 	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
@@ -185,7 +182,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	if d.FlushRate == 0 {
 		d.FlushRate = time.Second / 20
 	}
-	maxDecompressedLen := normalizeMaxDecompressedLen(d.MaxDecompressedLen)
 	if d.HTTPClient != nil {
 		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
 			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
@@ -263,7 +259,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
-	conn.maxDecompressedLen = maxDecompressedLen
+	conn.maxDecompressedLen = math.MaxInt
 	conn.disablePacketHandling = d.DisablePacketHandling
 
 	defaultIdentityData(&conn.identityData)

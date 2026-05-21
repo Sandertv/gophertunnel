@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math"
 	"net"
 	"regexp"
 	"slices"
@@ -31,10 +30,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 	"github.com/sandertv/gophertunnel/minecraft/text"
 )
-
-// defaultMaxDecompressedLen is the default maximum length of a decompressed packet to prevent potential exploits,
-// used by the listener and dialer.
-const defaultMaxDecompressedLen = 16 * 1024 * 1024
 
 // exemptedResourcePack is a resource pack that is exempted from being downloaded. These packs may be directly
 // applied by sending them in the ResourcePackStack packet.
@@ -308,16 +303,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		}
 	}()
 	return conn
-}
-
-func normalizeMaxDecompressedLen(n int) int {
-	if n == 0 {
-		return defaultMaxDecompressedLen
-	}
-	if n < 0 {
-		return math.MaxInt
-	}
-	return n
 }
 
 // IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
