@@ -891,9 +891,18 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 		return fmt.Errorf("decode ServerToClientHandshake salt: %w", err)
 	}
 
-	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
-	// Make sure to pad the shared secret up to 96 bytes.
-	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
+	privateKey, err := conn.privateKey.ECDH()
+	if err != nil {
+		return fmt.Errorf("convert private key to ECDH: %w", err)
+	}
+	publicKey, err := pub.ECDH()
+	if err != nil {
+		return fmt.Errorf("convert public key to ECDH: %w", err)
+	}
+	sharedSecret, err := privateKey.ECDH(publicKey)
+	if err != nil {
+		return fmt.Errorf("compute shared secret: %w", err)
+	}
 
 	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
 
@@ -1458,10 +1467,18 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	_ = conn.Flush()
 
 	// We first compute the shared secret.
-	x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
-
-	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
-
+	privateKey, err := conn.privateKey.ECDH()
+	if err != nil {
+		return fmt.Errorf("convert private key to ECDH: %w", err)
+	}
+	publicKey, err := clientPublicKey.ECDH()
+	if err != nil {
+		return fmt.Errorf("convert public key to ECDH: %w", err)
+	}
+	sharedSecret, err := privateKey.ECDH(publicKey)
+	if err != nil {
+		return fmt.Errorf("compute shared secret: %w", err)
+	}
 	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
