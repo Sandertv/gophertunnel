@@ -343,11 +343,11 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token str
 	signer, _ := jose.NewSigner(jose.SigningKey{Key: key, Algorithm: jose.ES384}, &jose.SignerOptions{
 		ExtraHeaders: map[jose.HeaderKey]any{"x5u": keyData},
 	})
-	firstJWT, _ := jwt.Signed(signer).Claims(identityPublicKeyClaims{
+	firstJWT, _ := signJSONWebToken(signer, identityPublicKeyClaims{
 		Claims:               claims,
 		IdentityPublicKey:    x5u,
 		CertificateAuthority: true,
-	}).Serialize()
+	})
 
 	req := &request{
 		Certificate: certificate{
@@ -359,7 +359,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token str
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
-	req.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
+	req.RawToken, _ = signJSONWebToken(signer, data)
 
 	return encodeRequest(req)
 }
@@ -398,16 +398,16 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 
 	req := &request{AuthenticationType: 2}
 	if legacy {
-		chainJWT, _ := jwt.Signed(signer).Claims(identityClaims{
+		chainJWT, _ := signJSONWebToken(signer, identityClaims{
 			Claims:            claims,
 			ExtraData:         identityData,
 			IdentityPublicKey: keyData,
-		}).Serialize()
+		})
 		req.Certificate = certificate{Chain: chain{chainJWT}}
 		req.Legacy = true
 	} else {
 		req.Certificate = certificate{Chain: chain{""}}
-		req.Token, _ = jwt.Signed(signer).Claims(tokenClaims{
+		req.Token, _ = signJSONWebToken(signer, tokenClaims{
 			Claims:          claims,
 			ClientPublicKey: keyData,
 			XUID:            identityData.XUID,
@@ -415,13 +415,26 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 			Identity:        identityData.Identity,
 			PlayFabID:       identityData.PlayFabID,
 			PlayFabTitleID:  identityData.PlayFabTitleID,
-		}).Serialize()
+		})
 	}
 	// We create another token this time, which is signed the same as the claim we just inserted in the chain,
 	// just now it contains client data.
-	req.RawToken, _ = jwt.Signed(signer).Claims(data).Serialize()
+	req.RawToken, _ = signJSONWebToken(signer, data)
 
 	return encodeRequest(req)
+}
+
+// bedrock client has a new line at the end of the JSON payload
+func signJSONWebToken(signer jose.Signer, claims any) (string, error) {
+	buf := bytes.NewBuffer(nil)
+	if err := json.NewEncoder(buf).Encode(claims); err != nil {
+		return "", err
+	}
+	jws, err := signer.Sign(buf.Bytes())
+	if err != nil {
+		return "", err
+	}
+	return jws.CompactSerialize()
 }
 
 // tokenClaims holds the claims for the multiplayer token from the first chain,
