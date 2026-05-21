@@ -33,19 +33,17 @@ func TestNewAccountCreationRequiredError(t *testing.T) {
 	}
 
 	query := accountErr.SignupURL.Query()
-	if query.Get("existing") != "1" {
-		t.Fatalf("expected existing query parameter to be preserved, got %q", query.Get("existing"))
+	for name, want := range map[string]string{
+		"did":      "0xdevice-id",
+		"existing": "1",
+		"redirect": "https://sisu.xboxlive.com/sisu_desktop.srf",
+		"sid":      "session-id",
+	} {
+		if got := query.Get(name); got != want {
+			t.Fatalf("unexpected %q query parameter: got %q, want %q", name, got, want)
+		}
 	}
-	if query.Get("sig") == "" {
+	if got := query.Get("sig"); got == "" {
 		t.Fatal("expected signature query parameter")
-	}
-	if query.Get("did") != "0xdevice-id" {
-		t.Fatalf("unexpected device ID query parameter: %q", query.Get("did"))
-	}
-	if query.Get("sid") != "session-id" {
-		t.Fatalf("unexpected session ID query parameter: %q", query.Get("sid"))
-	}
-	if query.Get("redirect") != "https://sisu.xboxlive.com/sisu_desktop.srf" {
-		t.Fatalf("unexpected redirect query parameter: %q", query.Get("redirect"))
 	}
 }
