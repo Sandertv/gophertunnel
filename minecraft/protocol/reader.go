@@ -72,6 +72,7 @@ func (r *Reader) StringUTF(x *string) {
 	if l > math.MaxInt16 {
 		r.panic(errStringTooLong)
 	}
+	r.checkRemaining(l, "string")
 	data := make([]byte, l)
 	if _, err := r.r.Read(data); err != nil {
 		r.panic(err)
@@ -87,6 +88,7 @@ func (r *Reader) String(x *string) {
 	if l > math.MaxInt32 {
 		r.panic(errStringTooLong)
 	}
+	r.checkRemaining(l, "string")
 	data := make([]byte, l)
 	if _, err := r.r.Read(data); err != nil {
 		r.panic(err)
@@ -102,6 +104,7 @@ func (r *Reader) ByteSlice(x *[]byte) {
 	if l > math.MaxInt32 {
 		r.panic(errStringTooLong)
 	}
+	r.checkRemaining(l, "byte slice")
 	data := make([]byte, l)
 	if _, err := r.r.Read(data); err != nil {
 		r.panic(err)
@@ -717,11 +720,22 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// SliceLimit checks if the value passed is lower than the limit passed. If
-// not, the Reader panics.
-func (r *Reader) SliceLimit(value uint32, max uint32) {
+// CheckSliceLength validates a length prefix before a slice is allocated.
+func (r *Reader) CheckSliceLength(value uint32, max uint32) {
 	if value > max && r.limitsEnabled {
 		r.panicf("slice length was too long: length of %v (max %v)", value, max)
+	}
+	if remaining, ok := r.r.(interface{ Len() int }); ok && uint64(value) > uint64(remaining.Len()) {
+		r.panicf("slice length %v exceeds remaining packet payload %v", value, remaining.Len())
+	}
+}
+
+func (r *Reader) checkRemaining(length int, field string) {
+	if length < 0 {
+		r.panicf("%s length was negative: %v", field, length)
+	}
+	if remaining, ok := r.r.(interface{ Len() int }); ok && length > remaining.Len() {
+		r.panicf("%s length %v exceeds remaining packet payload %v", field, length, remaining.Len())
 	}
 }
 
