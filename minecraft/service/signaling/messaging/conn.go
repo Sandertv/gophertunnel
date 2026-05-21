@@ -57,27 +57,33 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	}
 
 	id := uuid.New()
-	ch := conn.pending.Add(id)
-	defer conn.pending.Remove(id)
-
-	if err := conn.send(ctx, id, map[string]any{
+	msg := map[string]any{
 		"params": map[string]any{
 			"netherNetId": conn.d.NetworkID,
 			"message":     signal.String(),
 		},
 		"jsonrpc": "2.0",
 		"method":  MethodSignalingWebRTC,
-	}, messagingID); err != nil {
-		return err
 	}
 
-	select {
-	case <-ctx.Done():
-		return ctx.Err()
-	case <-conn.ctx.Done():
-		return context.Cause(conn.ctx)
-	case err := <-ch:
-		return err
+	if !conn.d.IgnoreDeliveryNotification {
+		ch := conn.pending.Add(id)
+		defer conn.pending.Remove(id)
+
+		if err := conn.send(ctx, id, msg, messagingID); err != nil {
+			return err
+		}
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-conn.ctx.Done():
+			return context.Cause(conn.ctx)
+		case err := <-ch:
+			return err
+		}
+	} else {
+		return conn.send(ctx, id, msg, messagingID)
 	}
 }
 
@@ -237,6 +243,9 @@ func (m *envelope) UnmarshalJSON(b []byte) error {
 func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) error {
 	switch envelope.Message.Method {
 	case MethodSignalingDeliveryNotification:
+		if conn.d.IgnoreDeliveryNotification {
+			return nil
+		}
 		var params struct {
 			MessageID uuid.UUID `json:"messageId"`
 		}

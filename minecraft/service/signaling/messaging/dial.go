@@ -18,18 +18,32 @@ import (
 
 // Dialer specifies options for connecting to the messaging service.
 type Dialer struct {
-	// Environment is the Environment of the 'signaling' service used to connect to messaging service.
-	// If nil, it will be automatically resolved from the discovery data returned from [service.Default].
+	// Environment is the environment used for connecting to the signaling service.
+	// If nil, it will be derived from [service.Default].
 	Environment *signaling.Environment
 	// HTTPClient is the HTTP client used for WebSocket handshake messages and [Environment] discovery.
 	HTTPClient *http.Client
 	// Log is the logger used to log messages at various levels.
 	Log *slog.Logger
 	// NetworkID specifies a unique ID for the NetherNet network. If zero, a random value will
-	// be automatically set from [rand.Uint64]. When listening on friend worlds, this value
+	// be automatically set from [rand.Uint64]. When listening on peer-to-peer worlds, this value
 	// must match the NetworkID advertised in [p2p.Connection.NetherNetID] in order to successfully
 	// negotiate with vanilla clients.
 	NetworkID string
+	// IgnoreDeliveryNotification disables waiting for the DeliveryNotification
+	// acknowledgement after sending a signal to a remote peer.
+	//
+	// By default, [Conn.Signal] blocks until the remote peer sends back a
+	// DeliveryNotification message to confirm receipt. Enabling this field
+	// causes Signal to return as soon as the signaling service accepts the
+	// message, without waiting for acknowledgement by the remote peer.
+	//
+	// The vanilla client appears to be sending DeliveryNotification only for
+	// telemetry so this field is unlikely to affect the actual WebRTC negotiation.
+	//
+	// It may be useful when interoperating with third-party implementations
+	// that do not send DeliveryNotification.
+	IgnoreDeliveryNotification bool
 }
 
 // Dial connects to the messaging service with a 15 seconds timeout.
