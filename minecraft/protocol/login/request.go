@@ -368,6 +368,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token str
 // Request field in a Login packet.
 func encodeRequest(req *request) []byte {
 	chainBytes, _ := json.Marshal(req)
+	chainBytes = append(chainBytes, '\n')
 
 	buf := bytes.NewBuffer(nil)
 	_ = binary.Write(buf, binary.LittleEndian, int32(len(chainBytes)))
