@@ -9,7 +9,8 @@ import (
 )
 
 // TokenSource returns an implementation of TokenSource, which subsequently supplies the token
-// by either newly requesting or refreshing an existing, cached token.
+// by either newly requesting or refreshing an existing, cached token. The given [playfab.Client]
+// will be used for logging into Bedrock Edition's network services with the user's PlayFab account.
 func (e *AuthorizationEnvironment) TokenSource(client *playfab.Client, config TokenConfig) TokenSource {
 	defaultUserConfig(&config.User)
 	defaultDeviceConfig(e, &config.Device)

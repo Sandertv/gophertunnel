@@ -161,7 +161,7 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 			nonce, ok := nonces[xuid]
 			if ok {
 				if nonce == "" {
-					return errors.New("host published empty-nonce for caller")
+					return errors.New("host published empty nonce for caller")
 				}
 				s.log.Debug("received nonce from host", slog.String("xuid", xuid), slog.String("nonce", nonce))
 				s.nonce = nonce

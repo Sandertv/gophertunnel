@@ -20,13 +20,16 @@ type MultiplayerTokenSource interface {
 }
 
 // multiplayerTokenSource is an implementation of MultiplayerTokenSource used by default, which uses the
-// underlying [oauth2.TokenSource] to sign in to the PlayFab account with Xbox Live.
+// underlying [service.TokenSource] to log in to the Minecraft: Bedrock Edition's network services.
 type multiplayerTokenSource struct {
+	// env is the environment used for requesting multiplayer tokens.
 	env *service.AuthorizationEnvironment
+	// src is the [service.TokenSource] used to log in to the network services.
+	// It is typically created from [service.AuthorizationEnvironment.TokenSource].
 	src service.TokenSource
 }
 
-// MultiplayerToken issues a multiplayer token using the underlying [oauth2.TokenSource].
+// MultiplayerToken issues a multiplayer token using the underlying [service.TokenSource].
 func (s *multiplayerTokenSource) MultiplayerToken(ctx context.Context, key *ecdsa.PublicKey) (string, error) {
 	return s.env.MultiplayerToken(ctx, s.src, key)
 }

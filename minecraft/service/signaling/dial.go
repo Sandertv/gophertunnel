@@ -19,7 +19,7 @@ import (
 // Dialer specifies options for connecting to the signaling service.
 type Dialer struct {
 	// Environment is the environment used for connecting to the signaling service.
-	// If nil, it will be automatically resolved from the discovery data returned from [service.Default].
+	// If nil, it will be derived from [service.Default].
 	Environment *Environment
 	// HTTPClient is the HTTP client used during WebSocket handshake.
 	HTTPClient *http.Client
@@ -40,6 +40,7 @@ func (d Dialer) Dial(src service.TokenSource) (*Conn, error) {
 }
 
 // DialContext connects to the signaling service using the provided [service.TokenSource] for authorization.
+// The given [context.Context] is used to control the deadline for the WebSocket handshake.
 func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn, error) {
 	if d.Environment == nil {
 		discovery, err := service.Default(ctx)
@@ -94,16 +95,32 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 	return conn, nil
 }
 
+// Environment represents an environment for the signaling service.
 type Environment struct {
+	// ServiceURI is the base endpoint URL for the signaling service.
+	// The scheme is typically 'wss://'.
 	ServiceURI *url.URL `json:"serviceUri"`
-	TurnURI    string   `json:"turnUri"`
-	StunURI    string   `json:"stunUri"`
+	// TurnURI is the 'turn://' URI for Microsoft's TURN server. NetherNet
+	// connections use the TURN server embedded in
+	// [github.com/df-mc/go-nethernet.Credentials]
+	// for actual WebRTC negotiation, so the purpose of this field is unknown.
+	TurnURI string `json:"turnUri"`
+	// StunURI is the 'stun://' URI for Microsoft's STUN server. NetherNet
+	// connections use the STUN server embedded in
+	// [github.com/df-mc/go-nethernet.Credentials]
+	// for actual WebRTC negotiation, so the purpose of this field is unknown.
+	StunURI string `json:"stunUri"`
 }
 
+// ServiceName always returns 'signaling' as the name of the service environment.
+// It implements [service.Environment] so it can be derived using [service.Discovery.Environment].
 func (e *Environment) ServiceName() string {
 	return "signaling"
 }
 
+// UnmarshalJSON decodes the ServiceURI field to string then parses as URL.
+// Other URI fields such as TurnURI is not validated as it is not used in
+// the actual WebRTC negotiation for NetherNet connections.
 func (e *Environment) UnmarshalJSON(b []byte) (err error) {
 	type Alias Environment
 	data := struct {
