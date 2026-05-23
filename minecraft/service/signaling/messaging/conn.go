@@ -343,6 +343,6 @@ const (
 	// by its outer envelope ID. Note the capitalized 'V' on the version.
 	MethodSignalingDeliveryNotification = "Signaling_DeliveryNotification_V1_0"
 	// MethodSignalingWebRTC is the JSON-RPC method name used by an inner
-	// message that carries a NetherNet WebRTC signaling payload.
+	// message that carries a [nethernet.Signal] used for WebRTC negotiation.
 	MethodSignalingWebRTC = "Signaling_WebRtc_v1_0"
 )
