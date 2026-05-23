@@ -8,7 +8,7 @@ import (
 	"github.com/df-mc/go-nethernet"
 )
 
-// NetherNet is an implementation of NetherNet network. Unlike RakNet, it needs to be registered manually with a Signaling.
+// NetherNet is an implementation of a NetherNet network using a Signaling backend.
 type NetherNet struct {
 	Signaling nethernet.Signaling
 
