@@ -143,7 +143,7 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 	if err := json.Unmarshal(custom, &world); err != nil {
 		return fmt.Errorf("decode custom properties: %w", err)
 	}
-	connection, ok := world.signalingConnection()
+	connection, ok := world.Connection()
 	if !ok {
 		return errors.New("world has no supported signaling connections")
 	}

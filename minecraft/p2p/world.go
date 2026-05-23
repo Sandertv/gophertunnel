@@ -153,12 +153,12 @@ func (c Connection) Valid() bool {
 	}
 }
 
-// signalingConnection returns the first supported NetherNet signaling connection
+// Connection returns the first supported NetherNet signaling connection
 // advertised by w. Non-NetherNet worlds are rejected because this package
 // currently implements only NetherNet peer-to-peer joins. Unsupported connection
 // entries are ignored so a future or auxiliary entry does not make an otherwise
 // joinable world unusable.
-func (w World) signalingConnection() (Connection, bool) {
+func (w World) Connection() (Connection, bool) {
 	if w.TransportLayer != TransportLayerNetherNet {
 		return Connection{}, false
 	}
