@@ -3,21 +3,27 @@ package minecraft
 import (
 	"context"
 	"errors"
-	"log/slog"
 	"net"
 
 	"github.com/df-mc/go-nethernet"
 )
 
-// NetherNet is an implementation of a NetherNet network.
+// NetherNet is an implementation of NetherNet network. Unlike RakNet, it needs to be registered manually with a Signaling.
 type NetherNet struct {
 	Signaling nethernet.Signaling
-	Log       *slog.Logger
+
+	// Dialer specifies options for establishing a connection with DialContext.
+	Dialer nethernet.Dialer
+	// ListenConfig specifies options for listening for connections with Listen.
+	ListenConfig nethernet.ListenConfig
 }
 
 // DialContext ...
 func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
-	return nethernet.Dialer{Log: n.Log}.DialContext(ctx, address, n.Signaling)
+	if n.Signaling == nil {
+		return nil, errors.New("minecraft: NetherNet.DialContext: Signaling is nil")
+	}
+	return n.Dialer.DialContext(ctx, address, n.Signaling)
 }
 
 // PingContext ...
@@ -27,5 +33,8 @@ func (n NetherNet) PingContext(context.Context, string) ([]byte, error) {
 
 // Listen ...
 func (n NetherNet) Listen(string) (NetworkListener, error) {
-	return nethernet.ListenConfig{Log: n.Log}.Listen(n.Signaling)
+	if n.Signaling == nil {
+		return nil, errors.New("minecraft: NetherNet.Listen: Signaling is nil")
+	}
+	return n.ListenConfig.Listen(n.Signaling)
 }
