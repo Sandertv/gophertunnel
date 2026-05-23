@@ -74,6 +74,9 @@ type Dialer struct {
 	// tokens when [Dialer.EnableLegacyAuth] is set to false. To log in to Minecraft network services correctly,
 	// it must be authenticated with a PlayFab account in the title ID '20CA2' that has Xbox Live account linked.
 	// If nil, one is created from [Dialer.XBLClient] when required for authenticated login.
+	//
+	// Setting PlayFabClient alone does not enable authenticated login. The dialer still needs [Dialer.XBLClient]
+	// or [Dialer.TokenSource] to request the legacy Minecraft chain used to populate trusted identity data.
 	PlayFabClient *playfab.Client
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
@@ -205,6 +208,9 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		chainData, token string
 		verifier         *oidc.IDTokenVerifier
 	)
+	if d.PlayFabClient != nil && d.TokenSource == nil && d.XBLClient == nil {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: errors.New("PlayFabClient requires XBLClient or TokenSource for authenticated login")}
+	}
 	if d.TokenSource != nil || d.XBLClient != nil {
 		if d.XBLClient == nil {
 			x, ok := d.TokenSource.(xsapi.TokenSource)

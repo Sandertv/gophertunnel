@@ -29,6 +29,8 @@ type Conn struct {
 	credentials atomic.Pointer[nethernet.Credentials]
 	// credentialsReceived is a channel that is closed when credentials is received for the first time.
 	credentialsReceived chan struct{}
+	// closeCredentialsReceived ensures that the credentialsReceived channel is closed only once.
+	closeCredentialsReceived sync.Once
 
 	// once ensures that closure of the Conn occurs only once.
 	once sync.Once
@@ -45,15 +47,20 @@ type Conn struct {
 // Signal sends a [nethernet.Signal] to a network.
 func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 	id := uuid.New()
-	ch := conn.pending.Add(id)
-	defer conn.pending.Remove(id)
-
-	if err := conn.write(Message{
+	message := Message{
 		Type: MessageTypeSignal,
 		To:   signal.NetworkID,
 		Data: signal.String(),
 		ID:   id,
-	}); err != nil {
+	}
+	if signal.Type != nethernet.SignalTypeOffer || conn.d.IgnoreDeliveryNotification {
+		return conn.write(message)
+	}
+
+	ch := conn.pending.Add(id)
+	defer conn.pending.Remove(id)
+
+	if err := conn.write(message); err != nil {
 		return err
 	}
 
@@ -125,9 +132,9 @@ func (conn *Conn) close(cause error) (err error) {
 	conn.once.Do(func() {
 		conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
 
+		conn.cancel(cause)
 		_ = conn.notifier.Close()
 
-		conn.cancel(cause)
 		err = conn.conn.Close(websocket.StatusNormalClosure, "")
 	})
 	return err
@@ -164,59 +171,70 @@ func (conn *Conn) read() {
 			_ = conn.close(err)
 			return
 		}
-		log := conn.d.Log.With(slog.Any("message", message))
+		conn.handleMessage(message)
+	}
+}
+
+// handleMessage handles a message received from the WebSocket signaling service.
+func (conn *Conn) handleMessage(message Message) {
+	log := conn.d.Log.With(slog.Any("message", message))
+	switch message.Type {
+	case MessageTypeCredentials:
+		if message.From != "Server" {
+			log.Warn("received credentials from non-Server", slog.Any("message", message))
+			return
+		}
+		var credentials nethernet.Credentials
+		if err := json.Unmarshal([]byte(message.Data), &credentials); err != nil {
+			log.Error("error decoding credentials", slog.Any("error", err))
+			return
+		}
+		conn.credentials.Store(&credentials)
+		conn.closeCredentialsReceived.Do(func() {
+			close(conn.credentialsReceived)
+		})
+	case MessageTypeSignal:
+		signal := &nethernet.Signal{}
+		if err := signal.UnmarshalText([]byte(message.Data)); err != nil {
+			log.Error("error decoding signal", slog.Any("error", err))
+			return
+		}
+		signal.NetworkID = message.From
+		if err := conn.notifier.SignalContext(conn.ctx, signal); err != nil {
+			log.Error("error delivering signal", slog.Any("error", err))
+		}
+	case MessageTypeError:
 		if message.ID == uuid.Nil {
 			log.Warn("received message without an ID", slog.Any("message", message))
-			continue
+			return
 		}
-		switch message.Type {
-		case MessageTypeCredentials:
-			if message.From != "Server" {
-				log.Warn("received credentials from non-Server", slog.Any("message", message))
-				continue
-			}
-			var credentials nethernet.Credentials
-			if err := json.Unmarshal([]byte(message.Data), &credentials); err != nil {
-				log.Error("error decoding credentials", slog.Any("error", err))
-				continue
-			}
-			closeChan := conn.credentials.Load() == nil
-			conn.credentials.Store(&credentials)
-			if closeChan {
-				close(conn.credentialsReceived)
-			}
-		case MessageTypeSignal:
-			signal := &nethernet.Signal{}
-			if err := signal.UnmarshalText([]byte(message.Data)); err != nil {
-				log.Error("error decoding signal", slog.Any("error", err))
-				continue
-			}
-			signal.NetworkID = message.From
-
-			conn.notifier.Signal(signal)
-		case MessageTypeError:
-			err := &Error{}
-			if err2 := json.Unmarshal([]byte(message.Data), err); err2 != nil {
-				log.Error("error decoding error", slog.Any("error", err2))
-				continue
-			}
-			log.Debug("received error", slog.Any("message", message))
-			conn.complete(message.ID, err)
-		case MessageTypeDelivered:
-			var status MessageStatus
-			if err := json.Unmarshal([]byte(message.Data), &status); err != nil {
-				log.Error("error decoding message status", slog.Any("message", message), slog.Any("error", err))
-				continue
-			}
-			if status.DeliveredOn.IsZero() {
-				log.Warn("delivery time is not included in message data")
-			}
-			conn.complete(message.ID, nil)
-		case MessageTypeAccepted:
-			continue
-		default:
-			log.Warn("received message for unknown type")
+		err := &Error{}
+		if err2 := json.Unmarshal([]byte(message.Data), err); err2 != nil {
+			log.Error("error decoding error", slog.Any("error", err2))
+			return
 		}
+		log.Debug("received error", slog.Any("message", message))
+		conn.complete(message.ID, err)
+	case MessageTypeDelivered:
+		if message.ID == uuid.Nil {
+			log.Warn("received message without an ID", slog.Any("message", message))
+			return
+		}
+		var status MessageStatus
+		if err := json.Unmarshal([]byte(message.Data), &status); err != nil {
+			log.Error("error decoding message status", slog.Any("message", message), slog.Any("error", err))
+			return
+		}
+		if status.DeliveredOn.IsZero() {
+			log.Warn("delivery time is not included in message data")
+		}
+		conn.complete(message.ID, nil)
+	case MessageTypeAccepted:
+		if message.ID == uuid.Nil {
+			log.Warn("received message without an ID", slog.Any("message", message))
+		}
+	default:
+		log.Warn("received message for unknown type")
 	}
 }
 

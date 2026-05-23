@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"sync"
-	"time"
 
 	"golang.org/x/oauth2"
 )
@@ -121,9 +120,7 @@ func RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
 // be printed to the io.Writer passed with a user code which the user must use to submit.
 // Once fully authenticated, an oauth2 token is returned which may be used to login to XBOX Live.
 func (conf Config) RequestLiveTokenWriter(w io.Writer) (*oauth2.Token, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), time.Minute*2)
-	defer cancel()
-	return conf.RequestLiveTokenContext(ctx, w)
+	return conf.RequestLiveTokenContext(context.Background(), w)
 }
 
 func RequestLiveTokenContext(ctx context.Context, w io.Writer) (*oauth2.Token, error) {

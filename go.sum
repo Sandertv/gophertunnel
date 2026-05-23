@@ -12,8 +12,6 @@ github.com/df-mc/go-nethernet v1.0.10 h1:DoHHpF5niQvvMT+EQ/vn40yuoX/Ykd7NLjzTzd1
 github.com/df-mc/go-nethernet v1.0.10/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
 github.com/df-mc/go-playfab/v2 v2.0.1 h1:UKOfa4r7xALUcd+SYXt2hhdLGYcJBOZgI/7YVLW2qbo=
 github.com/df-mc/go-playfab/v2 v2.0.1/go.mod h1:QzDrEVNhc1E/qENDSRKw7vdox2bMs5Zgsy5Fl5XfnW0=
-github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361 h1:Xt3YzTRiiR+UAzpX11lEedzOLMitprr8n9kSQhY3Q0s=
-github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260415092149-f15f3049a361/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
 github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260521011245-91de547c5eb6 h1:/4YQQ8bOl2CSBlNCAaX073iK/VvOm2nBEzhrZgSX7G0=
 github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260521011245-91de547c5eb6/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
 github.com/df-mc/jsonc v1.0.5 h1:O7oh07kbS5AYY+l2Fji6l4h0iHcdjKbxCtK5VlZlLMU=

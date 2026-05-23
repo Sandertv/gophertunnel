@@ -176,6 +176,7 @@ var (
 				},
 				UserAgent: "XAL GRTS 2025.11.20251105.000",
 				TitleID:   896928775,
+				Sandbox:   "RETAIL",
 			},
 			ClientID:    "0000000040159362",
 			RedirectURI: "ms-xal-0000000040159362://auth",
@@ -191,6 +192,7 @@ var (
 				},
 				UserAgent: "XAL",
 				TitleID:   2047319603,
+				Sandbox:   "RETAIL",
 			},
 			ClientID: "00000000441cc96b",
 		},
@@ -204,6 +206,7 @@ var (
 					Version: "10.0.0",
 				},
 				UserAgent: "XAL",
+				Sandbox:   "RETAIL",
 				// TODO: Obtain TitleID from titlehub
 			},
 			ClientID: "000000004827c78e",
@@ -240,7 +243,7 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 		}
 		cache.sessionMu.Lock()
 		if cache.session == nil {
-			cache.session = conf.New(conf.TokenSource(context.Background(), liveToken), &sisu.SessionConfig{
+			cache.session = conf.New(conf.TokenSource(context.WithoutCancel(ctx), liveToken), &sisu.SessionConfig{
 				DeviceTokenSource: cache.device,
 			})
 		}
@@ -249,7 +252,7 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 	} else {
 		// If the cache storage does not exist, we request a new session every time
 		// which may cause rate-limiting issues.
-		s = conf.New(conf.TokenSource(context.Background(), liveToken), nil)
+		s = conf.New(conf.TokenSource(context.WithoutCancel(ctx), liveToken), nil)
 	}
 	token, err := s.XSTSToken(ctx, relyingParty)
 	if err != nil {

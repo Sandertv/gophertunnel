@@ -66,24 +66,24 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 		"method":  MethodSignalingWebRTC,
 	}
 
-	if !conn.d.IgnoreDeliveryNotification {
-		ch := conn.pending.Add(id)
-		defer conn.pending.Remove(id)
-
-		if err := conn.send(ctx, id, msg, messagingID); err != nil {
-			return err
-		}
-
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-conn.ctx.Done():
-			return context.Cause(conn.ctx)
-		case err := <-ch:
-			return err
-		}
-	} else {
+	if signal.Type != nethernet.SignalTypeOffer || conn.d.IgnoreDeliveryNotification {
 		return conn.send(ctx, id, msg, messagingID)
+	}
+
+	ch := conn.pending.Add(id)
+	defer conn.pending.Remove(id)
+
+	if err := conn.send(ctx, id, msg, messagingID); err != nil {
+		return err
+	}
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-conn.ctx.Done():
+		return context.Cause(conn.ctx)
+	case err := <-ch:
+		return err
 	}
 }
 
@@ -123,12 +123,15 @@ func (conn *Conn) Credentials(ctx context.Context) (*nethernet.Credentials, erro
 		return conn.credentials, nil
 	}
 
-	var credentials nethernet.Credentials
+	var credentials *nethernet.Credentials
 	if err := conn.client.CallResult(ctx, MethodSignalingCredentials, map[string]any{}, &credentials); err != nil {
 		return nil, fmt.Errorf("call %q: %w", MethodSignalingCredentials, err)
 	}
+	if credentials == nil || credentials.ExpirationInSeconds == 0 {
+		return nil, fmt.Errorf("call %q: invalid credentials", MethodSignalingCredentials)
+	}
 
-	conn.credentials = &credentials
+	conn.credentials = credentials
 	conn.credentialsExpiry = time.Now().Add(time.Duration(credentials.ExpirationInSeconds) * time.Second)
 
 	return conn.credentials, nil
@@ -142,7 +145,7 @@ func (conn *Conn) PongData(b []byte) {
 // value will be automatically set from [rand.Uint64] in set up during [Dialer.DialContext]. It is utilized by
 // [nethernet.Listener] and [nethernet.Dialer] to obtain its local network ID to listen.
 func (conn *Conn) NetworkID() string {
-	return conn.pmid.String()
+	return conn.d.NetworkID
 }
 
 // PlayerMessagingID returns the player messaging ID of the current authenticated user.
@@ -165,14 +168,18 @@ func (conn *Conn) Context() context.Context {
 // close cancels the background context of the Conn and closes the underlying WebSocket connection.
 func (conn *Conn) close(cause error) (err error) {
 	conn.once.Do(func() {
-		conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
-
-		_ = conn.notifier.Close()
-
-		conn.cancel(cause)
+		conn.stop(cause)
 		err = conn.client.Close()
 	})
 	return err
+}
+
+// stop cancels the Conn context and unregisters signal notifiers without
+// closing the JSON-RPC client. It is used when the client stops itself.
+func (conn *Conn) stop(cause error) {
+	conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
+	conn.cancel(cause)
+	_ = conn.notifier.Close()
 }
 
 // handleCallback handles an JSON-RPC request method called by the server.
@@ -235,6 +242,9 @@ func (m *envelope) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal([]byte(data.Message), &m.Message); err != nil {
 		return fmt.Errorf("decode message: %w", err)
 	}
+	if m.Message == nil {
+		return errors.New("decode message: nil request")
+	}
 	m.RawMessage = data.Message
 	return nil
 }
@@ -256,7 +266,7 @@ func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) er
 			return errors.New("invalid request parameters")
 		}
 		if !conn.pending.Done(params.MessageID, nil) {
-			return fmt.Errorf("unexpected message ID: %s", params.MessageID)
+			conn.d.Log.Debug("received delivery notification for unknown message", slog.String("message_id", params.MessageID.String()))
 		}
 		return nil
 	case MethodSignalingWebRTC:
@@ -271,7 +281,9 @@ func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) er
 		if err := signal.UnmarshalText([]byte(params.Message)); err != nil {
 			return fmt.Errorf("decode signal: %w", err)
 		}
-		conn.notifier.Signal(signal)
+		if err := conn.notifier.SignalContext(ctx, signal); err != nil {
+			return fmt.Errorf("deliver signal: %w", err)
+		}
 
 		if err := conn.send(ctx, uuid.New(), map[string]any{
 			"params": map[string]any{
@@ -290,7 +302,7 @@ func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) er
 			var e signaling.Error
 			if err := dec.Decode(&e); err == nil {
 				if !conn.pending.Done(envelope.ID, &e) {
-					return fmt.Errorf("unexpected message ID: %s", envelope.ID)
+					conn.d.Log.Debug("received error for unknown message", slog.String("message_id", envelope.ID.String()))
 				}
 				return nil
 			}
@@ -310,7 +322,10 @@ func (conn *Conn) ping() {
 		case <-conn.ctx.Done():
 			return
 		case <-ticker.C:
-			if _, err := conn.client.Call(conn.ctx, MethodSystemPing, map[string]any{}); err != nil {
+			ctx, cancel := context.WithTimeout(conn.ctx, time.Second*5)
+			_, err := conn.client.Call(ctx, MethodSystemPing, map[string]any{})
+			cancel()
+			if err != nil {
 				conn.d.Log.Error("error pinging", slog.Any("error", err))
 				_ = conn.close(fmt.Errorf("call %q: %w", MethodSystemPing, err))
 				return
@@ -343,6 +358,6 @@ const (
 	// by its outer envelope ID. Note the capitalized 'V' on the version.
 	MethodSignalingDeliveryNotification = "Signaling_DeliveryNotification_V1_0"
 	// MethodSignalingWebRTC is the JSON-RPC method name used by an inner
-	// message that carries a NetherNet WebRTC signaling payload.
+	// message that carries a [nethernet.Signal] used for WebRTC negotiation.
 	MethodSignalingWebRTC = "Signaling_WebRtc_v1_0"
 )
