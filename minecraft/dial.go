@@ -9,7 +9,6 @@ import (
 	_ "embed"
 	"encoding/base64"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -24,8 +23,6 @@ import (
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/df-mc/go-playfab/v2"
 	"github.com/df-mc/go-xsapi/v2"
-	"github.com/go-jose/go-jose/v4"
-	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
@@ -205,8 +202,8 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		chainData, token string
 		verifier         *oidc.IDTokenVerifier
 	)
-	if d.TokenSource != nil || d.XBLClient != nil {
-		if d.XBLClient == nil {
+	if d.TokenSource != nil || d.XBLClient != nil || d.PlayFabClient != nil {
+		if d.TokenSource != nil && d.XBLClient == nil {
 			x, ok := d.TokenSource.(xsapi.TokenSource)
 			if !ok {
 				x = auth.ContextSession(ctx, d.TokenSource)
@@ -234,7 +231,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			if !ok {
 				// If a MultiplayerTokenSource was not provided, log in to PlayFab
 				// account and use a default implementation instead.
-				if d.PlayFabClient == nil {
+				if d.PlayFabClient == nil && d.XBLClient != nil {
 					client, err := playfab.LoginWithXbox(ctx, e.PlayFabTitleID, d.XBLClient, playfab.ClientConfig{
 						HTTPClient:    d.HTTPClient,
 						CreateAccount: true,
@@ -246,22 +243,23 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 					d.PlayFabClient = client
 				}
-				m = &multiplayerTokenSource{src: e.TokenSource(d.PlayFabClient, service.TokenConfig{}), env: e}
+				if d.PlayFabClient != nil {
+					m = &multiplayerTokenSource{src: e.TokenSource(d.PlayFabClient, service.TokenConfig{}), env: e}
+				}
 			}
-			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
+			if m != nil {
+				token, err = m.MultiplayerToken(ctx, &key.PublicKey)
+				if err != nil {
+					return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+				}
+			}
+		}
+		if d.XBLClient != nil {
+			chainData, err = auth.RequestMinecraftChain(ctx, d.XBLClient, key)
 			if err != nil {
-				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request Minecraft auth chain: %w", err)}
 			}
 		}
-		chainData, err = auth.RequestMinecraftChain(ctx, d.XBLClient, key)
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request Minecraft auth chain: %w", err)}
-		}
-		identityData, err := readChainIdentityData([]byte(chainData))
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
-		}
-		d.IdentityData = identityData
 	}
 
 	n, ok := networkByID(network, d.ErrorLog)
@@ -348,30 +346,6 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return conn, nil
 		}
 	}
-}
-
-// readChainIdentityData reads a login.IdentityData from the Mojang chain
-// obtained through authentication.
-func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
-	chain := struct{ Chain []string }{}
-	if err := json.Unmarshal(chainData, &chain); err != nil {
-		return login.IdentityData{}, fmt.Errorf("read chain: read json: %w", err)
-	}
-	data := chain.Chain[1]
-	claims := struct {
-		ExtraData login.IdentityData `json:"extraData"`
-	}{}
-	tok, err := jwt.ParseSigned(data, []jose.SignatureAlgorithm{jose.ES384})
-	if err != nil {
-		return login.IdentityData{}, fmt.Errorf("read chain: parse jwt: %w", err)
-	}
-	if err := tok.UnsafeClaimsWithoutVerification(&claims); err != nil {
-		return login.IdentityData{}, fmt.Errorf("read chain: read claims: %w", err)
-	}
-	if claims.ExtraData.Identity == "" {
-		return login.IdentityData{}, fmt.Errorf("read chain: no extra data found")
-	}
-	return claims.ExtraData, nil
 }
 
 // listenConn listens on the connection until it is closed on another goroutine. The channel passed will
