@@ -28,6 +28,13 @@ type Dialer struct {
 	// be automatically set from [rand.Uint64]. It is included in the URI for establishing
 	// a WebSocket connection.
 	NetworkID string
+	// IgnoreDeliveryNotification disables waiting for delivery confirmation after
+	// sending an offer signal to a remote peer.
+	//
+	// By default, [Conn.Signal] blocks for offer signals until the signaling
+	// service reports delivery. Enabling this field causes Signal to return as
+	// soon as the signaling service accepts the message.
+	IgnoreDeliveryNotification bool
 }
 
 // Dial connects to the signaling service with a 15 seconds timeout.

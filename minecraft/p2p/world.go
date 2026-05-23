@@ -2,8 +2,6 @@ package p2p
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"maps"
 	"slices"
 
@@ -140,26 +138,36 @@ type Connection struct {
 	PlayerMessagingID uuid.UUID `json:"PmsgId,omitzero"`
 }
 
-// UnmarshalJSON decodes the Connection with additional validations for the [Connection.Type] field.
-func (c *Connection) UnmarshalJSON(b []byte) error {
-	type Alias Connection
-	if err := json.Unmarshal(b, (*Alias)(c)); err != nil {
-		return err
-	}
+// Valid reports whether c is a complete NetherNet signaling connection
+// supported by this package. Unsupported, LAN-only, or future connection types
+// may still be decoded from MPSD data, but they are ignored when selecting a
+// connection to dial.
+func (c Connection) Valid() bool {
 	switch c.Type {
 	case ConnectionTypeSignalingOverJSONRPC:
-		if c.PlayerMessagingID == uuid.Nil {
-			return errors.New("minecraft/p2p: Connection.PlayerMessagingID cannot be uuid.Nil")
-		}
-		fallthrough // Both PlayerMessagingID and NetherNetID is required
+		return c.PlayerMessagingID != uuid.Nil && c.NetherNetID != ""
 	case ConnectionTypeSignalingOverWebSocket:
-		if c.NetherNetID == "" {
-			return errors.New("minecraft/p2p: Connection.NetherNetID cannot be empty string")
-		}
+		return c.NetherNetID != ""
 	default:
-		return fmt.Errorf("minecraft/p2p: invalid Connection.Type: %d", c.Type)
+		return false
 	}
-	return nil
+}
+
+// signalingConnection returns the first supported NetherNet signaling connection
+// advertised by w. Non-NetherNet worlds are rejected because this package
+// currently implements only NetherNet peer-to-peer joins. Unsupported connection
+// entries are ignored so a future or auxiliary entry does not make an otherwise
+// joinable world unusable.
+func (w World) signalingConnection() (Connection, bool) {
+	if w.TransportLayer != TransportLayerNetherNet {
+		return Connection{}, false
+	}
+	for _, c := range w.SupportedConnections {
+		if c.Valid() {
+			return c, true
+		}
+	}
+	return Connection{}, false
 }
 
 // Address returns a string that can be used as the address when dialing a new Conn.
