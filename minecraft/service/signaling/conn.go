@@ -29,6 +29,8 @@ type Conn struct {
 	credentials atomic.Pointer[nethernet.Credentials]
 	// credentialsReceived is a channel that is closed when credentials is received for the first time.
 	credentialsReceived chan struct{}
+	// closeCredentialsReceived ensures that the credentialsReceived channel is closed only once.
+	closeCredentialsReceived sync.Once
 
 	// once ensures that closure of the Conn occurs only once.
 	once sync.Once
@@ -180,11 +182,10 @@ func (conn *Conn) read() {
 				log.Error("error decoding credentials", slog.Any("error", err))
 				continue
 			}
-			closeChan := conn.credentials.Load() == nil
 			conn.credentials.Store(&credentials)
-			if closeChan {
+			conn.closeCredentialsReceived.Do(func() {
 				close(conn.credentialsReceived)
-			}
+			})
 		case MessageTypeSignal:
 			signal := &nethernet.Signal{}
 			if err := signal.UnmarshalText([]byte(message.Data)); err != nil {
