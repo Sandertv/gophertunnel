@@ -381,9 +381,11 @@ func (data ClientData) Validate() error {
 	if err != nil {
 		return fmt.Errorf("SkinResourcePatch was not a valid base64 string: %w", err)
 	}
-	m := make(map[string]any)
-	if err := json.Unmarshal(b, &m); err != nil {
-		return fmt.Errorf("SkinResourcePatch base64 decoded was not a valid JSON string: %w", err)
+	if len(b) != 0 {
+		m := make(map[string]any)
+		if err := json.Unmarshal(b, &m); err != nil {
+			return fmt.Errorf("SkinResourcePatch base64 decoded was not a valid JSON string: %w", err)
+		}
 	}
 	if data.SkinID == "" {
 		return fmt.Errorf("SkinID must not be an empty string")
