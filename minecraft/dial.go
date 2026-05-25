@@ -450,7 +450,9 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	if d.ServerAddress == "" {
 		d.ServerAddress = address
 	}
-	d.ThirdPartyName = username
+	if d.ThirdPartyName == "" {
+		d.ThirdPartyName = username
+	}
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid
 	}
@@ -505,6 +507,12 @@ func defaultClientData(address, username string, d *login.ClientData) {
 	}
 	if d.SkinGeometryVersion == "" {
 		d.SkinGeometryVersion = base64.StdEncoding.EncodeToString([]byte("0.0.0"))
+	}
+	if d.MaxViewDistance == 0 {
+		d.MaxViewDistance = 16
+	}
+	if d.MemoryTier == 0 {
+		d.MemoryTier = 5
 	}
 }
 
