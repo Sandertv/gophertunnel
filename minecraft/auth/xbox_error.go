@@ -37,7 +37,7 @@ type AccountCreationRequiredError struct {
 // Error implements the error interface.
 func (e *AccountCreationRequiredError) Error() string {
 	if e == nil || e.XboxError == nil {
-		return "Xbox account creation required"
+		return "xbox account creation required"
 	}
 	return e.XboxError.Error()
 }
@@ -125,11 +125,11 @@ func newXboxHTTPError(method, url string, resp *http.Response, responseBody []by
 
 func newAccountCreationRequiredError(xboxErr *XboxError, header http.Header, responseBody []byte, device *deviceToken) (*AccountCreationRequiredError, error) {
 	if xboxErr == nil || xboxErr.XboxErrorCode != "2148916233" {
-		return nil, fmt.Errorf("Xbox error is not account creation required")
+		return nil, fmt.Errorf("xbox error is not account creation required")
 	}
 	sessionID := header.Get("X-SessionId")
 	if sessionID == "" {
-		return nil, fmt.Errorf("X-SessionId header is absent from authorization response")
+		return nil, fmt.Errorf("header X-SessionId is absent from authorization response")
 	}
 	if device == nil || device.proofKey == nil {
 		return nil, fmt.Errorf("device token or proof key is absent")
