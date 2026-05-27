@@ -42,11 +42,6 @@ const (
 	AttributeColourOperationMultiply
 )
 
-const (
-	AttributeLayerWeightTypeFloat = iota
-	AttributeLayerWeightTypeString
-)
-
 // AttributeData represents a polymorphic attribute value.
 type AttributeData struct {
 	// Type is the attribute data type. It is one of the AttributeDataType constants.
@@ -124,13 +119,8 @@ func (x *EnvironmentAttributeData) Marshal(r IO) {
 type AttributeLayerSettings struct {
 	// Priority is the priority of the layer.
 	Priority int32
-	// WeightType determines whether the weight is a float or string. It is one of the
-	// AttributeLayerWeightType constants.
-	WeightType uint32
-	// FloatWeight is the weight if WeightType is AttributeLayerWeightTypeFloat.
+	// FloatWeight is the weight of the layer.
 	FloatWeight float32
-	// StringWeight is the weight if WeightType is AttributeLayerWeightTypeString.
-	StringWeight string
 	// Enabled indicates if the layer is enabled.
 	Enabled bool
 	// TransitionsPaused indicates if transitions are paused for this layer.
@@ -140,15 +130,7 @@ type AttributeLayerSettings struct {
 // Marshal encodes/decodes an AttributeLayerSettings.
 func (x *AttributeLayerSettings) Marshal(r IO) {
 	r.Int32(&x.Priority)
-	r.Varuint32(&x.WeightType)
-	switch x.WeightType {
-	case AttributeLayerWeightTypeFloat:
-		r.Float32(&x.FloatWeight)
-	case AttributeLayerWeightTypeString:
-		r.String(&x.StringWeight)
-	default:
-		r.UnknownEnumOption(x.WeightType, "attribute layer weight type")
-	}
+	r.Float32(&x.FloatWeight)
 	r.Bool(&x.Enabled)
 	r.Bool(&x.TransitionsPaused)
 }

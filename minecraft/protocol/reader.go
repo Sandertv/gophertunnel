@@ -26,6 +26,7 @@ type Reader struct {
 	}
 	shieldID      int32
 	limitsEnabled bool
+	buf           [8]byte
 }
 
 // NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
