@@ -367,8 +367,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		internal.BufferPool.Put(buf)
 	}()
 
-	var bufWriter Writer
-	bufWriter.Reset(buf, w.shieldID)
+	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
 	if len(x.NBTData) != 0 {
@@ -382,8 +381,8 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		bufWriter.Int16(&length)
 	}
 
-	FuncSliceUint32Length(&bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(&bufWriter, &x.CanBreak, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
 		bufWriter.Int64(&x.BlockingTick)
@@ -427,8 +426,7 @@ func (w *Writer) ItemInstanceNew(i *ItemInstance) {
 		internal.BufferPool.Put(buf)
 	}()
 
-	var bufWriter Writer
-	bufWriter.Reset(buf, w.shieldID)
+	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
 	if len(x.NBTData) != 0 {
@@ -442,8 +440,8 @@ func (w *Writer) ItemInstanceNew(i *ItemInstance) {
 		bufWriter.Int16(&length)
 	}
 
-	FuncSliceUint32Length(&bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(&bufWriter, &x.CanBreak, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
 		bufWriter.Int64(&x.BlockingTick)
@@ -472,8 +470,7 @@ func (w *Writer) Item(x *ItemStack) {
 		internal.BufferPool.Put(buf)
 	}()
 
-	var bufWriter Writer
-	bufWriter.Reset(buf, w.shieldID)
+	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
 	if len(x.NBTData) != 0 {
@@ -487,8 +484,8 @@ func (w *Writer) Item(x *ItemStack) {
 		bufWriter.Int16(&length)
 	}
 
-	FuncSliceUint32Length(&bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(&bufWriter, &x.CanBreak, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
 
 	if x.NetworkID == bufWriter.shieldID {
 		bufWriter.Int64(&x.BlockingTick)
