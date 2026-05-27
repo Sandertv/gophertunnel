@@ -293,8 +293,7 @@ type Conn struct {
 	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
-	// forceDisableVibrantVisuals tells the client to forcibly disable Vibrant
-	// Visuals.
+	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
 	packQueue                  *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
@@ -1108,10 +1107,7 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	if conn.fetchResourcePacks != nil {
 		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, slices.Clone(conn.resourcePacks))
 	}
-	pk := &packet.ResourcePacksInfo{
-		TexturePackRequired:        conn.texturePacksRequired,
-		ForceDisableVibrantVisuals: conn.forceDisableVibrantVisuals,
-	}
+	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired, ForceDisableVibrantVisuals: conn.forceDisableVibrantVisuals}
 	for _, pack := range conn.resourcePacks {
 		texturePack := protocol.TexturePackInfo{
 			UUID:        pack.UUID(),

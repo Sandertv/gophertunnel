@@ -92,8 +92,7 @@ type ListenConfig struct {
 	// TexturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	TexturePacksRequired bool
-	// ForceDisableVibrantVisuals tells the client to forcibly disable Vibrant
-	// Visuals (Bedrock's deferred rendering / fancy lighting).
+	// ForceDisableVibrantVisuals specifies if the server should force disable vibrant visuals for all clients.
 	ForceDisableVibrantVisuals bool
 	// FetchResourcePacks determines which resource packs to send to a client based on its identity and client data.
 	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
