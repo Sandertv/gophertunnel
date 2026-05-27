@@ -77,10 +77,12 @@ func (w *Writer) String(x *string) {
 	w.writeString(*x)
 }
 
+// stringWriter is implemented by writers that support writing strings directly.
 type stringWriter interface {
 	WriteString(string) (int, error)
 }
 
+// writeString uses WriteString when available to avoid converting s to []byte.
 func (w *Writer) writeString(s string) {
 	if sw, ok := w.w.(stringWriter); ok {
 		_, _ = sw.WriteString(s)
