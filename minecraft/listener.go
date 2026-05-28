@@ -111,6 +111,8 @@ type ListenConfig struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+	// PacketBatchFunc is called after each outbound packet batch has been encoded.
+	PacketBatchFunc packet.BatchEncodeObserver
 
 	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
@@ -433,6 +435,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.pool = conn.proto.Packets(true)
 
 	conn.packetFunc = listener.cfg.PacketFunc
+	conn.SetPacketBatchFunc(listener.cfg.PacketBatchFunc)
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
 	conn.forceDisableVibrantVisuals = listener.cfg.ForceDisableVibrantVisuals
 	conn.resourcePacks = packs

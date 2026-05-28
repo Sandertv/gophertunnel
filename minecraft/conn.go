@@ -393,6 +393,14 @@ func (conn *Conn) ClientData() login.ClientData {
 	return conn.clientData
 }
 
+// SetPacketBatchFunc sets a callback called after each outbound packet batch is
+// encoded. Passing nil disables the callback.
+func (conn *Conn) SetPacketBatchFunc(f packet.BatchEncodeObserver) {
+	conn.encMu.Lock()
+	defer conn.encMu.Unlock()
+	conn.enc.SetBatchEncodeObserver(f)
+}
+
 // Authenticated returns true if the connection was authenticated through XBOX Live services.
 func (conn *Conn) Authenticated() bool {
 	return conn.IdentityData().XUID != ""

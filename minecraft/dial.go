@@ -69,6 +69,8 @@ type Dialer struct {
 	// Login packet. The function is called with the header of the packet and its raw payload, the address
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
+	// PacketBatchFunc is called after each outbound packet batch has been encoded.
+	PacketBatchFunc packet.BatchEncodeObserver
 
 	// DownloadResourcePack is called individually for every texture and behaviour pack sent by the connection when
 	// using Dialer.Dial(), and can be used to stop the pack from being downloaded. The function is called with the UUID
@@ -261,6 +263,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 	conn.maxDecompressedLen = math.MaxInt
 	conn.disablePacketHandling = d.DisablePacketHandling
+	conn.SetPacketBatchFunc(d.PacketBatchFunc)
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
