@@ -347,7 +347,7 @@ func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
 func (w *Writer) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
 	w.Varint32(&x.NetworkID)
-	if x.NetworkID <= 0 {
+	if x.NetworkID == 0 || x.NetworkID == -1 {
 		// The item was air, so there's no more data to follow. Return immediately.
 		return
 	}
@@ -457,7 +457,7 @@ func (w *Writer) ItemInstanceNew(i *ItemInstance) {
 // Item writes an ItemStack x to the underlying buffer.
 func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)
-	if x.NetworkID <= 0 {
+	if x.NetworkID == 0 || x.NetworkID == -1 {
 		// The item was air, so there's no more data to follow. Return immediately.
 		return
 	}
