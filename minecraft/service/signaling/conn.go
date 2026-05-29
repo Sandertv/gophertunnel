@@ -216,6 +216,9 @@ func (conn *Conn) handleMessage(message Message) {
 		log.Debug("received error", slog.Any("message", message))
 		conn.complete(message.ID, err)
 	case MessageTypeDelivered:
+		if conn.d.IgnoreDeliveryNotification {
+			return
+		}
 		if message.ID == uuid.Nil {
 			log.Warn("received message without an ID", slog.Any("message", message))
 			return

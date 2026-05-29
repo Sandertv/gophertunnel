@@ -31,13 +31,16 @@ type Dialer struct {
 	// must match the NetworkID advertised in [p2p.Connection.NetherNetID] in order to successfully
 	// negotiate with vanilla clients.
 	NetworkID string
-	// IgnoreDeliveryNotification disables waiting for DeliveryNotification
-	// acknowledgement after sending an offer signal to a remote peer.
+	// IgnoreDeliveryNotification disables waiting for the DeliveryNotification
+	// acknowledgement after sending a signal to a remote peer.
 	//
-	// By default, [Conn.Signal] blocks for offer signals until the remote peer
-	// sends back a DeliveryNotification message to confirm receipt. Enabling this
-	// field causes Signal to return as soon as the signaling service accepts the
+	// By default, [Conn.Signal] blocks until the remote peer sends back a
+	// DeliveryNotification message to confirm receipt. Enabling this field
+	// causes Signal to return as soon as the signaling service accepts the
 	// message, without waiting for acknowledgement by the remote peer.
+	//
+	// The vanilla client appears to be sending DeliveryNotification only for
+	// telemetry so this field is unlikely to affect the actual WebRTC negotiation.
 	//
 	// It may be useful when interoperating with third-party implementations
 	// that do not send DeliveryNotification.

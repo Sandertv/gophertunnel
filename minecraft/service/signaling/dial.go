@@ -29,11 +29,15 @@ type Dialer struct {
 	// a WebSocket connection.
 	NetworkID string
 	// IgnoreDeliveryNotification disables waiting for delivery confirmation after
-	// sending an offer signal to a remote peer.
+	// sending a signal to a remote peer.
 	//
-	// By default, [Conn.Signal] blocks for offer signals until the signaling
-	// service reports delivery. Enabling this field causes Signal to return as
-	// soon as the signaling service accepts the message.
+	// By default, [Conn.Signal] blocks until the remote peer sends back a
+	// delivery confirmation message to confirm receipt. Enabling this field
+	// causes Signal to return as soon as the signaling service accepts the
+	// message, without waiting for acknowledgement by the remote peer.
+	//
+	// The signaling service appears to be sending delivery confirmation only for
+	// telemetry so this field is unlikely to affect the actual WebRTC negotiation.
 	IgnoreDeliveryNotification bool
 }
 
