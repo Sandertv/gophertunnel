@@ -448,6 +448,14 @@ var skinResourcePatch []byte
 //go:embed skin_geometry.json
 var skinGeometry []byte
 
+func DefaultSkinGeometry() []byte {
+	return skinGeometry
+}
+
+func DefaultSkinResourcePatch() []byte {
+	return skinResourcePatch
+}
+
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
 	if d.ServerAddress == "" {
