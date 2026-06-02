@@ -51,6 +51,7 @@ type IO interface {
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
 	ItemInstanceNew(i *ItemInstance)
+	InventoryActionNew(x *InventoryAction)
 	ItemDescriptorCount(i *ItemDescriptorCount)
 	StackRequestAction(x *StackRequestAction)
 	MaterialReducer(x *MaterialReducer)

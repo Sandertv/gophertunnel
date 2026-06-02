@@ -210,6 +210,20 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Uint8(&x.ClientCooldownState)
 }
 
+// InventoryActionNew writes an InventoryAction x in the new format.
+func (w *Writer) InventoryActionNew(x *InventoryAction) {
+	w.Varuint32(&x.SourceType)
+	switch x.SourceType {
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
+		w.Varint32(&x.WindowID)
+	case InventoryActionSourceWorld:
+		w.Varuint32(&x.SourceFlags)
+	}
+	w.Varuint32(&x.InventorySlot)
+	w.ItemInstanceNew(&x.OldItem)
+	w.ItemInstanceNew(&x.NewItem)
+}
+
 // GameRule writes a GameRule x to the Writer.
 func (w *Writer) GameRule(x *GameRule) {
 	w.String(&x.Name)

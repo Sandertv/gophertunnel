@@ -51,6 +51,6 @@ func (pk *InventoryTransaction) Marshal(io protocol.IO) {
 		protocol.Slice(io, &pk.LegacySetItemSlots)
 	}
 	io.TransactionDataType(&pk.TransactionData)
-	protocol.Slice(io, &pk.Actions)
+	protocol.FuncSlice(io, &pk.Actions, io.InventoryActionNew)
 	pk.TransactionData.Marshal(io)
 }

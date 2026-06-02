@@ -251,7 +251,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.BlockPos(&data.BlockPosition)
 	r.Varint32(&data.BlockFace)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstance(&data.HeldItem)
+	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -264,7 +264,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstance(&data.HeldItem)
+	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -273,7 +273,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varuint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstance(&data.HeldItem)
+	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 

@@ -282,6 +282,20 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Uint8(&x.ClientCooldownState)
 }
 
+// InventoryActionNew reads an InventoryAction x in the new format.
+func (r *Reader) InventoryActionNew(x *InventoryAction) {
+	r.Varuint32(&x.SourceType)
+	switch x.SourceType {
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
+		r.Varint32(&x.WindowID)
+	case InventoryActionSourceWorld:
+		r.Varuint32(&x.SourceFlags)
+	}
+	r.Varuint32(&x.InventorySlot)
+	r.ItemInstanceNew(&x.OldItem)
+	r.ItemInstanceNew(&x.NewItem)
+}
+
 // GameRule reads a GameRule x from the Reader.
 func (r *Reader) GameRule(x *GameRule) {
 	r.String(&x.Name)
