@@ -21,9 +21,6 @@ func (pk *ClientCacheBlobStatus) ID() uint32 {
 }
 
 func (pk *ClientCacheBlobStatus) Marshal(io protocol.IO) {
-	missLen, hitLen := uint32(len(pk.MissHashes)), uint32(len(pk.HitHashes))
-	io.Varuint32(&missLen)
-	io.Varuint32(&hitLen)
-	protocol.FuncSliceOfLen(io, missLen, &pk.MissHashes, io.Uint64)
-	protocol.FuncSliceOfLen(io, hitLen, &pk.HitHashes, io.Uint64)
+	protocol.FuncSlice(io, &pk.MissHashes, io.Uint64)
+	protocol.FuncSlice(io, &pk.HitHashes, io.Uint64)
 }

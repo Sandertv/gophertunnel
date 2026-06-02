@@ -38,6 +38,8 @@ type ServerBoundDiagnostics struct {
 	EntityDiagnostics []protocol.EntityDiagnosticTimingInfo
 	// SystemDiagnostics is a list of system timing entries sent by the client.
 	SystemDiagnostics []protocol.SystemDiagnosticTimingInfo
+	// WhiskerScopes is a list of whisker profiler scope diagnostic summaries sent by the client.
+	WhiskerScopes []protocol.WhiskerScopeDataSummary
 }
 
 // ID ...
@@ -58,4 +60,5 @@ func (pk *ServerBoundDiagnostics) Marshal(io protocol.IO) {
 	protocol.Slice(io, &pk.MemoryCategoryValues)
 	protocol.Slice(io, &pk.EntityDiagnostics)
 	protocol.Slice(io, &pk.SystemDiagnostics)
+	protocol.Slice(io, &pk.WhiskerScopes)
 }
