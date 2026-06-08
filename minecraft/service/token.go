@@ -84,9 +84,8 @@ func (e *AuthorizationEnvironment) ServiceName() string {
 }
 
 // UnmarshalJSON implements [json.Unmarshaler.UnmarshalJSON].
-// Since UnmarshalText() is not implemented in [url.URL] and [json.Unmarshal]
-// attempts to decode the string URL as a struct, it will first decode the URL
-// fields as strings then parse them manually.
+// Since [url.URL] does not implement [json.Unmarshaler] or [encoding.TextUnmarshaler],
+// we decode URL fields as strings first, then manually parse them into URLs.
 // See: https://github.com/golang/go/issues/52638
 func (e *AuthorizationEnvironment) UnmarshalJSON(b []byte) error {
 	type Alias AuthorizationEnvironment

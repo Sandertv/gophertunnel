@@ -21,7 +21,7 @@ import (
 type Dialer struct {
 	// Environment is the environment used for connecting to the signaling service.
 	// If nil, it will be derived from [service.Default].
-	Environment *signaling.Environment
+	Environment signaling.ConfigurationProvider
 	// HTTPClient is the HTTP client used for WebSocket handshake messages and [Environment] discovery.
 	HTTPClient *http.Client
 	// Log is the logger used to log messages at various levels.
@@ -61,10 +61,11 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		if err != nil {
 			return nil, fmt.Errorf("discover network services: %w", err)
 		}
-		d.Environment = new(signaling.Environment)
-		if err := discovery.Environment(d.Environment); err != nil {
-			return nil, fmt.Errorf("resolve environment for %q: %w", d.Environment.ServiceName(), err)
+		env := new(signaling.AFDEnvironment)
+		if err := discovery.Environment(env); err != nil {
+			return nil, fmt.Errorf("resolve environment for %q: %w", env.ServiceName(), err)
 		}
+		d.Environment = env
 	}
 	if d.HTTPClient == nil {
 		d.HTTPClient = http.DefaultClient
@@ -76,6 +77,10 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		d.NetworkID = strconv.FormatUint(rand.Uint64(), 10)
 	}
 
+	cfg, err := d.Environment.Configuration(ctx, d.HTTPClient, src)
+	if err != nil {
+		return nil, fmt.Errorf("request configuration: %w", err)
+	}
 	token, err := src.ServiceToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("request service token: %w", err)
@@ -86,7 +91,7 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		HTTPClient: d.HTTPClient,
 	}
 	opts.HTTPHeader.Set("Authorization", token.AuthorizationHeader)
-	requestURL := d.Environment.ServiceURI.JoinPath("/ws/v1.0/messaging/connect")
+	requestURL := cfg.ServiceURI.JoinPath("/ws/v1.0/messaging/connect")
 	c, _, err := websocket.Dial(ctx, requestURL.String(), opts)
 	if err != nil {
 		return nil, err
@@ -141,7 +146,7 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 			return v, nil
 		},
 	})
-	go conn.ping()
+	go conn.ping(cfg.PingFrequency)
 	return conn, nil
 }
 

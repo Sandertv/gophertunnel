@@ -18,7 +18,7 @@ import (
 type Dialer struct {
 	// Environment is the environment used for connecting to the signaling service.
 	// If nil, it will be derived from [service.Default].
-	Environment *Environment
+	Environment ConfigurationProvider
 	// HTTPClient is the HTTP client used during WebSocket handshake.
 	HTTPClient *http.Client
 	// Log is the logger used to log messages at various levels.
@@ -56,10 +56,11 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		if err != nil {
 			return nil, fmt.Errorf("discover network services: %w", err)
 		}
-		d.Environment = new(Environment)
-		if err := discovery.Environment(d.Environment); err != nil {
-			return nil, fmt.Errorf("resolve environment for %q: %w", d.Environment.ServiceName(), err)
+		env := new(Environment)
+		if err := discovery.Environment(env); err != nil {
+			return nil, fmt.Errorf("resolve environment for %q: %w", env.ServiceName(), err)
 		}
+		d.Environment = env
 	}
 	if d.HTTPClient == nil {
 		d.HTTPClient = http.DefaultClient
@@ -71,6 +72,10 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		d.NetworkID = strconv.FormatUint(rand.Uint64(), 10)
 	}
 
+	cfg, err := d.Environment.Configuration(ctx, d.HTTPClient, src)
+	if err != nil {
+		return nil, fmt.Errorf("request configuration: %w", err)
+	}
 	token, err := src.ServiceToken(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("request service token: %w", err)
@@ -81,7 +86,7 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		HTTPClient: d.HTTPClient,
 	}
 	opts.HTTPHeader.Set("Authorization", token.AuthorizationHeader)
-	requestURL := d.Environment.ServiceURI.JoinPath(
+	requestURL := cfg.ServiceURI.JoinPath(
 		"/ws/v1.0/signaling",
 		d.NetworkID,
 	)
@@ -101,5 +106,6 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	go conn.read()
+	go conn.ping(cfg.PingFrequency)
 	return conn, nil
 }
