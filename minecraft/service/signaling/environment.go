@@ -48,6 +48,11 @@ func (e *Environment) UnmarshalJSON(b []byte) (err error) {
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err
 	}
+	// [url.Parse] accepts empty strings and returns a valid url.URL with no error,
+	// so we must explicitly validate that ServiceURI is not empty.
+	if data.ServiceURI == "" {
+		return errors.New("service/signaling: Environment.ServiceURI cannot be empty string")
+	}
 	e.ServiceURI, err = url.Parse(data.ServiceURI)
 	if err != nil {
 		return fmt.Errorf("parse service URI: %w", err)
@@ -152,6 +157,8 @@ func (cfg *Configuration) UnmarshalJSON(b []byte) (err error) {
 	if err = json.Unmarshal(b, &data); err != nil {
 		return err
 	}
+	// [url.Parse] accepts empty strings and returns a valid url.URL with no error,
+	// so we must explicitly validate that ServiceURI is not empty.
 	cfg.ServiceURI, err = url.Parse(data.ServiceURI)
 	if err != nil {
 		return fmt.Errorf("service/signaling: parse Configuration.ServiceURI: %w", err)

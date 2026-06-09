@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -73,6 +74,9 @@ func (e *ServiceEnvironment) UnmarshalJSON(b []byte) error {
 	}
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err
+	}
+	if data.ServiceURI == "" {
+		return errors.New("service/internal: ServiceEnvironment.ServiceURI is empty")
 	}
 	var err error
 	e.ServiceURI, err = url.Parse(data.ServiceURI)

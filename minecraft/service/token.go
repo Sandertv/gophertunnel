@@ -99,10 +99,18 @@ func (e *AuthorizationEnvironment) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err
 	}
+	// [url.Parse] accepts empty strings and returns a valid url.URL with no error,
+	// so we must explicitly validate that ServiceURI and Issuer are not empty.
+	if data.ServiceURI == "" {
+		return errors.New("service: AuthorizationEnvironment.ServiceURI cannot be empty string")
+	}
 	var err error
 	e.ServiceURI, err = url.Parse(data.ServiceURI)
 	if err != nil {
 		return fmt.Errorf("parse ServiceURI: %w", err)
+	}
+	if data.Issuer == "" {
+		return errors.New("service: AuthorizationEnvironment.Issuer cannot be empty string")
 	}
 	e.Issuer, err = url.Parse(data.Issuer)
 	if err != nil {
