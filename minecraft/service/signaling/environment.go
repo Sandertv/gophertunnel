@@ -159,6 +159,9 @@ func (cfg *Configuration) UnmarshalJSON(b []byte) (err error) {
 	}
 	// [url.Parse] accepts empty strings and returns a valid url.URL with no error,
 	// so we must explicitly validate that ServiceURI is not empty.
+	if data.ServiceURI == "" {
+		return errors.New("service/signaling: Configuration.ServiceURI cannot be empty string")
+	}
 	cfg.ServiceURI, err = url.Parse(data.ServiceURI)
 	if err != nil {
 		return fmt.Errorf("service/signaling: parse Configuration.ServiceURI: %w", err)
