@@ -718,25 +718,6 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// TextCategory reads a text category from the reader.
-func (r *Reader) TextCategory(x *uint8) {
-	category := *x
-	r.Uint8(&category)
-	var length int
-	switch category {
-	case TextCategoryMessageOnly:
-		length = 6
-	case TextCategoryAuthoredMessage:
-		length = 3
-	case TextCategoryMessageWithParameters:
-		length = 3
-	}
-	var tmp string
-	for i := 0; i < length; i++ {
-		r.String(&tmp)
-	}
-}
-
 // SliceLimit checks if the value passed is lower than the limit passed. If
 // not, the Reader panics.
 func (r *Reader) SliceLimit(value uint32, max uint32) {
