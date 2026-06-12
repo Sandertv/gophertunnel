@@ -1,6 +1,7 @@
 package packet
 
 import (
+	"github.com/sandertv/gophertunnel/minecraft/nbt"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
@@ -8,7 +9,7 @@ import (
 type JigsawStructureData struct {
 	// StructureData is a network NBT serialised compound of all the jigsaw structure rules defined
 	// on the server.
-	StructureData []byte
+	StructureData map[string]any
 }
 
 // ID ...
@@ -17,5 +18,5 @@ func (*JigsawStructureData) ID() uint32 {
 }
 
 func (pk *JigsawStructureData) Marshal(io protocol.IO) {
-	io.Bytes(&pk.StructureData)
+	io.NBT(&pk.StructureData, nbt.NetworkLittleEndian)
 }

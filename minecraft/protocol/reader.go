@@ -26,6 +26,7 @@ type Reader struct {
 	}
 	shieldID      int32
 	limitsEnabled bool
+	buf           [8]byte
 }
 
 // NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
@@ -129,15 +130,6 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// UBlockPos reads three varint32s, one unsigned for the y, into a BlockPos from the underlying buffer.
-func (r *Reader) UBlockPos(x *BlockPos) {
-	r.Varint32(&x[0])
-	var y uint32
-	r.Varuint32(&y)
-	x[1] = int32(y)
-	r.Varint32(&x[2])
-}
-
 // ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
@@ -154,7 +146,7 @@ func (r *Reader) SubChunkPos(x *SubChunkPos) {
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
 func (r *Reader) SoundPos(x *mgl32.Vec3) {
 	var b BlockPos
-	r.UBlockPos(&b)
+	r.BlockPos(&b)
 	*x = mgl32.Vec3{float32(b[0]) / 8, float32(b[1]) / 8, float32(b[2]) / 8}
 }
 
@@ -240,7 +232,6 @@ func (r *Reader) NBT(m *map[string]any, encoding nbt.Encoding) {
 	dec := nbt.NewDecoderWithEncoding(r.r, encoding)
 	dec.AllowZero = true
 
-	*m = make(map[string]any)
 	if err := dec.Decode(m); err != nil {
 		r.panic(err)
 	}
@@ -255,19 +246,20 @@ func (r *Reader) NBTList(m *[]any, encoding nbt.Encoding) {
 
 // UUID reads a uuid.UUID from the underlying buffer.
 func (r *Reader) UUID(x *uuid.UUID) {
-	b := make([]byte, 16)
-	if _, err := r.r.Read(b); err != nil {
+	var b [16]byte
+	if _, err := io.ReadFull(r.r, b[:]); err != nil {
 		r.panic(err)
 	}
 
 	// The UUIDs we read are Little Endian, but the uuid library is based on Big Endian UUIDs, so we need to
-	// reverse the two int64s the UUID is composed of, then reverse their bytes too.
-	b = append(b[8:], b[:8]...)
-	var arr [16]byte
-	for i, j := 0, 15; i < j; i, j = i+1, j-1 {
-		arr[i], arr[j] = b[j], b[i]
+	// reverse the bytes of the two int64s the UUID is composed of.
+	for i, j := 0, 7; i < j; i, j = i+1, j-1 {
+		b[i], b[j] = b[j], b[i]
 	}
-	*x = arr
+	for i, j := 8, 15; i < j; i, j = i+1, j-1 {
+		b[i], b[j] = b[j], b[i]
+	}
+	*x = b
 }
 
 // PlayerInventoryAction reads a PlayerInventoryAction.
@@ -279,7 +271,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	Slice(r, &x.Actions)
 	r.Varuint32(&x.ActionType)
 	r.Varuint32(&x.TriggerType)
-	r.UBlockPos(&x.BlockPosition)
+	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
 	r.ItemInstance(&x.HeldItem)
@@ -287,6 +279,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Varuint32(&x.ClientPrediction)
+	r.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule reads a GameRule x from the Reader.
@@ -340,8 +333,8 @@ func (r *Reader) GameRuleLegacy(x *GameRule) {
 }
 
 // EntityMetadata reads an entity metadata map from the underlying buffer into map x.
-func (r *Reader) EntityMetadata(x *map[uint32]any) {
-	*x = map[uint32]any{}
+func (r *Reader) EntityMetadata(x *EntityMetadata) {
+	*x = EntityMetadata{}
 
 	var count uint32
 	r.Varuint32(&count)
@@ -422,12 +415,12 @@ func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
 // ItemInstance reads an ItemInstance i from the underlying buffer.
 func (r *Reader) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
-	x.NBTData = make(map[string]any)
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
-		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
+		x.MetadataValue, x.Count, x.BlockRuntimeID, i.StackNetworkID = 0, 0, 0, 0
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
 		return
 	}
 
@@ -439,6 +432,8 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 
 	if hasNetID {
 		r.Varint32(&i.StackNetworkID)
+	} else {
+		i.StackNetworkID = 0
 	}
 
 	r.Varint32(&x.BlockRuntimeID)
@@ -465,25 +460,94 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 		}
 	} else if length > 0 {
 		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+	} else {
+		x.NBTData = nil
 	}
 
 	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
 	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
-		var blockingTick int64
-		bufReader.Int64(&blockingTick)
+		bufReader.Int64(&x.BlockingTick)
+	}
+}
+
+// ItemInstanceNew reads an ItemInstance i from the underlying buffer in the new format.
+func (r *Reader) ItemInstanceNew(i *ItemInstance) {
+	x := &i.Stack
+	var id int16
+	r.Int16(&id)
+	x.NetworkID = int32(id)
+
+	r.Uint16(&x.Count)
+	r.Varuint32(&x.MetadataValue)
+
+	var hasNetID bool
+	r.Bool(&hasNetID)
+
+	if hasNetID {
+		var empty uint32
+		r.Varuint32(&empty)
+		r.Varint32(&i.StackNetworkID)
+	} else {
+		i.StackNetworkID = 0
+	}
+
+	var runtimeID uint32
+	r.Varuint32(&runtimeID)
+	x.BlockRuntimeID = int32(runtimeID)
+
+	var extraData []byte
+	r.ByteSlice(&extraData)
+
+	if len(extraData) == 0 {
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
+		x.BlockingTick = 0
+		return
+	}
+
+	buf := bytes.NewBuffer(extraData)
+	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
+
+	var length int16
+	bufReader.Int16(&length)
+
+	switch length {
+	case 0:
+		x.NBTData = nil
+	case -1:
+		var version uint8
+		bufReader.Uint8(&version)
+
+		switch version {
+		case 1:
+			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+		default:
+			bufReader.UnknownEnumOption(version, "item user data version")
+			return
+		}
+	default:
+		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+	}
+
+	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
+
+	if x.NetworkID == bufReader.shieldID {
+		bufReader.Int64(&x.BlockingTick)
+	} else {
+		x.BlockingTick = 0
 	}
 }
 
 // Item reads an ItemStack x from the underlying buffer.
 func (r *Reader) Item(x *ItemStack) {
-	x.NBTData = make(map[string]any)
 	r.Varint32(&x.NetworkID)
 	if x.NetworkID == 0 {
 		// The item was air, so there is no more data we should read for the item instance. After all, air
 		// items aren't really anything.
-		x.MetadataValue, x.Count, x.CanBePlacedOn, x.CanBreak = 0, 0, nil, nil
+		x.MetadataValue, x.Count, x.BlockRuntimeID = 0, 0, 0
+		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
 		return
 	}
 
@@ -513,14 +577,15 @@ func (r *Reader) Item(x *ItemStack) {
 		}
 	} else if length > 0 {
 		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+	} else {
+		x.NBTData = nil
 	}
 
 	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
 	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
 
 	if x.NetworkID == bufReader.shieldID {
-		var blockingTick int64
-		bufReader.Int64(&blockingTick)
+		bufReader.Int64(&x.BlockingTick)
 	}
 }
 
@@ -561,6 +626,16 @@ func (r *Reader) EventType(x *Event) {
 	if !lookupEvent(t, x) {
 		r.UnknownEnumOption(t, "event packet event type")
 	}
+}
+
+// EventOrdinal reads an Event's ordinal from the reader.
+func (r *Reader) EventOrdinal(x *Event) {
+	var ordinal uint32
+	if !lookupEventOrdinal(*x, &ordinal) {
+		r.UnknownEnumOption(*x, "event packet event ordinal")
+		return
+	}
+	r.Varuint32(&ordinal)
 }
 
 // TransactionDataType reads an InventoryTransactionData type from the reader.
@@ -677,7 +752,7 @@ func (r *Reader) ShieldID() int32 {
 
 // UnknownEnumOption panics with an unknown enum option error.
 func (r *Reader) UnknownEnumOption(value any, enum string) {
-	r.panicf("unknown value '%v' for enum type '%v'", value, enum)
+	r.panicf("unknown value '%#v' for enum type '%v'", value, enum)
 }
 
 // InvalidValue panics with an error indicating that the value passed is not valid for a specific field.

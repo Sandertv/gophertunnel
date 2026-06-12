@@ -67,7 +67,7 @@ func (*CommandBlockUpdate) ID() uint32 {
 func (pk *CommandBlockUpdate) Marshal(io protocol.IO) {
 	io.Bool(&pk.Block)
 	if pk.Block {
-		io.UBlockPos(&pk.Position)
+		io.BlockPos(&pk.Position)
 		io.Varuint32(&pk.Mode)
 		io.Bool(&pk.NeedsRedstone)
 		io.Bool(&pk.Conditional)

@@ -228,9 +228,24 @@ const (
 	IDPlayerUpdateEntityOverrides
 	IDPlayerLocation
 	IDClientBoundControlSchemeSet
-	IDDebugDrawer
+	IDPrimitiveShapes
 	IDServerBoundPackSettingChange
-	_ // TODO: Implement client-bound data store
+	IDClientBoundDataStore
 	IDGraphicsOverrideParameter
-	_ // TODO: Implement server-bound data store
+	IDServerBoundDataStore
+	IDClientBoundDataDrivenUIShowScreen
+	IDClientBoundDataDrivenUICloseScreen
+	IDClientBoundDataDrivenUIReload
+	IDClientBoundTextureShift
+	IDVoxelShapes
+	IDCameraSpline
+	IDCameraAimAssistActorPriority
+	IDResourcePacksReadyForValidation
+	IDLocatorBar
+	IDPartyChanged
+	IDServerBoundDataDrivenScreenClosed
+	IDSyncWorldClocks
+	IDClientBoundAttributeLayerSync
+	IDServerStoreInfo
+	IDServerPresenceInfo
 )

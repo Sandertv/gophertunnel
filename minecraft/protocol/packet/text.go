@@ -19,6 +19,12 @@ const (
 	TextTypeObjectAnnouncement
 )
 
+const (
+	TextCategoryMessageOnly = iota
+	TextCategoryAuthoredMessage
+	TextCategoryMessageWithParameters
+)
+
 // Text is sent by the client to the server to send chat messages, and by the server to the client to forward
 // or send messages, which may be chat, popups, tips etc.
 type Text struct {
@@ -58,16 +64,17 @@ func (*Text) ID() uint32 {
 
 func (pk *Text) Marshal(io protocol.IO) {
 	io.Bool(&pk.NeedsTranslation)
+
 	var categoryType uint8
 	switch pk.TextType {
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObjectWhisper, TextTypeObjectAnnouncement, TextTypeObject:
-		categoryType = protocol.TextCategoryMessageOnly
+		categoryType = TextCategoryMessageOnly
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
-		categoryType = protocol.TextCategoryAuthoredMessage
+		categoryType = TextCategoryAuthoredMessage
 	default:
-		categoryType = protocol.TextCategoryMessageWithParameters
+		categoryType = TextCategoryMessageWithParameters
 	}
-	io.TextCategory(&categoryType)
+	io.Uint8(&categoryType)
 	io.Uint8(&pk.TextType)
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:

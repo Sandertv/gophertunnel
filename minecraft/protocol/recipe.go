@@ -83,8 +83,8 @@ func (x *RecipeUnlockRequirement) Marshal(r IO) {
 const (
 	RecipeShapeless int32 = iota
 	RecipeShaped
-	RecipeFurnace
-	RecipeFurnaceData
+	_
+	_
 	RecipeMulti
 	RecipeShulkerBox
 	RecipeShapelessChemistry
@@ -110,10 +110,6 @@ func lookupRecipe(recipeType int32, x *Recipe) bool {
 		*x = &ShapelessRecipe{}
 	case RecipeShaped:
 		*x = &ShapedRecipe{}
-	case RecipeFurnace:
-		*x = &FurnaceRecipe{}
-	case RecipeFurnaceData:
-		*x = &FurnaceDataRecipe{}
 	case RecipeMulti:
 		*x = &MultiRecipe{}
 	case RecipeShulkerBox:
@@ -140,10 +136,6 @@ func lookupRecipeType(x Recipe, recipeType *int32) bool {
 		*recipeType = RecipeShapeless
 	case *ShapedRecipe:
 		*recipeType = RecipeShaped
-	case *FurnaceRecipe:
-		*recipeType = RecipeFurnace
-	case *FurnaceDataRecipe:
-		*recipeType = RecipeFurnaceData
 	case *MultiRecipe:
 		*recipeType = RecipeMulti
 	case *ShulkerBoxRecipe:
@@ -248,25 +240,6 @@ type ShapedChemistryRecipe struct {
 	ShapedRecipe
 }
 
-// FurnaceRecipe is a recipe that is specifically used for all kinds of furnaces. These recipes don't just
-// apply to furnaces, but also blast furnaces and smokers.
-type FurnaceRecipe struct {
-	// InputType is the item type of the input item. The metadata value of the item is not used in the
-	// FurnaceRecipe. Use FurnaceDataRecipe to allow an item with only one metadata value.
-	InputType ItemType
-	// Output is the item that is created as a result of smelting/cooking an item in the furnace.
-	Output ItemStack
-	// Block is the block name that is required to create the output of the recipe. The block is not prefixed
-	// with 'minecraft:', so it will look like 'furnace' as an example.
-	Block string
-}
-
-// FurnaceDataRecipe is a recipe specifically used for furnace-type crafting stations. It is equal to
-// FurnaceRecipe, except it has an input item with a specific metadata value, instead of any metadata value.
-type FurnaceDataRecipe struct {
-	FurnaceRecipe
-}
-
 // MultiRecipe serves as an 'enable' switch for multi-shape recipes.
 type MultiRecipe struct {
 	// UUID is a UUID identifying the recipe. Since the CraftingEvent packet no longer exists, this can always be empty.
@@ -368,39 +341,6 @@ func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
 // Unmarshal ...
 func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
 	marshalShaped(r, &recipe.ShapedRecipe)
-}
-
-// Marshal ...
-func (recipe *FurnaceRecipe) Marshal(w *Writer) {
-	w.Varint32(&recipe.InputType.NetworkID)
-	w.Item(&recipe.Output)
-	w.String(&recipe.Block)
-}
-
-// Unmarshal ...
-func (recipe *FurnaceRecipe) Unmarshal(r *Reader) {
-	r.Varint32(&recipe.InputType.NetworkID)
-	r.Item(&recipe.Output)
-	r.String(&recipe.Block)
-}
-
-// Marshal ...
-func (recipe *FurnaceDataRecipe) Marshal(w *Writer) {
-	w.Varint32(&recipe.InputType.NetworkID)
-	aux := int32(recipe.InputType.MetadataValue)
-	w.Varint32(&aux)
-	w.Item(&recipe.Output)
-	w.String(&recipe.Block)
-}
-
-// Unmarshal ...
-func (recipe *FurnaceDataRecipe) Unmarshal(r *Reader) {
-	var dataValue int32
-	r.Varint32(&recipe.InputType.NetworkID)
-	r.Varint32(&dataValue)
-	recipe.InputType.MetadataValue = uint32(dataValue)
-	r.Item(&recipe.Output)
-	r.String(&recipe.Block)
 }
 
 // Marshal ...

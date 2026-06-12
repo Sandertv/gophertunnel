@@ -130,6 +130,21 @@ const (
 	DisconnectReasonNetherNetDataChannelClosed
 	DisconnectReasonDiscoveryEnvironmentMismatch
 	DisconnectReasonHostWithoutKeys
+	DisconnectReasonHostSignedOut
+	DisconnectReasonScriptWatchdogException
+	DisconnectReasonScriptMemoryLimitExceeded
+	DisconnectReasonStorageLowDuringGameplay
+	DisconnectReasonStorageFullDuringGameplay
+	DisconnectReasonLevelStorageCorruption
+	DisconnectReasonEditionMismatchVanillaToEdu
+	DisconnectReasonEditionMismatchEduToVanilla
+	DisconnectReasonEditorMismatchEditorToVanilla
+	DisconnectReasonEditorMismatchVanillaToEditor
+	DisconnectReasonDenyListed
+	DisconnectReasonNonceMissing
+	DisconnectReasonNonceNotFound
+	DisconnectReasonNonceExpired
+	DisconnectReasonNonceNotValid
 )
 
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the
@@ -142,7 +157,7 @@ type Disconnect struct {
 	// disconnected, meaning it will be sent directly to the main menu.
 	HideDisconnectionScreen bool
 	// Message is an optional message to show when disconnected. This message is only written if the
-	// HideDisconnectionScreen field is set to true.
+	// HideDisconnectionScreen field is set to false.
 	Message string
 	// FilteredMessage is a filtered version of Message with all the profanity removed. The client will use
 	// this over Message if this field is not empty and they have the "Filter Profanity" setting enabled.
