@@ -52,10 +52,17 @@ func (pk *InventoryTransaction) Marshal(io protocol.IO) {
 	if hasLegacy {
 		protocol.Slice(io, &pk.LegacySetItemSlots)
 	}
-	present := true
-	io.Bool(&present)
+	hasType := true
+	io.Bool(&hasType)
+	if !hasType {
+		io.InvalidValue(hasType, "InventoryTransaction transaction type", "expected presence bool to be true")
+	}
 	io.TransactionDataType(&pk.TransactionData)
-	io.Bool(&present)
+	hasActions := true
+	io.Bool(&hasActions)
+	if !hasActions {
+		io.InvalidValue(hasActions, "InventoryTransaction actions", "expected presence bool to be true")
+	}
 	protocol.Slice(io, &pk.Actions)
 	pk.TransactionData.Marshal(io)
 }
