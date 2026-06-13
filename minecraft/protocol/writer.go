@@ -202,26 +202,12 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
-	w.ItemInstance(&x.HeldItem)
+	w.ItemInstanceNew(&x.HeldItem)
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
-	w.Varuint32(&x.ClientPrediction)
+	IntegerFunc(&x.ClientPrediction, w.Uint8)
 	w.Uint8(&x.ClientCooldownState)
-}
-
-// InventoryActionNew writes an InventoryAction x in the new format.
-func (w *Writer) InventoryActionNew(x *InventoryAction) {
-	w.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		w.Varint32(&x.WindowID)
-	case InventoryActionSourceWorld:
-		w.Varuint32(&x.SourceFlags)
-	}
-	w.Varuint32(&x.InventorySlot)
-	w.ItemInstanceNew(&x.OldItem)
-	w.ItemInstanceNew(&x.NewItem)
 }
 
 // GameRule writes a GameRule x to the Writer.

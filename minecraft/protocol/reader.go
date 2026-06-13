@@ -274,26 +274,12 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
-	r.ItemInstance(&x.HeldItem)
+	r.ItemInstanceNew(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
-	r.Varuint32(&x.ClientPrediction)
+	IntegerFunc(&x.ClientPrediction, r.Uint8)
 	r.Uint8(&x.ClientCooldownState)
-}
-
-// InventoryActionNew reads an InventoryAction x in the new format.
-func (r *Reader) InventoryActionNew(x *InventoryAction) {
-	r.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		r.Varint32(&x.WindowID)
-	case InventoryActionSourceWorld:
-		r.Varuint32(&x.SourceFlags)
-	}
-	r.Varuint32(&x.InventorySlot)
-	r.ItemInstanceNew(&x.OldItem)
-	r.ItemInstanceNew(&x.NewItem)
 }
 
 // GameRule reads a GameRule x from the Reader.

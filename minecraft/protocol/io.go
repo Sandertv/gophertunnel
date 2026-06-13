@@ -51,7 +51,6 @@ type IO interface {
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
 	ItemInstanceNew(i *ItemInstance)
-	InventoryActionNew(x *InventoryAction)
 	ItemDescriptorCount(i *ItemDescriptorCount)
 	StackRequestAction(x *StackRequestAction)
 	MaterialReducer(x *MaterialReducer)
@@ -195,6 +194,13 @@ type PtrMarshaler[T any] interface {
 // Single reads/writes a single Marshaler x.
 func Single[T any, S PtrMarshaler[T]](r IO, x S) {
 	x.Marshal(r)
+}
+
+// IntegerFunc reads/writes a value of type S using f, converting between S and the wire type W.
+func IntegerFunc[S, W ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64](x *S, f func(*W)) {
+	w := W(*x)
+	f(&w)
+	*x = S(w)
 }
 
 // Optional is an optional type in the protocol. If not set, only a false bool is written. If set, a true bool is

@@ -43,15 +43,22 @@ type InventoryAction struct {
 // Marshal encodes/decodes an InventoryAction.
 func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		r.Varint32(&x.WindowID)
-	case InventoryActionSourceWorld:
+	present := true
+	r.Bool(&present)
+	hasContainerID := x.SourceType == InventoryActionSourceContainer || x.SourceType == InventoryActionSourceTODO
+	r.Bool(&hasContainerID)
+	if hasContainerID {
+		IntegerFunc(&x.WindowID, r.Int8)
+	}
+	r.Bool(&present)
+	hasFlags := x.SourceType == InventoryActionSourceWorld
+	r.Bool(&hasFlags)
+	if hasFlags {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	r.ItemInstance(&x.OldItem)
-	r.ItemInstance(&x.NewItem)
+	r.ItemInstanceNew(&x.OldItem)
+	r.ItemInstanceNew(&x.NewItem)
 }
 
 const (
@@ -246,23 +253,23 @@ type ReleaseItemTransactionData struct {
 
 // Marshal ...
 func (data *UseItemTransactionData) Marshal(r IO) {
-	r.Varuint32(&data.ActionType)
-	r.Varuint32(&data.TriggerType)
+	IntegerFunc(&data.ActionType, r.Varint32)
+	IntegerFunc(&data.TriggerType, r.Uint8)
 	r.BlockPos(&data.BlockPosition)
-	r.Varint32(&data.BlockFace)
+	IntegerFunc(&data.BlockFace, r.Uint8)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
-	r.Varuint32(&data.ClientPrediction)
+	IntegerFunc(&data.ClientPrediction, r.Uint8)
 	r.Uint8(&data.ClientCooldownState)
 }
 
 // Marshal ...
 func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
-	r.Varuint32(&data.ActionType)
+	IntegerFunc(&data.ActionType, r.Varint32)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.Position)
@@ -271,7 +278,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 
 // Marshal ...
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
-	r.Varuint32(&data.ActionType)
+	IntegerFunc(&data.ActionType, r.Varint32)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
