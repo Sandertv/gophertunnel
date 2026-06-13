@@ -278,7 +278,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
-	IntegerFunc(&x.ClientPrediction, r.Uint8)
+	r.Uint8(&x.ClientPrediction)
 	r.Uint8(&x.ClientCooldownState)
 }
 

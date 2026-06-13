@@ -26,7 +26,7 @@ type InventoryAction struct {
 	SourceType uint32
 	// WindowID is the ID of the window that the client has opened. The window ID is not set if the SourceType
 	// is InventoryActionSourceWorld.
-	WindowID int32
+	WindowID int8
 	// SourceFlags is a combination of flags that is only set if the SourceType is InventoryActionSourceWorld.
 	SourceFlags uint32
 	// InventorySlot is the slot in which the action took place. Each action only describes the change of item
@@ -48,7 +48,7 @@ func (x *InventoryAction) Marshal(r IO) {
 	hasContainerID := x.SourceType == InventoryActionSourceContainer || x.SourceType == InventoryActionSourceTODO
 	r.Bool(&hasContainerID)
 	if hasContainerID {
-		IntegerFunc(&x.WindowID, r.Int8)
+		r.Int8(&x.WindowID)
 	}
 	r.Bool(&present)
 	hasFlags := x.SourceType == InventoryActionSourceWorld
@@ -194,7 +194,7 @@ type UseItemTransactionData struct {
 	BlockRuntimeID uint32
 	// ClientPrediction is the client's prediction on the output of the transaction. It is one of the client
 	// prediction found in the constants above.
-	ClientPrediction uint32
+	ClientPrediction uint8
 	// ClientCooldownState is the client's cooldown state for the item used. It is one of the
 	// ClientCooldownState constants above.
 	ClientCooldownState byte
@@ -213,7 +213,7 @@ type UseItemOnEntityTransactionData struct {
 	TargetEntityRuntimeID uint64
 	// ActionType is the type of the UseItemOnEntity inventory transaction. It is one of the action types
 	// found in the constants above, and specifies the way the player interacted with the entity.
-	ActionType uint32
+	ActionType int32
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the entity. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
@@ -239,7 +239,7 @@ type ReleaseItemTransactionData struct {
 	// in the constants above, and specifies the way the item was released.
 	// As of 1.13, the ActionType is always 0. This field can be ignored, because releasing food (by consuming
 	// it) or releasing a bow (to shoot an arrow) is essentially the same.
-	ActionType uint32
+	ActionType int32
 	// HotBarSlot is the hot bar slot that the player was holding while releasing the item. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
@@ -262,14 +262,14 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
-	IntegerFunc(&data.ClientPrediction, r.Uint8)
+	r.Uint8(&data.ClientPrediction)
 	r.Uint8(&data.ClientCooldownState)
 }
 
 // Marshal ...
 func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
-	IntegerFunc(&data.ActionType, r.Varint32)
+	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.Position)
@@ -278,7 +278,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 
 // Marshal ...
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
-	IntegerFunc(&data.ActionType, r.Varint32)
+	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstanceNew(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
