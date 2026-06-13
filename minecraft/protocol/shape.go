@@ -176,8 +176,10 @@ func (shape *ArrowShape) Marshal(io IO) {
 
 // CylinderShape represents a cylinder debug shape.
 type CylinderShape struct {
-	// Radii are the radii along the X/Z axes of the cylinder.
-	Radii mgl32.Vec2
+	// RadiusX is the radius of the cylinder along the X axis.
+	RadiusX mgl32.Vec2
+	// RadiusZ is the radius of the cylinder along the Z axis.
+	RadiusZ mgl32.Vec2
 	// Height is the height of the cylinder.
 	Height float32
 	// NumSegments is the number of segments used for the cylinder.
@@ -186,7 +188,8 @@ type CylinderShape struct {
 
 // Marshal ...
 func (shape *CylinderShape) Marshal(io IO) {
-	io.Vec2(&shape.Radii)
+	io.Vec2(&shape.RadiusX)
+	io.Vec2(&shape.RadiusZ)
 	io.Float32(&shape.Height)
 	io.Uint8(&shape.NumSegments)
 }
