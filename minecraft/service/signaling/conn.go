@@ -128,6 +128,9 @@ func (conn *Conn) Context() context.Context {
 	return conn.ctx
 }
 
+// close cancels the background context of the Conn and closes the
+// underlying WebSocket connection. Any blocking methods on Conn
+// will return the given cause as the error.
 func (conn *Conn) close(cause error) (err error) {
 	conn.once.Do(func() {
 		conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
@@ -140,31 +143,33 @@ func (conn *Conn) close(cause error) (err error) {
 	return err
 }
 
+// ping starts periodically sending ping messages at the specified interval.
+// On failure, it closes the Conn immediately with the cause.
+func (conn *Conn) ping(frequency time.Duration) {
+	ticker := time.NewTicker(frequency)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-conn.ctx.Done():
+			return
+		case <-ticker.C:
+			if err := conn.write(Message{
+				Type: MessageTypePing,
+			}); err != nil {
+				_ = conn.close(fmt.Errorf("background: write ping: %w", err))
+				return
+			}
+		}
+	}
+}
+
 // read continuously reads messages from the WebSocket connection and handles them.
 // It also sends a Message of MessageTypePing at 15 seconds intervals to keep the
 // Conn alive. It goes as a background goroutine of the Conn and handles different
 // types of messages: credentials, signals, and errors. It closes the Conn if it
 // encounters an error or when the Conn is closed.
 func (conn *Conn) read() {
-	go func() {
-		ticker := time.NewTicker(time.Second * 15)
-		defer ticker.Stop()
-
-		for {
-			select {
-			case <-conn.ctx.Done():
-				return
-			case <-ticker.C:
-				if err := conn.write(Message{
-					Type: MessageTypePing,
-				}); err != nil {
-					_ = conn.close(fmt.Errorf("background: write ping: %w", err))
-					return
-				}
-			}
-		}
-	}()
-
 	for {
 		var message Message
 		if err := wsjson.Read(context.Background(), conn.conn, &message); err != nil {
@@ -216,6 +221,9 @@ func (conn *Conn) handleMessage(message Message) {
 		log.Debug("received error", slog.Any("message", message))
 		conn.complete(message.ID, err)
 	case MessageTypeDelivered:
+		if conn.d.IgnoreDeliveryNotification {
+			return
+		}
 		if message.ID == uuid.Nil {
 			log.Warn("received message without an ID", slog.Any("message", message))
 			return
