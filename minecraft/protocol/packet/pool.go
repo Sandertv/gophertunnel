@@ -283,6 +283,8 @@ func init() {
 		IDClientBoundAttributeLayerSync:      func() Packet { return &ClientBoundAttributeLayerSync{} },
 		IDServerStoreInfo:                    func() Packet { return &ServerStoreInfo{} },
 		IDServerPresenceInfo:                 func() Packet { return &ServerPresenceInfo{} },
+		IDClientboundUpdateSoundData:         func() Packet { return &ClientboundUpdateSoundData{} },
+		IDSendPartyDestinationCookie:         func() Packet { return &SendPartyDestinationCookie{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -378,6 +380,7 @@ func init() {
 		IDResourcePacksReadyForValidation:   func() Packet { return &ResourcePacksReadyForValidation{} },
 		IDPartyChanged:                      func() Packet { return &PartyChanged{} },
 		IDServerBoundDataDrivenScreenClosed: func() Packet { return &ServerBoundDataDrivenScreenClosed{} },
+		IDPartyDestinationCookieResponse:    func() Packet { return &PartyDestinationCookieResponse{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

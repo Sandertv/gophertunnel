@@ -6,6 +6,8 @@ import (
 
 const (
 	MovementEffectTypeGlideBoost = iota
+	MovementEffectTypeDolphinBoost
+	MovementEffectTypeGeyserBoost
 )
 
 // MovementEffect is sent by the server to the client to update specific movement effects to allow the client

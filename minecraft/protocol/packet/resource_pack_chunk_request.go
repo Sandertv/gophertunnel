@@ -11,7 +11,7 @@ type ResourcePackChunkRequest struct {
 	UUID string
 	// ChunkIndex is the requested chunk index of the chunk. It is a number that starts at 0 and is
 	// incremented for each resource pack data chunk requested.
-	ChunkIndex uint32
+	ChunkIndex int32
 }
 
 // ID ...
@@ -21,5 +21,5 @@ func (*ResourcePackChunkRequest) ID() uint32 {
 
 func (pk *ResourcePackChunkRequest) Marshal(io protocol.IO) {
 	io.String(&pk.UUID)
-	io.Uint32(&pk.ChunkIndex)
+	io.Int32(&pk.ChunkIndex)
 }

@@ -1448,14 +1448,14 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 
 	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
 	// though there's data, and the client will still download normally.
-	chunkCount := uint32(pk.Size / uint64(pk.DataChunkSize))
+	chunkCount := int32(pk.Size / uint64(pk.DataChunkSize))
 	if pk.Size%uint64(pk.DataChunkSize) != 0 {
 		chunkCount++
 	}
 
 	idCopy := pk.UUID
 	go func() {
-		for i := uint32(0); i < chunkCount; i++ {
+		for i := int32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
 				UUID:       idCopy,
 				ChunkIndex: i,
@@ -1528,7 +1528,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	}
 	response := &packet.ResourcePackChunkData{
 		UUID:       pk.UUID,
-		ChunkIndex: pk.ChunkIndex,
+		ChunkIndex: uint32(pk.ChunkIndex),
 		DataOffset: conn.packQueue.currentOffset,
 		Data:       make([]byte, packChunkSize),
 	}
