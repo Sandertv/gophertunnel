@@ -13,6 +13,7 @@ require (
 	github.com/klauspost/compress v1.18.1
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6
+	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.35.0
 	golang.org/x/oauth2 v0.28.0
 	golang.org/x/text v0.22.0

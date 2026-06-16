@@ -6,6 +6,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/nbt"
+	"golang.org/x/exp/constraints"
 )
 
 // IO represents a packet IO direction. Implementations of this interface are Reader and Writer. Reader reads
@@ -197,7 +198,7 @@ func Single[T any, S PtrMarshaler[T]](r IO, x S) {
 }
 
 // IntegerFunc reads/writes a value of type S using f, converting between S and the wire type W.
-func IntegerFunc[S, W ~int8 | ~uint8 | ~int16 | ~uint16 | ~int32 | ~uint32 | ~int64 | ~uint64](x *S, f func(*W)) {
+func IntegerFunc[S, W constraints.Integer](x *S, f func(*W)) {
 	w := W(*x)
 	f(&w)
 	*x = S(w)
