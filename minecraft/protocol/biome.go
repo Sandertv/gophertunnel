@@ -467,20 +467,66 @@ func (x *BiomeSurfaceBuilder) Marshal(r IO) {
 type BiomeNoiseGradientSurface struct {
 	// NonReplaceableBlocks is a list of block runtime IDs that may not be replaced.
 	NonReplaceableBlocks []uint32
-	// GradientBlocks is a list of block runtime IDs used by the gradient.
-	GradientBlocks []uint32
-	// NoiseSeedString is the seed string used by the gradient noise.
-	NoiseSeedString string
-	// FirstOctave is the first octave used by the gradient noise.
-	FirstOctave int32
-	// Amplitudes is a list of amplitude values used by the gradient noise.
-	Amplitudes []float32
+	// GradientBlocks is a list of noise block specifiers used by the gradient.
+	GradientBlocks []NoiseBlockSpecifier
+	// Noise is the noise descriptor used by the gradient.
+	Noise NoiseDescriptor
 }
 
 func (x *BiomeNoiseGradientSurface) Marshal(r IO) {
 	FuncSlice(r, &x.NonReplaceableBlocks, r.Uint32)
-	FuncSlice(r, &x.GradientBlocks, r.Uint32)
-	r.String(&x.NoiseSeedString)
+	Slice(r, &x.GradientBlocks)
+	Single(r, &x.Noise)
+}
+
+// FloatRange is an inclusive minimum/maximum pair of float32 values.
+type FloatRange struct {
+	// Min is the minimum value of the range.
+	Min float32
+	// Max is the maximum value of the range.
+	Max float32
+}
+
+// Marshal encodes/decodes a FloatRange.
+func (x *FloatRange) Marshal(r IO) {
+	r.Float32(&x.Min)
+	r.Float32(&x.Max)
+}
+
+// NoiseBlockSpecifier specifies a block placed by the gradient noise based on a threshold and
+// range.
+type NoiseBlockSpecifier struct {
+	// Noise is the noise name.
+	Noise string
+	// Threshold is the noise threshold above which the block is placed.
+	Threshold float32
+	// Range is the noise range within which the block is placed.
+	Range FloatRange
+	// Block is the block runtime ID placed by this specifier.
+	Block uint32
+}
+
+// Marshal encodes/decodes a NoiseBlockSpecifier.
+func (x *NoiseBlockSpecifier) Marshal(r IO) {
+	r.String(&x.Noise)
+	r.Float32(&x.Threshold)
+	Single(r, &x.Range)
+	r.Uint32(&x.Block)
+}
+
+// NoiseDescriptor describes the gradient noise used by a BiomeNoiseGradientSurface.
+type NoiseDescriptor struct {
+	// Name is the string used to initialise the noise.
+	Name string
+	// FirstOctave is the first octave used by the noise.
+	FirstOctave int32
+	// Amplitudes is a list of amplitude values used by the noise. It must contain between 1 and 100 entries.
+	Amplitudes []float32
+}
+
+// Marshal encodes/decodes a NoiseDescriptor.
+func (x *NoiseDescriptor) Marshal(r IO) {
+	r.String(&x.Name)
 	r.Int32(&x.FirstOctave)
 	FuncSlice(r, &x.Amplitudes, r.Float32)
 }
