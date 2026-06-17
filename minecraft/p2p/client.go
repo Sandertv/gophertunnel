@@ -35,8 +35,7 @@ func (conf ClientConfig) New(client *xsapi.Client) *Client {
 
 // NewClient returns a new Client using the underlying [xsapi.Client].
 func NewClient(client *xsapi.Client) *Client {
-	var c ClientConfig
-	return c.New(client)
+	return ClientConfig{}.New(client)
 }
 
 // Client implements an API client for searching peer-to-peer worlds hosted by players.
@@ -148,16 +147,15 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 		return fmt.Errorf("decode custom properties: %w", err)
 	}
 	connection, err := world.Connection()
+	if err != nil {
+		return fmt.Errorf("select connection method: %w", err)
+	}
 
 	s.worldMu.Lock()
 	defer s.worldMu.Unlock()
 
 	s.world = world
-	if err == nil {
-		s.connection = connection
-	} else {
-		s.connection = Connection{}
-	}
+	s.connection = connection
 
 	if s.nonce == "" {
 		// If the host has not yet generated or published a nonce for the caller, check if
@@ -174,7 +172,7 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 			}
 		}
 	}
-	if err == nil && s.nonce != "" {
+	if s.nonce != "" {
 		s.readyOnce.Do(func() {
 			close(s.ready)
 		})
