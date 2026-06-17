@@ -53,6 +53,9 @@ func (c *Client) Worlds(ctx context.Context) ([]World, error) {
 	}
 	worlds := make([]World, 0, len(activities))
 	for _, activity := range activities {
+		if activity.RelatedInfo == nil || activity.RelatedInfo.Closed {
+			continue
+		}
 		var world World
 		if err := json.Unmarshal(activity.CustomProperties, &world); err != nil {
 			c.conf.Log.Error("error decoding world data",
