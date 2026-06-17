@@ -8,8 +8,8 @@ github.com/creachadair/mds v0.26.1 h1:CQG8f4cueHX/c20q5Sy/Ubk8Bvy+aRzVgbpxVieMBA
 github.com/creachadair/mds v0.26.1/go.mod h1:dMBTCSy3iS3dwh4Rb1zxeZz2d7K8+N24GCTsayWtQRI=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/df-mc/go-nethernet v1.0.10 h1:DoHHpF5niQvvMT+EQ/vn40yuoX/Ykd7NLjzTzd1U89o=
-github.com/df-mc/go-nethernet v1.0.10/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
+github.com/df-mc/go-nethernet v1.0.15-0.20260617180759-48a921e29502 h1:KRsnyMVqAR9NxZihRKh7YUs8g8v7no5GPblv97K7KWE=
+github.com/df-mc/go-nethernet v1.0.15-0.20260617180759-48a921e29502/go.mod h1:APCda153OgX8K55egZh5w/H50vY0OojlD6hsKFbdQtU=
 github.com/df-mc/go-playfab/v2 v2.0.1 h1:UKOfa4r7xALUcd+SYXt2hhdLGYcJBOZgI/7YVLW2qbo=
 github.com/df-mc/go-playfab/v2 v2.0.1/go.mod h1:QzDrEVNhc1E/qENDSRKw7vdox2bMs5Zgsy5Fl5XfnW0=
 github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260521011245-91de547c5eb6 h1:/4YQQ8bOl2CSBlNCAaX073iK/VvOm2nBEzhrZgSX7G0=

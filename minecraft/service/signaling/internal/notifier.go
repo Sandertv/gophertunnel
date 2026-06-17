@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"context"
 	"log/slog"
 	"sync"
 
@@ -13,31 +12,32 @@ import (
 // channel is full.
 func NewNotifier(log *slog.Logger) *Notifier {
 	return &Notifier{
-		notifiers: make(map[uint32]chan<- *nethernet.Signal),
+		notifiers: make(map[uint32]chan *nethernet.Signal),
 		log:       log,
 	}
 }
 
-// Notifier distributes incoming [nethernet.Signal] values to a set of
-// channels registered with [Notifier.Register].
+// Notifier distributes incoming [nethernet.Signal] values to registered
+// subscription channels.
 type Notifier struct {
-	notifiers   map[uint32]chan<- *nethernet.Signal
+	notifiers   map[uint32]chan *nethernet.Signal
 	notifyCount uint32
 	mu          sync.RWMutex
 	log         *slog.Logger
 }
 
-// Register adds signals to the set of channels notified by [Notifier.Notify]
-// and returns a stop function that removes and closes the channel. The caller
-// must not close the channel themselves.
-func (n *Notifier) Register(signals chan<- *nethernet.Signal) (stop func()) {
+// Register returns a channel that receives incoming signals. The returned stop
+// function removes and closes the channel.
+func (n *Notifier) Register() (<-chan *nethernet.Signal, func()) {
+	signals := make(chan *nethernet.Signal, 64)
+
 	n.mu.Lock()
 	i := n.notifyCount
 	n.notifyCount++
 	n.notifiers[i] = signals
 	n.mu.Unlock()
 
-	return func() {
+	return signals, func() {
 		n.mu.Lock()
 		n.stop(i)
 		n.mu.Unlock()
@@ -57,22 +57,6 @@ func (n *Notifier) Signal(signal *nethernet.Signal) {
 		}
 	}
 	n.mu.RUnlock()
-}
-
-// SignalContext sends signal to all registered channels, blocking until each
-// channel receives the signal or ctx is done. It returns ctx.Err if delivery
-// is interrupted by context cancellation.
-func (n *Notifier) SignalContext(ctx context.Context, signal *nethernet.Signal) error {
-	n.mu.RLock()
-	defer n.mu.RUnlock()
-	for _, ch := range n.notifiers {
-		select {
-		case ch <- signal:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
-	}
-	return nil
 }
 
 // stop removes the channel registered with the given ID and closes it.

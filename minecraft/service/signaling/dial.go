@@ -49,7 +49,8 @@ func (d Dialer) Dial(src service.TokenSource) (*Conn, error) {
 }
 
 // DialContext connects to the signaling service using the provided [service.TokenSource] for authorization.
-// The given [context.Context] is used to control the deadline for the WebSocket handshake.
+// The given [context.Context] is used to control the deadline for discovery, authorization, and the WebSocket
+// handshake. The returned Conn may still need to wait for initial ICE credentials in [Conn.Credentials].
 func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn, error) {
 	if d.Environment == nil {
 		discovery, err := service.Default(ctx)

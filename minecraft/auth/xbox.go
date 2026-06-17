@@ -3,7 +3,6 @@ package auth
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"sync"
 
@@ -25,7 +24,10 @@ type XBLToken struct {
 // SetAuthHeader sets the 'Authorization' header used for Minecraft related endpoints that
 // need an XBOX Live authenticated caller.
 func (t XBLToken) SetAuthHeader(r *http.Request) {
-	r.Header.Set("Authorization", fmt.Sprintf("XBL3.0 x=%v;%v", t.AuthorizationToken.DisplayClaims.UserInfo[0].UserHash, t.AuthorizationToken.Token))
+	if t.AuthorizationToken == nil || len(t.AuthorizationToken.DisplayClaims.UserInfo) == 0 {
+		return
+	}
+	t.AuthorizationToken.SetAuthHeader(r)
 }
 
 // Valid returns whether the XBLToken is valid.
@@ -258,6 +260,21 @@ func (conf Config) RequestXBLToken(ctx context.Context, liveToken *oauth2.Token,
 	if err != nil {
 		return nil, err
 	}
-	// We wrap the resulting token in XBLToken to maintain compatibility with the old code.
+	return newXBLToken(token)
+}
+
+// newXBLToken wraps an XSTS token after validating the fields required for
+// Minecraft/Xbox Authorization headers.
+func newXBLToken(token *xsts.Token) (*XBLToken, error) {
+	if token == nil {
+		return nil, errors.New("auth: xsts token is nil")
+	}
+	if len(token.DisplayClaims.UserInfo) == 0 {
+		return nil, errors.New("auth: xsts token has no user info")
+	}
+	if !token.Valid() {
+		return nil, errors.New("auth: xsts token is invalid")
+	}
+	// Wrap the resulting token in XBLToken to maintain compatibility with the old code.
 	return &XBLToken{AuthorizationToken: token}, nil
 }

@@ -7,11 +7,17 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"github.com/sandertv/gophertunnel/minecraft/service/internal"
 )
+
+// DefaultPingFrequency is used when the signaling service does not provide a
+// positive ping interval.
+const DefaultPingFrequency = time.Second * 15
 
 // Environment represents an environment for the signaling service.
 type Environment struct {
@@ -67,7 +73,7 @@ func (e *Environment) UnmarshalJSON(b []byte) (err error) {
 func (e *Environment) Configuration(context.Context, *http.Client, service.TokenSource) (*Configuration, error) {
 	return &Configuration{
 		ServiceURI:    e.ServiceURI,
-		PingFrequency: time.Second * 15, // 50 seconds for JSON-RPC and 15 seconds for legacy WebSocket connections
+		PingFrequency: DefaultPingFrequency,
 	}, nil
 }
 
@@ -166,12 +172,34 @@ func (cfg *Configuration) UnmarshalJSON(b []byte) (err error) {
 	if err != nil {
 		return fmt.Errorf("service/signaling: parse Configuration.ServiceURI: %w", err)
 	}
-	var h, m, s int
-	if _, err := fmt.Sscanf(data.PingFrequency, "%d:%d:%d", &h, &m, &s); err != nil {
-		return fmt.Errorf("service/signaling: parse Configuration.PingFrequency: %w", err)
+	if data.PingFrequency == "" {
+		cfg.PingFrequency = DefaultPingFrequency
+		return nil
+	}
+	parts := strings.Split(data.PingFrequency, ":")
+	if len(parts) != 3 {
+		return fmt.Errorf("service/signaling: parse Configuration.PingFrequency: invalid value %q", data.PingFrequency)
+	}
+	h, err := strconv.Atoi(parts[0])
+	if err != nil {
+		return fmt.Errorf("service/signaling: parse Configuration.PingFrequency hours: %w", err)
+	}
+	m, err := strconv.Atoi(parts[1])
+	if err != nil {
+		return fmt.Errorf("service/signaling: parse Configuration.PingFrequency minutes: %w", err)
+	}
+	s, err := strconv.Atoi(parts[2])
+	if err != nil {
+		return fmt.Errorf("service/signaling: parse Configuration.PingFrequency seconds: %w", err)
+	}
+	if h < 0 || m < 0 || s < 0 {
+		return fmt.Errorf("service/signaling: Configuration.PingFrequency cannot be negative: %q", data.PingFrequency)
 	}
 	cfg.PingFrequency = time.Duration(h)*time.Hour +
 		time.Duration(m)*time.Minute +
 		time.Duration(s)*time.Second
+	if cfg.PingFrequency <= 0 {
+		return fmt.Errorf("service/signaling: Configuration.PingFrequency must be positive: %q", data.PingFrequency)
+	}
 	return nil
 }

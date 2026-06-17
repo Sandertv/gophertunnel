@@ -52,7 +52,10 @@ func (i *PendingMap) Done(id uuid.UUID, err error) bool {
 	delete(i.expected, id)
 	i.mu.Unlock()
 	if ok {
-		ch <- err
+		select {
+		case ch <- err:
+		default:
+		}
 		close(ch)
 	}
 	return ok
