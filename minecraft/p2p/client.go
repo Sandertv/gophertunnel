@@ -71,7 +71,7 @@ func (c *Client) Worlds(ctx context.Context) ([]World, error) {
 }
 
 // Join joins the multiplayer session on Xbox Live using the given handle ID
-// and wait until the host publishes a nonce for the caller.
+// and waits until the host publishes a usable connection and nonce for the caller.
 func (c *Client) Join(ctx context.Context, handleID uuid.UUID) (_ *Session, err error) {
 	s, err := c.client.MPSD().Join(ctx, handleID, mpsd.JoinConfig{})
 	if err != nil {
@@ -88,24 +88,22 @@ func (c *Client) Join(ctx context.Context, handleID uuid.UUID) (_ *Session, err 
 		client:  c,
 		session: s,
 
-		nonceReceived: make(chan struct{}),
+		ready: make(chan struct{}),
 
 		log: c.conf.Log.With("sessionRef", s.Reference()),
 	}
+	s.Handle(&handler{session})
 	if err := session.updateWorldData(s.Properties().Custom); err != nil {
 		return nil, err
 	}
-	s.Handle(&handler{session})
-	select {
-	case <-ctx.Done():
-		return nil, ctx.Err()
-	case <-session.nonceReceived:
-		return session, nil
+	if err := session.waitReady(ctx); err != nil {
+		return nil, err
 	}
+	return session, nil
 }
 
 // Join joins the multiplayer session associated with the World on Xbox Live
-// and wait until the host publishes a nonce for the caller.
+// and waits until the host publishes a usable connection and nonce for the caller.
 func (w *World) Join(ctx context.Context) (*Session, error) {
 	if w.client == nil {
 		return nil, errors.New("minecraft/p2p: client is not bound to world")
@@ -123,8 +121,11 @@ type Session struct {
 	connection Connection
 	worldMu    sync.RWMutex
 
-	nonce         string
-	nonceReceived chan struct{}
+	nonce string
+
+	readyOnce sync.Once
+	readyErr  error
+	ready     chan struct{}
 
 	log *slog.Logger
 }
@@ -146,16 +147,17 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 	if err := json.Unmarshal(custom, &world); err != nil {
 		return fmt.Errorf("decode custom properties: %w", err)
 	}
-	connection, ok := world.Connection()
-	if !ok {
-		return errors.New("world has no supported signaling connections")
-	}
+	connection, err := world.Connection()
 
 	s.worldMu.Lock()
 	defer s.worldMu.Unlock()
 
 	s.world = world
-	s.connection = connection
+	if err == nil {
+		s.connection = connection
+	} else {
+		s.connection = Connection{}
+	}
 
 	if s.nonce == "" {
 		// If the host has not yet generated or published a nonce for the caller, check if
@@ -165,20 +167,54 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 			nonce, ok := nonces[xuid]
 			if ok {
 				if nonce == "" {
-					return errors.New("host published empty nonce for caller")
+					return s.failReadyLocked(errors.New("host published empty nonce for caller"))
 				}
 				s.log.Debug("received nonce from host", slog.String("xuid", xuid), slog.String("nonce", nonce))
 				s.nonce = nonce
-				close(s.nonceReceived)
 			}
 		}
+	}
+	if err == nil && s.nonce != "" {
+		s.readyOnce.Do(func() {
+			close(s.ready)
+		})
 	}
 	return nil
 }
 
-// Connection returns the first entry on [World.SupportedConnections].
-// This is a convenience method for obtaining a connection without validating
-// for slices boundary.
+func (s *Session) failReadyLocked(err error) error {
+	if s.readyErr == nil {
+		s.readyErr = err
+	}
+	s.readyOnce.Do(func() {
+		close(s.ready)
+	})
+	return err
+}
+
+// waitReady blocks until updateWorldData observes both a usable connection and
+// the caller nonce, or until ctx is canceled. If both happen together, it
+// returns the ready result so terminal host errors are not hidden by ctx.
+func (s *Session) waitReady(ctx context.Context) error {
+	select {
+	case <-s.ready:
+	case <-ctx.Done():
+		select {
+		case <-s.ready:
+		default:
+			return ctx.Err()
+		}
+	}
+	return s.readyResult()
+}
+
+func (s *Session) readyResult() error {
+	s.worldMu.RLock()
+	defer s.worldMu.RUnlock()
+	return s.readyErr
+}
+
+// Connection returns the supported connection selected from [World.SupportedConnections].
 func (s *Session) Connection() Connection {
 	s.worldMu.RLock()
 	defer s.worldMu.RUnlock()

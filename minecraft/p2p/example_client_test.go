@@ -72,8 +72,9 @@ func ExampleClient() {
 	}
 	defer session.Close()
 
+	connection := session.Connection()
 	var s nethernet.Signaling
-	switch session.Connection().Type {
+	switch connection.Type {
 	case ConnectionTypeSignalingOverJSONRPC:
 		var d messaging.Dialer
 		conn, err := d.DialContext(context.TODO(), src)
@@ -91,7 +92,12 @@ func ExampleClient() {
 		defer conn.Close()
 		s = conn
 	default:
-		panic(fmt.Sprintf("invalid connection type: %d", session.Connection().Type))
+		panic(fmt.Sprintf("invalid connection type: %d", connection.Type))
+	}
+
+	address, err := connection.Address()
+	if err != nil {
+		panic(fmt.Sprintf("invalid connection: %s", err))
 	}
 
 	minecraft.RegisterNetwork("nethernet", func(l *slog.Logger) minecraft.Network {
@@ -107,7 +113,7 @@ func ExampleClient() {
 		ClientData: login.ClientData{
 			Nonce: session.Nonce(),
 		},
-	}.Dial("nethernet", session.Connection().Address())
+	}.Dial("nethernet", address)
 	if err != nil {
 		panic(err)
 	}
