@@ -248,4 +248,7 @@ const (
 	IDClientBoundAttributeLayerSync
 	IDServerStoreInfo
 	IDServerPresenceInfo
+	IDClientboundUpdateSoundData
+	IDSendPartyDestinationCookie
+	IDPartyDestinationCookieResponse
 )

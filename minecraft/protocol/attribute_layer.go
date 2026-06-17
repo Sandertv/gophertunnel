@@ -100,6 +100,10 @@ type EnvironmentAttributeData struct {
 	TotalTransitionTicks uint32
 	// EaseType is the easing function used for the transition. It is one of the EasingType constants.
 	EaseType int32
+	// LocalTransitionTicks is the number of ticks elapsed in the local transition.
+	LocalTransitionTicks uint32
+	// NoiseTransition indicates whether the transition uses noise.
+	NoiseTransition bool
 }
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
@@ -113,6 +117,8 @@ func (x *EnvironmentAttributeData) Marshal(r IO) {
 	r.Uint32(&x.TotalTransitionTicks)
 	r.String(&easingType)
 	easingTypeFromString(r, &x.EaseType, easingType)
+	r.Uint32(&x.LocalTransitionTicks)
+	r.Bool(&x.NoiseTransition)
 }
 
 // AttributeLayerSettings represents settings for an attribute layer.
@@ -139,6 +145,8 @@ func (x *AttributeLayerSettings) Marshal(r IO) {
 type AttributeLayerData struct {
 	// Name is the name of the attribute layer.
 	Name string
+	// NoiseName is the optional name of the noise used by the layer.
+	NoiseName Optional[string]
 	// DimensionID is the dimension the layer applies to.
 	DimensionID int32
 	// Settings is the layer's settings.
@@ -150,6 +158,7 @@ type AttributeLayerData struct {
 // Marshal encodes/decodes an AttributeLayerData.
 func (x *AttributeLayerData) Marshal(r IO) {
 	r.String(&x.Name)
+	OptionalFunc(r, &x.NoiseName, r.String)
 	r.Varint32(&x.DimensionID)
 	Single(r, &x.Settings)
 	Slice(r, &x.EnvironmentAttributes)

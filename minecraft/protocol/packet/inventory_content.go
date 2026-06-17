@@ -29,7 +29,7 @@ func (*InventoryContent) ID() uint32 {
 
 func (pk *InventoryContent) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.WindowID)
-	protocol.FuncSlice(io, &pk.Content, io.ItemInstance)
+	protocol.FuncSlice(io, &pk.Content, io.ItemInstanceNew)
 	protocol.Single(io, &pk.Container)
-	io.ItemInstance(&pk.StorageItem)
+	io.ItemInstanceNew(&pk.StorageItem)
 }

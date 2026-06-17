@@ -26,6 +26,7 @@ type Writer struct {
 		io.ByteWriter
 	}
 	shieldID int32
+	buf      [8]byte
 }
 
 // NewWriter creates a new initialised Writer with an underlying io.ByteWriter to write to.
@@ -33,7 +34,18 @@ func NewWriter(w interface {
 	io.Writer
 	io.ByteWriter
 }, shieldID int32) *Writer {
-	return &Writer{w: w, shieldID: shieldID}
+	writer := new(Writer)
+	writer.Reset(w, shieldID)
+	return writer
+}
+
+// Reset reuses w with a new underlying destination and shield ID.
+func (w *Writer) Reset(dst interface {
+	io.Writer
+	io.ByteWriter
+}, shieldID int32) {
+	w.w = dst
+	w.shieldID = shieldID
 }
 
 // Uint8 writes a uint8 to the underlying buffer.
@@ -55,14 +67,28 @@ func (w *Writer) Bool(x *bool) {
 func (w *Writer) StringUTF(x *string) {
 	l := int16(len(*x))
 	w.Int16(&l)
-	_, _ = w.w.Write([]byte(*x))
+	w.writeString(*x)
 }
 
 // String writes a string, prefixed with a varuint32, to the underlying buffer.
 func (w *Writer) String(x *string) {
 	l := uint32(len(*x))
 	w.Varuint32(&l)
-	_, _ = w.w.Write([]byte(*x))
+	w.writeString(*x)
+}
+
+// stringWriter is implemented by writers that support writing strings directly.
+type stringWriter interface {
+	WriteString(string) (int, error)
+}
+
+// writeString uses WriteString when available to avoid converting s to []byte.
+func (w *Writer) writeString(s string) {
+	if sw, ok := w.w.(stringWriter); ok {
+		_, _ = sw.WriteString(s)
+		return
+	}
+	_, _ = w.w.Write([]byte(s))
 }
 
 // ByteSlice writes a []byte, prefixed with a varuint32, to the underlying buffer.
@@ -176,11 +202,11 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
-	w.ItemInstance(&x.HeldItem)
+	w.ItemInstanceNew(&x.HeldItem)
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
-	w.Varuint32(&x.ClientPrediction)
+	w.Uint8(&x.ClientPrediction)
 	w.Uint8(&x.ClientCooldownState)
 }
 

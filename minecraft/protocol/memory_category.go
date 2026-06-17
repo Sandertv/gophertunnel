@@ -148,3 +148,26 @@ func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
 }
+
+// WhiskerScopeDataSummary represents a whisker profiler scope diagnostic summary.
+type WhiskerScopeDataSummary struct {
+	// Label is the label of the whisker scope.
+	Label string
+	// Indentation is the indentation string of the whisker scope within the profiler hierarchy.
+	Indentation string
+	// TotalHighCostNS is the total time, in nanoseconds, spent in the high-cost portion of the scope.
+	TotalHighCostNS uint64
+	// TotalMidCostNS is the total time, in nanoseconds, spent in the mid-cost portion of the scope.
+	TotalMidCostNS uint64
+	// TotalLowCostNS is the total time, in nanoseconds, spent in the low-cost portion of the scope.
+	TotalLowCostNS uint64
+}
+
+// Marshal encodes/decodes a WhiskerScopeDataSummary.
+func (x *WhiskerScopeDataSummary) Marshal(r IO) {
+	r.String(&x.Label)
+	r.String(&x.Indentation)
+	r.Uint64(&x.TotalHighCostNS)
+	r.Uint64(&x.TotalMidCostNS)
+	r.Uint64(&x.TotalLowCostNS)
+}

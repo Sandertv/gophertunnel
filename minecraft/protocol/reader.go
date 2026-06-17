@@ -26,6 +26,7 @@ type Reader struct {
 	}
 	shieldID      int32
 	limitsEnabled bool
+	buf           [8]byte
 }
 
 // NewReader creates a new Reader using the io.ByteReader passed as underlying source to read bytes from.
@@ -273,11 +274,11 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.BlockPos(&x.BlockPosition)
 	r.Varint32(&x.BlockFace)
 	r.Varint32(&x.HotBarSlot)
-	r.ItemInstance(&x.HeldItem)
+	r.ItemInstanceNew(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
 	r.Varuint32(&x.BlockRuntimeID)
-	r.Varuint32(&x.ClientPrediction)
+	r.Uint8(&x.ClientPrediction)
 	r.Uint8(&x.ClientCooldownState)
 }
 
