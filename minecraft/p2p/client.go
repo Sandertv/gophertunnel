@@ -146,16 +146,17 @@ func (s *Session) updateWorldData(custom json.RawMessage) error {
 	if err := json.Unmarshal(custom, &world); err != nil {
 		return fmt.Errorf("decode custom properties: %w", err)
 	}
-	connection, err := world.Connection()
-	if err != nil {
-		return fmt.Errorf("select connection method: %w", err)
-	}
+	connection, connectionErr := world.Connection()
 
 	s.worldMu.Lock()
 	defer s.worldMu.Unlock()
 
 	s.world = world
-	s.connection = connection
+	if connectionErr == nil {
+		s.connection = connection
+	} else if _, err := s.connection.Address(); err != nil {
+		return s.failReadyLocked(fmt.Errorf("select connection method: %w", connectionErr))
+	}
 
 	if s.nonce == "" {
 		// If the host has not yet generated or published a nonce for the caller, check if
