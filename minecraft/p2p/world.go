@@ -1,6 +1,7 @@
 package p2p
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -98,6 +99,12 @@ type World struct {
 	// It is only populated when the host is playing a gathering experience.
 	FriendID string `json:"FriendId,omitempty"`
 
+	// RealmID is the ID of the Realm that the host is currently playing.
+	// When a player joins a Realm, it publishes a presence to Xbox Live
+	// to advertise its presence. It is only populated when the host is
+	// playing in a Realm.
+	RealmID int64 `json:"RealmId"`
+
 	// handleID is the identifier of the activity associated with the World.
 	handleID uuid.UUID
 	// client is the API Client bound to this World.
@@ -132,13 +139,43 @@ type Connection struct {
 	// It is typically empty for most sessions because RakNet is no longer supported.
 	HostPort uint16
 	// NetherNetID is the network ID of the NetherNet network for the host.
-	NetherNetID json.Number `json:"NetherNetId"`
+	NetherNetID NetherNetID `json:"NetherNetId"`
 	// PlayerMessagingID is the player messaging ID of the host.
 	// When joining a World, clients use it together with [NetherNetID]
 	// as the destination for signaling messages needed to establish the
 	// WebRTC connection to the host.
 	// It is only populated when Type is [ConnectionTypeSignalingOverJSONRPC].
 	PlayerMessagingID uuid.UUID `json:"PmsgId,omitzero"`
+}
+
+// NetherNetID is the NetherNet network ID advertised by a host. It is an opaque
+// identifier: MPSD custom properties encode it as either a JSON number or a JSON
+// string, and its value may be a decimal network ID or a UUID depending on the
+// host. It is always decoded into its string form regardless of the JSON
+// representation used.
+type NetherNetID string
+
+// UnmarshalJSON decodes the NetherNetID from either a JSON number or a JSON
+// string into its string form. It never rejects a representable value; whether
+// the ID is actually usable is decided by [Connection.Validate].
+func (id *NetherNetID) UnmarshalJSON(b []byte) error {
+	b = bytes.TrimSpace(b)
+	if bytes.Equal(b, []byte("null")) {
+		*id = ""
+		return nil
+	}
+	// A quoted value (a JSON string) may hold a decimal ID or a UUID.
+	if len(b) != 0 && b[0] == '"' {
+		var s string
+		if err := json.Unmarshal(b, &s); err != nil {
+			return err
+		}
+		*id = NetherNetID(s)
+		return nil
+	}
+	// Otherwise the value is a bare JSON number; keep its digits verbatim.
+	*id = NetherNetID(b)
+	return nil
 }
 
 // Validate validates whether the Connection is actually usable for connecting to the world.
@@ -159,10 +196,14 @@ func (c Connection) Validate() error {
 	}
 }
 
-// validateNetherNetID validates whether Connection.NetherNetID is an unsigned, 64-bit integer.
+// validateNetherNetID validates that Connection.NetherNetID is a non-empty,
+// non-zero identifier. The ID is treated as an opaque string because it may be a
+// decimal network ID or a UUID depending on the host.
 func (c Connection) validateNetherNetID() error {
 	if _, err := strconv.ParseUint(string(c.NetherNetID), 10, 64); err != nil {
-		return fmt.Errorf("minecraft/p2p: parse Connection.NetherNetID: %w", err)
+		if err2 := uuid.Validate(string(c.NetherNetID)); err2 != nil {
+			return errors.Join(err, err2)
+		}
 	}
 	return nil
 }
@@ -195,7 +236,7 @@ func (w World) Connection() (Connection, error) {
 func (c Connection) Address() string {
 	switch c.Type {
 	case ConnectionTypeSignalingOverWebSocket:
-		return c.NetherNetID.String()
+		return string(c.NetherNetID)
 	case ConnectionTypeSignalingOverJSONRPC:
 		return c.PlayerMessagingID.String()
 	default:
