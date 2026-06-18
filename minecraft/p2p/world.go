@@ -145,18 +145,24 @@ type Connection struct {
 func (c Connection) Validate() error {
 	switch c.Type {
 	case ConnectionTypeSignalingOverJSONRPC:
+		if err := c.validateNetherNetID(); err != nil {
+			return err
+		}
 		if c.PlayerMessagingID == uuid.Nil {
 			return errors.New("minecraft/p2p: Connection.PlayerMessagingID is nil")
 		}
-		fallthrough
-	case ConnectionTypeSignalingOverWebSocket:
-		if _, err := strconv.ParseUint(string(c.NetherNetID), 10, 64); err != nil {
-			return fmt.Errorf("minecraft/p2p: parse Connection.NetherNetID: %w", err)
-		}
 		return nil
+	case ConnectionTypeSignalingOverWebSocket:
+		return c.validateNetherNetID()
 	default:
 		return fmt.Errorf("minecraft/p2p: invalid Connection.Type: %d", c.Type)
 	}
+}
+
+// validateNetherNetID validates whether [Connection.NetherNetID] is an unsigned, 64-bit integer.
+func (c Connection) validateNetherNetID() error {
+	_, err := strconv.ParseUint(string(c.NetherNetID), 10, 64)
+	return err
 }
 
 // Connection returns the first supported NetherNet signaling connection
