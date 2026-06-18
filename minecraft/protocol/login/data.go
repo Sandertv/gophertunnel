@@ -72,7 +72,7 @@ func (data IdentityData) Validate() error {
 	if id, err := uuid.Parse(data.Identity); err != nil || id == uuid.Nil {
 		return fmt.Errorf("UUID must be parseable as a valid UUID, but got %v", data.Identity)
 	}
-	nameLimit := 16
+	nameLimit := 15
 	if len(data.DisplayName) == 0 || len(data.DisplayName) > nameLimit {
 		return fmt.Errorf("DisplayName must not be empty or longer than %d characters, but got %v characters", nameLimit, len(data.DisplayName))
 	}
