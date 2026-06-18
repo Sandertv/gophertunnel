@@ -95,10 +95,7 @@ func ExampleClient() {
 		panic(fmt.Sprintf("invalid connection type: %d", connection.Type))
 	}
 
-	address, err := connection.Address()
-	if err != nil {
-		panic(fmt.Sprintf("invalid connection: %s", err))
-	}
+	address := connection.Address()
 
 	minecraft.RegisterNetwork("nethernet", func(l *slog.Logger) minecraft.Network {
 		return minecraft.NetherNet{

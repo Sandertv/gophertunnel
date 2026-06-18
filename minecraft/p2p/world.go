@@ -6,21 +6,10 @@ import (
 	"fmt"
 	"maps"
 	"slices"
+	"strconv"
 
 	"github.com/df-mc/go-xsapi/v2/mpsd"
 	"github.com/google/uuid"
-)
-
-var (
-	// ErrNoSupportedConnection is returned when a World does not advertise a
-	// NetherNet signaling connection supported by this package.
-	ErrNoSupportedConnection = errors.New("minecraft/p2p: no supported signaling connection")
-	// ErrInvalidConnection is returned when a Connection cannot be converted
-	// into a usable dial address.
-	ErrInvalidConnection = errors.New("minecraft/p2p: invalid connection")
-	// ErrInvalidBroadcastSetting is returned when a BroadcastSetting cannot be
-	// converted into Xbox Live session restrictions.
-	ErrInvalidBroadcastSetting = errors.New("minecraft/p2p: invalid broadcast setting")
 )
 
 // World represents a player-hosted world that can be joined.
@@ -152,10 +141,22 @@ type Connection struct {
 	PlayerMessagingID uuid.UUID `json:"PmsgId,omitzero"`
 }
 
-// Valid reports whether Address can produce a dialable address for c.
-func (c Connection) Valid() bool {
-	_, err := c.Address()
-	return err == nil
+// Validate validates whether the Connection is actually usable for connecting to the world.
+func (c Connection) Validate() error {
+	switch c.Type {
+	case ConnectionTypeSignalingOverJSONRPC:
+		if c.PlayerMessagingID == uuid.Nil {
+			return errors.New("minecraft/p2p: Connection.PlayerMessagingID is nil")
+		}
+		fallthrough
+	case ConnectionTypeSignalingOverWebSocket:
+		if _, err := strconv.ParseUint(string(c.NetherNetID), 10, 64); err != nil {
+			return fmt.Errorf("minecraft/p2p: parse Connection.NetherNetID: %w", err)
+		}
+		return nil
+	default:
+		return fmt.Errorf("minecraft/p2p: invalid Connection.Type: %d", c.Type)
+	}
 }
 
 // Connection returns the first supported NetherNet signaling connection
@@ -166,40 +167,28 @@ func (c Connection) Valid() bool {
 // wraps [ErrNoSupportedConnection].
 func (w World) Connection() (Connection, error) {
 	if w.TransportLayer != TransportLayerNetherNet {
-		return Connection{}, fmt.Errorf("%w: transport layer %d", ErrNoSupportedConnection, w.TransportLayer)
+		return Connection{}, fmt.Errorf("invalid transport layer: %d", w.TransportLayer)
 	}
-	var unsupported error
+	var err error
 	for _, c := range w.SupportedConnections {
-		if _, err := c.Address(); err == nil {
-			return c, nil
-		} else {
-			unsupported = errors.Join(unsupported, err)
+		if err2 := c.Validate(); err2 != nil {
+			err = errors.Join(err, err2)
 		}
+		return c, nil
 	}
-	if unsupported == nil {
-		return Connection{}, ErrNoSupportedConnection
-	}
-	return Connection{}, fmt.Errorf("%w: %w", ErrNoSupportedConnection, unsupported)
+	return Connection{}, err
 }
 
 // Address returns a string that can be used as the address when dialing a new Conn.
-func (c Connection) Address() (string, error) {
+// Caller should validate the Connection using [Connection.Validate] before calling this method.
+func (c Connection) Address() string {
 	switch c.Type {
 	case ConnectionTypeSignalingOverWebSocket:
-		if c.NetherNetID == "" {
-			return "", fmt.Errorf("%w: missing nethernet id", ErrInvalidConnection)
-		}
-		return c.NetherNetID.String(), nil
+		return c.NetherNetID.String()
 	case ConnectionTypeSignalingOverJSONRPC:
-		if c.NetherNetID == "" {
-			return "", fmt.Errorf("%w: missing nethernet id", ErrInvalidConnection)
-		}
-		if c.PlayerMessagingID == uuid.Nil {
-			return "", fmt.Errorf("%w: missing player messaging id", ErrInvalidConnection)
-		}
-		return c.PlayerMessagingID.String(), nil
+		return c.PlayerMessagingID.String()
 	default:
-		return "", fmt.Errorf("%w: unsupported type %d", ErrInvalidConnection, c.Type)
+		panic(fmt.Sprintf("minecraft/p2p: invalid connection type: %d", c.Type))
 	}
 }
 
@@ -257,26 +246,26 @@ type BroadcastSetting int
 // JoinRestriction returns the
 // [github.com/df-mc/go-xsapi/v2/mpsd.PublishConfig.JoinRestriction]
 // value for the BroadcastSetting.
-func (s BroadcastSetting) JoinRestriction() (string, error) {
+func (s BroadcastSetting) JoinRestriction() string {
 	switch s {
 	case BroadcastSettingInviteOnly:
-		return mpsd.SessionRestrictionLocal, nil
+		return mpsd.SessionRestrictionLocal
 	case BroadcastSettingFriendsOnly, BroadcastSettingFriendsOfFriends:
-		return mpsd.SessionRestrictionFollowed, nil
+		return mpsd.SessionRestrictionFollowed
 	default:
-		return "", fmt.Errorf("%w: setting %d", ErrInvalidBroadcastSetting, s)
+		panic(fmt.Sprintf("minecraft/p2p: invalid BroadcastSetting value: %d", s))
 	}
 }
 
 // ReadRestriction returns the
 // [github.com/df-mc/go-xsapi/v2/mpsd.PublishConfig.ReadRestriction]
 // value for the BroadcastSetting.
-func (s BroadcastSetting) ReadRestriction() (string, error) {
+func (s BroadcastSetting) ReadRestriction() string {
 	switch s {
 	case BroadcastSettingInviteOnly, BroadcastSettingFriendsOnly, BroadcastSettingFriendsOfFriends:
-		return mpsd.SessionRestrictionFollowed, nil
+		return mpsd.SessionRestrictionFollowed
 	default:
-		return "", fmt.Errorf("%w: setting %d", ErrInvalidBroadcastSetting, s)
+		panic(fmt.Sprintf("minecraft/p2p: invalid BroadcastSetting value: %d", s))
 	}
 }
 
