@@ -173,6 +173,7 @@ func (w World) Connection() (Connection, error) {
 	for _, c := range w.SupportedConnections {
 		if err2 := c.Validate(); err2 != nil {
 			err = errors.Join(err, err2)
+			continue
 		}
 		return c, nil
 	}
