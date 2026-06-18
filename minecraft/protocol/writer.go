@@ -206,7 +206,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
-	w.Varuint32(&x.ClientPrediction)
+	w.Uint8(&x.ClientPrediction)
 	w.Uint8(&x.ClientCooldownState)
 }
 

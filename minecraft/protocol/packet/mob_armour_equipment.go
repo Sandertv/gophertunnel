@@ -32,9 +32,9 @@ func (*MobArmourEquipment) ID() uint32 {
 
 func (pk *MobArmourEquipment) Marshal(io protocol.IO) {
 	io.Varuint64(&pk.EntityRuntimeID)
-	io.ItemInstance(&pk.Helmet)
-	io.ItemInstance(&pk.Chestplate)
-	io.ItemInstance(&pk.Leggings)
-	io.ItemInstance(&pk.Boots)
-	io.ItemInstance(&pk.Body)
+	io.ItemInstanceNew(&pk.Helmet)
+	io.ItemInstanceNew(&pk.Chestplate)
+	io.ItemInstanceNew(&pk.Leggings)
+	io.ItemInstanceNew(&pk.Boots)
+	io.ItemInstanceNew(&pk.Body)
 }

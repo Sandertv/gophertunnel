@@ -7,608 +7,580 @@ import (
 
 // noinspection SpellCheckingInspection
 const (
-	SoundEventItemUseOn = iota
-	SoundEventHit
-	SoundEventStep
-	SoundEventFly
-	SoundEventJump
-	SoundEventBreak
-	SoundEventPlace
-	SoundEventHeavyStep
-	SoundEventGallop
-	SoundEventFall
-	SoundEventAmbient
-	SoundEventAmbientBaby
-	SoundEventAmbientInWater
-	SoundEventBreathe
-	SoundEventDeath
-	SoundEventDeathInWater
-	SoundEventDeathToZombie
-	SoundEventHurt
-	SoundEventHurtInWater
-	SoundEventMad
-	SoundEventBoost
-	SoundEventBow
-	SoundEventSquishBig
-	SoundEventSquishSmall
-	SoundEventFallBig
-	SoundEventFallSmall
-	SoundEventSplash
-	SoundEventFizz
-	SoundEventFlap
-	SoundEventSwim
-	SoundEventDrink
-	SoundEventEat
-	SoundEventTakeoff
-	SoundEventShake
-	SoundEventPlop
-	SoundEventLand
-	SoundEventSaddle
-	SoundEventArmor
-	SoundEventArmorPlace
-	SoundEventAddChest
-	SoundEventThrow
-	SoundEventAttack
-	SoundEventAttackNoDamage
-	SoundEventAttackStrong
-	SoundEventWarn
-	SoundEventShear
-	SoundEventMilk
-	SoundEventThunder
-	SoundEventExplode
-	SoundEventFire
-	SoundEventIgnite
-	SoundEventFuse
-	SoundEventStare
-	SoundEventSpawn
-	SoundEventShoot
-	SoundEventBreakBlock
-	SoundEventLaunch
-	SoundEventBlast
-	SoundEventLargeBlast
-	SoundEventTwinkle
-	SoundEventRemedy
-	SoundEventUnfect
-	SoundEventLevelUp
-	SoundEventBowHit
-	SoundEventBulletHit
-	SoundEventExtinguishFire
-	SoundEventItemFizz
-	SoundEventChestOpen
-	SoundEventChestClosed
-	SoundEventShulkerBoxOpen
-	SoundEventShulkerBoxClosed
-	SoundEventEnderChestOpen
-	SoundEventEnderChestClosed
-	SoundEventPowerOn
-	SoundEventPowerOff
-	SoundEventAttach
-	SoundEventDetach
-	SoundEventDeny
-	SoundEventTripod
-	SoundEventPop
-	SoundEventDropSlot
-	SoundEventNote
-	SoundEventThorns
-	SoundEventPistonIn
-	SoundEventPistonOut
-	SoundEventPortal
-	SoundEventWater
-	SoundEventLavaPop
-	SoundEventLava
-	SoundEventBurp
-	SoundEventBucketFillWater
-	SoundEventBucketFillLava
-	SoundEventBucketEmptyWater
-	SoundEventBucketEmptyLava
-	SoundEventEquipChain
-	SoundEventEquipDiamond
-	SoundEventEquipGeneric
-	SoundEventEquipGold
-	SoundEventEquipIron
-	SoundEventEquipLeather
-	SoundEventEquipElytra
-	SoundEventRecord13
-	SoundEventRecordCat
-	SoundEventRecordBlocks
-	SoundEventRecordChirp
-	SoundEventRecordFar
-	SoundEventRecordMall
-	SoundEventRecordMellohi
-	SoundEventRecordStal
-	SoundEventRecordStrad
-	SoundEventRecordWard
-	SoundEventRecord11
-	SoundEventRecordWait
-	SoundEventRecordNull
-	SoundEventFlop
-	SoundEventGuardianCurse
-	SoundEventMobWarning
-	SoundEventMobWarningBaby
-	SoundEventTeleport
-	SoundEventShulkerOpen
-	SoundEventShulkerClose
-	SoundEventHaggle
-	SoundEventHaggleYes
-	SoundEventHaggleNo
-	SoundEventHaggleIdle
-	SoundEventChorusGrow
-	SoundEventChorusDeath
-	SoundEventGlass
-	SoundEventPotionBrewed
-	SoundEventCastSpell
-	SoundEventPrepareAttackSpell
-	SoundEventPrepareSummon
-	SoundEventPrepareWololo
-	SoundEventFang
-	SoundEventCharge
-	SoundEventTakePicture
-	SoundEventPlaceLeashKnot
-	SoundEventBreakLeashKnot
-	SoundEventAmbientGrowl
-	SoundEventAmbientWhine
-	SoundEventAmbientPant
-	SoundEventAmbientPurr
-	SoundEventAmbientPurreow
-	SoundEventDeathMinVolume
-	SoundEventDeathMidVolume
-	SoundEventImitateBlaze
-	SoundEventImitateCaveSpider
-	SoundEventImitateCreeper
-	SoundEventImitateElderGuardian
-	SoundEventImitateEnderDragon
-	SoundEventImitateEnderman
-	SoundEventImitateEndermite
-	SoundEventImitateEvocationIllager
-	SoundEventImitateGhast
-	SoundEventImitateHusk
-	SoundEventImitateIllusionIllager
-	SoundEventImitateMagmaCube
-	SoundEventImitatePolarBear
-	SoundEventImitateShulker
-	SoundEventImitateSilverfish
-	SoundEventImitateSkeleton
-	SoundEventImitateSlime
-	SoundEventImitateSpider
-	SoundEventImitateStray
-	SoundEventImitateVex
-	SoundEventImitateVindicationIllager
-	SoundEventImitateWitch
-	SoundEventImitateWither
-	SoundEventImitateWitherSkeleton
-	SoundEventImitateWolf
-	SoundEventImitateZombie
-	SoundEventImitateZombiePigman
-	SoundEventImitateZombieVillager
-	SoundEventEnderEyePlaced
-	SoundEventEndPortalCreated
-	SoundEventAnvilUse
-	SoundEventBottleDragonBreath
-	SoundEventPortalTravel
-	SoundEventTridentHit
-	SoundEventTridentReturn
-	SoundEventTridentRiptide1
-	SoundEventTridentRiptide2
-	SoundEventTridentRiptide3
-	SoundEventTridentThrow
-	SoundEventTridentThunder
-	SoundEventTridentHitGround
-	SoundEventDefault
-	SoundEventFletchingTableUse
-	SoundEventElemConstructOpen
-	SoundEventIceBombHit
-	SoundEventBalloonPop
-	SoundEventLtReactionIceBomb
-	SoundEventLtReactionBleach
-	SoundEventLtReactionElephantToothpaste
-	SoundEventLtReactionElephantToothpaste2
-	SoundEventLtReactionGlowStick
-	SoundEventLtReactionGlowStick2
-	SoundEventLtReactionLuminol
-	SoundEventLtReactionSalt
-	SoundEventLtReactionFertilizer
-	SoundEventLtReactionFireball
-	SoundEventLtReactionMagnesiumSalt
-	SoundEventLtReactionMiscFire
-	SoundEventLtReactionFire
-	SoundEventLtReactionMiscExplosion
-	SoundEventLtReactionMiscMystical
-	SoundEventLtReactionMiscMystical2
-	SoundEventLtReactionProduct
-	SoundEventSparklerUse
-	SoundEventGlowStickUse
-	SoundEventSparklerActive
-	SoundEventConvertToDrowned
-	SoundEventBucketFillFish
-	SoundEventBucketEmptyFish
-	SoundEventBubbleColumnUpwards
-	SoundEventBubbleColumnDownwards
-	SoundEventBubblePop
-	SoundEventBubbleUpInside
-	SoundEventBubbleDownInside
-	SoundEventHurtBaby
-	SoundEventDeathBaby
-	SoundEventStepBaby
-	SoundEventSpawnBaby
-	SoundEventBorn
-	SoundEventTurtleEggBreak
-	SoundEventTurtleEggCrack
-	SoundEventTurtleEggHatched
-	SoundEventLayEgg
-	SoundEventTurtleEggAttacked
-	SoundEventBeaconActivate
-	SoundEventBeaconAmbient
-	SoundEventBeaconDeactivate
-	SoundEventBeaconPower
-	SoundEventConduitActivate
-	SoundEventConduitAmbient
-	SoundEventConduitAttack
-	SoundEventConduitDeactivate
-	SoundEventConduitShort
-	SoundEventSwoop
-	SoundEventBambooSaplingPlace
-	SoundEventPreSneeze
-	SoundEventSneeze
-	SoundEventAmbientTame
-	SoundEventScared
-	SoundEventScaffoldingClimb
-	SoundEventCrossbowLoadingStart
-	SoundEventCrossbowLoadingMiddle
-	SoundEventCrossbowLoadingEnd
-	SoundEventCrossbowShoot
-	SoundEventCrossbowQuickChargeStart
-	SoundEventCrossbowQuickChargeMiddle
-	SoundEventCrossbowQuickChargeEnd
-	SoundEventAmbientAggressive
-	SoundEventAmbientWorried
-	SoundEventCantBreed
-	SoundEventShieldBlock
-	SoundEventLecternBookPlace
-	SoundEventGrindstoneUse
-	SoundEventBell
-	SoundEventCampfireCrackle
-	SoundEventRoar
-	SoundEventStun
-	SoundEventSweetBerryBushHurt
-	SoundEventSweetBerryBushPick
-	SoundEventCartographyTableUse
-	SoundEventStonecutterUse
-	SoundEventComposterEmpty
-	SoundEventComposterFill
-	SoundEventComposterFillLayer
-	SoundEventComposterReady
-	SoundEventBarrelOpen
-	SoundEventBarrelClose
-	SoundEventRaidHorn
-	SoundEventLoomUse
-	SoundEventAmbientInRaid
-	SoundEventUicartographyTableUse
-	SoundEventUistonecutterUse
-	SoundEventUiloomUse
-	SoundEventSmokerUse
-	SoundEventBlastFurnaceUse
-	SoundEventSmithingTableUse
-	SoundEventScreech
-	SoundEventSleep
-	SoundEventFurnaceUse
-	SoundEventMooshroomConvert
-	SoundEventMilkSuspiciously
-	SoundEventCelebrate
-	SoundEventJumpPrevent
-	SoundEventAmbientPollinate
-	SoundEventBeehiveDrip
-	SoundEventBeehiveEnter
-	SoundEventBeehiveExit
-	SoundEventBeehiveWork
-	SoundEventBeehiveShear
-	SoundEventHoneybottleDrink
-	SoundEventAmbientCave
-	SoundEventRetreat
-	SoundEventConvertToZombified
-	SoundEventAdmire
-	SoundEventStepLava
-	SoundEventTempt
-	SoundEventPanic
-	SoundEventAngry
-	SoundEventAmbientMoodWarpedForest
-	SoundEventAmbientMoodSoulsandValley
-	SoundEventAmbientMoodNetherWastes
-	SoundEventAmbientMoodBasaltDeltas
-	SoundEventAmbientMoodCrimsonForest
-	SoundEventRespawnAnchorCharge
-	SoundEventRespawnAnchorDeplete
-	SoundEventRespawnAnchorSetSpawn
-	SoundEventRespawnAnchorAmbient
-	SoundEventSoulEscapeQuiet
-	SoundEventSoulEscapeLoud
-	SoundEventRecordPigstep
-	SoundEventLinkCompassToLodestone
-	SoundEventUseSmithingTable
-	SoundEventEquipNetherite
-	SoundEventAmbientLoopWarpedForest
-	SoundEventAmbientLoopSoulsandValley
-	SoundEventAmbientLoopNetherWastes
-	SoundEventAmbientLoopBasaltDeltas
-	SoundEventAmbientLoopCrimsonForest
-	SoundEventAmbientAdditionWarpedForest
-	SoundEventAmbientAdditionSoulsandValley
-	SoundEventAmbientAdditionNetherWastes
-	SoundEventAmbientAdditionBasaltDeltas
-	SoundEventAmbientAdditionCrimsonForest
-	SoundEventSculkSensorPowerOn
-	SoundEventSculkSensorPowerOff
-	SoundEventBucketFillPowderSnow
-	SoundEventBucketEmptyPowderSnow
-	SoundEventPointedDripstoneCauldronDripWater
-	SoundEventPointedDripstoneCauldronDripLava
-	SoundEventPointedDripstoneDripWater
-	SoundEventPointedDripstoneDripLava
-	SoundEventCaveVinesPickBerries
-	SoundEventBigDripleafTiltDown
-	SoundEventBigDripleafTiltUp
-	SoundEventCopperWaxOn
-	SoundEventCopperWaxOff
-	SoundEventScrape
-	SoundEventPlayerHurtDrown
-	SoundEventPlayerHurtOnFire
-	SoundEventPlayerHurtFreeze
-	SoundEventUseSpyglass
-	SoundEventStopUsingSpyglass
-	SoundEventAmethystBlockChime
-	SoundEventAmbientScreamer
-	SoundEventHurtScreamer
-	SoundEventDeathScreamer
-	SoundEventMilkScreamer
-	SoundEventJumpToBlock
-	SoundEventPreRam
-	SoundEventPreRamScreamer
-	SoundEventRamImpact
-	SoundEventRamImpactScreamer
-	SoundEventSquidInkSquirt
-	SoundEventGlowSquidInkSquirt
-	SoundEventConvertToStray
-	SoundEventCakeAddCandle
-	SoundEventExtinguishCandle
-	SoundEventAmbientCandle
-	SoundEventBlockClick
-	SoundEventBlockClickFail
-	SoundEventSculkCatalystBloom
-	SoundEventSculkShriekerShriek
-	SoundEventWardenNearbyClose
-	SoundEventWardenNearbyCloser
-	SoundEventWardenNearbyClosest
-	SoundEventWardenSlightlyAngry
-	SoundEventRecordOtherside
-	SoundEventTongue
-	SoundEventCrackIronGolem
-	SoundEventRepairIronGolem
-	SoundEventListening
-	SoundEventHeartbeat
-	SoundEventHornBreak
-	_
-	SoundEventSculkSpread
-	SoundEventSculkCharge
-	SoundEventSculkSensorPlace
-	SoundEventSculkShriekerPlace
-	SoundEventGoatCall0
-	SoundEventGoatCall1
-	SoundEventGoatCall2
-	SoundEventGoatCall3
-	SoundEventGoatCall4
-	SoundEventGoatCall5
-	SoundEventGoatCall6
-	SoundEventGoatCall7
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	_
-	SoundEventImitateWarden
-	SoundEventListeningAngry
-	SoundEventItemGiven
-	SoundEventItemTaken
-	SoundEventDisappeared
-	SoundEventReappeared
-	SoundEventDrinkMilk
-	SoundEventFrogspawnHatched
-	SoundEventLaySpawn
-	SoundEventFrogspawnBreak
-	SoundEventSonicBoom
-	SoundEventSonicCharge
-	SoundeventItemThrown
-	SoundEventRecord5
-	SoundEventConvertToFrog
-	SoundEventRecordPlaying
-	SoundEventEnchantingTableUse
-	SoundEventStepSand
-	SoundEventDashReady
-	SoundEventBundleDropContents
-	SoundEventBundleInsert
-	SoundEventBundleRemoveOne
-	SoundEventPressurePlateClickOff
-	SoundEventPressurePlateClickOn
-	SoundEventButtonClickOff
-	SoundEventButtonClickOn
-	SoundEventDoorOpen
-	SoundEventDoorClose
-	SoundEventTrapdoorOpen
-	SoundEventTrapdoorClose
-	SoundEventFenceGateOpen
-	SoundEventFenceGateClose
-	SoundEventInsert
-	SoundEventPickup
-	SoundEventInsertEnchanted
-	SoundEventPickupEnchanted
-	SoundEventBrush
-	SoundEventBrushCompleted
-	SoundEventShatterDecoratedPot
-	SoundEventBreakDecoratedPot
-	SoundEventSnifferEggCrack
-	SoundEventSnifferEggHatched
-	SoundEventWaxedSignInteractFail
-	SoundEventRecordRelic
-	SoundEventBump
-	SoundEventPumpkinCarve
-	SoundEventConvertHuskToZombie
-	SoundEventPigDeath
-	SoundEventHoglinZombified
-	SoundEventAmbientUnderwaterEnter
-	SoundEventAmbientUnderwaterExit
-	SoundEventBottleFill
-	SoundEventBottleEmpty
-	SoundEventCrafterCraft
-	SoundEventCrafterFail
-	SoundEventDecoratedPotInsert
-	SoundEventDecoratedPotInsertFail
-	SoundEventCrafterDisableSlot
-	SoundEventTrialSpawnerOpenShutter
-	SoundEventTrialSpawnerEjectItem
-	SoundEventTrialSpawnerDetectPlayer
-	SoundEventTrialSpawnerSpawnMob
-	SoundEventTrialSpawnerCloseShutter
-	SoundEventTrialSpawnerAmbient
-	SoundEventCopperBulbTurnOn
-	SoundEventCopperBulbTurnOff
-	SoundEventAmbientInAir
-	SoundEventBreezeWindChargeBurst
-	SoundEventImitateBreeze
-	SoundEventArmadilloBrush
-	SoundEventArmadilloScuteDrop
-	SoundEventEquipWolf
-	SoundEventUnequipWolf
-	SoundEventReflect
-	SoundEventVaultOpenShutter
-	SoundEventVaultCloseShutter
-	SoundEventVaultEjectItem
-	SoundEventVaultInsertItem
-	SoundEventVaultInsertItemFail
-	SoundEventVaultAmbient
-	SoundEventVaultActivate
-	SoundEventVaultDeactive
-	SoundEventHurtReduced
-	SoundEventWindChargeBurst
-	SoundEventImitateBogged
-	SoundEventWolfArmourCrack
-	SoundEventWolfArmourBreak
-	SoundEventWolfArmourRepair
-	SoundEventMaceSmashAir
-	SoundEventMaceSmashGround
-	SoundEventTrialSpawnerChargeActivate
-	SoundEventTrialSpawnerAmbientOminous
-	SoundEventOminiousItemSpawnerSpawnItem
-	SoundEventOminousBottleEndUse
-	SoundEventMaceHeavySmashGround
-	SoundEventOminousItemSpawnerSpawnItemBegin
-	_
-	SoundEventApplyEffectBadOmen
-	SoundEventApplyEffectRaidOmen
-	SoundEventApplyEffectTrialOmen
-	SoundEventOminousItemSpawnerAboutToSpawnItem
-	SoundEventRecordCreator
-	SoundEventRecordCreatorMusicBox
-	SoundEventRecordPrecipice
-	SoundEventVaultRejectRewardedPlayer
-	SoundEventImitateDrowned
-	SoundEventImitateCreaking
-	SoundEventBundleInsertFailed
-	SoundEventSpongeAbsorb
-	_
-	SoundEventBlockCreakingHeartTrail
-	SoundEventCreakingHeartSpawn
-	SoundEventActivate
-	SoundEventDeactivate
-	SoundEventFreeze
-	SoundEventUnfreeze
-	SoundEventOpen
-	SoundEventOpenLong
-	SoundEventClose
-	SoundEventCloseLong
-	SoundEventImitatePhantom
-	SoundEventImitateZoglin
-	SoundEventImitateGuardian
-	SoundEventImitateRavager
-	SoundEventImitatePillager
-	SoundEventPlaceInWater
-	SoundEventStateChange
-	SoundEventImitateHappyGhast
-	SoundEventUniqueGeneric
-	SoundEventRecordTears
-	SoundEventTheEndLightFlash
-	SoundEventLeadLeash
-	SoundEventLeadUnleash
-	SoundEventLeadBreak
-	SoundEventUnsaddle
-	SoundEventEquipCopper
-	SoundEventRecordLavaChicken
-	SoundEventPlaceItem
-	SoundEventSingleItemSwap
-	SoundEventMultiItemSwap
-	SoundEventItemEnchantLunge1
-	SoundEventItemEnchantLunge2
-	SoundEventItemEnchantLunge3
-	SoundEventAttackCritical
-	SoundEventItemSpearAttackHit
-	SoundEventItemSpearAttackMiss
-	SoundEventItemWoodenSpearAttackHit
-	SoundEventItemWoodenSpearAttackMiss
-	SoundEventImitateParched
-	SoundEventImitateCamelHusk
-	SoundEventItemSpearUse
-	SoundEventItemWoodenSpearUse
-	SoundEventSaddleInWater
-	SoundEventItemStoneSpearAttackHit
-	SoundEventItemIronSpearAttackHit
-	SoundEventItemCopperSpearAttackHit
-	SoundEventItemGoldenSpearAttackHit
-	SoundEventItemDiamondSpearAttackHit
-	SoundEventItemNetheriteSpearAttackHit
-	SoundEventItemStoneSpearAttackMiss
-	SoundEventItemIronSpearAttackMiss
-	SoundEventItemCopperSpearAttackMiss
-	SoundEventItemGoldenSpearAttackMiss
-	SoundEventItemDiamondSpearAttackMiss
-	SoundEventItemNetheriteSpearAttackMiss
-	SoundEventItemStoneSpearUse
-	SoundEventItemIronSpearUse
-	SoundEventItemCopperSpearUse
-	SoundEventItemGoldenSpearUse
-	SoundEventItemDiamondSpearUse
-	SoundEventItemNetheriteSpearUse
-	SoundEventPauseGrowth
-	SoundEventResetGrowth
-	SoundEventPushedByPlayer
-	SoundEventBounce
-	SoundEventUndefined
+	SoundEventItemUseOn                          = "item.use.on"
+	SoundEventHit                                = "hit"
+	SoundEventStep                               = "step"
+	SoundEventFly                                = "fly"
+	SoundEventJump                               = "jump"
+	SoundEventBreak                              = "break"
+	SoundEventPlace                              = "place"
+	SoundEventHeavyStep                          = "heavy.step"
+	SoundEventGallop                             = "gallop"
+	SoundEventFall                               = "fall"
+	SoundEventAmbient                            = "ambient"
+	SoundEventAmbientBaby                        = "ambient.baby"
+	SoundEventAmbientInWater                     = "ambient.in.water"
+	SoundEventBreathe                            = "breathe"
+	SoundEventDeath                              = "death"
+	SoundEventDeathInWater                       = "death.in.water"
+	SoundEventDeathToZombie                      = "death.to.zombie"
+	SoundEventHurt                               = "hurt"
+	SoundEventHurtInWater                        = "hurt.in.water"
+	SoundEventMad                                = "mad"
+	SoundEventBoost                              = "boost"
+	SoundEventBow                                = "bow"
+	SoundEventSquishBig                          = "squish.big"
+	SoundEventSquishSmall                        = "squish.small"
+	SoundEventFallBig                            = "fall.big"
+	SoundEventFallSmall                          = "fall.small"
+	SoundEventSplash                             = "splash"
+	SoundEventFizz                               = "fizz"
+	SoundEventFlap                               = "flap"
+	SoundEventSwim                               = "swim"
+	SoundEventDrink                              = "drink"
+	SoundEventEat                                = "eat"
+	SoundEventTakeoff                            = "takeoff"
+	SoundEventShake                              = "shake"
+	SoundEventPlop                               = "plop"
+	SoundEventLand                               = "land"
+	SoundEventSaddle                             = "saddle"
+	SoundEventArmor                              = "armor"
+	SoundEventArmorPlace                         = "mob.armor_stand.place"
+	SoundEventAddChest                           = "add.chest"
+	SoundEventThrow                              = "throw"
+	SoundEventAttack                             = "attack"
+	SoundEventAttackNoDamage                     = "attack.nodamage"
+	SoundEventAttackStrong                       = "attack.strong"
+	SoundEventWarn                               = "warn"
+	SoundEventShear                              = "shear"
+	SoundEventMilk                               = "milk"
+	SoundEventThunder                            = "thunder"
+	SoundEventExplode                            = "explode"
+	SoundEventFire                               = "fire"
+	SoundEventIgnite                             = "ignite"
+	SoundEventFuse                               = "fuse"
+	SoundEventStare                              = "stare"
+	SoundEventSpawn                              = "spawn"
+	SoundEventShoot                              = "shoot"
+	SoundEventBreakBlock                         = "break.block"
+	SoundEventLaunch                             = "launch"
+	SoundEventBlast                              = "blast"
+	SoundEventLargeBlast                         = "large.blast"
+	SoundEventTwinkle                            = "twinkle"
+	SoundEventRemedy                             = "remedy"
+	SoundEventUnfect                             = "unfect"
+	SoundEventLevelUp                            = "levelup"
+	SoundEventBowHit                             = "bow.hit"
+	SoundEventBulletHit                          = "bullet.hit"
+	SoundEventExtinguishFire                     = "extinguish.fire"
+	SoundEventItemFizz                           = "item.fizz"
+	SoundEventChestOpen                          = "chest.open"
+	SoundEventChestClosed                        = "chest.closed"
+	SoundEventShulkerBoxOpen                     = "shulkerbox.open"
+	SoundEventShulkerBoxClosed                   = "shulkerbox.closed"
+	SoundEventEnderChestOpen                     = "enderchest.open"
+	SoundEventEnderChestClosed                   = "enderchest.closed"
+	SoundEventPowerOn                            = "power.on"
+	SoundEventPowerOff                           = "power.off"
+	SoundEventAttach                             = "attach"
+	SoundEventDetach                             = "detach"
+	SoundEventDeny                               = "deny"
+	SoundEventTripod                             = "tripod"
+	SoundEventPop                                = "pop"
+	SoundEventDropSlot                           = "drop.slot"
+	SoundEventNote                               = "note"
+	SoundEventThorns                             = "thorns"
+	SoundEventPistonIn                           = "piston.in"
+	SoundEventPistonOut                          = "piston.out"
+	SoundEventPortal                             = "portal"
+	SoundEventWater                              = "water"
+	SoundEventLavaPop                            = "lava.pop"
+	SoundEventLava                               = "lava"
+	SoundEventBurp                               = "burp"
+	SoundEventBucketFillWater                    = "bucket.fill.water"
+	SoundEventBucketFillLava                     = "bucket.fill.lava"
+	SoundEventBucketEmptyWater                   = "bucket.empty.water"
+	SoundEventBucketEmptyLava                    = "bucket.empty.lava"
+	SoundEventEquipChain                         = "armor.equip_chain"
+	SoundEventEquipDiamond                       = "armor.equip_diamond"
+	SoundEventEquipGeneric                       = "armor.equip_generic"
+	SoundEventEquipGold                          = "armor.equip_gold"
+	SoundEventEquipIron                          = "armor.equip_iron"
+	SoundEventEquipLeather                       = "armor.equip_leather"
+	SoundEventEquipElytra                        = "armor.equip_elytra"
+	SoundEventRecord13                           = "record.13"
+	SoundEventRecordCat                          = "record.cat"
+	SoundEventRecordBlocks                       = "record.blocks"
+	SoundEventRecordChirp                        = "record.chirp"
+	SoundEventRecordFar                          = "record.far"
+	SoundEventRecordMall                         = "record.mall"
+	SoundEventRecordMellohi                      = "record.mellohi"
+	SoundEventRecordStal                         = "record.stal"
+	SoundEventRecordStrad                        = "record.strad"
+	SoundEventRecordWard                         = "record.ward"
+	SoundEventRecord11                           = "record.11"
+	SoundEventRecordWait                         = "record.wait"
+	SoundEventRecordNull                         = "record.null"
+	SoundEventFlop                               = "flop"
+	SoundEventGuardianCurse                      = "elderguardian.curse"
+	SoundEventMobWarning                         = "mob.warning"
+	SoundEventMobWarningBaby                     = "mob.warning.baby"
+	SoundEventTeleport                           = "teleport"
+	SoundEventShulkerOpen                        = "shulker.open"
+	SoundEventShulkerClose                       = "shulker.close"
+	SoundEventHaggle                             = "haggle"
+	SoundEventHaggleYes                          = "haggle.yes"
+	SoundEventHaggleNo                           = "haggle.no"
+	SoundEventHaggleIdle                         = "haggle.idle"
+	SoundEventChorusGrow                         = "chorusgrow"
+	SoundEventChorusDeath                        = "chorusdeath"
+	SoundEventGlass                              = "glass"
+	SoundEventPotionBrewed                       = "potion.brewed"
+	SoundEventCastSpell                          = "cast.spell"
+	SoundEventPrepareAttackSpell                 = "prepare.attack"
+	SoundEventPrepareSummon                      = "prepare.summon"
+	SoundEventPrepareWololo                      = "prepare.wololo"
+	SoundEventFang                               = "fang"
+	SoundEventCharge                             = "charge"
+	SoundEventTakePicture                        = "camera.take_picture"
+	SoundEventPlaceLeashKnot                     = "leashknot.place"
+	SoundEventBreakLeashKnot                     = "leashknot.break"
+	SoundEventAmbientGrowl                       = "growl"
+	SoundEventAmbientWhine                       = "whine"
+	SoundEventAmbientPant                        = "pant"
+	SoundEventAmbientPurr                        = "purr"
+	SoundEventAmbientPurreow                     = "purreow"
+	SoundEventDeathMinVolume                     = "death.min.volume"
+	SoundEventDeathMidVolume                     = "death.mid.volume"
+	SoundEventImitateBlaze                       = "imitate.blaze"
+	SoundEventImitateCaveSpider                  = "imitate.cave_spider"
+	SoundEventImitateCreeper                     = "imitate.creeper"
+	SoundEventImitateElderGuardian               = "imitate.elder_guardian"
+	SoundEventImitateEnderDragon                 = "imitate.ender_dragon"
+	SoundEventImitateEnderman                    = "imitate.enderman"
+	SoundEventImitateEndermite                   = "imitate.endermite"
+	SoundEventImitateEvocationIllager            = "imitate.evocation_illager"
+	SoundEventImitateGhast                       = "imitate.ghast"
+	SoundEventImitateHusk                        = "imitate.husk"
+	SoundEventImitateIllusionIllager             = "imitate.illusion_illager"
+	SoundEventImitateMagmaCube                   = "imitate.magma_cube"
+	SoundEventImitatePolarBear                   = "imitate.polar_bear"
+	SoundEventImitateShulker                     = "imitate.shulker"
+	SoundEventImitateSilverfish                  = "imitate.silverfish"
+	SoundEventImitateSkeleton                    = "imitate.skeleton"
+	SoundEventImitateSlime                       = "imitate.slime"
+	SoundEventImitateSpider                      = "imitate.spider"
+	SoundEventImitateStray                       = "imitate.stray"
+	SoundEventImitateVex                         = "imitate.vex"
+	SoundEventImitateVindicationIllager          = "imitate.vindication_illager"
+	SoundEventImitateWitch                       = "imitate.witch"
+	SoundEventImitateWither                      = "imitate.wither"
+	SoundEventImitateWitherSkeleton              = "imitate.wither_skeleton"
+	SoundEventImitateWolf                        = "imitate.wolf"
+	SoundEventImitateZombie                      = "imitate.zombie"
+	SoundEventImitateZombiePigman                = "imitate.zombie_pigman"
+	SoundEventImitateZombieVillager              = "imitate.zombie_villager"
+	SoundEventEnderEyePlaced                     = "block.end_portal_frame.fill"
+	SoundEventEndPortalCreated                   = "block.end_portal.spawn"
+	SoundEventAnvilUse                           = "random.anvil_use"
+	SoundEventBottleDragonBreath                 = "bottle.dragonbreath"
+	SoundEventPortalTravel                       = "portal.travel"
+	SoundEventTridentHit                         = "item.trident.hit"
+	SoundEventTridentReturn                      = "item.trident.return"
+	SoundEventTridentRiptide1                    = "item.trident.riptide_1"
+	SoundEventTridentRiptide2                    = "item.trident.riptide_2"
+	SoundEventTridentRiptide3                    = "item.trident.riptide_3"
+	SoundEventTridentThrow                       = "item.trident.throw"
+	SoundEventTridentThunder                     = "item.trident.thunder"
+	SoundEventTridentHitGround                   = "item.trident.hit_ground"
+	SoundEventDefault                            = "default"
+	SoundEventFletchingTableUse                  = "block.fletching_table.use"
+	SoundEventElemConstructOpen                  = "elemconstruct.open"
+	SoundEventIceBombHit                         = "icebomb.hit"
+	SoundEventBalloonPop                         = "balloonpop"
+	SoundEventLtReactionIceBomb                  = "lt.reaction.icebomb"
+	SoundEventLtReactionBleach                   = "lt.reaction.bleach"
+	SoundEventLtReactionElephantToothpaste       = "lt.reaction.epaste"
+	SoundEventLtReactionElephantToothpaste2      = "lt.reaction.epaste2"
+	SoundEventLtReactionGlowStick                = "lt.reaction.glow_stick"
+	SoundEventLtReactionGlowStick2               = "lt.reaction.glow_stick2"
+	SoundEventLtReactionLuminol                  = "lt.reaction.luminol"
+	SoundEventLtReactionSalt                     = "lt.reaction.salt"
+	SoundEventLtReactionFertilizer               = "lt.reaction.fertilizer"
+	SoundEventLtReactionFireball                 = "lt.reaction.fireball"
+	SoundEventLtReactionMagnesiumSalt            = "lt.reaction.mgsalt"
+	SoundEventLtReactionMiscFire                 = "lt.reaction.miscfire"
+	SoundEventLtReactionFire                     = "lt.reaction.fire"
+	SoundEventLtReactionMiscExplosion            = "lt.reaction.miscexplosion"
+	SoundEventLtReactionMiscMystical             = "lt.reaction.miscmystical"
+	SoundEventLtReactionMiscMystical2            = "lt.reaction.miscmystical2"
+	SoundEventLtReactionProduct                  = "lt.reaction.product"
+	SoundEventSparklerUse                        = "sparkler.use"
+	SoundEventGlowStickUse                       = "glowstick.use"
+	SoundEventSparklerActive                     = "sparkler.active"
+	SoundEventConvertToDrowned                   = "convert_to_drowned"
+	SoundEventBucketFillFish                     = "bucket.fill.fish"
+	SoundEventBucketEmptyFish                    = "bucket.empty.fish"
+	SoundEventBubbleColumnUpwards                = "bubble.up"
+	SoundEventBubbleColumnDownwards              = "bubble.down"
+	SoundEventBubblePop                          = "bubble.pop"
+	SoundEventBubbleUpInside                     = "bubble.upinside"
+	SoundEventBubbleDownInside                   = "bubble.downinside"
+	SoundEventHurtBaby                           = "hurt.baby"
+	SoundEventDeathBaby                          = "death.baby"
+	SoundEventStepBaby                           = "step.baby"
+	SoundEventSpawnBaby                          = "spawn.baby"
+	SoundEventBorn                               = "born"
+	SoundEventTurtleEggBreak                     = "block.turtle_egg.break"
+	SoundEventTurtleEggCrack                     = "block.turtle_egg.crack"
+	SoundEventTurtleEggHatched                   = "block.turtle_egg.hatch"
+	SoundEventLayEgg                             = "lay_egg"
+	SoundEventTurtleEggAttacked                  = "block.turtle_egg.attack"
+	SoundEventBeaconActivate                     = "beacon.activate"
+	SoundEventBeaconAmbient                      = "beacon.ambient"
+	SoundEventBeaconDeactivate                   = "beacon.deactivate"
+	SoundEventBeaconPower                        = "beacon.power"
+	SoundEventConduitActivate                    = "conduit.activate"
+	SoundEventConduitAmbient                     = "conduit.ambient"
+	SoundEventConduitAttack                      = "conduit.attack"
+	SoundEventConduitDeactivate                  = "conduit.deactivate"
+	SoundEventConduitShort                       = "conduit.short"
+	SoundEventSwoop                              = "swoop"
+	SoundEventBambooSaplingPlace                 = "block.bamboo_sapling.place"
+	SoundEventPreSneeze                          = "presneeze"
+	SoundEventSneeze                             = "sneeze"
+	SoundEventAmbientTame                        = "ambient.tame"
+	SoundEventScared                             = "scared"
+	SoundEventScaffoldingClimb                   = "block.scaffolding.climb"
+	SoundEventCrossbowLoadingStart               = "crossbow.loading.start"
+	SoundEventCrossbowLoadingMiddle              = "crossbow.loading.middle"
+	SoundEventCrossbowLoadingEnd                 = "crossbow.loading.end"
+	SoundEventCrossbowShoot                      = "crossbow.shoot"
+	SoundEventCrossbowQuickChargeStart           = "crossbow.quick_charge.start"
+	SoundEventCrossbowQuickChargeMiddle          = "crossbow.quick_charge.middle"
+	SoundEventCrossbowQuickChargeEnd             = "crossbow.quick_charge.end"
+	SoundEventAmbientAggressive                  = "ambient.aggressive"
+	SoundEventAmbientWorried                     = "ambient.worried"
+	SoundEventCantBreed                          = "cant_breed"
+	SoundEventShieldBlock                        = "item.shield.block"
+	SoundEventLecternBookPlace                   = "item.book.put"
+	SoundEventGrindstoneUse                      = "block.grindstone.use"
+	SoundEventBell                               = "block.bell.hit"
+	SoundEventCampfireCrackle                    = "block.campfire.crackle"
+	SoundEventRoar                               = "roar"
+	SoundEventStun                               = "stun"
+	SoundEventSweetBerryBushHurt                 = "block.sweet_berry_bush.hurt"
+	SoundEventSweetBerryBushPick                 = "block.sweet_berry_bush.pick"
+	SoundEventCartographyTableUse                = "block.cartography_table.use"
+	SoundEventStonecutterUse                     = "block.stonecutter.use"
+	SoundEventComposterEmpty                     = "block.composter.empty"
+	SoundEventComposterFill                      = "block.composter.fill"
+	SoundEventComposterFillLayer                 = "block.composter.fill_success"
+	SoundEventComposterReady                     = "block.composter.ready"
+	SoundEventBarrelOpen                         = "block.barrel.open"
+	SoundEventBarrelClose                        = "block.barrel.close"
+	SoundEventRaidHorn                           = "raid.horn"
+	SoundEventLoomUse                            = "block.loom.use"
+	SoundEventAmbientInRaid                      = "ambient.in.raid"
+	SoundEventUicartographyTableUse              = "ui.cartography_table.take_result"
+	SoundEventUistonecutterUse                   = "ui.stonecutter.take_result"
+	SoundEventUiloomUse                          = "ui.loom.take_result"
+	SoundEventSmokerUse                          = "block.smoker.smoke"
+	SoundEventBlastFurnaceUse                    = "block.blastfurnace.fire_crackle"
+	SoundEventSmithingTableUse                   = "block.smithing_table.use"
+	SoundEventScreech                            = "screech"
+	SoundEventSleep                              = "sleep"
+	SoundEventFurnaceUse                         = "block.furnace.lit"
+	SoundEventMooshroomConvert                   = "convert_mooshroom"
+	SoundEventMilkSuspiciously                   = "milk_suspiciously"
+	SoundEventCelebrate                          = "celebrate"
+	SoundEventJumpPrevent                        = "jump.prevent"
+	SoundEventAmbientPollinate                   = "ambient.pollinate"
+	SoundEventBeehiveDrip                        = "block.beehive.drip"
+	SoundEventBeehiveEnter                       = "block.beehive.enter"
+	SoundEventBeehiveExit                        = "block.beehive.exit"
+	SoundEventBeehiveWork                        = "block.beehive.work"
+	SoundEventBeehiveShear                       = "block.beehive.shear"
+	SoundEventHoneybottleDrink                   = "drink.honey"
+	SoundEventAmbientCave                        = "ambient.cave"
+	SoundEventRetreat                            = "retreat"
+	SoundEventConvertToZombified                 = "converted_to_zombified"
+	SoundEventAdmire                             = "admire"
+	SoundEventStepLava                           = "step_lava"
+	SoundEventTempt                              = "tempt"
+	SoundEventPanic                              = "panic"
+	SoundEventAngry                              = "angry"
+	SoundEventAmbientMoodWarpedForest            = "ambient.warped_forest.mood"
+	SoundEventAmbientMoodSoulsandValley          = "ambient.soulsand_valley.mood"
+	SoundEventAmbientMoodNetherWastes            = "ambient.nether_wastes.mood"
+	SoundEventAmbientMoodBasaltDeltas            = "ambient.basalt_deltas.mood"
+	SoundEventAmbientMoodCrimsonForest           = "ambient.crimson_forest.mood"
+	SoundEventRespawnAnchorCharge                = "respawn_anchor.charge"
+	SoundEventRespawnAnchorDeplete               = "respawn_anchor.deplete"
+	SoundEventRespawnAnchorSetSpawn              = "respawn_anchor.set_spawn"
+	SoundEventRespawnAnchorAmbient               = "respawn_anchor.ambient"
+	SoundEventSoulEscapeQuiet                    = "particle.soul_escape.quiet"
+	SoundEventSoulEscapeLoud                     = "particle.soul_escape.loud"
+	SoundEventRecordPigstep                      = "record.pigstep"
+	SoundEventLinkCompassToLodestone             = "lodestone_compass.link_compass_to_lodestone"
+	SoundEventUseSmithingTable                   = "smithing_table.use"
+	SoundEventEquipNetherite                     = "armor.equip_netherite"
+	SoundEventAmbientLoopWarpedForest            = "ambient.warped_forest.loop"
+	SoundEventAmbientLoopSoulsandValley          = "ambient.soulsand_valley.loop"
+	SoundEventAmbientLoopNetherWastes            = "ambient.nether_wastes.loop"
+	SoundEventAmbientLoopBasaltDeltas            = "ambient.basalt_deltas.loop"
+	SoundEventAmbientLoopCrimsonForest           = "ambient.crimson_forest.loop"
+	SoundEventAmbientAdditionWarpedForest        = "ambient.warped_forest.additions"
+	SoundEventAmbientAdditionSoulsandValley      = "ambient.soulsand_valley.additions"
+	SoundEventAmbientAdditionNetherWastes        = "ambient.nether_wastes.additions"
+	SoundEventAmbientAdditionBasaltDeltas        = "ambient.basalt_deltas.additions"
+	SoundEventAmbientAdditionCrimsonForest       = "ambient.crimson_forest.additions"
+	SoundEventSculkSensorPowerOn                 = "power.on.sculk_sensor"
+	SoundEventSculkSensorPowerOff                = "power.off.sculk_sensor"
+	SoundEventBucketFillPowderSnow               = "bucket.fill.powder_snow"
+	SoundEventBucketEmptyPowderSnow              = "bucket.empty.powder_snow"
+	SoundEventPointedDripstoneCauldronDripWater  = "cauldron_drip.water.pointed_dripstone"
+	SoundEventPointedDripstoneCauldronDripLava   = "cauldron_drip.lava.pointed_dripstone"
+	SoundEventPointedDripstoneDripWater          = "drip.water.pointed_dripstone"
+	SoundEventPointedDripstoneDripLava           = "drip.lava.pointed_dripstone"
+	SoundEventCaveVinesPickBerries               = "pick_berries.cave_vines"
+	SoundEventBigDripleafTiltDown                = "tilt_down.big_dripleaf"
+	SoundEventBigDripleafTiltUp                  = "tilt_up.big_dripleaf"
+	SoundEventCopperWaxOn                        = "copper.wax.on"
+	SoundEventCopperWaxOff                       = "copper.wax.off"
+	SoundEventScrape                             = "scrape"
+	SoundEventPlayerHurtDrown                    = "mob.player.hurt_drown"
+	SoundEventPlayerHurtOnFire                   = "mob.player.hurt_on_fire"
+	SoundEventPlayerHurtFreeze                   = "mob.player.hurt_freeze"
+	SoundEventUseSpyglass                        = "item.spyglass.use"
+	SoundEventStopUsingSpyglass                  = "item.spyglass.stop_using"
+	SoundEventAmethystBlockChime                 = "chime.amethyst_block"
+	SoundEventAmbientScreamer                    = "ambient.screamer"
+	SoundEventHurtScreamer                       = "hurt.screamer"
+	SoundEventDeathScreamer                      = "death.screamer"
+	SoundEventMilkScreamer                       = "milk.screamer"
+	SoundEventJumpToBlock                        = "jump_to_block"
+	SoundEventPreRam                             = "pre_ram"
+	SoundEventPreRamScreamer                     = "pre_ram.screamer"
+	SoundEventRamImpact                          = "ram_impact"
+	SoundEventRamImpactScreamer                  = "ram_impact.screamer"
+	SoundEventSquidInkSquirt                     = "squid.ink_squirt"
+	SoundEventGlowSquidInkSquirt                 = "glow_squid.ink_squirt"
+	SoundEventConvertToStray                     = "convert_to_stray"
+	SoundEventCakeAddCandle                      = "cake.add_candle"
+	SoundEventExtinguishCandle                   = "extinguish.candle"
+	SoundEventAmbientCandle                      = "ambient.candle"
+	SoundEventBlockClick                         = "block.click"
+	SoundEventBlockClickFail                     = "block.click.fail"
+	SoundEventSculkCatalystBloom                 = "block.sculk_catalyst.bloom"
+	SoundEventSculkShriekerShriek                = "block.sculk_shrieker.shriek"
+	SoundEventWardenNearbyClose                  = "nearby_close"
+	SoundEventWardenNearbyCloser                 = "nearby_closer"
+	SoundEventWardenNearbyClosest                = "nearby_closest"
+	SoundEventWardenSlightlyAngry                = "agitated"
+	SoundEventRecordOtherside                    = "record.otherside"
+	SoundEventTongue                             = "tongue"
+	SoundEventCrackIronGolem                     = "irongolem.crack"
+	SoundEventRepairIronGolem                    = "irongolem.repair"
+	SoundEventListening                          = "listening"
+	SoundEventHeartbeat                          = "heartbeat"
+	SoundEventHornBreak                          = "horn_break"
+	SoundEventSculkSpread                        = "block.sculk.spread"
+	SoundEventSculkCharge                        = "charge.sculk"
+	SoundEventSculkSensorPlace                   = "block.sculk_sensor.place"
+	SoundEventSculkShriekerPlace                 = "block.sculk_shrieker.place"
+	SoundEventGoatCall0                          = "horn_call0"
+	SoundEventGoatCall1                          = "horn_call1"
+	SoundEventGoatCall2                          = "horn_call2"
+	SoundEventGoatCall3                          = "horn_call3"
+	SoundEventGoatCall4                          = "horn_call4"
+	SoundEventGoatCall5                          = "horn_call5"
+	SoundEventGoatCall6                          = "horn_call6"
+	SoundEventGoatCall7                          = "horn_call7"
+	SoundEventImitateWarden                      = "imitate.warden"
+	SoundEventListeningAngry                     = "listening_angry"
+	SoundEventItemGiven                          = "item_given"
+	SoundEventItemTaken                          = "item_taken"
+	SoundEventDisappeared                        = "disappeared"
+	SoundEventReappeared                         = "reappeared"
+	SoundEventDrinkMilk                          = "drink.milk"
+	SoundEventFrogspawnHatched                   = "block.frog_spawn.hatch"
+	SoundEventLaySpawn                           = "lay_spawn"
+	SoundEventFrogspawnBreak                     = "block.frog_spawn.break"
+	SoundEventSonicBoom                          = "sonic_boom"
+	SoundEventSonicCharge                        = "sonic_charge"
+	SoundeventItemThrown                         = "item_thrown"
+	SoundEventRecord5                            = "record.5"
+	SoundEventConvertToFrog                      = "convert_to_frog"
+	SoundEventRecordPlaying                      = "record.playing"
+	SoundEventEnchantingTableUse                 = "block.enchanting_table.use"
+	SoundEventStepSand                           = "step_sand"
+	SoundEventDashReady                          = "dash_ready"
+	SoundEventBundleDropContents                 = "bundle.drop_contents"
+	SoundEventBundleInsert                       = "bundle.insert"
+	SoundEventBundleRemoveOne                    = "bundle.remove_one"
+	SoundEventPressurePlateClickOff              = "pressure_plate.click_off"
+	SoundEventPressurePlateClickOn               = "pressure_plate.click_on"
+	SoundEventButtonClickOff                     = "button.click_off"
+	SoundEventButtonClickOn                      = "button.click_on"
+	SoundEventDoorOpen                           = "door.open"
+	SoundEventDoorClose                          = "door.close"
+	SoundEventTrapdoorOpen                       = "trapdoor.open"
+	SoundEventTrapdoorClose                      = "trapdoor.close"
+	SoundEventFenceGateOpen                      = "fence_gate.open"
+	SoundEventFenceGateClose                     = "fence_gate.close"
+	SoundEventInsert                             = "insert"
+	SoundEventPickup                             = "pickup"
+	SoundEventInsertEnchanted                    = "insert_enchanted"
+	SoundEventPickupEnchanted                    = "pickup_enchanted"
+	SoundEventBrush                              = "brush"
+	SoundEventBrushCompleted                     = "brush_completed"
+	SoundEventShatterDecoratedPot                = "shatter_pot"
+	SoundEventBreakDecoratedPot                  = "break_pot"
+	SoundEventSnifferEggCrack                    = "block.sniffer_egg.crack"
+	SoundEventSnifferEggHatched                  = "block.sniffer_egg.hatch"
+	SoundEventWaxedSignInteractFail              = "block.sign.waxed_interact_fail"
+	SoundEventRecordRelic                        = "record.relic"
+	SoundEventBump                               = "note.bass"
+	SoundEventPumpkinCarve                       = "pumpkin.carve"
+	SoundEventConvertHuskToZombie                = "mob.husk.convert_to_zombie"
+	SoundEventPigDeath                           = "mob.pig.death"
+	SoundEventHoglinZombified                    = "mob.hoglin.converted_to_zombified"
+	SoundEventAmbientUnderwaterEnter             = "ambient.underwater.enter"
+	SoundEventAmbientUnderwaterExit              = "ambient.underwater.exit"
+	SoundEventBottleFill                         = "bottle.fill"
+	SoundEventBottleEmpty                        = "bottle.empty"
+	SoundEventCrafterCraft                       = "crafter.craft"
+	SoundEventCrafterFail                        = "crafter.fail"
+	SoundEventDecoratedPotInsert                 = "block.decorated_pot.insert"
+	SoundEventDecoratedPotInsertFail             = "block.decorated_pot.insert_fail"
+	SoundEventCrafterDisableSlot                 = "crafter.disable_slot"
+	SoundEventTrialSpawnerOpenShutter            = "trial_spawner.open_shutter"
+	SoundEventTrialSpawnerEjectItem              = "trial_spawner.eject_item"
+	SoundEventTrialSpawnerDetectPlayer           = "trial_spawner.detect_player"
+	SoundEventTrialSpawnerSpawnMob               = "trial_spawner.spawn_mob"
+	SoundEventTrialSpawnerCloseShutter           = "trial_spawner.close_shutter"
+	SoundEventTrialSpawnerAmbient                = "trial_spawner.ambient"
+	SoundEventCopperBulbTurnOn                   = "block.copper_bulb.turn_on"
+	SoundEventCopperBulbTurnOff                  = "block.copper_bulb.turn_off"
+	SoundEventAmbientInAir                       = "ambient.in.air"
+	SoundEventBreezeWindChargeBurst              = "breeze_wind_charge.burst"
+	SoundEventImitateBreeze                      = "imitate.breeze"
+	SoundEventArmadilloBrush                     = "mob.armadillo.brush"
+	SoundEventArmadilloScuteDrop                 = "mob.armadillo.scute_drop"
+	SoundEventEquipWolf                          = "armor.equip_wolf"
+	SoundEventUnequipWolf                        = "armor.unequip_wolf"
+	SoundEventReflect                            = "reflect"
+	SoundEventVaultOpenShutter                   = "vault.open_shutter"
+	SoundEventVaultCloseShutter                  = "vault.close_shutter"
+	SoundEventVaultEjectItem                     = "vault.eject_item"
+	SoundEventVaultInsertItem                    = "vault.insert_item"
+	SoundEventVaultInsertItemFail                = "vault.insert_item_fail"
+	SoundEventVaultAmbient                       = "vault.ambient"
+	SoundEventVaultActivate                      = "vault.activate"
+	SoundEventVaultDeactive                      = "vault.deactivate"
+	SoundEventHurtReduced                        = "hurt.reduced"
+	SoundEventWindChargeBurst                    = "wind_charge.burst"
+	SoundEventImitateBogged                      = "imitate.bogged"
+	SoundEventWolfArmourCrack                    = "armor.crack_wolf"
+	SoundEventWolfArmourBreak                    = "armor.break_wolf"
+	SoundEventWolfArmourRepair                   = "armor.repair_wolf"
+	SoundEventMaceSmashAir                       = "mace.smash_air"
+	SoundEventMaceSmashGround                    = "mace.smash_ground"
+	SoundEventTrialSpawnerChargeActivate         = "trial_spawner.charge_activate"
+	SoundEventTrialSpawnerAmbientOminous         = "trial_spawner.ambient_ominous"
+	SoundEventOminiousItemSpawnerSpawnItem       = "ominous_item_spawner.spawn_item"
+	SoundEventOminousBottleEndUse                = "ominous_bottle.end_use"
+	SoundEventMaceHeavySmashGround               = "mace.heavy_smash_ground"
+	SoundEventOminousItemSpawnerSpawnItemBegin   = "ominous_item_spawner.spawn_item_begin"
+	SoundEventApplyEffectBadOmen                 = "apply_effect.bad_omen"
+	SoundEventApplyEffectRaidOmen                = "apply_effect.raid_omen"
+	SoundEventApplyEffectTrialOmen               = "apply_effect.trial_omen"
+	SoundEventOminousItemSpawnerAboutToSpawnItem = "ominous_item_spawner.about_to_spawn_item"
+	SoundEventRecordCreator                      = "record.creator"
+	SoundEventRecordCreatorMusicBox              = "record.creator_music_box"
+	SoundEventRecordPrecipice                    = "record.precipice"
+	SoundEventVaultRejectRewardedPlayer          = "vault.reject_rewarded_player"
+	SoundEventImitateDrowned                     = "imitate.drowned"
+	SoundEventImitateCreaking                    = "imitate.creaking"
+	SoundEventBundleInsertFailed                 = "bundle.insert_fail"
+	SoundEventSpongeAbsorb                       = "sponge.absorb"
+	SoundEventBlockCreakingHeartTrail            = "block.creaking_heart.trail"
+	SoundEventCreakingHeartSpawn                 = "creaking_heart_spawn"
+	SoundEventActivate                           = "activate"
+	SoundEventDeactivate                         = "deactivate"
+	SoundEventFreeze                             = "freeze"
+	SoundEventUnfreeze                           = "unfreeze"
+	SoundEventOpen                               = "open"
+	SoundEventOpenLong                           = "open_long"
+	SoundEventClose                              = "close"
+	SoundEventCloseLong                          = "close_long"
+	SoundEventImitatePhantom                     = "imitate.phantom"
+	SoundEventImitateZoglin                      = "imitate.zoglin"
+	SoundEventImitateGuardian                    = "imitate.guardian"
+	SoundEventImitateRavager                     = "imitate.ravager"
+	SoundEventImitatePillager                    = "imitate.pillager"
+	SoundEventPlaceInWater                       = "place_in_water"
+	SoundEventStateChange                        = "state_change"
+	SoundEventImitateHappyGhast                  = "imitate.happy_ghast"
+	SoundEventUniqueGeneric                      = "armor.unequip_generic"
+	SoundEventRecordTears                        = "record.tears"
+	SoundEventTheEndLightFlash                   = "ambient.weather.the_end_light_flash"
+	SoundEventLeadLeash                          = "lead.leash"
+	SoundEventLeadUnleash                        = "lead.unleash"
+	SoundEventLeadBreak                          = "lead.break"
+	SoundEventUnsaddle                           = "unsaddle"
+	SoundEventEquipCopper                        = "armor.equip_copper"
+	SoundEventRecordLavaChicken                  = "record.lava_chicken"
+	SoundEventPlaceItem                          = "place_item"
+	SoundEventSingleItemSwap                     = "single_swap"
+	SoundEventMultiItemSwap                      = "multi_swap"
+	SoundEventItemEnchantLunge1                  = "item.enchant.lunge1"
+	SoundEventItemEnchantLunge2                  = "item.enchant.lunge2"
+	SoundEventItemEnchantLunge3                  = "item.enchant.lunge3"
+	SoundEventAttackCritical                     = "attack.critical"
+	SoundEventItemSpearAttackHit                 = "item.spear.attack_hit"
+	SoundEventItemSpearAttackMiss                = "item.spear.attack_miss"
+	SoundEventItemWoodenSpearAttackHit           = "item.wooden_spear.attack_hit"
+	SoundEventItemWoodenSpearAttackMiss          = "item.wooden_spear.attack_miss"
+	SoundEventImitateParched                     = "imitate.parched"
+	SoundEventImitateCamelHusk                   = "imitate.camel_husk"
+	SoundEventItemSpearUse                       = "item.spear.use"
+	SoundEventItemWoodenSpearUse                 = "item.wooden_spear.use"
+	SoundEventSaddleInWater                      = "saddle_in_water"
+	SoundEventItemStoneSpearAttackHit            = "item.stone_spear.attack_hit"
+	SoundEventItemIronSpearAttackHit             = "item.iron_spear.attack_hit"
+	SoundEventItemCopperSpearAttackHit           = "item.copper_spear.attack_hit"
+	SoundEventItemGoldenSpearAttackHit           = "item.golden_spear.attack_hit"
+	SoundEventItemDiamondSpearAttackHit          = "item.diamond_spear.attack_hit"
+	SoundEventItemNetheriteSpearAttackHit        = "item.netherite_spear.attack_hit"
+	SoundEventItemStoneSpearAttackMiss           = "item.stone_spear.attack_miss"
+	SoundEventItemIronSpearAttackMiss            = "item.iron_spear.attack_miss"
+	SoundEventItemCopperSpearAttackMiss          = "item.copper_spear.attack_miss"
+	SoundEventItemGoldenSpearAttackMiss          = "item.golden_spear.attack_miss"
+	SoundEventItemDiamondSpearAttackMiss         = "item.diamond_spear.attack_miss"
+	SoundEventItemNetheriteSpearAttackMiss       = "item.netherite_spear.attack_miss"
+	SoundEventItemStoneSpearUse                  = "item.stone_spear.use"
+	SoundEventItemIronSpearUse                   = "item.iron_spear.use"
+	SoundEventItemCopperSpearUse                 = "item.copper_spear.use"
+	SoundEventItemGoldenSpearUse                 = "item.golden_spear.use"
+	SoundEventItemDiamondSpearUse                = "item.diamond_spear.use"
+	SoundEventItemNetheriteSpearUse              = "item.netherite_spear.use"
+	SoundEventPauseGrowth                        = "pause_growth"
+	SoundEventResetGrowth                        = "reset_growth"
+	SoundEventPushedByPlayer                     = "pushed_by_player"
+	SoundEventBounce                             = "bounce"
+	SoundEventSlimeLanding                       = "slime_landing"
+	SoundEventAbsorbBlock                        = "absorb_block"
+	SoundEventEjectBlock                         = "eject_block"
+	SoundEventGeyserEruptionStart                = "geyser_eruption_start"
+	SoundEventGeyserEruptionActive               = "geyser_eruption_active"
+	SoundEventRecordBounce                       = "record.bounce"
+	SoundEventBucketFillLandAnimal               = "bucket.fill.land_animal"
+	SoundEventBucketEmptyLandAnimal              = "bucket.empty.land_animal"
+	SoundEventGeyserContinuousEruptionStart      = "geyser_continuous_eruption_start"
+	SoundEventGeyserContinuousEruptionActive     = "geyser_continuous_eruption_active"
+	SoundEventUndefined                          = "undefined"
 )
 
 // LevelSoundEvent is sent by the server to make any kind of built-in sound heard to a player. It is sent to,
@@ -617,8 +589,8 @@ const (
 // should be ignored however, and the server should play them on its own accord.
 type LevelSoundEvent struct {
 	// SoundType is the type of the sound to play. It is one of the constants above. Some of the sound types
-	// require additional data, which is set in the EventData field.
-	SoundType uint32
+	// require additional data, which is set in the ExtraData field.
+	SoundType string
 	// Position is the position of the sound event. The player will be able to hear the direction of the sound
 	// based on what position is sent here.
 	Position mgl32.Vec3
@@ -650,7 +622,7 @@ func (*LevelSoundEvent) ID() uint32 {
 }
 
 func (pk *LevelSoundEvent) Marshal(io protocol.IO) {
-	io.Varuint32(&pk.SoundType)
+	io.String(&pk.SoundType)
 	io.Vec3(&pk.Position)
 	io.Varint32(&pk.ExtraData)
 	io.String(&pk.EntityType)

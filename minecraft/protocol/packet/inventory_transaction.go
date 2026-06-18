@@ -47,10 +47,22 @@ func (*InventoryTransaction) ID() uint32 {
 
 func (pk *InventoryTransaction) Marshal(io protocol.IO) {
 	io.Varint32(&pk.LegacyRequestID)
-	if pk.LegacyRequestID != 0 {
+	hasLegacy := pk.LegacyRequestID < -1 && (pk.LegacyRequestID&1) == 0
+	io.Bool(&hasLegacy)
+	if hasLegacy {
 		protocol.Slice(io, &pk.LegacySetItemSlots)
 	}
+	hasType := true
+	io.Bool(&hasType)
+	if !hasType {
+		io.InvalidValue(hasType, "InventoryTransaction transaction type", "expected presence bool to be true")
+	}
 	io.TransactionDataType(&pk.TransactionData)
+	hasActions := true
+	io.Bool(&hasActions)
+	if !hasActions {
+		io.InvalidValue(hasActions, "InventoryTransaction actions", "expected presence bool to be true")
+	}
 	protocol.Slice(io, &pk.Actions)
 	pk.TransactionData.Marshal(io)
 }
