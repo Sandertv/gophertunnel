@@ -65,14 +65,14 @@ func (data IdentityData) Validate() error {
 	if _, err := strconv.ParseInt(data.XUID, 10, 64); err != nil && len(data.XUID) != 0 {
 		return fmt.Errorf("XUID must be parseable as an int64, but got %v", data.XUID)
 	}
+	if data.XUID == "" {
+		// Non-authenticated clients don't have DisplayName nor Identity. This will be filled with their ClientData when parsing their request.
+		return nil
+	}
 	if id, err := uuid.Parse(data.Identity); err != nil || id == uuid.Nil {
 		return fmt.Errorf("UUID must be parseable as a valid UUID, but got %v", data.Identity)
 	}
 	nameLimit := 15
-	if data.XUID == "" {
-		// Non-authenticated clients can have up to 16 characters in their name.
-		nameLimit = 16
-	}
 	if len(data.DisplayName) == 0 || len(data.DisplayName) > nameLimit {
 		return fmt.Errorf("DisplayName must not be empty or longer than %d characters, but got %v characters", nameLimit, len(data.DisplayName))
 	}

@@ -174,6 +174,10 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	if err := cData.Validate(); err != nil {
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
 	}
+	if !authenticated {
+		iData.Identity = cData.SelfSignedID
+		iData.DisplayName = cData.ThirdPartyName
+	}
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
 }
 
@@ -457,8 +461,6 @@ func (tc tokenClaims) identityData() IdentityData {
 	if identity == "" {
 		if tc.XUID != "" {
 			identity = identityFromXUID(tc.XUID).String()
-		} else {
-			identity = uuid.New().String()
 		}
 	}
 	return IdentityData{
