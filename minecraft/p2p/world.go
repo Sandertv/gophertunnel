@@ -159,18 +159,19 @@ func (c Connection) Validate() error {
 	}
 }
 
-// validateNetherNetID validates whether [Connection.NetherNetID] is an unsigned, 64-bit integer.
+// validateNetherNetID validates whether Connection.NetherNetID is an unsigned, 64-bit integer.
 func (c Connection) validateNetherNetID() error {
-	_, err := strconv.ParseUint(string(c.NetherNetID), 10, 64)
-	return err
+	if _, err := strconv.ParseUint(string(c.NetherNetID), 10, 64); err != nil {
+		return fmt.Errorf("minecraft/p2p: parse Connection.NetherNetID: %w", err)
+	}
+	return nil
 }
 
 // Connection returns the first supported NetherNet signaling connection
 // advertised by w. Non-NetherNet worlds are rejected because this package
 // currently implements only NetherNet peer-to-peer joins. Unsupported connection
 // entries are ignored so a future or auxiliary entry does not make an otherwise
-// joinable world unusable. If no connection can be selected, the returned error
-// wraps [ErrNoSupportedConnection].
+// joinable world unusable.
 func (w World) Connection() (Connection, error) {
 	if w.TransportLayer != TransportLayerNetherNet {
 		return Connection{}, fmt.Errorf("invalid transport layer: %d", w.TransportLayer)
@@ -182,6 +183,9 @@ func (w World) Connection() (Connection, error) {
 			continue
 		}
 		return c, nil
+	}
+	if err == nil {
+		err = errors.New("minecraft/p2p: no supported signaling connection")
 	}
 	return Connection{}, err
 }
