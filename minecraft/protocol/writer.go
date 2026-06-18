@@ -202,7 +202,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.BlockPos(&x.BlockPosition)
 	w.Varint32(&x.BlockFace)
 	w.Varint32(&x.HotBarSlot)
-	w.ItemInstanceNew(&x.HeldItem)
+	w.ItemInstance(&x.HeldItem)
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
 	w.Varuint32(&x.BlockRuntimeID)
