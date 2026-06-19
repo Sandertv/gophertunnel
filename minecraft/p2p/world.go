@@ -23,7 +23,7 @@ type World struct {
 	Joinability string
 	// HostName is the host's display name.
 	// It is typically the gamertag of the host.
-	// It is displayed below [World.HostName] in the world card.
+	// It is displayed below [World.WorldName] in the world card.
 	HostName string `json:"hostName"`
 	// OwnerID is the XUID for the host of the World.
 	OwnerID string `json:"ownerId"`
@@ -196,16 +196,18 @@ func (c Connection) Validate() error {
 	}
 }
 
-// validateNetherNetID validates that Connection.NetherNetID is a non-empty,
-// non-zero identifier. The ID is treated as an opaque string because it may be a
-// decimal network ID or a UUID depending on the host.
+// validateNetherNetID reports whether Connection.NetherNetID is a usable
+// identifier: either a decimal network ID, as advertised by regular worlds, or a
+// UUID, as advertised by Realm presences where it mirrors PlayerMessagingID.
 func (c Connection) validateNetherNetID() error {
-	if _, err := strconv.ParseUint(string(c.NetherNetID), 10, 64); err != nil {
-		if err2 := uuid.Validate(string(c.NetherNetID)); err2 != nil {
-			return errors.Join(err, err2)
-		}
+	s := string(c.NetherNetID)
+	if _, err := strconv.ParseUint(s, 10, 64); err == nil {
+		return nil
 	}
-	return nil
+	if err := uuid.Validate(s); err == nil {
+		return nil
+	}
+	return fmt.Errorf("minecraft/p2p: NetherNetID %q is neither a uint64 nor a UUID", s)
 }
 
 // Connection returns the first supported NetherNet signaling connection
