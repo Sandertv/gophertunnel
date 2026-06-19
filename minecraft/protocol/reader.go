@@ -271,7 +271,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
 		Slice(r, &x.LegacySetItemSlots)
 	}
-	Slice(r, &x.Actions)
+	FuncSlice(r, &x.Actions, r.inventoryActionOld)
 	r.Varuint32(&x.ActionType)
 	r.Varuint32(&x.TriggerType)
 	r.BlockPos(&x.BlockPosition)
@@ -283,6 +283,21 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Uint8(&x.ClientPrediction)
 	r.Uint8(&x.ClientCooldownState)
+}
+
+func (r *Reader) inventoryActionOld(x *InventoryAction) {
+	r.Varuint32(&x.SourceType)
+	switch x.SourceType {
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
+		var windowID int32
+		r.Varint32(&windowID)
+		x.WindowID = int8(windowID)
+	case InventoryActionSourceWorld:
+		r.Varuint32(&x.SourceFlags)
+	}
+	r.Varuint32(&x.InventorySlot)
+	r.ItemInstance(&x.OldItem)
+	r.ItemInstance(&x.NewItem)
 }
 
 // GameRule reads a GameRule x from the Reader.

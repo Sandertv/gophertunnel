@@ -196,7 +196,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
 		Slice(w, &x.LegacySetItemSlots)
 	}
-	Slice(w, &x.Actions)
+	FuncSlice(w, &x.Actions, w.inventoryActionOld)
 	w.Varuint32(&x.ActionType)
 	w.Varuint32(&x.TriggerType)
 	w.BlockPos(&x.BlockPosition)
@@ -208,6 +208,20 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varuint32(&x.BlockRuntimeID)
 	w.Uint8(&x.ClientPrediction)
 	w.Uint8(&x.ClientCooldownState)
+}
+
+func (w *Writer) inventoryActionOld(x *InventoryAction) {
+	w.Varuint32(&x.SourceType)
+	switch x.SourceType {
+	case InventoryActionSourceContainer, InventoryActionSourceTODO:
+		windowID := int32(x.WindowID)
+		w.Varint32(&windowID)
+	case InventoryActionSourceWorld:
+		w.Varuint32(&x.SourceFlags)
+	}
+	w.Varuint32(&x.InventorySlot)
+	w.ItemInstance(&x.OldItem)
+	w.ItemInstance(&x.NewItem)
 }
 
 // GameRule writes a GameRule x to the Writer.
