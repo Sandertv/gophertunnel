@@ -108,20 +108,24 @@ func (conn *Conn) send(ctx context.Context, id uuid.UUID, inner any, messagingID
 	return nil
 }
 
-// Notify returns a channel that receives incoming NetherNet signals.
-//
-// The returned stop function unregisters and closes the channel.
+// Notify registers n to receive incoming NetherNet signals.
 func (conn *Conn) Notify(n nethernet.Notifier) func() {
-	id := conn.notifyCount
+	if n == nil {
+		panic("signaling/messaging: nil Notifier")
+	}
 	conn.notifiersMu.Lock()
-	conn.notifiers[id] = n
+	id := conn.notifyCount
 	conn.notifyCount++
+	conn.notifiers[id] = n
 	conn.notifiersMu.Unlock()
 
+	var once sync.Once
 	return func() {
-		conn.notifiersMu.Lock()
-		delete(conn.notifiers, id)
-		conn.notifiersMu.Unlock()
+		once.Do(func() {
+			conn.notifiersMu.Lock()
+			delete(conn.notifiers, id)
+			conn.notifiersMu.Unlock()
+		})
 	}
 }
 
@@ -166,8 +170,7 @@ func (conn *Conn) PlayerMessagingID() uuid.UUID {
 	return conn.pmid
 }
 
-// Close closes the Conn and unregisters any notifiers. It ensures that the Conn is closed only once.
-// It unregisters all notifiers registered on the Conn with notifying [nethernet.ErrSignalingStopped].
+// Close closes the Conn. It ensures that the Conn is closed only once.
 func (conn *Conn) Close() (err error) {
 	return conn.close(net.ErrClosed)
 }
