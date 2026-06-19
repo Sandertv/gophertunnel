@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/coder/websocket"
+	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
 )
@@ -102,8 +103,8 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 
 		credentialsReceived: make(chan struct{}),
 
-		notifier: internal.NewNotifier(d.Log),
-		pending:  internal.NewPendingMap(),
+		notifiers: make(map[uint32]nethernet.Notifier),
+		pending:   internal.NewPendingMap(),
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	go conn.read()

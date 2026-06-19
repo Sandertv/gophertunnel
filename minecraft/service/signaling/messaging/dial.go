@@ -12,6 +12,7 @@ import (
 
 	"github.com/coder/websocket"
 	"github.com/creachadair/jrpc2"
+	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
@@ -102,8 +103,8 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 		d:    d,
 		pmid: token.Claims.PlayerMessagingID,
 
-		notifier: internal.NewNotifier(d.Log),
-		pending:  internal.NewPendingMap(),
+		notifiers: make(map[uint32]nethernet.Notifier),
+		pending:   internal.NewPendingMap(),
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	conn.client = jrpc2.NewClient(&websocketChannel{c}, &jrpc2.ClientOptions{
