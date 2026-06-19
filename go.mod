@@ -7,8 +7,8 @@ require (
 	github.com/coreos/go-oidc/v3 v3.17.0
 	github.com/creachadair/jrpc2 v1.3.5
 	github.com/df-mc/go-nethernet v1.0.15-0.20260619173129-a2ca473609ab
-	github.com/df-mc/go-playfab/v2 v2.0.1
-	github.com/df-mc/go-xsapi/v2 v2.0.1-0.20260521011245-91de547c5eb6
+	github.com/df-mc/go-playfab/v2 v2.0.2-0.20260618232935-6d86fc87875f
+	github.com/df-mc/go-xsapi/v2 v2.0.2-0.20260618232321-7db98a0b7856
 	github.com/df-mc/jsonc v1.0.5
 	github.com/go-gl/mathgl v1.1.0
 	github.com/go-jose/go-jose/v4 v4.1.4
