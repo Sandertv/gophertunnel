@@ -1,6 +1,6 @@
 module github.com/sandertv/gophertunnel
 
-go 1.25
+go 1.25.0
 
 require (
 	github.com/coder/websocket v1.8.12
@@ -16,6 +16,7 @@ require (
 	github.com/klauspost/compress v1.18.1
 	github.com/pelletier/go-toml v1.9.5
 	github.com/sandertv/go-raknet v1.15.0
+	golang.org/x/exp v0.0.0-20260611194520-c48552f49976
 	golang.org/x/net v0.50.0
 	golang.org/x/oauth2 v0.34.0
 	golang.org/x/text v0.34.0
@@ -41,7 +42,7 @@ require (
 	github.com/pion/webrtc/v4 v4.2.10-0.20260224155637-aa3b95c72dd2 // indirect
 	github.com/wlynxg/anet v0.0.5 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/sync v0.21.0 // indirect
 	golang.org/x/sys v0.41.0 // indirect
 	golang.org/x/time v0.10.0 // indirect
 )
