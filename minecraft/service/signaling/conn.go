@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"sync"
 	"sync/atomic"
@@ -39,7 +40,9 @@ type Conn struct {
 	ctx    context.Context
 	cancel context.CancelCauseFunc
 
-	notifier *internal.Notifier
+	notifiersMu sync.RWMutex
+	notifyCount uint32
+	notifiers   map[uint32]nethernet.Notifier
 
 	pending *internal.PendingMap
 }
@@ -77,8 +80,18 @@ func (conn *Conn) Signal(ctx context.Context, signal *nethernet.Signal) error {
 // Notify returns a channel that receives incoming NetherNet signals.
 //
 // The returned stop function unregisters and closes the channel.
-func (conn *Conn) Notify() (<-chan *nethernet.Signal, func()) {
-	return conn.notifier.Register()
+func (conn *Conn) Notify(n nethernet.Notifier) func() {
+	id := conn.notifyCount
+	conn.notifiersMu.Lock()
+	conn.notifiers[id] = n
+	conn.notifyCount++
+	conn.notifiersMu.Unlock()
+
+	return func() {
+		conn.notifiersMu.Lock()
+		delete(conn.notifiers, id)
+		conn.notifiersMu.Unlock()
+	}
 }
 
 // complete resolves the expectation registered for the outbound Message with
@@ -135,7 +148,6 @@ func (conn *Conn) close(cause error) (err error) {
 		conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
 
 		conn.cancel(cause)
-		_ = conn.notifier.Close()
 
 		err = conn.conn.Close(websocket.StatusNormalClosure, "")
 	})
@@ -207,7 +219,13 @@ func (conn *Conn) handleMessage(message Message) {
 			return
 		}
 		signal.NetworkID = message.From
-		conn.notifier.Signal(signal)
+
+		conn.notifiersMu.RLock()
+		notifiers := maps.Clone(conn.notifiers)
+		conn.notifiersMu.RUnlock()
+		for _, n := range notifiers {
+			n.NotifySignal(signal)
+		}
 	case MessageTypeError:
 		if message.ID == uuid.Nil {
 			log.Warn("received message without an ID", slog.Any("message", message))

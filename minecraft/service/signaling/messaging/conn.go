@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"net"
 	"strings"
 	"sync"
@@ -36,7 +37,9 @@ type Conn struct {
 	ctx    context.Context
 	cancel context.CancelCauseFunc
 
-	notifier *internal.Notifier
+	notifiersMu sync.RWMutex
+	notifyCount uint32
+	notifiers   map[uint32]nethernet.Notifier
 
 	pending *internal.PendingMap
 
@@ -108,8 +111,18 @@ func (conn *Conn) send(ctx context.Context, id uuid.UUID, inner any, messagingID
 // Notify returns a channel that receives incoming NetherNet signals.
 //
 // The returned stop function unregisters and closes the channel.
-func (conn *Conn) Notify() (<-chan *nethernet.Signal, func()) {
-	return conn.notifier.Register()
+func (conn *Conn) Notify(n nethernet.Notifier) func() {
+	id := conn.notifyCount
+	conn.notifiersMu.Lock()
+	conn.notifiers[id] = n
+	conn.notifyCount++
+	conn.notifiersMu.Unlock()
+
+	return func() {
+		conn.notifiersMu.Lock()
+		delete(conn.notifiers, id)
+		conn.notifiersMu.Unlock()
+	}
 }
 
 // Credentials blocks until [nethernet.Credentials] are received from the server or the [context.Context]
@@ -179,7 +192,6 @@ func (conn *Conn) close(cause error) (err error) {
 func (conn *Conn) stop(cause error) {
 	conn.d.Log.Debug("closing connection", slog.Any("cause", cause))
 	conn.cancel(cause)
-	_ = conn.notifier.Close()
 }
 
 // handleCallback handles an JSON-RPC request method called by the server.
@@ -281,7 +293,13 @@ func (conn *Conn) handleInnerMessage(ctx context.Context, envelope *envelope) er
 		if err := signal.UnmarshalText([]byte(params.Message)); err != nil {
 			return fmt.Errorf("decode signal: %w", err)
 		}
-		conn.notifier.Signal(signal)
+
+		conn.notifiersMu.RLock()
+		notifiers := maps.Clone(conn.notifiers)
+		conn.notifiersMu.RUnlock()
+		for _, n := range notifiers {
+			n.NotifySignal(signal)
+		}
 
 		if err := conn.send(ctx, uuid.New(), map[string]any{
 			"params": map[string]any{
