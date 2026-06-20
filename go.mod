@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	github.com/df-mc/go-nethernet v1.0.16-0.20260620175855-c6e08be827b9 // indirect
+	github.com/df-mc/go-nethernet v1.0.16 // indirect
 	github.com/pion/datachannel v1.6.0 // indirect
 	github.com/pion/dtls/v3 v3.1.2 // indirect
 	github.com/pion/ice/v4 v4.2.1 // indirect
