@@ -178,29 +178,11 @@ func (id *NetherNetID) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// Validate validates whether the Connection is actually usable for connecting to the world.
-func (c Connection) Validate() error {
-	switch c.Type {
-	case ConnectionTypeSignalingOverJSONRPC:
-		if err := c.validateNetherNetID(); err != nil {
-			return err
-		}
-		if c.PlayerMessagingID == uuid.Nil {
-			return errors.New("minecraft/p2p: Connection.PlayerMessagingID is nil")
-		}
-		return nil
-	case ConnectionTypeSignalingOverWebSocket:
-		return c.validateNetherNetID()
-	default:
-		return fmt.Errorf("minecraft/p2p: invalid Connection.Type: %d", c.Type)
-	}
-}
-
-// validateNetherNetID reports whether Connection.NetherNetID is a usable
-// identifier: either a decimal network ID, as advertised by regular worlds, or a
-// UUID, as advertised by Realm presences where it mirrors PlayerMessagingID.
-func (c Connection) validateNetherNetID() error {
-	s := string(c.NetherNetID)
+// Validate reports whether id is a usable NetherNet identifier: either a
+// decimal network ID, as advertised by regular worlds, or a UUID, as advertised
+// by Realm presences where it mirrors PlayerMessagingID.
+func (id NetherNetID) Validate() error {
+	s := string(id)
 	if _, err := strconv.ParseUint(s, 10, 64); err == nil {
 		return nil
 	}
@@ -208,6 +190,24 @@ func (c Connection) validateNetherNetID() error {
 		return nil
 	}
 	return fmt.Errorf("minecraft/p2p: NetherNetID %q is neither a uint64 nor a UUID", s)
+}
+
+// Validate validates whether the Connection is actually usable for connecting to the world.
+func (c Connection) Validate() error {
+	switch c.Type {
+	case ConnectionTypeSignalingOverJSONRPC:
+		if err := c.NetherNetID.Validate(); err != nil {
+			return err
+		}
+		if c.PlayerMessagingID == uuid.Nil {
+			return errors.New("minecraft/p2p: Connection.PlayerMessagingID is nil")
+		}
+		return nil
+	case ConnectionTypeSignalingOverWebSocket:
+		return c.NetherNetID.Validate()
+	default:
+		return fmt.Errorf("minecraft/p2p: invalid Connection.Type: %d", c.Type)
+	}
 }
 
 // Connection returns the first supported NetherNet signaling connection
