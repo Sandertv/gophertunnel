@@ -175,7 +175,6 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
 	}
 	if !authenticated {
-		iData.Identity = cData.SelfSignedID
 		iData.DisplayName = cData.ThirdPartyName
 	}
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
@@ -451,7 +450,7 @@ type tokenClaims struct {
 	DisplayName string `json:"xname"`
 	// Identity is the UUID of the player. It is only set for offline logins where
 	// the UUID cannot be derived from the XUID.
-	Identity string `json:"identity,omitempty"`
+	Identity string `json:"leguuid,omitempty"`
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
