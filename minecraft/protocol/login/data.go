@@ -358,9 +358,6 @@ func (data ClientData) Validate() error {
 			(u.Scheme != "https" && u.Scheme != "http") {
 			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
 		}
-		if _, err := net.ResolveUDPAddr("udp", u.Host); err != nil {
-			return fmt.Errorf("ServerAddress must be resolveable as a UDP address, but got %v", data.ServerAddress)
-		}
 	} else if _, err := net.ResolveUDPAddr("udp", data.ServerAddress); err != nil {
 		return fmt.Errorf("ServerAddress must be resolveable as a UDP address, but got %v", data.ServerAddress)
 	}
