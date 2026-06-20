@@ -4,6 +4,7 @@ go 1.24.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.17.0
+	github.com/df-mc/go-nethernet v1.0.16
 	github.com/df-mc/go-playfab v1.0.0
 	github.com/df-mc/go-xsapi v1.0.1
 	github.com/df-mc/jsonc v1.0.5
@@ -20,7 +21,6 @@ require (
 )
 
 require (
-	github.com/df-mc/go-nethernet v1.0.16 // indirect
 	github.com/pion/datachannel v1.6.0 // indirect
 	github.com/pion/dtls/v3 v3.1.2 // indirect
 	github.com/pion/ice/v4 v4.2.1 // indirect
