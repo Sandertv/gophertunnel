@@ -25,12 +25,11 @@ type PacketReader interface {
 	ReadPacket() ([]byte, error)
 }
 
-// TransportCapabilities groups optional packet-layer methods that transport
-// wrappers must preserve.
+// TransportCapabilities is the full set of optional packet transport methods.
 //
-// Implementing this full interface is not required for ordinary transports, but
-// wrappers around a transport that does implement these methods must keep them
-// visible or packet framing and encryption behaviour may change.
+// Normal transports do not need to implement this interface. If code wraps a
+// connection that has any of these methods, the wrapper must expose the same
+// methods too. Otherwise packets may be framed, encrypted, or read differently.
 type TransportCapabilities interface {
 	BatchHeaderer
 	EncryptionDisabler
