@@ -29,7 +29,7 @@ type PacketReader interface {
 //
 // Normal transports do not need to implement this interface. If code wraps a
 // connection that has any of these methods, the wrapper must expose the same
-// methods too. Otherwise packets may be framed, encrypted, or read differently.
+// methods too so Encoder and Decoder keep using the transport-specific behavior.
 type TransportCapabilities interface {
 	BatchHeaderer
 	EncryptionDisabler
