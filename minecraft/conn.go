@@ -832,11 +832,28 @@ func (conn *Conn) Context() context.Context {
 // closing the connection after. If the message passed is empty, the client will be immediately sent to the
 // server list instead of a disconnect screen.
 func (conn *Conn) Disconnect(message string) error {
-	_ = conn.WritePacketImmediate(&packet.Disconnect{
+	return conn.DisconnectPacket(packet.Disconnect{
 		HideDisconnectionScreen: message == "",
 		Message:                 message,
 	})
-	return conn.close(conn.closeErr(message))
+}
+
+// DisconnectPacket disconnects the connection by first sending pk, and closing
+// the connection after.
+func (conn *Conn) DisconnectPacket(pk packet.Disconnect) error {
+	_ = conn.WritePacketImmediate(&pk)
+	return conn.close(conn.closeErr(conn.disconnectPacketMessage(&pk)))
+}
+
+func (conn *Conn) disconnectPacketMessage(pk *packet.Disconnect) string {
+	if pk.Message != "" {
+		return pk.Message
+	}
+	if reason, ok := disconnectReasons[pk.Reason]; ok {
+		return reason
+	}
+	conn.log.Debug("unknown disconnect reason", "reason", pk.Reason)
+	return fmt.Sprintf("Unknown disconnect reason: %d", pk.Reason)
 }
 
 // takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
@@ -878,15 +895,7 @@ func (conn *Conn) receive(data []byte) error {
 			return err
 		}
 		disconnectPacket := pks[0].(*packet.Disconnect)
-		disconnectMessage := disconnectPacket.Message
-		if disconnectPacket.Message == "" {
-			if reason, ok := disconnectReasons[disconnectPacket.Reason]; ok {
-				disconnectMessage = reason
-			} else {
-				conn.log.Debug("unknown disconnect reason", "reason", disconnectPacket.Reason)
-				disconnectMessage = fmt.Sprintf("Unknown disconnect reason: %d", disconnectPacket.Reason)
-			}
-		}
+		disconnectMessage := conn.disconnectPacketMessage(disconnectPacket)
 		_ = conn.close(conn.wrap(&DisconnectPacketError{
 			Reason:                  disconnectPacket.Reason,
 			HideDisconnectionScreen: disconnectPacket.HideDisconnectionScreen,

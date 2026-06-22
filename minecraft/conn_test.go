@@ -94,6 +94,52 @@ func TestDisconnectWritesDisconnectPacket(t *testing.T) {
 	}
 }
 
+func TestDisconnectPacketWritesDisconnectReason(t *testing.T) {
+	t.Parallel()
+
+	client, serverConn := net.Pipe()
+	defer client.Close()
+
+	conn := newConn(serverConn, nil, slog.New(internal.DiscardHandler{}), DefaultProtocol, -1, false)
+	errCh := make(chan error, 1)
+	go func() {
+		errCh <- conn.DisconnectPacket(packet.Disconnect{
+			Reason:          packet.DisconnectReasonServerFull,
+			FilteredMessage: "Server Full",
+		})
+	}()
+
+	if err := client.SetReadDeadline(time.Now().Add(time.Second)); err != nil {
+		t.Fatalf("set read deadline: %v", err)
+	}
+	packets, err := packet.NewDecoder(client).Decode()
+	if err != nil {
+		t.Fatalf("decode disconnect packet: %v", err)
+	}
+	if len(packets) != 1 {
+		t.Fatalf("decoded packet count = %d, want 1", len(packets))
+	}
+	buf := bytes.NewBuffer(packets[0])
+	var header packet.Header
+	if err := header.Read(buf); err != nil {
+		t.Fatalf("read packet header: %v", err)
+	}
+	if header.PacketID != packet.IDDisconnect {
+		t.Fatalf("packet ID = %d, want Disconnect", header.PacketID)
+	}
+	var disconnect packet.Disconnect
+	disconnect.Marshal(protocol.NewReader(buf, 0, false))
+	if disconnect.Reason != packet.DisconnectReasonServerFull {
+		t.Fatalf("disconnect reason = %d, want %d", disconnect.Reason, packet.DisconnectReasonServerFull)
+	}
+	if disconnect.FilteredMessage != "Server Full" {
+		t.Fatalf("filtered message = %q, want Server Full", disconnect.FilteredMessage)
+	}
+	if err := <-errCh; err != nil {
+		t.Fatalf("DisconnectPacket: %v", err)
+	}
+}
+
 func TestReceiveDisconnectPreservesPacketReason(t *testing.T) {
 	t.Parallel()
 
