@@ -887,7 +887,13 @@ func (conn *Conn) receive(data []byte) error {
 				disconnectMessage = fmt.Sprintf("Unknown disconnect reason: %d", disconnectPacket.Reason)
 			}
 		}
-		_ = conn.close(conn.wrap(DisconnectError(disconnectMessage), "receive"))
+		_ = conn.close(conn.wrap(&DisconnectPacketError{
+			Reason:                  disconnectPacket.Reason,
+			HideDisconnectionScreen: disconnectPacket.HideDisconnectionScreen,
+			Message:                 disconnectPacket.Message,
+			FilteredMessage:         disconnectPacket.FilteredMessage,
+			DisplayMessage:          disconnectMessage,
+		}, "receive"))
 		return nil
 	}
 	if conn.disablePacketHandling {

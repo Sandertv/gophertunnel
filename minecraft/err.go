@@ -3,6 +3,8 @@ package minecraft
 import (
 	"errors"
 	"net"
+
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 var errBufferTooSmall = errors.New("a message sent was larger than the buffer used to receive the message into")
@@ -30,4 +32,48 @@ type DisconnectError string
 // Error returns the message held in the packet.Disconnect.
 func (d DisconnectError) Error() string {
 	return string(d)
+}
+
+// DisconnectPacketError is returned when the other end closes the connection
+// through a packet.Disconnect. It preserves the original disconnect packet
+// fields while still unwrapping to DisconnectError for older callers.
+type DisconnectPacketError struct {
+	Reason                  int32
+	HideDisconnectionScreen bool
+	Message                 string
+	FilteredMessage         string
+	DisplayMessage          string
+}
+
+// Error returns the message that should be shown for the disconnect.
+func (d *DisconnectPacketError) Error() string {
+	if d == nil {
+		return "<nil>"
+	}
+	if d.DisplayMessage != "" {
+		return d.DisplayMessage
+	}
+	if d.Message != "" {
+		return d.Message
+	}
+	return "Disconnected"
+}
+
+// Unwrap returns the legacy DisconnectError so existing errors.As checks keep
+// working.
+func (d *DisconnectPacketError) Unwrap() error {
+	return DisconnectError(d.Error())
+}
+
+// Packet returns a copy of the original disconnect packet fields.
+func (d *DisconnectPacketError) Packet() *packet.Disconnect {
+	if d == nil {
+		return nil
+	}
+	return &packet.Disconnect{
+		Reason:                  d.Reason,
+		HideDisconnectionScreen: d.HideDisconnectionScreen,
+		Message:                 d.Message,
+		FilteredMessage:         d.FilteredMessage,
+	}
 }

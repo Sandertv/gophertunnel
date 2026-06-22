@@ -3,6 +3,8 @@ package minecraft
 import (
 	"archive/zip"
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -89,6 +91,56 @@ func TestDisconnectWritesDisconnectPacket(t *testing.T) {
 	}
 	if err := <-errCh; err != nil {
 		t.Fatalf("Disconnect: %v", err)
+	}
+}
+
+func TestReceiveDisconnectPreservesPacketReason(t *testing.T) {
+	t.Parallel()
+
+	client, serverConn := net.Pipe()
+	defer client.Close()
+	defer serverConn.Close()
+
+	conn := newConn(client, nil, slog.New(internal.DiscardHandler{}), DefaultProtocol, -1, false)
+	conn.pool = conn.proto.Packets(false)
+	defer conn.Close()
+
+	var buf bytes.Buffer
+	header := packet.Header{PacketID: packet.IDDisconnect}
+	if err := header.Write(&buf); err != nil {
+		t.Fatalf("write header: %v", err)
+	}
+	(&packet.Disconnect{
+		Reason:          packet.DisconnectReasonServerFull,
+		Message:         "",
+		FilteredMessage: "Server Full",
+	}).Marshal(protocol.NewWriter(&buf, 0))
+
+	if err := conn.receive(buf.Bytes()); err != nil {
+		t.Fatalf("receive disconnect: %v", err)
+	}
+
+	cause := context.Cause(conn.Context())
+	var packetErr *DisconnectPacketError
+	if !errors.As(cause, &packetErr) {
+		t.Fatalf("cause %v does not contain DisconnectPacketError", cause)
+	}
+	if packetErr.Reason != packet.DisconnectReasonServerFull {
+		t.Fatalf("reason = %d, want %d", packetErr.Reason, packet.DisconnectReasonServerFull)
+	}
+	if packetErr.FilteredMessage != "Server Full" {
+		t.Fatalf("filtered message = %q, want Server Full", packetErr.FilteredMessage)
+	}
+	if packetErr.Error() != "Server Full" {
+		t.Fatalf("error = %q, want Server Full", packetErr.Error())
+	}
+
+	var legacyErr DisconnectError
+	if !errors.As(cause, &legacyErr) {
+		t.Fatalf("cause %v does not contain legacy DisconnectError", cause)
+	}
+	if legacyErr.Error() != "Server Full" {
+		t.Fatalf("legacy error = %q, want Server Full", legacyErr.Error())
 	}
 }
 
