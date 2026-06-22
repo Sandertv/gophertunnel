@@ -18,9 +18,9 @@ type Decoder struct {
 	r   io.Reader
 	buf []byte
 
-	// pr holds a packetReader (and io.Reader) that packets are read from if the io.Reader passed to
-	// NewDecoder implements the packetReader interface.
-	pr packetReader
+	// pr holds a PacketReader (and io.Reader) that packets are read from if the io.Reader passed to
+	// NewDecoder implements the PacketReader interface.
+	pr PacketReader
 
 	// header holds the batch header that is expected on the beginning of input packet data.
 	header             []byte
@@ -35,26 +35,20 @@ type Decoder struct {
 	checkPacketLimit bool
 }
 
-// packetReader is used to read packets immediately instead of copying them in a buffer first. This is a
-// specific case made to reduce RAM usage.
-type packetReader interface {
-	ReadPacket() ([]byte, error)
-}
-
 // NewDecoder returns a new decoder decoding data from the io.Reader passed. One read call from the reader is
 // assumed to consume an entire packet.
 func NewDecoder(reader io.Reader) *Decoder {
 	var batch []byte
-	if b, ok := reader.(batchHeader); ok {
+	if b, ok := reader.(BatchHeaderer); ok {
 		batch = b.BatchHeader()
 	} else {
 		batch = []byte{header}
 	}
 	var disableEncryption bool
-	if d, ok := reader.(encryptionDisabler); ok {
+	if d, ok := reader.(EncryptionDisabler); ok {
 		disableEncryption = d.DisableEncryption()
 	}
-	if pr, ok := reader.(packetReader); ok {
+	if pr, ok := reader.(PacketReader); ok {
 		return &Decoder{
 			checkPacketLimit:  true,
 			pr:                pr,

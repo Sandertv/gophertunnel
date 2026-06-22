@@ -38,7 +38,7 @@ func tokenSource() oauth2.TokenSource {
 	}
 	tok, _ := src.Token()
 	b, _ := json.Marshal(tok)
-	_ = os.WriteFile("token.tok", b, 0644)
+	_ = os.WriteFile("token.tok", b, 0600)
 	return src
 }
 

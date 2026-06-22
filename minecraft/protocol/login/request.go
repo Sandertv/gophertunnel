@@ -174,6 +174,9 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	if err := cData.Validate(); err != nil {
 		return iData, cData, res, fmt.Errorf("validate client data: %w", err)
 	}
+	if !authenticated {
+		iData.DisplayName = cData.ThirdPartyName
+	}
 	return iData, cData, AuthResult{PublicKey: key, XBOXLiveAuthenticated: authenticated}, nil
 }
 
@@ -221,7 +224,7 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 		if err := c.Validate(jwt.Expected{Time: now}); err != nil {
 			return IdentityData{}, nil, false, fmt.Errorf("validate token 0: %w", err)
 		}
-		authenticated = bytes.Equal(key.X.Bytes(), mojangKey.X.Bytes()) && bytes.Equal(key.Y.Bytes(), mojangKey.Y.Bytes())
+		authenticated = key.Equal(mojangKey)
 
 		if err := parseFullClaim(chain[1], key, &c); err != nil {
 			return IdentityData{}, nil, false, fmt.Errorf("parse token 1: %w", err)
@@ -461,7 +464,7 @@ type tokenClaims struct {
 	DisplayName string `json:"xname"`
 	// Identity is the UUID of the player. It is only set for offline logins where
 	// the UUID cannot be derived from the XUID.
-	Identity string `json:"identity,omitempty"`
+	Identity string `json:"leguuid,omitempty"`
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
@@ -471,8 +474,6 @@ func (tc tokenClaims) identityData() IdentityData {
 	if identity == "" {
 		if tc.XUID != "" {
 			identity = identityFromXUID(tc.XUID).String()
-		} else {
-			identity = uuid.New().String()
 		}
 	}
 	return IdentityData{

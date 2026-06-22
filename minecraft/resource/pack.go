@@ -3,10 +3,13 @@ package resource
 import (
 	"archive/zip"
 	"bytes"
+	"context"
 	"crypto/sha256"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
+	"math"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -56,14 +59,40 @@ func ReadPath(path string) (*Pack, error) {
 }
 
 func ReadBytes(data []byte) (*Pack, error) {
-	return compile(data)
+	return compile(data, true)
 }
 
 // ReadURL downloads a resource pack found at the URL passed and compiles it. The resource pack must be a valid
 // zip archive where the manifest.json file is inside a subdirectory rather than the root itself. If the resource
 // pack is not a valid zip or there is no manifest.json file, an error is returned.
 func ReadURL(url string) (*Pack, error) {
-	resp, err := http.Get(url)
+	return ReadURLContext(context.Background(), url)
+}
+
+// ReadURLContext downloads a resource pack found at the URL passed and compiles it. The request is canceled
+// when ctx is done.
+func ReadURLContext(ctx context.Context, url string) (*Pack, error) {
+	return readURLContext(ctx, url, 0)
+}
+
+// ReadURLContextLimit downloads a resource pack found at the URL passed and compiles it, reading at most maxSize
+// bytes from the response body. The request is canceled when ctx is done.
+func ReadURLContextLimit(ctx context.Context, url string, maxSize uint64) (*Pack, error) {
+	if maxSize == 0 {
+		return nil, errors.New("download resource pack: max size must be greater than 0")
+	}
+	if maxSize > math.MaxInt64 {
+		return nil, fmt.Errorf("download resource pack: max size %d exceeds supported limit", maxSize)
+	}
+	return readURLContext(ctx, url, int64(maxSize))
+}
+
+func readURLContext(ctx context.Context, url string, maxSize int64) (*Pack, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create resource pack request: %w", err)
+	}
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("download resource pack: %w", err)
 	}
@@ -71,7 +100,21 @@ func ReadURL(url string) (*Pack, error) {
 	if resp.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("download resource pack: %v (%d)", resp.Status, resp.StatusCode)
 	}
-	pack, err := Read(resp.Body)
+	var r io.Reader = resp.Body
+	if maxSize > 0 {
+		if resp.ContentLength > maxSize {
+			return nil, fmt.Errorf("download resource pack: response size %d exceeds limit %d", resp.ContentLength, maxSize)
+		}
+		r = io.LimitReader(resp.Body, maxSize+1)
+	}
+	data, err := io.ReadAll(r)
+	if err != nil {
+		return nil, fmt.Errorf("read resource pack: %w", err)
+	}
+	if maxSize > 0 && int64(len(data)) > maxSize {
+		return nil, fmt.Errorf("download resource pack: response size exceeds limit %d", maxSize)
+	}
+	pack, err := compile(data, false)
 	if err != nil {
 		return nil, err
 	}
@@ -121,7 +164,7 @@ func Read(r io.Reader) (*Pack, error) {
 	if err != nil {
 		return nil, fmt.Errorf("read resource pack: %w", err)
 	}
-	return compile(data)
+	return compile(data, true)
 }
 
 // Name returns the name of the resource pack.
@@ -356,7 +399,7 @@ func compileZipPath(p string) (*Pack, error) {
 
 // compile compiles the resource pack from the bytes passed, either a zip archive or a directory, and returns a
 // resource pack if successful.
-func compile(data []byte) (*Pack, error) {
+func compile(data []byte, unwrapNested bool) (*Pack, error) {
 	zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 	if err != nil {
 		return nil, fmt.Errorf("open zip: %w", err)
@@ -364,7 +407,7 @@ func compile(data []byte) (*Pack, error) {
 
 	// Check if this is a nested zip (only contains a single .zip file)
 	// We only unwrap one level to avoid recursive nesting issues
-	if len(zr.File) == 1 && strings.HasSuffix(strings.ToLower(zr.File[0].Name), ".zip") {
+	if unwrapNested && len(zr.File) == 1 && strings.HasSuffix(strings.ToLower(zr.File[0].Name), ".zip") {
 		nestedFile, err := zr.File[0].Open()
 		if err != nil {
 			return nil, fmt.Errorf("open nested zip %s: %w", zr.File[0].Name, err)

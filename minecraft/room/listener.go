@@ -10,6 +10,7 @@ import (
 
 	"github.com/df-mc/go-nethernet"
 	"github.com/sandertv/gophertunnel/minecraft"
+	"github.com/sandertv/gophertunnel/minecraft/p2p"
 	"github.com/sandertv/gophertunnel/minecraft/room/internal"
 )
 
@@ -43,6 +44,9 @@ func (conf ListenConfig) Wrap(n minecraft.NetworkListener) *Listener {
 	}
 	if conf.StatusProvider == nil {
 		conf.StatusProvider = NewStatusProvider(DefaultStatus())
+	}
+	if conf.Log == nil {
+		conf.Log = slog.Default()
 	}
 
 	return &Listener{
@@ -94,15 +98,15 @@ func (l *Listener) ServerStatus(server minecraft.ServerStatus) {
 		switch addr := l.n.Addr().(type) {
 		case *nethernet.Addr:
 			if status.TransportLayer == 0 {
-				status.TransportLayer = TransportLayerNetherNet
+				status.TransportLayer = p2p.TransportLayerNetherNet
 			}
 			status.SupportedConnections = append(status.SupportedConnections, Connection{
-				ConnectionType: ConnectionTypeWebSocketsWebRTCSignaling,
-				NetherNetID:    NetherNetID(addr.NetworkID),
+				ConnectionType: p2p.ConnectionTypeSignalingOverWebSocket,
+				NetherNetID:    p2p.NetherNetID(addr.NetworkID),
 			})
 		case *net.UDPAddr:
 			if status.TransportLayer == 0 {
-				status.TransportLayer = TransportLayerRakNet
+				status.TransportLayer = p2p.TransportLayerRakNet
 			}
 			if status.RakNetGUID == "" {
 				status.RakNetGUID = strconv.FormatInt(l.n.ID(), 10)

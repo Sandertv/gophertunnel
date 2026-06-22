@@ -103,13 +103,17 @@ type ListenConfig struct {
 	// If AfterHandshake returns a non-nil error, the connection is aborted.
 	AfterHandshake func(c *Conn) error
 
+	// ConnHandler is called when a connection is ready for caller-owned packet handling. If set, ready connections
+	// are delivered to ConnHandler instead of Listener.Accept.
+	ConnHandler func(c *Conn) error
+
 	// DisablePacketHandling, if set to true, disables automatic packet handling for the connection.
 	DisablePacketHandling bool
 
-	// PacketFunc is called whenever a packet is read from or written to a connection returned when using
-	// Listener.Accept. It includes packets that are otherwise covered in the connection sequence, such as the
-	// Login packet. The function is called with the header of the packet and its raw payload, the address
-	// from which the packet originated, and the destination address.
+	// PacketFunc is called whenever a packet is read from or written to a connection delivered through ConnHandler or
+	// Listener.Accept. It includes packets that are otherwise covered in the connection sequence, such as the Login
+	// packet. The function is called with the header of the packet and its raw payload, the address from which the
+	// packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 	// PacketBatchFunc is called after each outbound packet batch has been encoded.
 	PacketBatchFunc packet.BatchEncodeObserver
@@ -252,13 +256,10 @@ func authEnv(ctx context.Context) (*service.AuthorizationEnvironment, error) {
 		return authEnvCache, nil
 	}
 
-	if ctx == nil {
-		ctx = context.Background()
-	}
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
-	discovery, err := service.Discover(ctx, service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
+	discovery, err := service.Default(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("discover service endpoints: %w", err)
 	}
@@ -277,10 +278,6 @@ func authEnv(ctx context.Context) (*service.AuthorizationEnvironment, error) {
 // authenticating new multiplayer tokens issued by the authorization service
 // of Minecraft.
 func oidcVerifier(ctx context.Context) (*oidc.IDTokenVerifier, error) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
-
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
@@ -488,6 +485,7 @@ func (listener *Listener) handleConn(conn *Conn) {
 		}
 		for _, data := range packets {
 			loggedInBefore, handshakeCompleteBefore := conn.loggedIn, conn.handshakeComplete
+			passthroughReadyBefore := conn.disablePacketHandlingReady
 			if err := conn.receive(data); err != nil {
 				conn.log.Error(err.Error())
 				return
@@ -498,18 +496,35 @@ func (listener *Listener) handleConn(conn *Conn) {
 					return
 				}
 			}
-			if !loggedInBefore && conn.loggedIn {
-				select {
-				case <-listener.close:
-					// The listener was closed while this one was logged in, so the incoming channel will be
-					// closed. Just return so the connection is closed and cleaned up.
-					return
-				case listener.incoming <- conn:
-					// The connection was previously not logged in, but was after receiving this packet,
-					// meaning the connection is fully completely now. We add it to the channel so that
-					// a call to Accept() can receive it.
-				}
+			publish := !loggedInBefore && conn.loggedIn
+			if conn.disablePacketHandling && !passthroughReadyBefore && conn.disablePacketHandlingReady {
+				publish = true
+			}
+			if publish && !listener.deliverConn(conn) {
+				return
 			}
 		}
+	}
+}
+
+// deliverConn delivers conn to the configured owner. ConnHandler, when set, replaces the Accept path entirely:
+// connections delivered through it are not published to listener.incoming.
+func (listener *Listener) deliverConn(conn *Conn) bool {
+	if listener.cfg.ConnHandler != nil {
+		if err := listener.cfg.ConnHandler(conn); err != nil {
+			conn.log.Error(err.Error())
+			return false
+		}
+		return true
+	}
+	select {
+	case <-listener.close:
+		// The listener was closed while this one was logged in, so the incoming channel will be closed. Just return
+		// so the connection is closed and cleaned up.
+		return false
+	case listener.incoming <- conn:
+		// The connection was previously not logged in, but was after receiving this packet, meaning the connection is
+		// complete now. We add it to the channel so that a call to Accept() can receive it.
+		return true
 	}
 }

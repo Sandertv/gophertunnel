@@ -6,118 +6,97 @@ import (
 	"log/slog"
 	"math/rand"
 	"net/http"
-	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/coder/websocket"
 	"github.com/df-mc/go-nethernet"
-	"github.com/df-mc/go-playfab"
-	"github.com/sandertv/gophertunnel/minecraft/auth/xal"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/service"
+	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
 	"golang.org/x/oauth2"
 )
 
-// Dialer provides methods and fields to establish a Conn to a signaling service.
-// It allows specifying options for the connection and handles various authentication
-// and environment configuration.
+// Dialer specifies options for connecting to the signaling service.
 type Dialer struct {
-	// Options specifies the options for dialing the signaling service over
-	// a WebSocket connection. If nil, a new *websocket.DialOptions will be
-	// created. Note that the [websocket.DialOptions.HTTPClient] and its Transport
-	// will be overridden with a [service.Transport] for authorization.
-	Options *websocket.DialOptions
-
+	// Environment is the environment used for connecting to the signaling service.
+	// If nil, it will be derived from [service.Default].
+	Environment ConfigurationProvider
+	// HTTPClient is the HTTP client used during WebSocket handshake.
+	HTTPClient *http.Client
+	// Log is the logger used to log messages at various levels.
+	// If nil, it will be set from [slog.Default].
+	Log *slog.Logger
 	// NetworkID specifies a unique ID for the network. If zero, a random value will
 	// be automatically set from [rand.Uint64]. It is included in the URI for establishing
 	// a WebSocket connection.
-	NetworkID uint64
-
-	// Log is used to logging messages at various levels. If nil, the default
-	// [slog.Logger] will be set from [slog.Default].
-	Log *slog.Logger
-
-	// HTTPClient is used to make HTTP requests to the signaling service. If nil, the default
-	// [http.Client] will be used.
-	HTTPClient *http.Client
+	NetworkID string
+	// IgnoreDeliveryNotification disables waiting for delivery confirmation after
+	// sending a signal to a remote peer.
+	//
+	// By default, [Conn.Signal] blocks until the remote peer sends back a
+	// delivery confirmation message to confirm receipt. Enabling this field
+	// causes Signal to return as soon as the signaling service accepts the
+	// message, without waiting for acknowledgement by the remote peer.
+	//
+	// The signaling service appears to be sending delivery confirmation only for
+	// telemetry so this field is unlikely to affect the actual WebRTC negotiation.
+	IgnoreDeliveryNotification bool
 }
 
-// DialContext establishes a Conn to the signaling service using the [oauth2.TokenSource] for
-// authentication and authorization with franchise services. It obtains the necessary [franchise.Discovery]
-// and [Environment] needed, then calls DialWithIdentityAndEnvironment internally. It is the
-// method that is typically used when no configuration of identity and environment is required.
-func (d Dialer) DialContext(ctx context.Context, src oauth2.TokenSource) (*Conn, error) {
-	if d.HTTPClient != nil {
-		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
-			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
-		}
-	}
-
-	discovery, err := service.Discover(ctx, service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
-	if err != nil {
-		return nil, fmt.Errorf("obtain discovery: %w", err)
-	}
-	a := new(service.AuthorizationEnvironment)
-	if err := discovery.Environment(a); err != nil {
-		return nil, fmt.Errorf("obtain environment for %s: %w", a.ServiceName(), err)
-	}
-	s := new(Environment)
-	if err := discovery.Environment(s); err != nil {
-		return nil, fmt.Errorf("obtain environment for %s: %w", s.ServiceName(), err)
-	}
-
-	return d.DialWithIdentityAndEnvironment(ctx, playfab.XBLIdentityProvider{
-		TokenSource: xal.RefreshTokenSource(ctx, src, playfab.RelyingParty),
-	}, s)
+// Dial connects to the signaling service with a 15 seconds timeout.
+func (d Dialer) Dial(src service.TokenSource) (*Conn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*15)
+	defer cancel()
+	return d.DialContext(ctx, src)
 }
 
-// DialWithIdentityAndEnvironment establishes a Conn to the signaling service using the [franchise.IdentityProvider]
-// for authorization and the [Environment] for creating the URI of an internal WebSocket connection. It appends 'ws/v1.0/signaling'
-// with the NetworkID to the service URI from the Environment. It sets up necessary options and logging if not provided, and
-// dials a [websocket.Conn] using [websocket.Dial]. The [context.Context] may be used to cancel the connection if necessary as
-// soon as possible.
-func (d Dialer) DialWithIdentityAndEnvironment(ctx context.Context, i playfab.IdentityProvider, env *Environment) (*Conn, error) {
-	// DialWithIdentityAndEnvironment may be called directly (without DialContext). Ensure the ctx has an HTTP
-	// client for any discovery/auth HTTP requests, without affecting the websocket dial client.
-	if d.HTTPClient != nil {
-		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
-			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
+// DialContext connects to the signaling service using the provided [service.TokenSource] for authorization.
+// The given [context.Context] is used to control the deadline for discovery, authorization, and the WebSocket
+// handshake. The returned Conn may still need to wait for initial ICE credentials in [Conn.Credentials].
+func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn, error) {
+	if d.HTTPClient == nil {
+		d.HTTPClient = http.DefaultClient
+	}
+	if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
+	}
+	if d.Environment == nil {
+		discovery, err := service.Default(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("discover network services: %w", err)
 		}
-	}
-
-	if d.Options == nil {
-		d.Options = &websocket.DialOptions{}
-	}
-	if d.Options.HTTPClient == nil {
-		d.Options.HTTPClient = &http.Client{}
-	}
-	if d.NetworkID == 0 {
-		d.NetworkID = rand.Uint64()
+		env := new(Environment)
+		if err := discovery.Environment(env); err != nil {
+			return nil, fmt.Errorf("resolve environment for %q: %w", env.ServiceName(), err)
+		}
+		d.Environment = env
 	}
 	if d.Log == nil {
 		d.Log = slog.Default()
 	}
-
-	var (
-		hasTransport bool
-		base         = d.Options.HTTPClient.Transport
-	)
-	if base != nil {
-		_, hasTransport = base.(*service.Transport)
-	}
-	if !hasTransport {
-		d.Options.HTTPClient.Transport = &service.Transport{
-			IdentityProvider: i,
-			Base:             base,
-		}
+	if d.NetworkID == "" {
+		d.NetworkID = strconv.FormatUint(rand.Uint64(), 10)
 	}
 
-	u, err := url.Parse(env.ServiceURI)
+	cfg, err := d.Environment.Configuration(ctx, d.HTTPClient, src)
 	if err != nil {
-		return nil, fmt.Errorf("parse service URI: %w", err)
+		return nil, fmt.Errorf("request configuration: %w", err)
+	}
+	token, err := src.ServiceToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("request service token: %w", err)
 	}
 
-	c, _, err := websocket.Dial(ctx, u.JoinPath("/ws/v1.0/signaling", strconv.FormatUint(d.NetworkID, 10)).String(), d.Options)
+	opts := &websocket.DialOptions{
+		HTTPHeader: make(http.Header),
+		HTTPClient: d.HTTPClient,
+	}
+	opts.HTTPHeader.Set("Authorization", token.AuthorizationHeader)
+	requestURL := cfg.ServiceURI.JoinPath(
+		"/ws/v1.0/signaling",
+		d.NetworkID,
+	)
+	c, _, err := websocket.Dial(ctx, requestURL.String(), opts)
 	if err != nil {
 		return nil, err
 	}
@@ -128,17 +107,11 @@ func (d Dialer) DialWithIdentityAndEnvironment(ctx context.Context, i playfab.Id
 
 		credentialsReceived: make(chan struct{}),
 
-		closed: make(chan struct{}),
-
-		notifiers: make(map[uint32]chan<- *nethernet.Signal),
+		notifiers: make(map[uint32]nethernet.Notifier),
+		pending:   internal.NewPendingMap(),
 	}
 	conn.ctx, conn.cancel = context.WithCancelCause(context.Background())
 	go conn.read()
-
-	select {
-	case <-ctx.Done():
-		return nil, context.Cause(ctx)
-	case <-conn.credentialsReceived:
-		return conn, nil
-	}
+	go conn.ping(cfg.PingFrequency)
+	return conn, nil
 }

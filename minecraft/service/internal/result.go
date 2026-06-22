@@ -2,10 +2,11 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"net/http"
+	"net/url"
 )
 
 // Result wraps the basic structure of response body sent by most franchise-related services.
@@ -52,8 +53,35 @@ func Err(resp *http.Response) error {
 // request is made by libHttpClient, which is a primary HTTP client bundled in XSAPI/GDK.
 const UserAgent = "libhttpclient/1.0.0.0"
 
-const errorKey = "error"
+// ServiceEnvironment represents an environment for a service that hosts an endpoint
+// on the [ServiceEnvironment.ServiceURI].
+type ServiceEnvironment struct {
+	ServiceURI *url.URL `json:"serviceUri"`
+}
 
-func ErrAttr(err error) slog.Attr {
-	return slog.Any(errorKey, err)
+// UnmarshalJSON implements [json.Unmarshaler.UnmarshalJSON].
+// Since [url.URL] does not implement [json.Unmarshaler] or [encoding.TextUnmarshaler],
+// we decode URL fields as strings first, then manually parse them into URLs.
+// See: https://github.com/golang/go/issues/52638
+func (e *ServiceEnvironment) UnmarshalJSON(b []byte) error {
+	type Alias ServiceEnvironment
+	data := struct {
+		*Alias
+		ServiceURI string `json:"serviceUri"`
+		Issuer     string `json:"issuer"`
+	}{
+		Alias: (*Alias)(e),
+	}
+	if err := json.Unmarshal(b, &data); err != nil {
+		return err
+	}
+	if data.ServiceURI == "" {
+		return errors.New("service/internal: ServiceEnvironment.ServiceURI is empty")
+	}
+	var err error
+	e.ServiceURI, err = url.Parse(data.ServiceURI)
+	if err != nil {
+		return fmt.Errorf("parse ServiceURI: %w", err)
+	}
+	return nil
 }

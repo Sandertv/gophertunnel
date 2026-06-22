@@ -13,6 +13,9 @@ type Network interface {
 	// hostname, combined with a port that is separated with ':'.
 	// DialContext will use the deadline (ctx.Deadline) of the context.Context passed for the maximum amount of time that
 	// the dialing can take. DialContext will terminate as soon as possible when the context.Context is closed.
+	//
+	// If the returned connection implements optional packet transport capabilities from the packet package, wrappers around
+	// the connection must preserve those methods. Hiding them can change packet framing, encryption or read behaviour.
 	DialContext(ctx context.Context, address string) (net.Conn, error)
 	// PingContext sends a ping to an address and returns the response obtained. If successful, a non-nil response byte
 	// slice containing the data is returned. If the ping failed, an error is returned describing the failure.

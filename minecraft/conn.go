@@ -832,7 +832,7 @@ func (conn *Conn) Context() context.Context {
 // closing the connection after. If the message passed is empty, the client will be immediately sent to the
 // server list instead of a disconnect screen.
 func (conn *Conn) Disconnect(message string) error {
-	_ = conn.WritePacket(&packet.Disconnect{
+	_ = conn.WritePacketImmediate(&packet.Disconnect{
 		HideDisconnectionScreen: message == "",
 		Message:                 message,
 	})
@@ -1100,12 +1100,16 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("enable encryption: %w", err)
 	}
-	conn.handshakeComplete = true
 	return nil
 }
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func (conn *Conn) handleClientToServerHandshake() error {
+	conn.handshakeComplete = true
+	if conn.disablePacketHandling {
+		conn.disablePacketHandlingReady = true
+		return nil
+	}
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
@@ -1169,11 +1173,10 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	}
 
 	if !conn.disableEncryption {
-		x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
-		// Make sure to pad the shared secret up to 96 bytes.
-		sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
-
-		keyBytes := sha256.Sum256(append(salt, sharedSecret...))
+		keyBytes, err := conn.encryptionKey(salt, pub)
+		if err != nil {
+			return fmt.Errorf("derive encryption key: %w", err)
+		}
 
 		// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
 		conn.encMu.Lock()
@@ -1226,11 +1229,14 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 
 		// Try to use the Download URL if set
 		if pack.DownloadURL != "" {
-			newPack, err := resource.ReadURL(pack.DownloadURL)
+			newPack, err := resource.ReadURLContextLimit(conn.ctx, pack.DownloadURL, pack.Size)
 			if err != nil {
 				conn.log.Warn("handle ResourcePacksInfo: failed to download pack from URL", "UUID", pack.UUID, "download_url", pack.DownloadURL, "err", err)
+			} else if newPack.UUID() != pack.UUID || newPack.Version() != pack.Version {
+				conn.log.Warn("handle ResourcePacksInfo: downloaded pack from URL did not match advertised pack", "UUID", pack.UUID, "version", pack.Version, "downloaded_UUID", newPack.UUID(), "downloaded_version", newPack.Version(), "download_url", pack.DownloadURL)
 			} else {
 				conn.resourcePacks = append(conn.resourcePacks, newPack.WithContentKey(pack.ContentKey))
+				conn.packQueue.packAmount--
 				continue
 			}
 		}
@@ -1401,6 +1407,7 @@ func (conn *Conn) startGame() {
 		BaseGameVersion:              data.BaseGameVersion,
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
+		PropertyData:                 data.PropertyData,
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
@@ -1766,12 +1773,10 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	_ = conn.Flush()
 
 	if !conn.disableEncryption {
-		// We first compute the shared secret.
-		x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
-
-		sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
-
-		keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
+		keyBytes, err := conn.encryptionKey(conn.salt, clientPublicKey)
+		if err != nil {
+			return fmt.Errorf("derive encryption key: %w", err)
+		}
 
 		// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
 		conn.encMu.Lock()
@@ -1781,6 +1786,26 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	}
 
 	return nil
+}
+
+// encryptionKey computes the encryption key for the connection using the salt
+// and the remote connection's public key. It derives the shared secret through
+// ECDH key exchange, then produces a 32-byte key by hashing the salt with the
+// shared secret.
+func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, error) {
+	privateKey, err := conn.privateKey.ECDH()
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("convert private key to ECDH: %w", err)
+	}
+	publicKey, err := pub.ECDH()
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("convert public key to ECDH: %w", err)
+	}
+	sharedSecret, err := privateKey.ECDH(publicKey)
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("compute shared secret: %w", err)
+	}
+	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
 // expect sets the packet IDs that are next expected to arrive.
