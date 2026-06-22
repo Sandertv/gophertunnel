@@ -1306,8 +1306,14 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 	return false
 }
 
-// packChunkSize is the size of a single chunk of data from a resource pack: 128 KiB.
-const packChunkSize = 1024 * 128
+const (
+	// packChunkSize is the size of a single chunk of data from a resource pack: 128 KiB.
+	packChunkSize = 1024 * 128
+	// resourcePackChunkSendDelay spaces ResourcePackChunkData packets so slow clients are not flooded while
+	// downloading packs. Clients after 1.26.30 may fail resource pack downloads when pack chunks are sent
+	// too aggressively.
+	resourcePackChunkSendDelay = 200 * time.Millisecond
+)
 
 // handleResourcePackClientResponse handles an incoming resource pack client response packet. The packet is
 // handled differently depending on the response.
@@ -1527,7 +1533,8 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 // pack to be downloaded.
 func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
 	current := conn.packQueue.currentPack
-	if current.UUID().String() != pk.UUID {
+	uuid, _, _ := strings.Cut(pk.UUID, "_")
+	if current.UUID().String() != uuid {
 		return fmt.Errorf("expected pack UUID %v, but got %v", current.UUID(), pk.UUID)
 	}
 	if conn.packQueue.currentOffset != uint64(pk.ChunkIndex)*packChunkSize {
@@ -1548,20 +1555,37 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 			return fmt.Errorf("read resource pack chunk: %w", err)
 		}
 		response.Data = response.Data[:n]
-
-		defer func() {
-			if !conn.packQueue.AllDownloaded() {
-				_ = conn.nextResourcePackDownload()
-			} else {
-				conn.expect(packet.IDResourcePackClientResponse)
-			}
-		}()
 	}
 	if err := conn.WritePacket(response); err != nil {
 		return fmt.Errorf("send ResourcePackChunkData: %w", err)
 	}
 
+	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Size())
+	if lastChunk {
+		if !conn.packQueue.AllDownloaded() {
+			_ = conn.nextResourcePackDownload()
+		} else {
+			conn.expect(packet.IDResourcePackClientResponse)
+		}
+	}
+	if err := waitResourcePackChunkSendDelay(conn.ctx); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// waitResourcePackChunkSendDelay waits before processing the next resource pack chunk request.
+func waitResourcePackChunkSendDelay(ctx context.Context) error {
+	timer := time.NewTimer(resourcePackChunkSendDelay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (conn *Conn) handleDimensionData(pk *packet.DimensionData) error {
