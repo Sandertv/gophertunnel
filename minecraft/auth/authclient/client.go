@@ -80,8 +80,7 @@ func SendRequestWithRetries(ctx context.Context, c *http.Client, request *http.R
 			if errors.Is(err, io.EOF) {
 				continue
 			}
-			var netErr net.Error
-			if errors.As(err, &netErr) {
+			if _, ok := errors.AsType[net.Error](err); ok {
 				continue
 			}
 			// Not a network error, so don't retry
