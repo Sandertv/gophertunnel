@@ -207,14 +207,9 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		return nil, fmt.Errorf("listen: no network under id %v", network)
 	}
 	if cfg.RakNetServerID != 0 {
-		switch rakNet := n.(type) {
-		case RakNet:
+		if rakNet, ok := n.(RakNet); ok {
 			rakNet.ServerID = cfg.RakNetServerID
 			n = rakNet
-		case *RakNet:
-			clone := *rakNet
-			clone.ServerID = cfg.RakNetServerID
-			n = &clone
 		}
 	}
 
