@@ -106,6 +106,21 @@ func TestRakNetListenUsesConfiguredServerID(t *testing.T) {
 	}
 }
 
+func TestListenConfigRakNetServerID(t *testing.T) {
+	t.Parallel()
+
+	const serverID = 12345
+	listener, err := (ListenConfig{RakNetServerID: serverID}).Listen("raknet", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+	defer listener.Close()
+
+	if got := listener.listener.ID(); got != serverID {
+		t.Fatalf("listener ID = %d, want %d", got, serverID)
+	}
+}
+
 type upstreamDialerFunc func(context.Context, string, string) (net.Conn, error)
 
 func (f upstreamDialerFunc) DialContext(ctx context.Context, network, address string) (net.Conn, error) {
