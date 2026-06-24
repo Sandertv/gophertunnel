@@ -5,6 +5,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,6 +13,8 @@ import (
 	"strings"
 
 	"github.com/df-mc/go-xsapi/v2"
+	"github.com/df-mc/go-xsapi/v2/xal/nsal"
+	"github.com/df-mc/go-xsapi/v2/xal/xsts"
 	"github.com/sandertv/gophertunnel/minecraft/auth/authclient"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
@@ -22,6 +25,27 @@ var minecraftAuthURL = &url.URL{
 	Host:   "multiplayer.minecraft.net",
 	Path:   "/authentication",
 } // https://multiplayer.minecraft.net/authentication
+
+// MinecraftRelyingParty is the Xbox Live relying party used to request the
+// XSTS token sent to the Minecraft authentication endpoint.
+const MinecraftRelyingParty = "https://multiplayer.minecraft.net/"
+
+// MinecraftTokenSigner adapts an XSTS token source to the TokenAndSignaturer
+// interface for the Minecraft authentication endpoint. The endpoint does not
+// need NSAL title-data resolution because its relying party is fixed and the
+// returned signature policy is not used by [RequestMinecraftChain].
+type MinecraftTokenSigner struct {
+	Source xsts.TokenSource
+}
+
+// TokenAndSignature requests an XSTS token for [MinecraftRelyingParty].
+func (s MinecraftTokenSigner) TokenAndSignature(ctx context.Context, _ *url.URL) (*xsts.Token, nsal.SignaturePolicy, error) {
+	if s.Source == nil {
+		return nil, nsal.SignaturePolicy{}, errors.New("minecraft/auth: nil XSTS token source")
+	}
+	token, err := s.Source.XSTSToken(ctx, MinecraftRelyingParty)
+	return token, nsal.AuthPolicy, err
+}
 
 // RequestMinecraftChain requests a fully processed Minecraft JWT chain using
 // signer and the ECDSA private key passed. The key will later be used to
