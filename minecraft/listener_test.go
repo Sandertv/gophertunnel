@@ -150,6 +150,30 @@ func TestListenerDisablePacketHandlingConsumesClientHandshake(t *testing.T) {
 	}
 }
 
+func TestListenerPongDataUsesStatusProviderSubtitle(t *testing.T) {
+	t.Parallel()
+
+	var pongData []byte
+	listener := &Listener{
+		cfg: ListenConfig{
+			StatusProvider: NewStatusProvider("Minecraft Server", "Provider Subtitle"),
+		},
+		listener: fakeNetworkListener{
+			addr:     &net.UDPAddr{IP: net.IPv4zero, Port: 19132},
+			pongData: &pongData,
+		},
+	}
+	listener.updatePongData()
+
+	status := ParsePongData(pongData)
+	if status.ServerName != "Minecraft Server" {
+		t.Fatalf("server name = %q, want Minecraft Server", status.ServerName)
+	}
+	if status.ServerSubName != "Provider Subtitle" {
+		t.Fatalf("server subtitle = %q, want Provider Subtitle", status.ServerSubName)
+	}
+}
+
 func writePacket(w io.Writer, pk packet.Packet) error {
 	buf := new(bytes.Buffer)
 	header := &packet.Header{PacketID: pk.ID()}
@@ -161,11 +185,16 @@ func writePacket(w io.Writer, pk packet.Packet) error {
 }
 
 type fakeNetworkListener struct {
-	addr net.Addr
+	addr     net.Addr
+	pongData *[]byte
 }
 
 func (f fakeNetworkListener) Accept() (net.Conn, error) { return nil, net.ErrClosed }
 func (f fakeNetworkListener) Close() error              { return nil }
 func (f fakeNetworkListener) Addr() net.Addr            { return f.addr }
 func (fakeNetworkListener) ID() int64                   { return 1 }
-func (fakeNetworkListener) PongData([]byte)             {}
+func (f fakeNetworkListener) PongData(data []byte) {
+	if f.pongData != nil {
+		*f.pongData = append((*f.pongData)[:0], data...)
+	}
+}

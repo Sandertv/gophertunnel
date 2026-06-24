@@ -370,7 +370,6 @@ func (listener *Listener) updatePongData() {
 	}
 
 	s := listener.status()
-	s.ServerSubName = "Lunar Proxy"
 	listener.listener.PongData(fmt.Appendf(nil, "MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
 		listener.listener.ID(), s.ServerSubName, "Creative", 1, ipv4Port, ipv6Port,
