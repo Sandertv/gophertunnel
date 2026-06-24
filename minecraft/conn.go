@@ -444,8 +444,27 @@ func (conn *Conn) StartGameTimeout(data GameData, timeout time.Duration) error {
 // be used to spawn the player in the world of the server. To spawn a Conn obtained from a call to
 // minecraft.Dial(), use Conn.DoSpawn().
 func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
+	if err := conn.SendStartGame(data); err != nil {
+		return err
+	}
+
+	select {
+	case <-conn.ctx.Done():
+		return conn.closeErr("start game")
+	case <-ctx.Done():
+		return conn.wrap(ctx.Err(), "start game")
+	case <-conn.spawn:
+		// Conn was spawned successfully.
+		return nil
+	}
+}
+
+// SendStartGame sends the packets that start a game for a client connected to a Listener without waiting for
+// the client to finish spawning. Most callers should use StartGame instead, which waits until the client sends
+// its spawn acknowledgement.
+func (conn *Conn) SendStartGame(data GameData) error {
 	if conn.gameDataReceived.Load() {
-		panic("(*Conn).StartGame must only be called on Listener connections")
+		panic("(*Conn).SendStartGame must only be called on Listener connections")
 	}
 	if data.WorldName == "" {
 		data.WorldName = conn.gameData.WorldName
@@ -458,17 +477,7 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 		}
 	}
 	conn.waitingForSpawn.Store(true)
-	conn.startGame()
-
-	select {
-	case <-conn.ctx.Done():
-		return conn.closeErr("start game")
-	case <-ctx.Done():
-		return conn.wrap(ctx.Err(), "start game")
-	case <-conn.spawn:
-		// Conn was spawned successfully.
-		return nil
-	}
+	return conn.startGame()
 }
 
 // DoSpawn starts the game for the client in the server. DoSpawn should be called for a Conn obtained using
@@ -1373,21 +1382,27 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 }
 
 // startGame sends a StartGame packet using the game data of the connection.
-func (conn *Conn) startGame() {
+func (conn *Conn) startGame() error {
 	data := conn.gameData
 	if len(data.Dimensions) > 0 {
-		_ = conn.WritePacket(&packet.DimensionData{Definitions: data.Dimensions})
+		if err := conn.WritePacket(&packet.DimensionData{Definitions: data.Dimensions}); err != nil {
+			return err
+		}
 	}
-	_ = conn.WritePacket(&packet.JigsawStructureData{
+	if err := conn.WritePacket(&packet.JigsawStructureData{
 		StructureData: map[string]any{
 			"processors":     make([]map[string]any, 0),
 			"template_pools": make([]map[string]any, 0),
 			"jigsaws":        make([]map[string]any, 0),
 			"structure_sets": make([]map[string]any, 0),
 		},
-	})
-	_ = conn.WritePacket(&packet.VoxelShapes{})
-	_ = conn.WritePacket(&packet.StartGame{
+	}); err != nil {
+		return err
+	}
+	if err := conn.WritePacket(&packet.VoxelShapes{}); err != nil {
+		return err
+	}
+	if err := conn.WritePacket(&packet.StartGame{
 		Difficulty:                   data.Difficulty,
 		EntityUniqueID:               data.EntityUniqueID,
 		EntityRuntimeID:              data.EntityRuntimeID,
@@ -1429,10 +1444,17 @@ func (conn *Conn) startGame() {
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 		PropertyData:                 data.PropertyData,
-	})
-	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
-	_ = conn.Flush()
+	}); err != nil {
+		return err
+	}
+	if err := conn.WritePacket(&packet.ItemRegistry{Items: data.Items}); err != nil {
+		return err
+	}
+	if err := conn.Flush(); err != nil {
+		return err
+	}
 	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
+	return nil
 }
 
 // nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info

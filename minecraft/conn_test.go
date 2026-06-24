@@ -42,12 +42,13 @@ func TestStartGameWritesPropertyData(t *testing.T) {
 		got = start.PropertyData
 	}
 
-	conn.gameData = GameData{
+	if err := conn.SendStartGame(GameData{
 		PropertyData: map[string]any{
 			"gophertunnel:test": int32(1),
 		},
+	}); err != nil {
+		t.Fatalf("SendStartGame: %v", err)
 	}
-	conn.startGame()
 
 	if got["gophertunnel:test"] != int32(1) {
 		t.Fatalf("StartGame.PropertyData = %#v, want gophertunnel:test=1", got)
