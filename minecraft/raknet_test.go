@@ -106,11 +106,11 @@ func TestRakNetListenUsesConfiguredServerID(t *testing.T) {
 	}
 }
 
-func TestListenConfigRakNetServerID(t *testing.T) {
+func TestListenConfigRaknetServerID(t *testing.T) {
 	t.Parallel()
 
 	const serverID = 12345
-	listener, err := (ListenConfig{RakNetServerID: serverID}).Listen("raknet", "127.0.0.1:0")
+	listener, err := (ListenConfig{RaknetServerID: serverID}).Listen("raknet", "127.0.0.1:0")
 	if err != nil {
 		t.Fatalf("Listen: %v", err)
 	}
