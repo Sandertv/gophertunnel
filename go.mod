@@ -52,4 +52,4 @@ replace github.com/df-mc/go-xsapi/v2 => github.com/HashimTheArab/go-xsapi/v2 v2.
 
 replace github.com/df-mc/go-nethernet => github.com/HashimTheArab/go-nethernet v0.0.0-20260621185016-ac3e14475524
 
-replace github.com/sandertv/go-raknet => github.com/hashimthearab/go-raknet v1.14.2-0.20260624174020-ebed38357d38
+replace github.com/sandertv/go-raknet => github.com/hashimthearab/go-raknet v1.14.2-0.20260625072737-109968c5e6ff
