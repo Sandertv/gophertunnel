@@ -161,7 +161,10 @@ func (decoder *Decoder) Decode() (packets [][]byte, err error) {
 			return nil, fmt.Errorf("decode batch: read packet length: %w", err)
 		}
 		if length == 0 {
-			return nil, fmt.Errorf("decode batch: empty packet")
+			if decoder.checkPacketLimit {
+				return nil, fmt.Errorf("decode batch: empty packet")
+			}
+			continue
 		}
 		if length > uint32(b.Len()) {
 			return nil, fmt.Errorf("decode batch: packet length %v exceeds remaining %v", length, b.Len())
