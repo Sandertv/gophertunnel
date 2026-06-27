@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/df-mc/go-nethernet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // NetherNet is an implementation of a NetherNet network, a WebRTC-based transport layer protocol.
@@ -50,3 +51,8 @@ func (n NetherNet) Listen(string) (NetworkListener, error) {
 	}
 	return n.ListenConfig.Listen(n.Signaling)
 }
+
+// Ensure the connection returned by NetherNet.DialContext has the optional
+// packet methods used by Encoder and Decoder, even though DialContext returns it
+// as a net.Conn.
+var _ packet.TransportCapabilities = (*nethernet.Conn)(nil)
