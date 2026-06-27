@@ -823,10 +823,27 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("client was not authenticated to XBOX Live")
 	}
+	if pkc, ok := conn.conn.(publicKeyConn); ok {
+		if pub := pkc.PublicKey(); pub != nil && !authResult.PublicKey.Equal(pub) {
+			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonNotAuthenticated})
+			return fmt.Errorf("identity public key mismatch: %s != %s", login.MarshalPublicKey(authResult.PublicKey), login.MarshalPublicKey(pub))
+		}
+	}
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("enable encryption: %w", err)
 	}
 	return nil
+}
+
+// publicKeyConn is implemented by underlying [net.Conn] of the Conn to provide access
+// to the public key that the connection has proven possession of.
+type publicKeyConn interface {
+	// PublicKey returns a public key that the connection has proven possession of.
+	// It may be nil if the connection did not provide an authenticated identity
+	// and the underlying transport layer was configured to allow such connections.
+	// When non-nil, it must be compared against [login.AuthResult.PublicKey]
+	// to prevent login packet replay attacks.
+	PublicKey() *ecdsa.PublicKey
 }
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.

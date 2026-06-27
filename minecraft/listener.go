@@ -11,6 +11,7 @@ import (
 	"math"
 	"net"
 	"net/http"
+	"net/netip"
 	"slices"
 	"sync"
 	"sync/atomic"
@@ -138,6 +139,18 @@ type Listener struct {
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
+	n, ok := networkByID(network, cfg.ErrorLog)
+	if !ok {
+		return nil, fmt.Errorf("listen: no network under id %v", network)
+	}
+	return cfg.ListenNetwork(n, address)
+}
+
+// ListenNetwork announces on the local network address using the Network implementation passed.
+// The network is typically [RakNet]. If the host in the address parameter is empty or a literal
+// unspecified IP address, ListenNetwork listens on all available unicast and anycast IP addresses of
+// the local system.
+func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listener, error) {
 	if cfg.ErrorLog == nil {
 		cfg.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -180,12 +193,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		}
 	}
 
-	n, ok := networkByID(network, cfg.ErrorLog)
-	if !ok {
-		return nil, fmt.Errorf("listen: no network under id %v", network)
-	}
-
-	netListener, err := n.Listen(address)
+	netListener, err := network.Listen(address)
 	if err != nil {
 		return nil, err
 	}
@@ -336,10 +344,18 @@ func (listener *Listener) PlayerCount() int {
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
-	s := listener.status()
+	var (
+		s    = listener.status()
+		port uint16
+	)
+	if a, ok := listener.Addr().(interface {
+		AddrPort() netip.AddrPort
+	}); ok {
+		port = a.AddrPort().Port()
+	}
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, listener.Addr().(*net.UDPAddr).Port, listener.Addr().(*net.UDPAddr).Port, 0,
+		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0,
 	)))
 }
 
