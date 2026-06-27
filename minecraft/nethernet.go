@@ -25,6 +25,11 @@ type NetherNet struct {
 	Log *slog.Logger
 }
 
+// Ensure the connection returned by NetherNet.DialContext has the optional
+// packet methods used by Encoder and Decoder, even though DialContext returns it
+// as a net.Conn.
+var _ packet.TransportCapabilities = (*nethernet.Conn)(nil)
+
 // DialContext ...
 func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, error) {
 	if n.Signaling == nil {
@@ -51,8 +56,3 @@ func (n NetherNet) Listen(string) (NetworkListener, error) {
 	}
 	return n.ListenConfig.Listen(n.Signaling)
 }
-
-// Ensure the connection returned by NetherNet.DialContext has the optional
-// packet methods used by Encoder and Decoder, even though DialContext returns it
-// as a net.Conn.
-var _ packet.TransportCapabilities = (*nethernet.Conn)(nil)
