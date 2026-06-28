@@ -2,11 +2,13 @@ package minecraft
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"log/slog"
 	"net"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/df-mc/go-xsapi/v2/xal"
 	"github.com/sandertv/gophertunnel/minecraft/auth"
@@ -42,6 +44,25 @@ func TestDialAuthContextDoesNotOverwriteHTTPClient(t *testing.T) {
 	}
 	if got, _ := ctx.Value(oauth2.HTTPClient).(*http.Client); got != existingOAuth {
 		t.Fatalf("oauth2.HTTPClient = %p, want existing %p", got, existingOAuth)
+	}
+}
+
+func TestDialContextWithMultiplayerTokenSourceSkipsLegacySessionSetup(t *testing.T) {
+	cache := auth.AndroidConfig.NewTokenCache()
+	ctx := auth.WithXBLTokenCache(context.Background(), cache)
+	client := &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		return nil, errors.New("stop before auth discovery")
+	})}
+
+	_, err := Dialer{
+		HTTPClient:  client,
+		TokenSource: dialTestMultiplayerTokenSource{},
+	}.DialContext(ctx, "unused", "example.com:19132")
+	if err == nil {
+		t.Fatal("expected DialContext to fail before network dial")
+	}
+	if cache.Session() != nil {
+		t.Fatal("DialContext created a legacy XBL session for a MultiplayerTokenSource")
 	}
 }
 
@@ -97,4 +118,20 @@ func (n dialTestNetwork) PingContext(ctx context.Context, address string) ([]byt
 
 func (dialTestNetwork) Listen(string) (NetworkListener, error) {
 	return nil, errors.New("not implemented")
+}
+
+type dialTestMultiplayerTokenSource struct{}
+
+func (dialTestMultiplayerTokenSource) Token() (*oauth2.Token, error) {
+	return &oauth2.Token{AccessToken: "live", Expiry: time.Now().Add(time.Hour)}, nil
+}
+
+func (dialTestMultiplayerTokenSource) MultiplayerToken(context.Context, *ecdsa.PublicKey) (string, error) {
+	return "", errors.New("unexpected multiplayer token request")
+}
+
+type roundTripFunc func(*http.Request) (*http.Response, error)
+
+func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
+	return f(req)
 }

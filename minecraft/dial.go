@@ -194,24 +194,14 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("generating ECDSA key: %w", err)}
 	}
 	var (
-		token         string
-		verifier      *oidc.IDTokenVerifier
-		playFabSigner xsapi.TokenAndSignaturer
+		token    string
+		verifier *oidc.IDTokenVerifier
 	)
 	if d.PlayFabClient != nil && d.TokenSource == nil && d.XBLClient == nil {
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: errors.New("PlayFabClient requires XBLClient or TokenSource for authenticated login")}
 	}
 	if d.TokenSource != nil || d.XBLClient != nil {
 		ctx = auth.WithContextClient(ctx, d.HTTPClient)
-		if d.XBLClient != nil {
-			playFabSigner = d.XBLClient
-		} else {
-			x, ok := d.TokenSource.(xsapi.TokenSource)
-			if !ok {
-				x = auth.ContextSession(ctx, d.TokenSource)
-			}
-			playFabSigner = nsal.NewResolver(x)
-		}
 		e, err := authEnv(ctx)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request authorization environment: %w", err)}
@@ -223,6 +213,17 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 
 		m, ok := d.TokenSource.(MultiplayerTokenSource)
 		if !ok {
+			var playFabSigner xsapi.TokenAndSignaturer
+			if d.XBLClient != nil {
+				playFabSigner = d.XBLClient
+			} else {
+				x, ok := d.TokenSource.(xsapi.TokenSource)
+				if !ok {
+					x = auth.ContextSession(ctx, d.TokenSource)
+				}
+				playFabSigner = nsal.NewResolver(x)
+			}
+
 			// If a MultiplayerTokenSource was not provided, log in to PlayFab
 			// account and use a default implementation instead.
 			if d.PlayFabClient == nil {
