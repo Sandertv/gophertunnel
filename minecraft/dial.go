@@ -245,14 +245,19 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
-		authIdentityData, err := login.ParseTokenIdentityData(ctx, token, verifier)
+		identityData, err := login.ParseTokenIdentityData(ctx, token, verifier)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
-		d.IdentityData = authIdentityData
+		d.IdentityData = identityData
 	}
 
-	netConn, err := network.DialContext(ctx, address)
+	var netConn net.Conn
+	if i, ok := network.(identityDialer); ok && token != "" {
+		netConn, err = i.DialContextIdentity(ctx, address, token, key)
+	} else {
+		netConn, err = network.DialContext(ctx, address)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -332,11 +337,11 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 // typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
 // If a connection is not established before the context passed is cancelled, DialContext returns an error.
 func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
-	log := d.ErrorLog
-	if log == nil {
-		log = slog.New(internal.DiscardHandler{})
+	if d.ErrorLog == nil {
+		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
-	n, ok := networkByID(network, log.With("src", "dialer"))
+	d.ErrorLog = d.ErrorLog.With("src", "dialer")
+	n, ok := networkByID(network, d.ErrorLog)
 	if !ok {
 		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
 	}

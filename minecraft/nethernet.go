@@ -7,10 +7,13 @@ import (
 	"net"
 
 	"github.com/df-mc/go-nethernet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
-// NetherNet is an implementation of a NetherNet network using a Signaling backend.
+// NetherNet is an implementation of a NetherNet network, a WebRTC-based transport layer protocol.
+// A valid Signaling implementation must be provided before use.
 type NetherNet struct {
+	// Signaling is the interface used to exchange connection details with the remote peers.
 	Signaling nethernet.Signaling
 
 	// Dialer specifies options for establishing a connection with DialContext.
@@ -21,6 +24,11 @@ type NetherNet struct {
 	// It is useful when registering this network from RegisterNetwork.
 	Log *slog.Logger
 }
+
+// Ensure the connection returned by NetherNet.DialContext has the optional
+// packet methods used by Encoder and Decoder, even though DialContext returns it
+// as a net.Conn.
+var _ packet.TransportCapabilities = (*nethernet.Conn)(nil)
 
 // DialContext ...
 func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, error) {

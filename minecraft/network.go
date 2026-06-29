@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log/slog"
 	"net"
 	"sync"
@@ -29,6 +30,15 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
+}
+
+// identityDialer is implemented by Networks that require an additional security measure
+// to prove possession of the player's private key. The identity token is issued by Minecraft's
+// authorization service and must include corresponding public key in the 'cpk' claim.
+type identityDialer interface {
+	// DialContextIdentity establishes a connection using the given identity token and the private key
+	// to authenticate the player at the transport layer.
+	DialContextIdentity(ctx context.Context, address string, token string, privateKey *ecdsa.PrivateKey) (net.Conn, error)
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra
