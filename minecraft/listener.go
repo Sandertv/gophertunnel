@@ -142,6 +142,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	if cfg.ErrorLog == nil {
 		cfg.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
+	cfg.ErrorLog = cfg.ErrorLog.With("src", "listener")
 	n, ok := networkByID(network, cfg.ErrorLog)
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id %v", network)
