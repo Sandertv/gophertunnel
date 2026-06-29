@@ -168,12 +168,6 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id %v", network)
 	}
-	if cfg.RaknetServerID != 0 {
-		if raknet, ok := n.(RakNet); ok {
-			raknet.ServerID = cfg.RaknetServerID
-			n = raknet
-		}
-	}
 	return cfg.ListenNetwork(n, address)
 }
 
@@ -209,6 +203,12 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 		cfg.MaxDecompressedLen = 16 * 1024 * 1024 // 16MB
 	} else if cfg.MaxDecompressedLen < 0 {
 		cfg.MaxDecompressedLen = math.MaxInt
+	}
+	if cfg.RaknetServerID != 0 {
+		if raknet, ok := network.(RakNet); ok {
+			raknet.ServerID = cfg.RaknetServerID
+			network = raknet
+		}
 	}
 
 	var verifier *oidc.IDTokenVerifier
