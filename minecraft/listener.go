@@ -160,6 +160,28 @@ type Listener struct {
 // If the host in the address parameter is empty or a literal unspecified IP address, Listen listens on all
 // available unicast and anycast IP addresses of the local system.
 func (cfg ListenConfig) Listen(network string, address string) (*Listener, error) {
+	log := cfg.ErrorLog
+	if log == nil {
+		log = slog.New(internal.DiscardHandler{})
+	}
+	n, ok := networkByID(network, log.With("src", "listener"))
+	if !ok {
+		return nil, fmt.Errorf("listen: no network under id %v", network)
+	}
+	if cfg.RaknetServerID != 0 {
+		if raknet, ok := n.(RakNet); ok {
+			raknet.ServerID = cfg.RaknetServerID
+			n = raknet
+		}
+	}
+	return cfg.ListenNetwork(n, address)
+}
+
+// ListenNetwork announces on the local network address using the Network implementation passed.
+// The network is typically [RakNet]. If the host in the address parameter is empty or a literal
+// unspecified IP address, ListenNetwork listens on all available unicast and anycast IP addresses of
+// the local system.
+func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listener, error) {
 	if cfg.ErrorLog == nil {
 		cfg.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -202,18 +224,7 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 		}
 	}
 
-	n, ok := networkByID(network, cfg.ErrorLog)
-	if !ok {
-		return nil, fmt.Errorf("listen: no network under id %v", network)
-	}
-	if cfg.RaknetServerID != 0 {
-		if raknet, ok := n.(RakNet); ok {
-			raknet.ServerID = cfg.RaknetServerID
-			n = raknet
-		}
-	}
-
-	netListener, err := n.Listen(address)
+	netListener, err := network.Listen(address)
 	if err != nil {
 		return nil, err
 	}

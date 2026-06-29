@@ -2,6 +2,8 @@ package minecraft
 
 import (
 	"bytes"
+	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -11,6 +13,29 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
+
+func TestListenConfigListenNetworkUsesExplicitNetwork(t *testing.T) {
+	t.Parallel()
+
+	listener := fakeNetworkListener{addr: &net.UDPAddr{IP: net.IPv4zero, Port: 19132}}
+	network := listenTestNetwork{
+		listen: func(address string) (NetworkListener, error) {
+			if address != "ignored-by-nethernet" {
+				t.Fatalf("listen address = %q, want ignored-by-nethernet", address)
+			}
+			return listener, nil
+		},
+	}
+
+	got, err := ListenConfig{AuthenticationDisabled: true}.ListenNetwork(network, "ignored-by-nethernet")
+	if err != nil {
+		t.Fatalf("ListenNetwork: %v", err)
+	}
+	defer got.Close()
+	if got.listener != listener {
+		t.Fatalf("underlying listener = %v, want explicit listener", got.listener)
+	}
+}
 
 func TestListenerPublishesDisablePacketHandlingConnection(t *testing.T) {
 	t.Parallel()
@@ -197,4 +222,20 @@ func (f fakeNetworkListener) PongData(data []byte) {
 	if f.pongData != nil {
 		*f.pongData = append((*f.pongData)[:0], data...)
 	}
+}
+
+type listenTestNetwork struct {
+	listen func(string) (NetworkListener, error)
+}
+
+func (listenTestNetwork) DialContext(context.Context, string) (net.Conn, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (listenTestNetwork) PingContext(context.Context, string) ([]byte, error) {
+	return nil, errors.New("not implemented")
+}
+
+func (n listenTestNetwork) Listen(address string) (NetworkListener, error) {
+	return n.listen(address)
 }

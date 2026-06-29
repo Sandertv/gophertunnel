@@ -100,6 +100,29 @@ func TestDialContextDialsOriginalAddressWithoutPinging(t *testing.T) {
 	}
 }
 
+func TestDialContextNetworkUsesExplicitNetwork(t *testing.T) {
+	t.Parallel()
+
+	dialErr := errors.New("stop after explicit network dial")
+	ctx := context.WithValue(context.Background(), testContextKey{}, "explicit")
+	network := dialTestNetwork{
+		dial: func(gotCtx context.Context, address string) (net.Conn, error) {
+			if gotCtx != ctx {
+				t.Fatal("DialContextNetwork did not pass caller context to network")
+			}
+			if address != "nethernet-id" {
+				t.Fatalf("network address = %q, want nethernet-id", address)
+			}
+			return nil, dialErr
+		},
+	}
+
+	_, err := Dialer{}.DialContextNetwork(ctx, network, "nethernet-id")
+	if !errors.Is(err, dialErr) {
+		t.Fatalf("DialContextNetwork error = %v, want %v", err, dialErr)
+	}
+}
+
 type dialTestNetwork struct {
 	dial func(context.Context, string) (net.Conn, error)
 	ping func(context.Context, string) ([]byte, error)
@@ -135,3 +158,5 @@ type roundTripFunc func(*http.Request) (*http.Response, error)
 func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
+
+type testContextKey struct{}

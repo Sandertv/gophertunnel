@@ -171,10 +171,11 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 	return d.DialContext(ctx, network, address)
 }
 
-// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
-// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
-// If a connection is not established before the context passed is cancelled, DialContext returns an error.
-func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+// DialContextNetwork dials a Minecraft connection to the address passed over the Network implementation
+// passed. The network is typically [RakNet]. A Conn is returned which may be used to receive packets from
+// and send packets to. If a connection is not established before the context passed is cancelled,
+// DialContextNetwork returns an error.
+func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address string) (conn *Conn, err error) {
 	if d.ErrorLog == nil {
 		d.ErrorLog = slog.New(internal.DiscardHandler{})
 	}
@@ -251,12 +252,7 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.IdentityData = authIdentityData
 	}
 
-	n, ok := networkByID(network, d.ErrorLog)
-	if !ok {
-		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
-	}
-
-	netConn, err := n.DialContext(ctx, address)
+	netConn, err := network.DialContext(ctx, address)
 	if err != nil {
 		return nil, err
 	}
@@ -330,6 +326,21 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return conn, nil
 		}
 	}
+}
+
+// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// If a connection is not established before the context passed is cancelled, DialContext returns an error.
+func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+	log := d.ErrorLog
+	if log == nil {
+		log = slog.New(internal.DiscardHandler{})
+	}
+	n, ok := networkByID(network, log.With("src", "dialer"))
+	if !ok {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
+	}
+	return d.DialContextNetwork(ctx, n, address)
 }
 
 // listenConn listens on the connection until it is closed on another goroutine. The channel passed will
