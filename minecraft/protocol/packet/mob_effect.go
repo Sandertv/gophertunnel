@@ -59,8 +59,8 @@ type MobEffect struct {
 	// Particles specifies if viewers of the entity that gets the effect shows particles around it. If set to
 	// false, no particles are emitted around the entity.
 	Particles bool
-	// Duration is the duration of the effect in seconds. After the duration has elapsed, the effect will be
-	// removed automatically client-side.
+	// Duration is the duration of the effect in ticks (20 per second). After the duration has elapsed, the
+	// effect will be removed automatically client-side. A negative duration means the effect never expires.
 	Duration int32
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
