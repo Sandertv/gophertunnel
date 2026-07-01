@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
@@ -94,6 +95,10 @@ type ListenConfig struct {
 	TexturePacksRequired bool
 	// ForceDisableVibrantVisuals specifies if the server should force disable vibrant visuals for all clients.
 	ForceDisableVibrantVisuals bool
+	// ResourcePackWorldTemplateUUID is written into ResourcePacksInfo. Leave zero for default server behaviour.
+	ResourcePackWorldTemplateUUID uuid.UUID
+	// ResourcePackWorldTemplateVersion is written into ResourcePacksInfo. Leave empty for default server behaviour.
+	ResourcePackWorldTemplateVersion string
 	// FetchResourcePacks determines which resource packs to send to a client based on its identity and client data.
 	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
 	// will be forwarded to the client in place of the Listener's current ones.
@@ -454,6 +459,8 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.SetPacketBatchFunc(listener.cfg.PacketBatchFunc)
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired
 	conn.forceDisableVibrantVisuals = listener.cfg.ForceDisableVibrantVisuals
+	conn.resourcePackWorldTemplateUUID = listener.cfg.ResourcePackWorldTemplateUUID
+	conn.resourcePackWorldTemplateVersion = listener.cfg.ResourcePackWorldTemplateVersion
 	conn.resourcePacks = packs
 	conn.fetchResourcePacks = listener.cfg.FetchResourcePacks
 	conn.gameData.WorldName = listener.status().ServerName

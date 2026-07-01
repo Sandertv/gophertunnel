@@ -55,6 +55,44 @@ func TestStartGameWritesPropertyData(t *testing.T) {
 	}
 }
 
+func TestResourcePacksInfoUsesConfiguredWorldTemplateFields(t *testing.T) {
+	t.Parallel()
+
+	client, serverConn := net.Pipe()
+	defer client.Close()
+	defer serverConn.Close()
+	go func() {
+		_, _ = io.Copy(io.Discard, serverConn)
+	}()
+
+	conn := newConn(client, nil, slog.New(internal.DiscardHandler{}), DefaultProtocol, -1, false)
+	defer conn.Close()
+
+	templateUUID := uuid.MustParse("11111111-2222-3333-4444-555555555555")
+	conn.forceDisableVibrantVisuals = true
+	conn.resourcePackWorldTemplateUUID = templateUUID
+	conn.resourcePackWorldTemplateVersion = "*"
+
+	var got packet.ResourcePacksInfo
+	conn.packetFunc = func(header packet.Header, payload []byte, _, _ net.Addr) {
+		if header.PacketID != packet.IDResourcePacksInfo {
+			return
+		}
+		got.Marshal(protocol.NewReader(bytes.NewBuffer(payload), 0, false))
+	}
+
+	if err := conn.handleClientToServerHandshake(); err != nil {
+		t.Fatalf("handleClientToServerHandshake: %v", err)
+	}
+
+	if got.WorldTemplateUUID != templateUUID || got.WorldTemplateVersion != "*" {
+		t.Fatalf("ResourcePacksInfo template = %s %q, want %s *", got.WorldTemplateUUID, got.WorldTemplateVersion, templateUUID)
+	}
+	if !got.ForceDisableVibrantVisuals {
+		t.Fatal("ResourcePacksInfo ForceDisableVibrantVisuals = false, want true")
+	}
+}
+
 func TestDisconnectWritesDisconnectPacket(t *testing.T) {
 	t.Parallel()
 

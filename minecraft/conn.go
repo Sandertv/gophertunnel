@@ -295,7 +295,10 @@ type Conn struct {
 	texturePacksRequired bool
 	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
-	packQueue                  *resourcePackQueue
+	// resourcePackWorldTemplateUUID and resourcePackWorldTemplateVersion are written into ResourcePacksInfo.
+	resourcePackWorldTemplateUUID    uuid.UUID
+	resourcePackWorldTemplateVersion string
+	packQueue                        *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
@@ -1160,7 +1163,12 @@ func (conn *Conn) handleClientToServerHandshake() error {
 	if conn.fetchResourcePacks != nil {
 		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, slices.Clone(conn.resourcePacks))
 	}
-	pk := &packet.ResourcePacksInfo{TexturePackRequired: conn.texturePacksRequired, ForceDisableVibrantVisuals: conn.forceDisableVibrantVisuals}
+	pk := &packet.ResourcePacksInfo{
+		TexturePackRequired:        conn.texturePacksRequired,
+		ForceDisableVibrantVisuals: conn.forceDisableVibrantVisuals,
+		WorldTemplateUUID:          conn.resourcePackWorldTemplateUUID,
+		WorldTemplateVersion:       conn.resourcePackWorldTemplateVersion,
+	}
 	for _, pack := range conn.resourcePacks {
 		texturePack := protocol.TexturePackInfo{
 			UUID:        pack.UUID(),
