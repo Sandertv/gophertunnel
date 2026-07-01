@@ -1247,6 +1247,9 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 // has support for the client blob cache.
 func (conn *Conn) handleClientCacheStatus(pk *packet.ClientCacheStatus) error {
 	conn.cacheEnabled = pk.Enabled
+	if conn.handshakeComplete && !conn.loggedIn && len(conn.resourcePacks) == 0 {
+		return conn.handleResourcePackClientResponse(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
+	}
 	return nil
 }
 

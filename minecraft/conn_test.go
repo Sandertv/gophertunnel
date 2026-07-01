@@ -146,6 +146,35 @@ func TestHandleLoginSkipsServerHandshakeWhenEncryptionDisabled(t *testing.T) {
 	}
 }
 
+func TestClientCacheStatusSendsEmptyResourcePackStack(t *testing.T) {
+	t.Parallel()
+
+	client, serverConn := net.Pipe()
+	defer client.Close()
+	defer serverConn.Close()
+	go func() {
+		_, _ = io.Copy(io.Discard, serverConn)
+	}()
+
+	conn := newConn(client, nil, slog.New(internal.DiscardHandler{}), DefaultProtocol, -1, false)
+	defer conn.Close()
+	conn.handshakeComplete = true
+
+	var sawResourcePackStack bool
+	conn.packetFunc = func(header packet.Header, _ []byte, _, _ net.Addr) {
+		if header.PacketID == packet.IDResourcePackStack {
+			sawResourcePackStack = true
+		}
+	}
+
+	if err := conn.handleClientCacheStatus(&packet.ClientCacheStatus{Enabled: true}); err != nil {
+		t.Fatalf("handleClientCacheStatus: %v", err)
+	}
+	if !sawResourcePackStack {
+		t.Fatal("ResourcePackStack was not sent")
+	}
+}
+
 func TestDisconnectWritesDisconnectPacket(t *testing.T) {
 	t.Parallel()
 
