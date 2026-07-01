@@ -160,10 +160,12 @@ func TestClientCacheStatusSendsEmptyResourcePackStack(t *testing.T) {
 	defer conn.Close()
 	conn.handshakeComplete = true
 
+	var got packet.ResourcePackStack
 	var sawResourcePackStack bool
-	conn.packetFunc = func(header packet.Header, _ []byte, _, _ net.Addr) {
+	conn.packetFunc = func(header packet.Header, payload []byte, _, _ net.Addr) {
 		if header.PacketID == packet.IDResourcePackStack {
 			sawResourcePackStack = true
+			got.Marshal(protocol.NewReader(bytes.NewBuffer(payload), 0, false))
 		}
 	}
 
@@ -172,6 +174,12 @@ func TestClientCacheStatusSendsEmptyResourcePackStack(t *testing.T) {
 	}
 	if !sawResourcePackStack {
 		t.Fatal("ResourcePackStack was not sent")
+	}
+	if got.BaseGameVersion != "*" {
+		t.Fatalf("ResourcePackStack.BaseGameVersion = %q, want *", got.BaseGameVersion)
+	}
+	if len(got.Experiments) != 0 || got.ExperimentsPreviouslyToggled {
+		t.Fatalf("ResourcePackStack experiments = %#v previouslyToggled=%v, want none/false", got.Experiments, got.ExperimentsPreviouslyToggled)
 	}
 }
 
