@@ -385,6 +385,11 @@ func defaultDeviceConfig(auth *AuthorizationEnvironment, device *DeviceConfig) {
 	if device.Memory == "" {
 		device.Memory = strconv.FormatUint(16*(1<<30), 10)
 	}
+	if device.HardwareMemoryTier == 0 {
+		// Tier 5 corresponds to the 16GB default set above. Real clients always
+		// report a tier, so we avoid omitting the field from the request body.
+		device.HardwareMemoryTier = 5
+	}
 	if device.Platform == "" {
 		device.Platform = PlatformWindows10
 	}
