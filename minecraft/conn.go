@@ -1108,8 +1108,6 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 // handleLogin handles an incoming login packet. It verifies and decodes the login request found in the packet
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
-	// The next expected packet is a response from the client to the handshake.
-	conn.expect(packet.IDClientToServerHandshake)
 	var (
 		err        error
 		authResult login.AuthResult
@@ -1130,6 +1128,11 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 			return fmt.Errorf("identity public key mismatch: %s != %s", login.MarshalPublicKey(authResult.PublicKey), login.MarshalPublicKey(pub))
 		}
 	}
+	if conn.disableEncryption {
+		return conn.handleClientToServerHandshake()
+	}
+	// The next expected packet is a response from the client to the handshake.
+	conn.expect(packet.IDClientToServerHandshake)
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("enable encryption: %w", err)
 	}

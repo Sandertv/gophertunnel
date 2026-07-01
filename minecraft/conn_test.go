@@ -4,6 +4,9 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rand"
 	"errors"
 	"io"
 	"log/slog"
@@ -16,6 +19,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -90,6 +94,55 @@ func TestResourcePacksInfoUsesConfiguredWorldTemplateFields(t *testing.T) {
 	}
 	if !got.ForceDisableVibrantVisuals {
 		t.Fatal("ResourcePacksInfo ForceDisableVibrantVisuals = false, want true")
+	}
+}
+
+func TestHandleLoginSkipsServerHandshakeWhenEncryptionDisabled(t *testing.T) {
+	t.Parallel()
+
+	client, serverConn := net.Pipe()
+	defer client.Close()
+	defer serverConn.Close()
+	go func() {
+		_, _ = io.Copy(io.Discard, serverConn)
+	}()
+
+	conn := newConn(client, nil, slog.New(internal.DiscardHandler{}), DefaultProtocol, -1, false)
+	defer conn.Close()
+	conn.disableEncryption = true
+	conn.authEnabled = false
+
+	var identityData login.IdentityData
+	defaultIdentityData(&identityData)
+	var clientData login.ClientData
+	defaultClientData("127.0.0.1:19132", identityData.DisplayName, &clientData)
+	key, err := ecdsa.GenerateKey(elliptic.P384(), rand.Reader)
+	if err != nil {
+		t.Fatalf("generate key: %v", err)
+	}
+
+	var sawServerHandshake, sawResourcePacksInfo bool
+	conn.packetFunc = func(header packet.Header, _ []byte, _, _ net.Addr) {
+		switch header.PacketID {
+		case packet.IDServerToClientHandshake:
+			sawServerHandshake = true
+		case packet.IDResourcePacksInfo:
+			sawResourcePacksInfo = true
+		}
+	}
+
+	err = conn.handleLogin(&packet.Login{ConnectionRequest: login.EncodeOffline(identityData, clientData, key)})
+	if err != nil {
+		t.Fatalf("handleLogin: %v", err)
+	}
+	if sawServerHandshake {
+		t.Fatal("ServerToClientHandshake was sent despite disabled encryption")
+	}
+	if !sawResourcePacksInfo {
+		t.Fatal("ResourcePacksInfo was not sent")
+	}
+	if !conn.handshakeComplete {
+		t.Fatal("handshakeComplete = false, want true")
 	}
 }
 
