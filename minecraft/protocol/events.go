@@ -227,6 +227,8 @@ func lookupEventOrdinal(x Event, eventOrdinal *uint32) bool {
 		*eventOrdinal = 19
 	case *ItemUsedEvent:
 		*eventOrdinal = 20
+	case *StriderRiddenInLavaInOverworldEvent, *SneakCloseToSculkSensorEvent, *CarefulRestorationEvent:
+		*eventOrdinal = 21
 	default:
 		return false
 	}
