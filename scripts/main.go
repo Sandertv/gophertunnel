@@ -16,7 +16,7 @@ import (
 
 const (
 	// GitHub API URL to list JSON files in the bedrock-protocol-docs repo
-	githubAPIURL = "https://api.github.com/repos/Mojang/bedrock-protocol-docs/contents/json?ref=dfd586157b9cf5fece81bacbe29248cca578c951"
+	githubAPIURL = "https://api.github.com/repos/Mojang/bedrock-protocol-docs/contents/json?ref=ba81d713aa983bb6bc26fe662a9934c5de1838a5"
 	// Output directory for generated packets
 	outputDir = "../minecraft/protocol/packet/__generated__"
 )
@@ -239,7 +239,12 @@ func main() {
 	fmt.Println("🚀 Bedrock Protocol Packet Generator")
 	fmt.Println("=====================================")
 
-	// Create output directory
+	// Recreate the output directory from scratch so packets that were renamed or
+	// removed upstream don't linger as stale, uncompilable orphan files.
+	if err := os.RemoveAll(outputDir); err != nil {
+		fmt.Printf("❌ Failed to clean output directory: %v\n", err)
+		os.Exit(1)
+	}
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		fmt.Printf("❌ Failed to create output directory: %v\n", err)
 		os.Exit(1)
@@ -1309,7 +1314,13 @@ func generatePacketFile(packet PacketInfo) error {
 		}
 		// Check struct slices BEFORE IOMethod check (they don't need IOMethod)
 		if f.IsStructSlice {
-			contentBuilder.WriteString(fmt.Sprintf("\tprotocol.Slice(io, &pk.%s)\n", f.GoName))
+			if f.IsOptional {
+				// An optional slice-of-structs (protocol.Optional[[]T]) has no
+				// one-liner marshaler; needs manual presence-flag handling.
+				contentBuilder.WriteString(fmt.Sprintf("\t// TODO: %s - optional slice of structs needs manual handling\n", f.GoName))
+			} else {
+				contentBuilder.WriteString(fmt.Sprintf("\tprotocol.Slice(io, &pk.%s)\n", f.GoName))
+			}
 			continue
 		}
 		if f.IOMethod == "" {
