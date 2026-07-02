@@ -1301,6 +1301,7 @@ func generatePacketFile(packet PacketInfo) error {
 	contentBuilder.WriteString("}\n\n")
 
 	// Marshal method
+	contentBuilder.WriteString("// Marshal ...\n")
 	contentBuilder.WriteString(fmt.Sprintf("func (pk *%s) Marshal(io protocol.IO) {\n", packet.GoName))
 	for _, f := range packet.Fields {
 		if f.IsComplex {
