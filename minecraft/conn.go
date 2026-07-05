@@ -174,9 +174,13 @@ type Conn struct {
 
 	cacheEnabled bool
 
-	// shouldAcceptLogin is an optional function passed from a Listener. If set, the function will be called
-	// to determine if the login should be accepted or not.
-	shouldAcceptLogin func(identityData login.IdentityData, clientData login.ClientData) error
+	// allow filters what connections are allowed to connect to the Server. The
+	// address, identity data, and client data of the connection are passed. If
+	// Admit returns false, the connection is closed with the string returned as
+	// the disconnect message. WARNING: Use the client data at your own risk, it
+	// cannot be trusted because it can be freely changed by the player
+	// connecting.
+	allow func(addr net.Addr, identityData login.IdentityData, clientData login.ClientData) (string, bool)
 
 	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
 	// to this connection will call this function.
@@ -833,10 +837,10 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 			return fmt.Errorf("identity public key mismatch: %s != %s", login.MarshalPublicKey(authResult.PublicKey), login.MarshalPublicKey(pub))
 		}
 	}
-	if conn.shouldAcceptLogin != nil {
-		if err := conn.shouldAcceptLogin(conn.identityData, conn.clientData); err != nil {
-			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonKicked, Message: err.Error()})
-			return fmt.Errorf("login rejected by listener: %w", err)
+	if conn.allow != nil {
+		if reason, ok := conn.allow(conn.RemoteAddr(), conn.identityData, conn.clientData); !ok {
+			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonKicked, Message: reason})
+			return fmt.Errorf("login rejected by listener: %s", reason)
 		}
 	}
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
