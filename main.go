@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"os"
+	"sync"
 
 	"github.com/pelletier/go-toml"
 	"github.com/sandertv/gophertunnel/minecraft"
@@ -26,7 +27,6 @@ func main() {
 	}
 	listener, err := minecraft.ListenConfig{
 		StatusProvider: p,
-		IgnoreHandlers: true,
 	}.Listen("raknet", config.Connection.LocalAddress)
 	if err != nil {
 		panic(err)
@@ -44,13 +44,28 @@ func main() {
 // handleConn handles a new incoming minecraft.Conn from the minecraft.Listener passed.
 func handleConn(conn *minecraft.Conn, listener *minecraft.Listener, config config, src oauth2.TokenSource) {
 	serverConn, err := minecraft.Dialer{
-		TokenSource:    src,
-		ClientData:     conn.ClientData(),
-		IgnoreHandlers: true,
+		TokenSource: src,
+		ClientData:  conn.ClientData(),
 	}.Dial("raknet", config.Connection.RemoteAddress)
 	if err != nil {
 		panic(err)
 	}
+	var g sync.WaitGroup
+	g.Add(2)
+	go func() {
+		if err := conn.StartGame(serverConn.GameData()); err != nil {
+			panic(err)
+		}
+		g.Done()
+	}()
+	go func() {
+		if err := serverConn.DoSpawn(); err != nil {
+			panic(err)
+		}
+		g.Done()
+	}()
+	g.Wait()
+
 	go func() {
 		defer listener.Disconnect(conn, "connection lost")
 		defer serverConn.Close()
