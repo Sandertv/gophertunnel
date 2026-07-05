@@ -148,6 +148,11 @@ type Conn struct {
 	spawn           chan struct{}
 	waitingForSpawn atomic.Bool
 
+	// ignoreHandlers is a bool indicating whether we should ignore packet handlers after the connection is
+	// established. This is useful for connections that wish to handle packets immediately after the encryption
+	// handshake has been completed.
+	ignoreHandlers bool
+
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
 	expectedIDs atomic.Value
@@ -854,6 +859,12 @@ func (conn *Conn) handleClientToServerHandshake() error {
 		return fmt.Errorf("send PlayStatus (Status=LoginSuccess): %w", err)
 	}
 
+	if conn.ignoreHandlers {
+		conn.expectedIDs.Store([]uint32{})
+		conn.loggedIn = true
+		return nil
+	}
+
 	if conn.fetchResourcePacks != nil {
 		conn.resourcePacks = conn.fetchResourcePacks(conn.identityData, conn.clientData, slices.Clone(conn.resourcePacks))
 	}
@@ -924,6 +935,12 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 
 	// We write a ClientToServerHandshake packet (which has no payload) as a response.
 	_ = conn.WritePacket(&packet.ClientToServerHandshake{})
+
+	if conn.ignoreHandlers {
+		conn.expectedIDs.Store([]uint32{})
+		conn.loggedIn = true
+	}
+
 	return nil
 }
 

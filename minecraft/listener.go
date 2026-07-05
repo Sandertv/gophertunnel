@@ -109,6 +109,11 @@ type ListenConfig struct {
 	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
+
+	// IgnoreHandlers is a bool indicating whether we should ignore packet handlers after the connection is
+	// established. This is useful for connections that wish to handle packets immediately after the encryption
+	// handshake has been completed.
+	IgnoreHandlers bool
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -420,6 +425,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.verifier = listener.verifier
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
+	conn.ignoreHandlers = listener.cfg.IgnoreHandlers
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
