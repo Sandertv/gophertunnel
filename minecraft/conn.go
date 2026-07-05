@@ -165,7 +165,7 @@ type Conn struct {
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
-	// fetchResourcePacks is an optional function passed to a Listener. If set, the returned resource packs from the function
+	// fetchResourcePacks is an optional function passed from a Listener. If set, the returned resource packs from the function
 	// will determine which resource packs to send to the client based on its identity and client data.
 	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
@@ -173,6 +173,10 @@ type Conn struct {
 	ignoredResourcePacks []exemptedResourcePack
 
 	cacheEnabled bool
+
+	// shouldAcceptLogin is an optional function passed from a Listener. If set, the function will be called
+	// to determine if the login should be accepted or not.
+	shouldAcceptLogin func(identityData login.IdentityData, clientData login.ClientData) error
 
 	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
 	// to this connection will call this function.
@@ -827,6 +831,12 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		if pub := pkc.PublicKey(); pub != nil && !authResult.PublicKey.Equal(pub) {
 			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonNotAuthenticated})
 			return fmt.Errorf("identity public key mismatch: %s != %s", login.MarshalPublicKey(authResult.PublicKey), login.MarshalPublicKey(pub))
+		}
+	}
+	if conn.shouldAcceptLogin != nil {
+		if err := conn.shouldAcceptLogin(conn.identityData, conn.clientData); err != nil {
+			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonKicked, Message: err.Error()})
+			return fmt.Errorf("login rejected by listener: %w", err)
 		}
 	}
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
