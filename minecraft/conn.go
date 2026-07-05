@@ -149,7 +149,7 @@ type Conn struct {
 	waitingForSpawn atomic.Bool
 
 	// ignoreHandlers is a bool indicating whether we should ignore packet handlers after the connection is
-	// established. This is useful for connections that wish to handle packets immediately after the encryption
+	// established. This is useful for connections that wish to handle packets immediately after the login
 	// handshake has been completed.
 	ignoreHandlers bool
 
