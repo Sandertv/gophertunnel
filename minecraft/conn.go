@@ -838,7 +838,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 	if conn.allow != nil {
 		if reason, ok := conn.allow(conn.RemoteAddr(), conn.identityData, conn.clientData); !ok {
 			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonKicked, Message: reason})
-			return nil
+			return conn.Close()
 		}
 	}
 
