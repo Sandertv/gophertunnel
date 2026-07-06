@@ -132,9 +132,6 @@ type ListenConfig struct {
 	// listeners on different ports (e.g., 19132 for IPv4, 19133 for IPv6).
 	IPv4Port uint16
 	IPv6Port uint16
-	// RaknetServerID overrides the RakNet server GUID advertised by RakNet listeners.
-	// If zero, RakNet generates a unique ID for each listener.
-	RaknetServerID int64
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -172,12 +169,6 @@ func (cfg ListenConfig) Listen(network string, address string) (*Listener, error
 	n, ok := networkByID(network, cfg.ErrorLog)
 	if !ok {
 		return nil, fmt.Errorf("listen: no network under id %v", network)
-	}
-	if cfg.RaknetServerID != 0 {
-		if raknet, ok := n.(RakNet); ok {
-			raknet.ServerID = cfg.RaknetServerID
-			n = raknet
-		}
 	}
 	return cfg.ListenNetwork(n, address)
 }
