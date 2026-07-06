@@ -17,9 +17,6 @@ type RakNet struct {
 	// UpstreamDialer overrides the dialer used for outbound UDP connections.
 	// If nil, RakNet uses the default net.Dialer.
 	UpstreamDialer raknet.UpstreamDialer
-	// ServerID overrides the RakNet server GUID advertised by listeners.
-	// If zero, RakNet generates a unique ID for each listener.
-	ServerID int64
 }
 
 // DialContext ...
@@ -34,10 +31,7 @@ func (r RakNet) PingContext(ctx context.Context, address string) (response []byt
 
 // Listen ...
 func (r RakNet) Listen(address string) (NetworkListener, error) {
-	return raknet.ListenConfig{
-		ErrorLog: r.logger().With("net origin", "raknet"),
-		ServerID: r.ServerID,
-	}.Listen(address)
+	return raknet.ListenConfig{ErrorLog: r.logger().With("net origin", "raknet")}.Listen(address)
 }
 
 func (r RakNet) dialer() raknet.Dialer {
