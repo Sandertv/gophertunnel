@@ -145,8 +145,9 @@ type Conn struct {
 	loggedIn bool
 	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
 	// the world: It is completing a sequence that will result in the spawning.
-	spawn           chan struct{}
-	waitingForSpawn atomic.Bool
+	spawn            chan struct{}
+	waitingForSpawn  atomic.Bool
+	earlyChunkRadius atomic.Pointer[packetData]
 
 	// expectedIDs is a slice of packet identifiers that are next expected to arrive, until the connection is
 	// logged in.
@@ -312,6 +313,12 @@ func (conn *Conn) StartGameContext(ctx context.Context, data GameData) error {
 	}
 	conn.waitingForSpawn.Store(true)
 	conn.startGame()
+
+	if early := conn.earlyChunkRadius.Swap(nil); early != nil {
+		if err := conn.handle(early); err != nil {
+			return conn.wrap(fmt.Errorf("replay early request_chunk_radius: %w", err), "start game")
+		}
+	}
 
 	select {
 	case <-conn.ctx.Done():
@@ -656,6 +663,9 @@ func (conn *Conn) receive(data []byte) error {
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
+		if pkData.h.PacketID == packet.IDRequestChunkRadius && !conn.gameDataReceived.Load() {
+			conn.earlyChunkRadius.Store(pkData)
+		}
 		select {
 		case <-conn.ctx.Done():
 		case previous := <-conn.packets:
