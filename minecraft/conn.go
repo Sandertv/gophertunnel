@@ -165,7 +165,7 @@ type Conn struct {
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
-	// fetchResourcePacks is an optional function passed to a Listener. If set, the returned resource packs from the function
+	// fetchResourcePacks is an optional function passed from a Listener. If set, the returned resource packs from the function
 	// will determine which resource packs to send to the client based on its identity and client data.
 	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
@@ -173,6 +173,14 @@ type Conn struct {
 	ignoredResourcePacks []exemptedResourcePack
 
 	cacheEnabled bool
+
+	// allow filters what connections are allowed to connect to the Server. The
+	// address, identity data, and client data of the connection are passed. If
+	// allow returns false, the connection is closed with the string returned as
+	// the disconnect message. WARNING: Use the client data at your own risk, it
+	// cannot be trusted because it can be freely changed by the player
+	// connecting.
+	allow func(addr net.Addr, identityData login.IdentityData, clientData login.ClientData) (string, bool)
 
 	// packetFunc is an optional function passed to a Dial() call. If set, each packet read from and written
 	// to this connection will call this function.
@@ -807,8 +815,6 @@ func (conn *Conn) handleNetworkSettings(pk *packet.NetworkSettings) error {
 // handleLogin handles an incoming login packet. It verifies and decodes the login request found in the packet
 // and returns an error if it couldn't be done successfully.
 func (conn *Conn) handleLogin(pk *packet.Login) error {
-	// The next expected packet is a response from the client to the handshake.
-	conn.expect(packet.IDClientToServerHandshake)
 	var (
 		err        error
 		authResult login.AuthResult
@@ -823,10 +829,36 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("client was not authenticated to XBOX Live")
 	}
+	if pkc, ok := conn.conn.(publicKeyConn); ok {
+		if pub := pkc.PublicKey(); pub != nil && !authResult.PublicKey.Equal(pub) {
+			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonNotAuthenticated})
+			return fmt.Errorf("identity public key mismatch: %s != %s", login.MarshalPublicKey(authResult.PublicKey), login.MarshalPublicKey(pub))
+		}
+	}
+	if conn.allow != nil {
+		if reason, ok := conn.allow(conn.RemoteAddr(), conn.identityData, conn.clientData); !ok {
+			_ = conn.WritePacket(&packet.Disconnect{Reason: packet.DisconnectReasonKicked, Message: reason})
+			return conn.Close()
+		}
+	}
+
+	// The next expected packet is a response from the client to the handshake.
+	conn.expect(packet.IDClientToServerHandshake)
 	if err := conn.enableEncryption(authResult.PublicKey); err != nil {
 		return fmt.Errorf("enable encryption: %w", err)
 	}
 	return nil
+}
+
+// publicKeyConn is implemented by underlying [net.Conn] of the Conn to provide access
+// to the public key that the connection has proven possession of.
+type publicKeyConn interface {
+	// PublicKey returns a public key that the connection has proven possession of.
+	// It may be nil if the connection did not provide an authenticated identity
+	// and the underlying transport layer was configured to allow such connections.
+	// When non-nil, it must be compared against [login.AuthResult.PublicKey]
+	// to prevent login packet replay attacks.
+	PublicKey() *ecdsa.PublicKey
 }
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
@@ -1230,7 +1262,8 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 // pack to be downloaded.
 func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
 	current := conn.packQueue.currentPack
-	if current.UUID().String() != pk.UUID {
+	uuid, _, _ := strings.Cut(pk.UUID, "_")
+	if current.UUID().String() != uuid {
 		return fmt.Errorf("expected pack UUID %v, but got %v", current.UUID(), pk.UUID)
 	}
 	if conn.packQueue.currentOffset != uint64(pk.ChunkIndex)*packChunkSize {

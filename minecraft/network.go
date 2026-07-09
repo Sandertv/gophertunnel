@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"log/slog"
 	"net"
 )
@@ -12,6 +13,9 @@ type Network interface {
 	// hostname, combined with a port that is separated with ':'.
 	// DialContext will use the deadline (ctx.Deadline) of the context.Context passed for the maximum amount of time that
 	// the dialing can take. DialContext will terminate as soon as possible when the context.Context is closed.
+	//
+	// If the returned connection implements optional packet transport capabilities from the packet package, wrappers around
+	// the connection must preserve those methods. Hiding them can change packet framing, encryption or read behaviour.
 	DialContext(ctx context.Context, address string) (net.Conn, error)
 	// PingContext sends a ping to an address and returns the response obtained. If successful, a non-nil response byte
 	// slice containing the data is returned. If the ping failed, an error is returned describing the failure.
@@ -25,6 +29,15 @@ type Network interface {
 	// Specific features of the listener may be modified once it is returned, such as the used log and/or the
 	// accepted protocol.
 	Listen(address string) (NetworkListener, error)
+}
+
+// identityDialer is implemented by Networks that require an additional security measure
+// to prove possession of the player's private key. The identity token is issued by Minecraft's
+// authorization service and must include corresponding public key in the 'cpk' claim.
+type identityDialer interface {
+	// DialContextIdentity establishes a connection using the given identity token and the private key
+	// to authenticate the player at the transport layer.
+	DialContextIdentity(ctx context.Context, address string, token string, privateKey *ecdsa.PrivateKey) (net.Conn, error)
 }
 
 // NetworkListener represents a listening connection to a remote server. It is the equivalent of net.Listener, but with extra

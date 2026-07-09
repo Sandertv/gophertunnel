@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -352,7 +353,19 @@ func (data ClientData) Validate() error {
 	if _, err := uuid.Parse(data.SelfSignedID); err != nil {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
 	}
-	if _, err := net.ResolveUDPAddr("udp", data.ServerAddress); err != nil {
+	if strings.Contains(data.ServerAddress, "://") {
+		// The server address for NetherNet connections has the following format:
+		// https://<host>:<port>:<port>
+		ind := strings.LastIndex(data.ServerAddress, ":")
+		u, err := url.Parse(data.ServerAddress[:ind])
+		if err != nil {
+			return fmt.Errorf("ServerAddress must be a URL, but got %v", data.ServerAddress)
+		}
+		if u.Host == "" || u.Port() == "" || u.Port() != data.ServerAddress[ind+1:] ||
+			(u.Scheme != "https" && u.Scheme != "http") {
+			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
+		}
+	} else if _, err := net.ResolveUDPAddr("udp", data.ServerAddress); err != nil {
 		return fmt.Errorf("ServerAddress must be resolveable as a UDP address, but got %v", data.ServerAddress)
 	}
 	if err := base64DecLength(data.SkinData, data.SkinImageHeight*data.SkinImageWidth*4); err != nil {

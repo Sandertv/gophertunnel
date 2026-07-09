@@ -178,10 +178,11 @@ func (d Dialer) DialTimeout(network, address string, timeout time.Duration) (*Co
 	return d.DialContext(ctx, network, address)
 }
 
-// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
-// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
-// If a connection is not established before the context passed is cancelled, DialContext returns an error.
-func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+// DialContextNetwork dials a Minecraft connection to the address passed over the Network implementation
+// passed. The network is typically [RakNet]. A Conn is returned which may be used to receive packets from
+// and send packets to. If a connection is not established before the context passed is cancelled,
+// DialContextNetwork returns an error.
+func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address string) (conn *Conn, err error) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
@@ -268,17 +269,16 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 		d.IdentityData = identityData
 	}
 
-	n, ok := networkByID(network, d.ErrorLog)
-	if !ok {
-		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
+	var pong []byte
+	if pong, err = network.PingContext(ctx, address); err == nil {
+		address = addressWithPongPort(pong, address)
 	}
 
-	var pong []byte
 	var netConn net.Conn
-	if pong, err = n.PingContext(ctx, address); err == nil {
-		netConn, err = n.DialContext(ctx, addressWithPongPort(pong, address))
+	if i, ok := network.(identityDialer); ok && token != "" {
+		netConn, err = i.DialContextIdentity(ctx, address, token, key)
 	} else {
-		netConn, err = n.DialContext(ctx, address)
+		netConn, err = network.DialContext(ctx, address)
 	}
 	if err != nil {
 		return nil, err
@@ -352,6 +352,21 @@ func (d Dialer) DialContext(ctx context.Context, network, address string) (conn 
 			return conn, nil
 		}
 	}
+}
+
+// DialContext dials a Minecraft connection to the address passed over the network passed. The network is
+// typically "raknet". A Conn is returned which may be used to receive packets from and send packets to.
+// If a connection is not established before the context passed is cancelled, DialContext returns an error.
+func (d Dialer) DialContext(ctx context.Context, network, address string) (conn *Conn, err error) {
+	if d.ErrorLog == nil {
+		d.ErrorLog = slog.New(internal.DiscardHandler{})
+	}
+	d.ErrorLog = d.ErrorLog.With("src", "dialer")
+	n, ok := networkByID(network, d.ErrorLog)
+	if !ok {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("dial: no network under id %v", network)}
+	}
+	return d.DialContextNetwork(ctx, n, address)
 }
 
 // readChainIdentityData reads a login.IdentityData from the Mojang chain

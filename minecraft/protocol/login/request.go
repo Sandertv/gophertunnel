@@ -164,7 +164,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 	if err := parseFullClaim(req.RawToken, key, &cData); err != nil {
 		return iData, cData, res, fmt.Errorf("parse client data: %w", err)
 	}
-	if strings.Count(cData.ServerAddress, ":") > 1 && cData.ServerAddress[0] != '[' {
+	if !strings.Contains(cData.ServerAddress, "://") && strings.Count(cData.ServerAddress, ":") > 1 && cData.ServerAddress[0] != '[' {
 		// IPv6: We can't net.ResolveUDPAddr this directly, because Mojang does
 		// not always put [] around the IP if it isn't added by the player in
 		// the External Server adding screen. We'll have to do this manually:
