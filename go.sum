@@ -1,3 +1,5 @@
+github.com/andreburgaud/crypt2go v1.8.0 h1:J73vGTb1P6XL69SSuumbKs0DWn3ulbl9L92ZXBjw6pc=
+github.com/andreburgaud/crypt2go v1.8.0/go.mod h1:L5nfShQ91W78hOWhUH2tlGRPO+POAPJAF5fKOLB9SXg=
 github.com/coder/websocket v1.8.14 h1:9L0p0iKiNOibykf283eHkKUHHrpG7f65OE3BhhO7v9g=
 github.com/coder/websocket v1.8.14/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNvehc=
@@ -10,10 +12,10 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/df-mc/go-nethernet v1.0.15-0.20260619173129-a2ca473609ab h1:Q9q3df9vn/hq+lbLI6qDOi/iJPRNz6LWgFdMcXF1zHI=
 github.com/df-mc/go-nethernet v1.0.15-0.20260619173129-a2ca473609ab/go.mod h1:4yrQZMotdkZJvdYnRQr5L8OnokZtSzqJ6EU3dntAaIU=
-github.com/df-mc/go-playfab/v2 v2.0.2-0.20260618232935-6d86fc87875f h1:LDC3aXERNBpbhF0X56u4h7CjAFre4YvI8i5C4EP5xyg=
-github.com/df-mc/go-playfab/v2 v2.0.2-0.20260618232935-6d86fc87875f/go.mod h1:21Q50SUHyVXVd/oPkTEVriNoOmal3gY2qQ2hLhyMQrM=
-github.com/df-mc/go-xsapi/v2 v2.0.2-0.20260618232321-7db98a0b7856 h1:6tmfs866ngZ8R6jFlDfXzBP9N+vmlkX4IlM1+0lVxlI=
-github.com/df-mc/go-xsapi/v2 v2.0.2-0.20260618232321-7db98a0b7856/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
+github.com/df-mc/go-playfab/v2 v2.0.2 h1:JqOsrpe0nt6Ni4V2JrdmOAhbBgTm7LBw1ppGXlmknhs=
+github.com/df-mc/go-playfab/v2 v2.0.2/go.mod h1:CS3FV3tJlohvGQiX0IJiaYKOVNfy0p778B84oEVyxlw=
+github.com/df-mc/go-xsapi/v2 v2.0.2 h1:CpN4EhKZxKazSkdoqRuEcYk5F7of1xHfmgps6AopSmc=
+github.com/df-mc/go-xsapi/v2 v2.0.2/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
 github.com/df-mc/jsonc v1.0.5 h1:O7oh07kbS5AYY+l2Fji6l4h0iHcdjKbxCtK5VlZlLMU=
 github.com/df-mc/jsonc v1.0.5/go.mod h1:+Q++JuCE9IKiP8v7sWImdf/RjQX0nfXyfX6PdfTTmc4=
 github.com/go-gl/mathgl v1.1.0 h1:0lzZ+rntPX3/oGrDzYGdowSLC2ky8Osirvf5uAwfIEA=
