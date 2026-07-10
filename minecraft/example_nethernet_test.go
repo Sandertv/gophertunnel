@@ -2,7 +2,6 @@ package minecraft
 
 import (
 	"errors"
-	"net/url"
 	"sync"
 
 	"github.com/df-mc/go-nethernet/endpoint"
@@ -48,14 +47,10 @@ func ExampleNetherNet() {
 // The upstream server can be hosted using a Bedrock Dedicated Server with 'transport=nethernet'
 // set in server.properties.
 func handleConn(conn *Conn, listener *Listener) {
-	u, err := url.Parse("http://localhost:19133")
-	if err != nil {
-		panic(err)
-	}
-	client := endpoint.NewClient(u)
+	client := endpoint.NewClient()
 	serverConn, err := Dialer{
 		ClientData: conn.ClientData(),
-	}.DialContextNetwork(conn.Context(), NetherNet{Signaling: client}, client.NetworkID())
+	}.DialContextNetwork(conn.Context(), NetherNet{Signaling: client}, "http://localhost:19133")
 	if err != nil {
 		panic(err)
 	}
