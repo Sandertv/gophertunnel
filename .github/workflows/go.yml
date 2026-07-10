@@ -22,6 +22,3 @@ jobs:
         run: |
           go install honnef.co/go/tools/cmd/staticcheck@latest
           staticcheck ./...
-
-      - name: Build
-        run: go build -o gophertunnel_exe -v .
