@@ -49,7 +49,8 @@ func RequestMinecraftChain(ctx context.Context, signer xsapi.TokenAndSignaturer,
 	request.Header.Set("Content-Type", "application/json")
 	token.SetAuthHeader(request)
 
-	resp, err := client.Do(request)
+	// The vanilla client does not populate Signature header for auth chain requests.
+	resp, err := client.Do(xsapi.WithoutAuthHeaders(request, "Signature"))
 	if err != nil {
 		return "", fmt.Errorf("POST %v: %w", minecraftAuthURL, err)
 	}
