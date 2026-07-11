@@ -48,8 +48,9 @@ type ListenConfig struct {
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
-	// ListenerGroup shares the active player count and MaximumPlayers admission limit between multiple listeners. If
-	// nil, the listener uses a private group. All listeners in a group must configure the same MaximumPlayers value.
+	// ListenerGroup shares the active player count between multiple listeners serving one logical server, so
+	// that the MaximumPlayers admission limit and advertised player count apply across all of them. If nil,
+	// the listener uses a private group. All listeners in a group should use the same MaximumPlayers value.
 	ListenerGroup *ListenerGroup
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
@@ -144,12 +145,9 @@ type Listener struct {
 	verifier *oidc.IDTokenVerifier
 }
 
-// ListenerGroup shares active player state between listeners serving one logical server.
+// ListenerGroup shares the active player count between listeners serving one logical server.
 type ListenerGroup struct {
-	mu             sync.Mutex
-	configured     bool
-	maximumPlayers int
-	playerCount    atomic.Int32
+	playerCount atomic.Int32
 }
 
 // PlayerCount returns the number of active connections across the group.
@@ -157,24 +155,12 @@ func (g *ListenerGroup) PlayerCount() int {
 	return int(g.playerCount.Load())
 }
 
-func (g *ListenerGroup) configure(maxPlayers int) error {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	if g.configured {
-		if g.maximumPlayers != maxPlayers {
-			return fmt.Errorf("listener group maximum players is %v, cannot use %v", g.maximumPlayers, maxPlayers)
-		}
-		return nil
-	}
-	g.configured = true
-	g.maximumPlayers = maxPlayers
-	return nil
-}
-
-func (g *ListenerGroup) add() bool {
+// add increments the player count if it is below max, returning false if the group is full. A max of zero
+// means no limit.
+func (g *ListenerGroup) add(max int) bool {
 	for {
 		current := g.playerCount.Load()
-		if g.maximumPlayers > 0 && int64(current) >= int64(g.maximumPlayers) {
+		if max > 0 && int(current) >= max {
 			return false
 		}
 		if g.playerCount.CompareAndSwap(current, current+1) {
@@ -216,9 +202,6 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 	}
 	if cfg.ListenerGroup == nil {
 		cfg.ListenerGroup = new(ListenerGroup)
-	}
-	if err := cfg.ListenerGroup.configure(cfg.MaximumPlayers); err != nil {
-		return nil, err
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
@@ -481,7 +464,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 
-	if !listener.group.add() {
+	if !listener.group.add(listener.cfg.MaximumPlayers) {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 		_ = conn.close(conn.closeErr("server full"))
