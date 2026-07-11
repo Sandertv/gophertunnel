@@ -16,6 +16,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/service"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling"
 	"github.com/sandertv/gophertunnel/minecraft/service/signaling/internal"
+	"golang.org/x/oauth2"
 )
 
 // Dialer specifies options for connecting to the messaging service.
@@ -57,6 +58,12 @@ func (d Dialer) Dial(src service.TokenSource) (*Conn, error) {
 
 // DialContext connects to the messaging service using the provided [service.TokenSource] for authorization.
 func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn, error) {
+	if d.HTTPClient == nil {
+		d.HTTPClient = http.DefaultClient
+	}
+	if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
+	}
 	if d.Environment == nil {
 		discovery, err := service.Default(ctx)
 		if err != nil {
@@ -67,9 +74,6 @@ func (d Dialer) DialContext(ctx context.Context, src service.TokenSource) (*Conn
 			return nil, fmt.Errorf("resolve environment for %q: %w", env.ServiceName(), err)
 		}
 		d.Environment = env
-	}
-	if d.HTTPClient == nil {
-		d.HTTPClient = http.DefaultClient
 	}
 	if d.Log == nil {
 		d.Log = slog.Default()
