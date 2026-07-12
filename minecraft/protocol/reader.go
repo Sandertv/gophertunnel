@@ -736,8 +736,8 @@ func (r *Reader) ShapeData(x *ShapeData) {
 	(*x).Marshal(r)
 }
 
-// CheckSliceLength validates a length prefix before a slice is allocated.
-func (r *Reader) CheckSliceLength(value uint32, max uint32) {
+// SliceLength validates a length prefix before a slice is allocated.
+func (r *Reader) SliceLength(value uint32, max uint32) {
 	if value > max && r.limitsEnabled {
 		r.panicf("slice length was too long: length of %v (max %v)", value, max)
 	}
