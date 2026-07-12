@@ -16,7 +16,9 @@ const (
 	DataStorePropertyTypeNone   = 0
 	DataStorePropertyTypeBool   = 1
 	DataStorePropertyTypeInt64  = 2
+	DataStorePropertyTypeDouble = 3
 	DataStorePropertyTypeString = 4
+	DataStorePropertyTypeList   = 5
 	DataStorePropertyTypeMap    = 6
 )
 
@@ -100,8 +102,12 @@ type DataStorePropertyValue struct {
 	BoolValue bool
 	// Int64Value is the value if Type is DataStorePropertyTypeInt64.
 	Int64Value int64
+	// DoubleValue is the value if Type is DataStorePropertyTypeDouble.
+	DoubleValue float64
 	// StringValue is the value if Type is DataStorePropertyTypeString.
 	StringValue string
+	// ListValue is the value if Type is DataStorePropertyTypeList.
+	ListValue []DataStorePropertyValue
 	// MapValue is the value if Type is DataStorePropertyTypeMap.
 	MapValue []DataStoreMapEntry
 }
@@ -124,8 +130,14 @@ func MarshalDataStorePropertyValue(r IO, x *DataStorePropertyValue) {
 		r.Bool(&x.BoolValue)
 	case DataStorePropertyTypeInt64:
 		r.Int64(&x.Int64Value)
+	case DataStorePropertyTypeDouble:
+		r.Float64(&x.DoubleValue)
 	case DataStorePropertyTypeString:
 		r.String(&x.StringValue)
+	case DataStorePropertyTypeList:
+		FuncSlice(r, &x.ListValue, func(v *DataStorePropertyValue) {
+			MarshalDataStorePropertyValue(r, v)
+		})
 	case DataStorePropertyTypeMap:
 		FuncSlice(r, &x.MapValue, func(entry *DataStoreMapEntry) {
 			r.String(&entry.Key)

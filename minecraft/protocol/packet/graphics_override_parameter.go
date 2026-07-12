@@ -15,6 +15,8 @@ type GraphicsOverrideParameter struct {
 	Vec3Value protocol.Optional[mgl32.Vec3]
 	// BiomeIdentifier is the identifier of the biome for which the parameters apply.
 	BiomeIdentifier string
+	// PlayerIdentifier is the optional identifier of the player for which the override parameter applies.
+	PlayerIdentifier protocol.Optional[string]
 	// ParameterType is the type of parameter being overridden.
 	ParameterType uint8
 	// Reset indicates whether to reset the parameters.
@@ -31,6 +33,7 @@ func (pk *GraphicsOverrideParameter) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.FloatValue, io.Float32)
 	protocol.OptionalFunc(io, &pk.Vec3Value, io.Vec3)
 	io.String(&pk.BiomeIdentifier)
+	protocol.OptionalFunc(io, &pk.PlayerIdentifier, io.String)
 	io.Uint8(&pk.ParameterType)
 	io.Bool(&pk.Reset)
 }

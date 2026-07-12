@@ -6,9 +6,12 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"io"
+	"slices"
 
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
+
+const maxPooledEncoderBufferCap = 1 << 20
 
 // Encoder handles the encoding of Minecraft packets that are sent to an io.Writer. The packets are compressed
 // and optionally encoded before they are sent to the io.Writer.
@@ -30,13 +33,13 @@ type Encoder struct {
 // sent with a single call to io.Writer.Write().
 func NewEncoder(w io.Writer) *Encoder {
 	var batch []byte
-	if b, ok := w.(batchHeader); ok {
+	if b, ok := w.(BatchHeaderer); ok {
 		batch = b.BatchHeader()
 	} else {
 		batch = []byte{header}
 	}
 	var disableEncryption bool
-	if d, ok := w.(encryptionDisabler); ok {
+	if d, ok := w.(EncryptionDisabler); ok {
 		disableEncryption = d.DisableEncryption()
 	}
 	return &Encoder{
@@ -44,25 +47,6 @@ func NewEncoder(w io.Writer) *Encoder {
 		header:            batch,
 		disableEncryption: disableEncryption,
 	}
-}
-
-// batchHeader can be implemented by underlying transport connection provided to Encoder and Decoder
-// to specify the initial bytes that should appear at the beginning of packet data in wire.
-type batchHeader interface {
-	// BatchHeader returns initial bytes that should be appended to the produced data
-	// in Encoder and Decoder. It can be an empty slice if nothing is expected at the beginning.
-	BatchHeader() []byte
-}
-
-// encryptionDisabler may be implemented by the underlying transport connection to
-// prevent encryption from being enabled in Encoder and Decoder.
-//
-// Disabling encryption is strongly discouraged, as it removes protection against
-// replay attacks during login. Use only if you fully understand the implications.
-type encryptionDisabler interface {
-	// DisableEncryption reports whether encryption should be disabled for both
-	// Encoder and Decoder.
-	DisableEncryption() bool
 }
 
 // EnableEncryption enables encryption for the Encoder using the secret key bytes passed. Each packet sent
@@ -87,16 +71,28 @@ func (encoder *Encoder) EnableCompression(compression Compression, threshold int
 // optionally encrypted.
 func (encoder *Encoder) Encode(packets [][]byte) error {
 	buf := internal.BufferPool.Get().(*bytes.Buffer)
+	var compressedBuf *bytes.Buffer
 	defer func() {
 		// Reset the buffer, so we can return it to the buffer pool safely.
 		buf.Reset()
 		internal.BufferPool.Put(buf)
+		if compressedBuf != nil && compressedBuf.Cap() <= maxPooledEncoderBufferCap {
+			compressedBuf.Reset()
+			internal.BufferPool.Put(compressedBuf)
+		}
 	}()
 
-	l := make([]byte, 5)
+	compression := encoder.compression
+	_, _ = buf.Write(encoder.header)
+	if compression != nil {
+		_ = buf.WriteByte(0)
+	}
+	batchStart := buf.Len()
+
+	var l [5]byte
 	for _, packet := range packets {
 		// Each packet is prefixed with a varuint32 specifying the length of the packet.
-		if err := writeVaruint32(buf, uint32(len(packet)), l); err != nil {
+		if _, err := buf.Write(l[:putVaruint32(&l, uint32(len(packet)))]); err != nil {
 			return fmt.Errorf("encode batch: write packet length: %w", err)
 		}
 		if _, err := buf.Write(packet); err != nil {
@@ -105,24 +101,37 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	}
 
 	data := buf.Bytes()
-	prepend := encoder.header
-
-	if compression := encoder.compression; compression != nil {
-		if len(data) < encoder.compressionThreshold {
-			compression = NopCompression
+	if compression != nil {
+		batch := data[batchStart:]
+		if len(batch) < encoder.compressionThreshold {
+			data[len(encoder.header)] = byte(NopCompression.EncodeCompression())
+		} else {
+			compressedBuf = internal.BufferPool.Get().(*bytes.Buffer)
+			_, _ = compressedBuf.Write(encoder.header)
+			_ = compressedBuf.WriteByte(byte(compression.EncodeCompression()))
+			var err error
+			if appender, ok := compression.(appendCompression); ok {
+				if n := appender.MaxCompressedLen(len(batch)); n > 0 {
+					compressedBuf.Grow(n)
+				}
+				dst := compressedBuf.Bytes()
+				data, err = appender.CompressAppend(dst, batch)
+			} else {
+				dst := compressedBuf.Bytes()
+				var compressed []byte
+				compressed, err = compression.Compress(batch)
+				data = append(dst, compressed...)
+			}
+			if err != nil {
+				return fmt.Errorf("compress batch: %w", err)
+			}
 		}
-		var err error
-		data, err = compression.Compress(data)
-		if err != nil {
-			return fmt.Errorf("compress batch: %w", err)
-		}
-		prepend = append(prepend, byte(compression.EncodeCompression()))
 	}
 
-	data = append(prepend, data...)
 	if encoder.encrypt != nil {
 		// If the encryption session is not nil, encryption is enabled, meaning we should encrypt the
 		// compressed data of this packet.
+		data = slices.Grow(data, 8)
 		data = encoder.encrypt.encrypt(data)
 	}
 	if _, err := encoder.w.Write(data); err != nil {
@@ -131,10 +140,9 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 	return nil
 }
 
-// writeVaruint32 writes a uint32 to the destination buffer passed with a size of 1-5 bytes. It uses byte
-// slice b in order to prevent allocations.
-func writeVaruint32(dst io.Writer, x uint32, b []byte) error {
-	clear(b[:5])
+// putVaruint32 writes x to b with a size of 1-5 bytes and returns the number of
+// bytes written.
+func putVaruint32(b *[5]byte, x uint32) int {
 	i := 0
 	for x >= 0x80 {
 		b[i] = byte(x) | 0x80
@@ -142,6 +150,5 @@ func writeVaruint32(dst io.Writer, x uint32, b []byte) error {
 		x >>= 7
 	}
 	b[i] = byte(x)
-	_, err := dst.Write(b[:i+1])
-	return err
+	return i + 1
 }
