@@ -146,9 +146,6 @@ type ClientData struct {
 	ClientEditorConnectionIntent int
 	// ClientIsEditorCapable specifies if the client supports editor features.
 	ClientIsEditorCapable bool
-	// IsEditorMode is retained for source compatibility with older callers.
-	// Deprecated: Use ClientEditorConnectionIntent instead.
-	IsEditorMode bool `json:"-"`
 	// LanguageCode is the language code of the player. It looks like 'en_UK'. It follows the ISO language
 	// codes, but hyphens ('-') are replaced with underscores. ('_')
 	LanguageCode string
