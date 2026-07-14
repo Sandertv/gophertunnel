@@ -97,7 +97,7 @@ func ContextClient(ctx context.Context) *http.Client {
 	if client, ok := ctx.Value(xal.HTTPClient).(*http.Client); ok && client != nil {
 		return client
 	}
-	return nil
+	return http.DefaultClient
 }
 
 // WithContextClient stores client on ctx for auth code paths that read HTTP
