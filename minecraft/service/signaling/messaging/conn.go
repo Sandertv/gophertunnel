@@ -210,11 +210,10 @@ func (conn *Conn) handleCallback(ctx context.Context, request *jrpc2.Request) (a
 	}
 }
 
-// handleMessage handles a message received from the server.
-// It decodes every batch message included in the given request
-// and calls handleInnerMessage.
+// handleMessage handles one or more messages received from the server.
+// It decodes each message included in the request and calls handleInnerMessage.
 func (conn *Conn) handleMessage(ctx context.Context, request *jrpc2.Request) (v any, err error) {
-	var params []*envelope
+	var params envelopeParams
 	if err := request.UnmarshalParams(&params); err != nil {
 		return nil, fmt.Errorf("decode parameters: %w", err)
 	}
@@ -228,6 +227,25 @@ func (conn *Conn) handleMessage(ctx context.Context, request *jrpc2.Request) (v 
 		}
 	}
 	return nil, err
+}
+
+// envelopeParams accepts both the single-message object and legacy batched array
+// forms used by the Player Messaging service.
+type envelopeParams []*envelope
+
+func (p *envelopeParams) UnmarshalJSON(data []byte) error {
+	var batch []*envelope
+	if err := json.Unmarshal(data, &batch); err == nil {
+		*p = batch
+		return nil
+	}
+
+	var single *envelope
+	if err := json.Unmarshal(data, &single); err != nil {
+		return err
+	}
+	*p = []*envelope{single}
+	return nil
 }
 
 // envelope wraps a JSON-RPC message delivered through Player Messaging.
