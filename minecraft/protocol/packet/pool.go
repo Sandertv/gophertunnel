@@ -299,6 +299,7 @@ func init() {
 		IDResourcePackClientResponse:        func() Packet { return &ResourcePackClientResponse{} },
 		IDText:                              func() Packet { return &Text{} },
 		IDMovePlayer:                        func() Packet { return &MovePlayer{} },
+		IDUpdateBlock:                       func() Packet { return &UpdateBlock{} },
 		IDActorEvent:                        func() Packet { return &ActorEvent{} },
 		IDInventoryTransaction:              func() Packet { return &InventoryTransaction{} },
 		IDMobEquipment:                      func() Packet { return &MobEquipment{} },
