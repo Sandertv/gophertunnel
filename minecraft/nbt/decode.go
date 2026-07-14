@@ -258,7 +258,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			return err
 		}
 		if length < 0 {
-			return InvalidLengthError{Off: d.r.off, Op: "ByteArray", N: int64(length)}
+			return BufferOverrunError{Op: "ByteArray"}
 		}
 		b := make([]byte, length)
 		if _, err := d.r.Read(b); err != nil {
@@ -341,7 +341,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 				return BufferOverrunError{Op: "ByteSlice"}
 			}
 			if length < 0 {
-				return InvalidLengthError{Off: d.r.off, Op: "ByteSlice", N: int64(length)}
+				return BufferOverrunError{Op: "ByteSlice"}
 			}
 			if length == 0 {
 				// Empty lists are allowed to have the TAG_Byte type.
@@ -389,7 +389,7 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 				return err
 			}
 			if length < 0 {
-				return InvalidLengthError{Off: d.r.off, Op: "Slice", N: int64(length)}
+				return BufferOverrunError{Op: "Slice"}
 			}
 			v := reflect.MakeSlice(sliceType, int(length), int(length))
 			for i := 0; i < int(length); i++ {
