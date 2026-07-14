@@ -119,6 +119,7 @@ func (err IncompatibleTypeError) Error() string {
 }
 
 var errStringTooLong = errors.New("string length exceeds maximum length")
+var errNegativeLength = errors.New("negative length")
 
 // InvalidStringError is returned if a string read is not valid, meaning it does not exist exclusively out of
 // utf8 characters, or if it is longer than the length prefix can carry.
@@ -131,6 +132,19 @@ type InvalidStringError struct {
 // Error ...
 func (err InvalidStringError) Error() string {
 	return fmt.Sprintf("nbt: string at offset %v is not valid: %v (len=%v)", err.Off, err.Err, err.N)
+}
+
+// InvalidLengthError is returned when a negative length is read from NBT data for an array/slice/string/list.
+// Some implementations may send malformed or truncated NBT, and Go's slice/array allocation would panic.
+type InvalidLengthError struct {
+	Off int64
+	Op  string
+	N   int64
+}
+
+// Error ...
+func (err InvalidLengthError) Error() string {
+	return fmt.Sprintf("nbt: invalid length at offset %v during op '%v': %v", err.Off, err.Op, err.N)
 }
 
 const maximumNestingDepth = 512
