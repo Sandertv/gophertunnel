@@ -114,6 +114,13 @@ type ListenConfig struct {
 	// established. This is useful for connections that wish to handle packets immediately after the login
 	// handshake has been completed.
 	IgnoreHandlers bool
+	// Allow filters what connections are allowed to connect to the Server. The
+	// address, identity data, and client data of the connection are passed. If
+	// Allow returns false, the connection is closed with the string returned as
+	// the disconnect message. WARNING: Use the client data at your own risk, it
+	// cannot be trusted because it can be freely changed by the player
+	// connecting.
+	Allow func(addr net.Addr, identityData login.IdentityData, clientData login.ClientData) (string, bool)
 }
 
 // Listener implements a Minecraft listener on top of an unspecific net.Listener. It abstracts away the
@@ -414,6 +421,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.compressionThreshold = listener.cfg.CompressionThreshold
 	conn.maxDecompressedLen = listener.cfg.MaxDecompressedLen
 	conn.pool = conn.proto.Packets(true)
+	conn.allow = listener.cfg.Allow
 
 	conn.packetFunc = listener.cfg.PacketFunc
 	conn.texturePacksRequired = listener.cfg.TexturePacksRequired

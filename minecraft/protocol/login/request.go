@@ -405,6 +405,7 @@ func EncodeOffline(identityData IdentityData, data ClientData, key *ecdsa.Privat
 		req.Certificate = certificate{Chain: chain{chainJWT}}
 		req.Legacy = true
 	} else {
+		claims.Audience = jwt.Audience{"api://auth-minecraft-services/multiplayer"}
 		req.Certificate = certificate{Chain: chain{""}}
 		req.Token, _ = jwt.Signed(signer).Claims(tokenClaims{
 			Claims:          claims,
@@ -447,7 +448,7 @@ type tokenClaims struct {
 	DisplayName string `json:"xname"`
 	// Identity is the UUID of the player. It is only set for offline logins where
 	// the UUID cannot be derived from the XUID.
-	Identity string `json:"identity,omitempty"`
+	Identity string `json:"leguuid,omitempty"`
 }
 
 // identityData converts the OIDC tokenClaims into IdentityData.
