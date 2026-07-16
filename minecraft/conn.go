@@ -652,7 +652,7 @@ func (conn *Conn) receive(data []byte) error {
 		if err != nil {
 			return err
 		}
-		_ = conn.close(conn.closeErr(pks[0].(*packet.Disconnect).Message))
+		_ = conn.close(conn.wrap(DisconnectError(pks[0].(*packet.Disconnect).Message), "receive"))
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
