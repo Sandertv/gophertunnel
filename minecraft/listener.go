@@ -48,6 +48,10 @@ type ListenConfig struct {
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
+	// ListenerGroup shares the active player count between multiple listeners serving one logical server, so
+	// that the MaximumPlayers admission limit and advertised player count apply across all of them. If nil,
+	// the listener uses a private group. All listeners in a group should use the same MaximumPlayers value.
+	ListenerGroup *ListenerGroup
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
 	// in the packet pool. If false (by default), such packets lead to the connection being closed immediately.
@@ -129,9 +133,7 @@ type Listener struct {
 	packs   []*resource.Pack
 	packsMu sync.RWMutex
 
-	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
-	// to the playerCount, no more players will be accepted.
-	playerCount atomic.Int32
+	group *ListenerGroup
 
 	incoming chan *Conn
 	close    chan struct{}
@@ -141,6 +143,34 @@ type Listener struct {
 	// for authenticating incoming connections. It will be nil if authentication is
 	// disabled on ListenConfig.
 	verifier *oidc.IDTokenVerifier
+}
+
+// ListenerGroup shares the active player count between listeners serving one logical server.
+type ListenerGroup struct {
+	playerCount atomic.Int32
+}
+
+// PlayerCount returns the number of active connections across the group.
+func (g *ListenerGroup) PlayerCount() int {
+	return int(g.playerCount.Load())
+}
+
+// add increments the player count if it is below max, returning false if the group is full. A max of zero
+// means no limit.
+func (g *ListenerGroup) add(max int) bool {
+	for {
+		current := g.playerCount.Load()
+		if max > 0 && int(current) >= max {
+			return false
+		}
+		if g.playerCount.CompareAndSwap(current, current+1) {
+			return true
+		}
+	}
+}
+
+func (g *ListenerGroup) remove() {
+	g.playerCount.Add(-1)
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -169,6 +199,9 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 	cfg.ErrorLog = cfg.ErrorLog.With("src", "listener")
 	if cfg.StatusProvider == nil {
 		cfg.StatusProvider = NewStatusProvider("Minecraft Server", "Gophertunnel")
+	}
+	if cfg.ListenerGroup == nil {
+		cfg.ListenerGroup = new(ListenerGroup)
 	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
@@ -216,6 +249,7 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
+		group:    cfg.ListenerGroup,
 		packs:    slices.Clone(cfg.ResourcePacks),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
@@ -350,7 +384,7 @@ func (listener *Listener) Close() error {
 
 // PlayerCount returns the number of active connections.
 func (listener *Listener) PlayerCount() int {
-	return int(listener.playerCount.Load())
+	return listener.group.PlayerCount()
 }
 
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
@@ -430,13 +464,12 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 
-	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
+	if !listener.group.add(listener.cfg.MaximumPlayers) {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 		_ = conn.close(conn.closeErr("server full"))
 		return
 	}
-	listener.playerCount.Add(1)
 	listener.updatePongData()
 
 	go listener.handleConn(conn)
@@ -444,7 +477,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 // status returns the current ServerStatus of the Listener.
 func (listener *Listener) status() ServerStatus {
-	status := listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
+	status := listener.cfg.StatusProvider.ServerStatus(listener.group.PlayerCount(), listener.cfg.MaximumPlayers)
 	if status.MaxPlayers == 0 {
 		status.MaxPlayers = status.PlayerCount + 1
 	}
@@ -456,7 +489,7 @@ func (listener *Listener) status() ServerStatus {
 func (listener *Listener) handleConn(conn *Conn) {
 	defer func() {
 		_ = conn.Close()
-		listener.playerCount.Add(-1)
+		listener.group.remove()
 		listener.updatePongData()
 	}()
 	for {
