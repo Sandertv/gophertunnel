@@ -925,11 +925,10 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 		return fmt.Errorf("decode ServerToClientHandshake salt: %w", err)
 	}
 
-	x, _ := pub.Curve.ScalarMult(pub.X, pub.Y, conn.privateKey.D.Bytes())
-	// Make sure to pad the shared secret up to 96 bytes.
-	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
-
-	keyBytes := sha256.Sum256(append(salt, sharedSecret...))
+	keyBytes, err := conn.encryptionKey(salt, pub)
+	if err != nil {
+		return fmt.Errorf("derive encryption key: %w", err)
+	}
 
 	// Finally we enable encryption for the enc and dec using the secret pubKey bytes we produced.
 	conn.encMu.Lock()
@@ -1488,12 +1487,10 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	// Flush immediately as we'll enable encryption after this.
 	_ = conn.Flush()
 
-	// We first compute the shared secret.
-	x, _ := clientPublicKey.Curve.ScalarMult(clientPublicKey.X, clientPublicKey.Y, conn.privateKey.D.Bytes())
-
-	sharedSecret := append(bytes.Repeat([]byte{0}, 48-len(x.Bytes())), x.Bytes()...)
-
-	keyBytes := sha256.Sum256(append(conn.salt, sharedSecret...))
+	keyBytes, err := conn.encryptionKey(conn.salt, clientPublicKey)
+	if err != nil {
+		return fmt.Errorf("derive encryption key: %w", err)
+	}
 
 	// Finally we enable encryption for the encoder and decoder using the secret key bytes we produced.
 	conn.encMu.Lock()
@@ -1502,6 +1499,25 @@ func (conn *Conn) enableEncryption(clientPublicKey *ecdsa.PublicKey) error {
 	conn.dec.EnableEncryption(keyBytes)
 
 	return nil
+}
+
+// encryptionKey computes the encryption key for the connection using the salt and the
+// remote connection's public key. It derives the shared secret through ECDH key exchange
+// then produces a 32-byte key by hashing the salt with the shared secret.
+func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, error) {
+	privateKey, err := conn.privateKey.ECDH()
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("convert private key to ECDH: %w", err)
+	}
+	publicKey, err := pub.ECDH()
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("convert public key to ECDH: %w", err)
+	}
+	sharedSecret, err := privateKey.ECDH(publicKey)
+	if err != nil {
+		return [32]byte{}, fmt.Errorf("compute shared secret: %w", err)
+	}
+	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
 // expect sets the packet IDs that are next expected to arrive.
