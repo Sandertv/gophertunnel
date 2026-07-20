@@ -254,6 +254,12 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 		if err != nil {
 			return err
 		}
+		if err = d.checkRemaining(int(length), "ByteArray"); err != nil {
+			return err
+		}
+		if length < 0 {
+			return BufferOverrunError{Op: "ByteArray"}
+		}
 		b := make([]byte, length)
 		if _, err := d.r.Read(b); err != nil {
 			return BufferOverrunError{Op: "ByteArray"}
@@ -334,10 +340,16 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			if err != nil {
 				return BufferOverrunError{Op: "ByteSlice"}
 			}
+			if length < 0 {
+				return BufferOverrunError{Op: "ByteSlice"}
+			}
 			if length == 0 {
 				// Empty lists are allowed to have the TAG_Byte type.
 				val.Set(reflect.MakeSlice(sliceType, int(length), int(length)))
 				break
+			}
+			if err = d.checkRemaining(int(length), "ByteSlice"); err != nil {
+				return err
 			}
 			b := make([]byte, length)
 			if _, err := d.r.Read(b); err != nil {
@@ -375,6 +387,9 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			length, err := d.Encoding.Int32(d.r)
 			if err != nil {
 				return err
+			}
+			if length < 0 {
+				return BufferOverrunError{Op: "Slice"}
 			}
 			v := reflect.MakeSlice(sliceType, int(length), int(length))
 			for i := 0; i < int(length); i++ {
@@ -528,6 +543,13 @@ func (d *Decoder) tag() (t tagType, tagName string, err error) {
 		tagName, err = d.Encoding.String(d.r)
 	}
 	return t, tagName, err
+}
+
+func (d *Decoder) checkRemaining(length int, op string) error {
+	if remaining, ok := d.r.Reader.(interface{ Len() int }); ok && length > remaining.Len() {
+		return BufferOverrunError{Op: op}
+	}
+	return nil
 }
 
 // isAny checks if a reflect.Value has the type `any` or `interface{}`.
