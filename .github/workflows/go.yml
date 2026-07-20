@@ -15,19 +15,10 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Get dependencies
-        run: |
-          mkdir -p $GOPATH/bin
-          export PATH=$PATH:$GOPATH/bin
-
       - name: Vet
         run: go vet ./...
 
       - name: Staticcheck
         run: |
-          go get honnef.co/go/tools/cmd/staticcheck@v0.6.1
-          GOBIN=$PWD/bin go install honnef.co/go/tools/cmd/staticcheck@v0.6.1
-          ./bin/staticcheck ./...
-
-      - name: Build
-        run: go build -o gophertunnel_exe -v .
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          staticcheck ./...

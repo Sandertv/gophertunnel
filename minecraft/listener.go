@@ -263,7 +263,7 @@ func authEnv(ctx context.Context) (*service.AuthorizationEnvironment, error) {
 	ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
 	defer cancel()
 
-	discovery, err := service.Discover(ctx, service.ApplicationTypeMinecraftPE, protocol.CurrentVersion)
+	discovery, err := service.Default(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("discover service endpoints: %w", err)
 	}
