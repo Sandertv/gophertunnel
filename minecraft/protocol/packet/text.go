@@ -90,6 +90,9 @@ func (pk *Text) Marshal(io protocol.IO) {
 	if len(pk.Message) == 0 {
 		io.InvalidValue(pk.Message, "message", "string cannot be empty")
 	}
+	if len(pk.Message) > 65536 {
+		io.InvalidValue(pk.Message, "message", "string too long")
+	}
 	io.String(&pk.XUID)
 	io.String(&pk.PlatformChatID)
 	protocol.OptionalFunc(io, &pk.FilteredMessage, io.String)
