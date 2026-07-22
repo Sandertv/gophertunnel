@@ -66,14 +66,14 @@ func (data IdentityData) Validate() error {
 	if _, err := strconv.ParseInt(data.XUID, 10, 64); err != nil && len(data.XUID) != 0 {
 		return fmt.Errorf("XUID must be parseable as an int64, but got %v", data.XUID)
 	}
+	if data.XUID == "" {
+		// Non-authenticated clients don't have DisplayName nor Identity. This will be filled with their ClientData when parsing their request.
+		return nil
+	}
 	if id, err := uuid.Parse(data.Identity); err != nil || id == uuid.Nil {
 		return fmt.Errorf("UUID must be parseable as a valid UUID, but got %v", data.Identity)
 	}
 	nameLimit := 15
-	if data.XUID == "" {
-		// Non-authenticated clients can have up to 16 characters in their name.
-		nameLimit = 16
-	}
 	if len(data.DisplayName) == 0 || len(data.DisplayName) > nameLimit {
 		return fmt.Errorf("DisplayName must not be empty or longer than %d characters, but got %v characters", nameLimit, len(data.DisplayName))
 	}
@@ -83,14 +83,8 @@ func (data IdentityData) Validate() error {
 	if data.DisplayName[0] >= '0' && data.DisplayName[0] <= '9' {
 		return fmt.Errorf("DisplayName may not have a number as first character, but got %v", data.DisplayName)
 	}
-	if data.XUID != "" {
-		if !checkOnlineUsername(data.DisplayName) {
-			return fmt.Errorf("DisplayName for authorized client must only contain numbers, Latin letters and spaces, but got %v", data.DisplayName)
-		}
-	} else {
-		if !checkOfflineUsername(data.DisplayName) {
-			return fmt.Errorf("DisplayName for unauthorized client must only contain numbers, letters and spaces, but got %v", data.DisplayName)
-		}
+	if !checkOnlineUsername(data.DisplayName) {
+		return fmt.Errorf("DisplayName for authorized client must only contain numbers, Latin letters and spaces, but got %v", data.DisplayName)
 	}
 	// We check here if the name contains at least 2 spaces after each other, which is not allowed. The name
 	// is only allowed to have single spaces.
@@ -405,6 +399,13 @@ func (data ClientData) Validate() error {
 	}
 	if data.UIProfile < 0 || data.UIProfile > 2 {
 		return fmt.Errorf("UIProfile must be between 0-2, but got %v", data.UIProfile)
+	}
+	nameLimit := 16
+	if len(data.ThirdPartyName) == 0 || len(data.ThirdPartyName) > nameLimit {
+		return fmt.Errorf("ThirdPartyName must not be empty or longer than %d characters, but got %v characters", nameLimit, len(data.ThirdPartyName))
+	}
+	if !checkOfflineUsername(data.ThirdPartyName) {
+		return fmt.Errorf("ThirdPartyName for client must only contain numbers, Latin letters and spaces, but got %v", data.ThirdPartyName)
 	}
 	return nil
 }
