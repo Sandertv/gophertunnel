@@ -114,6 +114,10 @@ type ListenConfig struct {
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
 
+	// IgnoreHandlers is a bool indicating whether we should ignore packet handlers after the connection is
+	// established. This is useful for connections that wish to handle packets immediately after the login
+	// handshake has been completed.
+	IgnoreHandlers bool
 	// Allow filters what connections are allowed to connect to the Server. The
 	// address, identity data, and client data of the connection are passed. If
 	// Allow returns false, the connection is closed with the string returned as
@@ -434,6 +438,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.verifier = listener.verifier
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
+	conn.ignoreHandlers = listener.cfg.IgnoreHandlers
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
