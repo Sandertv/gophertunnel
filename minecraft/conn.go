@@ -1048,8 +1048,14 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 	return false
 }
 
-// packChunkSize is the size of a single chunk of data from a resource pack: 512 kB or 0.5 MB
-const packChunkSize = 1024 * 128
+const (
+	// packChunkSize is the size of a single chunk of data from a resource pack: 128 KiB.
+	packChunkSize = 1024 * 128
+	// resourcePackChunkSendDelay spaces ResourcePackChunkData packets so slow clients are not flooded while
+	// downloading packs. Clients after 1.26.30 may fail resource pack downloads when pack chunks are sent
+	// too aggressively.
+	resourcePackChunkSendDelay = 200 * time.Millisecond
+)
 
 // handleResourcePackClientResponse handles an incoming resource pack client response packet. The packet is
 // handled differently depending on the response.
@@ -1291,20 +1297,37 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 			return fmt.Errorf("read resource pack chunk: %w", err)
 		}
 		response.Data = response.Data[:n]
-
-		defer func() {
-			if !conn.packQueue.AllDownloaded() {
-				_ = conn.nextResourcePackDownload()
-			} else {
-				conn.expect(packet.IDResourcePackClientResponse)
-			}
-		}()
 	}
 	if err := conn.WritePacket(response); err != nil {
 		return fmt.Errorf("send ResourcePackChunkData: %w", err)
 	}
 
+	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Len())
+	if lastChunk {
+		if !conn.packQueue.AllDownloaded() {
+			_ = conn.nextResourcePackDownload()
+		} else {
+			conn.expect(packet.IDResourcePackClientResponse)
+		}
+	}
+	if err := waitResourcePackChunkSendDelay(conn.ctx); err != nil {
+		return err
+	}
+
 	return nil
+}
+
+// waitResourcePackChunkSendDelay waits before processing the next resource pack chunk request.
+func waitResourcePackChunkSendDelay(ctx context.Context) error {
+	timer := time.NewTimer(resourcePackChunkSendDelay)
+	defer timer.Stop()
+
+	select {
+	case <-ctx.Done():
+		return ctx.Err()
+	case <-timer.C:
+		return nil
+	}
 }
 
 func (conn *Conn) handleDimensionData(pk *packet.DimensionData) error {
