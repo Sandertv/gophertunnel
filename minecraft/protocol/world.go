@@ -14,7 +14,7 @@ const (
 type DimensionDefinition struct {
 	// Name specifies the name of the dimension.
 	Name string
-	// Range is the height range of the dimension, where the first value is the minimum and the second is the maximum.
+	// Range is the height range of the dimension, where the first value is the exclusive maximum and the second is the inclusive minimum.
 	Range [2]int32
 	// Generator is the variant of generator that exists in the provided dimension. These can be one of the constants
 	// defined above. If this is set to GeneratorLegacy, the legacy horizontal world limits will be enforced.
