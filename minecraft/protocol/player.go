@@ -85,7 +85,7 @@ type PlayerListEntry struct {
 // Marshal encodes/decodes a PlayerListEntry.
 func (x *PlayerListEntry) Marshal(r IO) {
 	r.UUID(&x.UUID)
-	r.Varint64(&x.EntityUniqueID)
+	r.ActorUniqueID(&x.EntityUniqueID)
 	r.String(&x.Username)
 	r.String(&x.XUID)
 	r.String(&x.PlatformChatID)

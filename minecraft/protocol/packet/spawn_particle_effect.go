@@ -35,7 +35,7 @@ func (*SpawnParticleEffect) ID() uint32 {
 
 func (pk *SpawnParticleEffect) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Dimension)
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.Vec3(&pk.Position)
 	io.String(&pk.ParticleName)
 	protocol.OptionalFunc(io, &pk.MoLangVariables, io.ByteSlice)

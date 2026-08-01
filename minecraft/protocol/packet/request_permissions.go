@@ -23,7 +23,7 @@ func (*RequestPermissions) ID() uint32 {
 }
 
 func (pk *RequestPermissions) Marshal(io protocol.IO) {
-	io.Int64(&pk.EntityUniqueID)
+	protocol.ActorUniqueIDFixed(io, &pk.EntityUniqueID)
 	io.Varint32(&pk.PermissionLevel)
 	io.Uint16(&pk.RequestedPermissions)
 }

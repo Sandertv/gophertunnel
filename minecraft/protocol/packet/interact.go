@@ -36,6 +36,6 @@ func (*Interact) ID() uint32 {
 
 func (pk *Interact) Marshal(io protocol.IO) {
 	io.Uint8(&pk.ActionType)
-	io.Varuint64(&pk.TargetEntityRuntimeID)
+	io.ActorRuntimeID(&pk.TargetEntityRuntimeID)
 	protocol.OptionalFunc(io, &pk.Position, io.Vec3)
 }

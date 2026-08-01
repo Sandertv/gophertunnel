@@ -39,7 +39,7 @@ func (*MoveActorDelta) ID() uint32 {
 }
 
 func (pk *MoveActorDelta) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint16(&pk.Flags)
 	if pk.Flags&MoveActorDeltaFlagHasX != 0 {
 		io.Float32(&pk.Position[0])

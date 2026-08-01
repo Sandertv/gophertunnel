@@ -35,7 +35,7 @@ func (*PlayerUpdateEntityOverrides) ID() uint32 {
 }
 
 func (pk *PlayerUpdateEntityOverrides) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.Varuint32(&pk.PropertyIndex)
 	io.Uint8(&pk.Type)
 	if pk.Type == PlayerUpdateEntityOverridesTypeInt {

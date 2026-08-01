@@ -294,6 +294,6 @@ func (x *PrimitiveShape) Marshal(io IO) {
 	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.Varint64)
+	OptionalFunc(io, &x.AttachedToEntityID, io.ActorUniqueID)
 	io.ShapeData(&x.ExtraShapeData)
 }

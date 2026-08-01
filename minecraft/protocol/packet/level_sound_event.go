@@ -628,6 +628,6 @@ func (pk *LevelSoundEvent) Marshal(io protocol.IO) {
 	io.String(&pk.EntityType)
 	io.Bool(&pk.BabyMob)
 	io.Bool(&pk.DisableRelativeVolume)
-	io.Int64(&pk.EntityUniqueID)
+	protocol.ActorUniqueIDFixed(io, &pk.EntityUniqueID)
 	protocol.OptionalFunc(io, &pk.FireAtPosition, io.Vec3)
 }

@@ -40,7 +40,7 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 	r.Uint8(&x.IdentityType)
 	switch x.IdentityType {
 	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-		r.Varint64(&x.EntityUniqueID)
+		r.ActorUniqueID(&x.EntityUniqueID)
 	case ScoreboardIdentityFakePlayer:
 		r.String(&x.DisplayName)
 	default:
@@ -69,7 +69,7 @@ type ScoreboardIdentityEntry struct {
 // Marshal encodes/decodes a ScoreboardIdentityEntry.
 func (x *ScoreboardIdentityEntry) Marshal(r IO) {
 	r.Varint64(&x.EntryID)
-	r.Varint64(&x.EntityUniqueID)
+	r.ActorUniqueID(&x.EntityUniqueID)
 }
 
 // ScoreboardIdentityClearEntry encodes/decodes a ScoreboardIdentityEntry for clearing the entry.

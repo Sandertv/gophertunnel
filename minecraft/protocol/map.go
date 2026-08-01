@@ -54,7 +54,7 @@ func (x *MapTrackedObject) Marshal(r IO) {
 	r.Int32(&x.Type)
 	switch x.Type {
 	case MapObjectTypeEntity:
-		r.Varint64(&x.EntityUniqueID)
+		r.ActorUniqueID(&x.EntityUniqueID)
 	case MapObjectTypeBlock:
 		r.BlockPos(&x.BlockPosition)
 	default:

@@ -23,7 +23,7 @@ func (*ActorPickRequest) ID() uint32 {
 }
 
 func (pk *ActorPickRequest) Marshal(io protocol.IO) {
-	io.Int64(&pk.EntityUniqueID)
+	protocol.ActorUniqueIDFixed(io, &pk.EntityUniqueID)
 	io.Uint8(&pk.HotBarSlot)
 	io.Bool(&pk.WithData)
 }

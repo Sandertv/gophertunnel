@@ -75,5 +75,5 @@ func (pk *AdventureSettings) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.ActionPermissions)
 	io.Varuint32(&pk.PermissionLevel)
 	io.Varuint32(&pk.CustomStoredPermissions)
-	io.Int64(&pk.PlayerUniqueID)
+	protocol.ActorUniqueIDFixed(io, &pk.PlayerUniqueID)
 }

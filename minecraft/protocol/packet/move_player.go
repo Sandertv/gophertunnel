@@ -61,14 +61,14 @@ func (*MovePlayer) ID() uint32 {
 }
 
 func (pk *MovePlayer) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Position)
 	io.Float32(&pk.Pitch)
 	io.Float32(&pk.Yaw)
 	io.Float32(&pk.HeadYaw)
 	io.Uint8(&pk.Mode)
 	io.Bool(&pk.OnGround)
-	io.Varuint64(&pk.RiddenEntityRuntimeID)
+	io.ActorRuntimeID(&pk.RiddenEntityRuntimeID)
 	if pk.Mode == MoveModeTeleport {
 		io.Int32(&pk.TeleportCause)
 		io.Int32(&pk.TeleportSourceEntityType)

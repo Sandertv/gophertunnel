@@ -29,6 +29,9 @@ type IO interface {
 	Varuint64(x *uint64)
 	Varint32(x *int32)
 	Varuint32(x *uint32)
+	// ActorRuntimeID and ActorUniqueID mark entity identifiers in packet marshaling.
+	ActorRuntimeID(x *uint64)
+	ActorUniqueID(x *int64)
 	String(x *string)
 	StringUTF(x *string)
 	ByteSlice(x *[]byte)
@@ -70,6 +73,53 @@ type IO interface {
 	ShieldID() int32
 	UnknownEnumOption(value any, enum string)
 	InvalidValue(value any, forField, reason string)
+}
+
+// ActorRuntimeIDInt64 reads/writes a legacy actor runtime ID encoded as a signed varint.
+// It is kept separate from ActorRuntimeID because the field's Go type and wire encoding
+// predate the canonical unsigned runtime ID representation.
+func ActorRuntimeIDInt64(r IO, x *int64) {
+	if v, ok := r.(interface{ ActorRuntimeIDInt64(*int64) }); ok {
+		v.ActorRuntimeIDInt64(x)
+		return
+	}
+	r.Varint64(x)
+}
+
+// ActorRuntimeIDUint32 reads/writes a legacy actor runtime ID encoded as a varuint32.
+func ActorRuntimeIDUint32(r IO, x *uint32) {
+	if v, ok := r.(interface{ ActorRuntimeIDUint32(*uint32) }); ok {
+		v.ActorRuntimeIDUint32(x)
+		return
+	}
+	r.Varuint32(x)
+}
+
+// ActorUniqueIDFixed reads/writes an actor unique ID encoded as a fixed-width int64.
+func ActorUniqueIDFixed(r IO, x *int64) {
+	if v, ok := r.(interface{ ActorUniqueIDFixed(*int64) }); ok {
+		v.ActorUniqueIDFixed(x)
+		return
+	}
+	r.Int64(x)
+}
+
+// ActorUniqueIDUint64 reads/writes an actor unique ID encoded as a fixed-width uint64.
+func ActorUniqueIDUint64(r IO, x *uint64) {
+	if v, ok := r.(interface{ ActorUniqueIDUint64(*uint64) }); ok {
+		v.ActorUniqueIDUint64(x)
+		return
+	}
+	r.Uint64(x)
+}
+
+// ActorUniqueIDVaruint64 reads/writes an actor unique ID encoded as an unsigned varint.
+func ActorUniqueIDVaruint64(r IO, x *uint64) {
+	if v, ok := r.(interface{ ActorUniqueIDVaruint64(*uint64) }); ok {
+		v.ActorUniqueIDVaruint64(x)
+		return
+	}
+	r.Varuint64(x)
 }
 
 // Marshaler is a type that can be written to or read from an IO.

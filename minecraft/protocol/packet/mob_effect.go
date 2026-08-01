@@ -74,7 +74,7 @@ func (*MobEffect) ID() uint32 {
 }
 
 func (pk *MobEffect) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint8(&pk.Operation)
 	io.Varint32(&pk.EffectType)
 	io.Varint32(&pk.Amplifier)

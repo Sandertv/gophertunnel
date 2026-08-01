@@ -33,7 +33,7 @@ func (*AddVolumeEntity) ID() uint32 {
 }
 
 func (pk *AddVolumeEntity) Marshal(io protocol.IO) {
-	io.Varuint32(&pk.EntityRuntimeID)
+	protocol.ActorRuntimeIDUint32(io, &pk.EntityRuntimeID)
 	io.NBT(&pk.EntityMetadata, nbt.NetworkLittleEndian)
 	io.String(&pk.EncodingIdentifier)
 	io.String(&pk.InstanceIdentifier)
