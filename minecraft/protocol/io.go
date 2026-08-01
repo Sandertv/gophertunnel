@@ -76,8 +76,6 @@ type IO interface {
 }
 
 // ActorRuntimeIDInt64 reads/writes a legacy actor runtime ID encoded as a signed varint.
-// It is kept separate from ActorRuntimeID because the field's Go type and wire encoding
-// predate the canonical unsigned runtime ID representation.
 func ActorRuntimeIDInt64(r IO, x *int64) {
 	if v, ok := r.(interface{ ActorRuntimeIDInt64(*int64) }); ok {
 		v.ActorRuntimeIDInt64(x)
