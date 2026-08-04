@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	PackResponseRefused = iota + 1
+	PackResponseRefused = iota
 	PackResponseSendPacks
 	PackResponseAllPacksDownloaded
 	PackResponseCompleted
@@ -28,21 +28,12 @@ func (*ResourcePackClientResponse) ID() uint32 {
 }
 
 func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
-	// As of 1.26.40 the response is a varuint32 that is zero-indexed: the value on the wire is the
-	// response constant minus one. Adjust in both directions so pk.Response keeps using the 1-based
-	// constants above.
-	var response uint32
-	if _, writing := io.(*protocol.Writer); writing {
-		if pk.Response < PackResponseRefused || pk.Response > PackResponseCompleted {
-			io.UnknownEnumOption(pk.Response, "resource pack response")
-		}
-		response = uint32(pk.Response) - 1
-	}
+	response := uint32(pk.Response)
 	io.Varuint32(&response)
-	if response > uint32(PackResponseCompleted-PackResponseRefused) {
+	if response > uint32(PackResponseCompleted) {
 		io.UnknownEnumOption(response, "resource pack response")
 	}
-	pk.Response = byte(response + 1)
+	pk.Response = byte(response)
 
 	// A varuint32 length-prefixed string follows the response. Its contents are ignored by the client,
 	// so we write the readable name of the response for parity and discard whatever is read.

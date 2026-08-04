@@ -81,11 +81,6 @@ func (x *SubChunkEntry) Marshal(r IO) {
 	}
 }
 
-// SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
-func SubChunkEntryNoCache(r IO, x *SubChunkEntry) {
-	x.Marshal(r)
-}
-
 // SubChunkOffset represents an offset from the base position of another sub chunk.
 type SubChunkOffset [3]int8
 

@@ -19,8 +19,6 @@ const (
 	ItemDescriptorDefault
 	ItemDescriptorMoLang
 	ItemDescriptorItemTag
-	ItemDescriptorDeferred
-	ItemDescriptorComplexAlias
 )
 
 // InvalidItemDescriptor represents an invalid item descriptor. This is usually sent by the vanilla server for empty
@@ -126,32 +124,4 @@ type ItemTagItemDescriptor struct {
 // Marshal ...
 func (x *ItemTagItemDescriptor) Marshal(r IO) {
 	r.String(&x.Tag)
-}
-
-// DeferredItemDescriptor represents an item descriptor that uses a namespace and metadata value to identify the item.
-// There is no clear benefit of using this item descriptor.
-type DeferredItemDescriptor struct {
-	// Name is the name of the item, which is a name like 'minecraft:stick'.
-	Name string
-	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
-	// other items it is simply an identifier of a variant of the item.
-	MetadataValue int16
-}
-
-// Marshal ...
-func (x *DeferredItemDescriptor) Marshal(r IO) {
-	r.String(&x.Name)
-	r.Int16(&x.MetadataValue)
-}
-
-// ComplexAliasItemDescriptor represents an item descriptor that uses a single name to identify the item. There is no
-// clear benefit of using this item descriptor and only seem to be used for specific recipes.
-type ComplexAliasItemDescriptor struct {
-	// Name is the name of the item, which is a name like 'minecraft:stick'.
-	Name string
-}
-
-// Marshal ...
-func (x *ComplexAliasItemDescriptor) Marshal(r IO) {
-	r.String(&x.Name)
 }

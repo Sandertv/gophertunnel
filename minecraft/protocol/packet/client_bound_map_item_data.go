@@ -6,12 +6,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const (
-	MapUpdateFlagTexture = 1 << (iota + 1)
-	MapUpdateFlagDecoration
-	MapUpdateFlagInitialisation
-)
-
 // ClientBoundMapItemData is sent by the server to the client to update the data of a map shown to the client.
 // It is sent with a combination of flags that specify what data is updated.
 // The ClientBoundMapItemData packet may be used to update specific parts of the map only. It is not required

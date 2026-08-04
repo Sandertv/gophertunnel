@@ -34,8 +34,6 @@ type ItemStack struct {
 	CanBePlacedOn []string
 	// CanBreak is a list of block identifiers like 'minecraft:dirt' that the item is able to break.
 	CanBreak []string
-	// HasNetworkID ...
-	HasNetworkID bool
 	// BlockingTick is the tick at which a shield started blocking. It is only used for shield items.
 	BlockingTick int64
 }
