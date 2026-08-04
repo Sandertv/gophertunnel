@@ -120,8 +120,8 @@ type PlayerAuthInput struct {
 	MoveVector mgl32.Vec2
 	// HeadYaw is the horizontal rotation of the head that the player reports it has.
 	HeadYaw float32
-	// InputData is a combination of bit flags that together specify the way the player moved last tick. It
-	// is a combination of the flags above.
+	// InputData is an optional list of input flag IDs that together specify how the player moved last tick.
+	// Each element is one of the InputFlag constants above.
 	InputData protocol.Optional[[]int32]
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.

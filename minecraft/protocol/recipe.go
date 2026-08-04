@@ -281,7 +281,10 @@ func marshalShaped(r IO, recipe *ShapedRecipe, withRequirement bool) {
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
 	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
-	if len(recipe.Input) != int(recipe.Width*recipe.Height) {
+	if recipe.Width <= 0 || recipe.Height <= 0 {
+		r.InvalidValue([2]int32{recipe.Width, recipe.Height}, "shaped recipe dimensions", "must both be positive")
+	}
+	if int64(len(recipe.Input)) != int64(recipe.Width)*int64(recipe.Height) {
 		r.InvalidValue(len(recipe.Input), "shaped recipe ingredients", "must equal width multiplied by height")
 	}
 	FuncSlice(r, &recipe.Output, r.Item)

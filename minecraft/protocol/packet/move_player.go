@@ -46,7 +46,8 @@ type MovePlayer struct {
 	// RiddenEntityRuntimeID is the runtime ID of the entity that the player might currently be riding. If not
 	// riding, this should be left 0.
 	RiddenEntityRuntimeID uint64
-	TeleportData          protocol.Optional[protocol.TeleportData]
+	// TeleportData holds metadata present only when Mode is MoveModeTeleport.
+	TeleportData protocol.Optional[protocol.TeleportData]
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
 }

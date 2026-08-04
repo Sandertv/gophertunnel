@@ -31,10 +31,13 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 	// As of 1.26.40 the response is a varuint32 that is zero-indexed: the value on the wire is the
 	// response constant minus one. Adjust in both directions so pk.Response keeps using the 1-based
 	// constants above.
-	if _, writing := io.(*protocol.Writer); writing && (pk.Response < PackResponseRefused || pk.Response > PackResponseCompleted) {
-		io.UnknownEnumOption(pk.Response, "resource pack response")
+	var response uint32
+	if _, writing := io.(*protocol.Writer); writing {
+		if pk.Response < PackResponseRefused || pk.Response > PackResponseCompleted {
+			io.UnknownEnumOption(pk.Response, "resource pack response")
+		}
+		response = uint32(pk.Response) - 1
 	}
-	response := uint32(pk.Response) - 1
 	io.Varuint32(&response)
 	if response > uint32(PackResponseCompleted-PackResponseRefused) {
 		io.UnknownEnumOption(response, "resource pack response")

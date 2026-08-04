@@ -53,23 +53,31 @@ func (x *SubChunkEntry) Marshal(r IO) {
 	r.Bool(&hasRawPayload)
 	if hasRawPayload {
 		r.ByteSlice(&x.RawPayload)
+	} else {
+		x.RawPayload = nil
 	}
 	r.Uint8(&x.HeightMapType)
 	hasHeightMapData := x.HeightMapData != nil
 	r.Bool(&hasHeightMapData)
 	if hasHeightMapData {
 		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
+	} else {
+		x.HeightMapData = nil
 	}
 	r.Uint8(&x.RenderHeightMapType)
 	hasRenderHeightMapData := x.RenderHeightMapData != nil
 	r.Bool(&hasRenderHeightMapData)
 	if hasRenderHeightMapData {
 		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
+	} else {
+		x.RenderHeightMapData = nil
 	}
 	hasBlobHash := x.BlobHash != 0
 	r.Bool(&hasBlobHash)
 	if hasBlobHash {
 		r.Uint64(&x.BlobHash)
+	} else {
+		x.BlobHash = 0
 	}
 }
 

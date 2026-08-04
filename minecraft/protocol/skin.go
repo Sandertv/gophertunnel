@@ -251,7 +251,7 @@ type PersonaPieceTintColour struct {
 func (x *PersonaPieceTintColour) Marshal(r IO) {
 	wireType := personaPieceTintWireType(x.PieceType)
 	r.String(&wireType)
-	x.PieceType = personaPieceTintWireType(wireType)
+	x.PieceType = personaPieceTintLoginType(wireType)
 	for i := range x.Colours {
 		r.BEARGB(&x.Colours[i])
 	}
@@ -264,4 +264,15 @@ func personaPieceTintWireType(pieceType string) string {
 		return "hands"
 	}
 	return strings.TrimPrefix(pieceType, "persona_")
+}
+
+// personaPieceTintLoginType converts v2168 wire names back to the persona_* names used in login data.
+func personaPieceTintLoginType(pieceType string) string {
+	if pieceType == "hands" {
+		return "persona_hand"
+	}
+	if pieceType == "unsupported" {
+		return pieceType
+	}
+	return "persona_" + pieceType
 }

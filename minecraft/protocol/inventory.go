@@ -46,15 +46,28 @@ func (x *InventoryAction) Marshal(r IO) {
 	present := true
 	r.Bool(&present)
 	hasContainerID := x.SourceType == InventoryActionSourceContainer || x.SourceType == InventoryActionSourceTODO
-	r.Bool(&hasContainerID)
-	if hasContainerID {
-		r.Int8(&x.WindowID)
+	if present {
+		r.Bool(&hasContainerID)
+		if hasContainerID {
+			r.Int8(&x.WindowID)
+		} else {
+			x.WindowID = 0
+		}
+	} else {
+		x.WindowID = 0
 	}
+	present = true
 	r.Bool(&present)
 	hasFlags := x.SourceType == InventoryActionSourceWorld
-	r.Bool(&hasFlags)
-	if hasFlags {
-		r.Varuint32(&x.SourceFlags)
+	if present {
+		r.Bool(&hasFlags)
+		if hasFlags {
+			r.Varuint32(&x.SourceFlags)
+		} else {
+			x.SourceFlags = 0
+		}
+	} else {
+		x.SourceFlags = 0
 	}
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)

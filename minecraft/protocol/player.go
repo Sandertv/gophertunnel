@@ -176,8 +176,8 @@ func (x *PlayerArmourDamageEntry) Marshal(r IO) {
 }
 
 type TeleportData struct {
-	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
-	// which is one of the constants above.
+	// TeleportCause specifies why the teleport occurred. See the TeleportCause constants in the packet package.
+	// TeleportData is present only when MovePlayer uses teleport mode.
 	TeleportCause int32
 	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
 	TeleportSourceEntityType int32
