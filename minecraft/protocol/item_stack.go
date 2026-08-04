@@ -431,16 +431,6 @@ func (a *CreateStackRequestAction) Marshal(r IO) {
 	r.Uint8(&a.ResultsSlot)
 }
 
-// PlaceInContainerStackRequestAction currently has no known purpose.
-type PlaceInContainerStackRequestAction struct {
-	transferStackRequestAction
-}
-
-// TakeOutContainerStackRequestAction currently has no known purpose.
-type TakeOutContainerStackRequestAction struct {
-	transferStackRequestAction
-}
-
 // LabTableCombineStackRequestAction is sent by the client when it uses a lab table to combine item stacks.
 type LabTableCombineStackRequestAction struct{}
 

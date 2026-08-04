@@ -270,7 +270,11 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
 	var legacySlotsPresent bool
 	r.Bool(&legacySlotsPresent)
-	if legacySlotsPresent && x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
+	expectsLegacySlots := x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0
+	if legacySlotsPresent != expectsLegacySlots {
+		r.InvalidValue(legacySlotsPresent, "legacy set item slots presence", "does not match legacy request ID")
+	}
+	if legacySlotsPresent {
 		Slice(r, &x.LegacySetItemSlots)
 	} else {
 		x.LegacySetItemSlots = nil

@@ -294,6 +294,9 @@ func marshalShaped(r IO, recipe *ShapedRecipe, withRequirement bool) {
 	r.Bool(&recipe.AssumeSymmetry)
 	present := withRequirement
 	r.Bool(&present)
+	if present != withRequirement {
+		r.InvalidValue(present, "shaped recipe unlock requirement presence", "does not match recipe type")
+	}
 	if present {
 		Single(r, &recipe.UnlockRequirement)
 	}
@@ -310,6 +313,9 @@ func marshalShapeless(r IO, recipe *ShapelessRecipe, withRequirement bool) {
 	r.Varint32(&recipe.Priority)
 	present := withRequirement
 	r.Bool(&present)
+	if present != withRequirement {
+		r.InvalidValue(present, "shapeless recipe unlock requirement presence", "does not match recipe type")
+	}
 	if present {
 		Single(r, &recipe.UnlockRequirement)
 	}

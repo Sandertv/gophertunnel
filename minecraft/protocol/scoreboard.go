@@ -61,30 +61,13 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 		OptionalFunc(r, &objective, r.String)
 		x.ObjectiveName, _ = objective.Value()
 	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
-		objectiveName := x.ObjectiveName
-		if objectiveName == "" {
-			objectiveName = " "
-		}
-		r.String(&objectiveName)
-		x.ObjectiveName = objectiveName
+		r.String(&x.ObjectiveName)
 		r.Int32(&x.Score)
 		r.Varint64(&x.EntityUniqueID)
 	case ScoreboardIdentityFakePlayer:
-		objectiveName := x.ObjectiveName
-		if objectiveName == "" {
-			objectiveName = " "
-		}
-		r.String(&objectiveName)
-		x.ObjectiveName = objectiveName
+		r.String(&x.ObjectiveName)
 		r.Int32(&x.Score)
-		displayName := x.DisplayName
-		if displayName == "" {
-			displayName = " "
-		}
-		r.String(&displayName)
-		x.DisplayName = displayName
-	default:
-		r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
+		r.String(&x.DisplayName)
 	}
 }
 

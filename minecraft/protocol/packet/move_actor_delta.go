@@ -4,18 +4,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const (
-	MoveActorDeltaFlagHasX = 1 << iota
-	MoveActorDeltaFlagHasY
-	MoveActorDeltaFlagHasZ
-	MoveActorDeltaFlagHasRotX
-	MoveActorDeltaFlagHasRotY
-	MoveActorDeltaFlagHasRotZ
-	MoveActorDeltaFlagOnGround
-	MoveActorDeltaFlagTeleport
-	MoveActorDeltaFlagForceMove
-)
-
 // MoveActorDelta is sent by the server to move an entity. The packet is specifically optimised to save as
 // much space as possible, by only writing non-zero fields.
 // As of 1.16.100, this packet no longer actually contains any deltas.
