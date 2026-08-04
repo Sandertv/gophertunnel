@@ -1,31 +1,26 @@
 package protocol
 
-// InputFlags is a set of input flags sent in a PlayerAuthInput packet. On the wire it is an optional list of
-// the IDs of the flags that are set, but in memory it is backed by a Bitset so that individual flags may be
-// tested and modified in constant time.
+// InputFlags is the set of input flags in a PlayerAuthInput packet. It is sent as a list of the flag IDs that
+// are set, but is backed by a Bitset so that flags can be read and changed in constant time.
 //
-// An InputFlags may be absent, which is distinct from being present but empty: the former is not sent over the
-// wire at all. The zero value is absent and has no size, so it must be created using NewInputFlags before any
-// flag may be set on it. Values decoded from the wire are always sized, absent or not.
+// An absent InputFlags is not the same as an empty one: it is not sent at all. The zero value is absent and
+// has no size, so use NewInputFlags before setting a flag on it. Decoded values are always sized.
 type InputFlags struct {
 	set  bool
 	bits Bitset
 }
 
-// NewInputFlags creates a present InputFlags with no flags set, able to hold flags in the range [0, size).
-// Setting a flag at an index beyond size will panic.
+// NewInputFlags creates an InputFlags holding flags in the range [0, size), with none of them set.
 func NewInputFlags(size int) InputFlags {
 	return InputFlags{set: true, bits: NewBitset(size)}
 }
 
-// Present returns whether the InputFlags was sent over the wire. An absent InputFlags reports every flag as
-// unset.
+// Present returns whether the InputFlags was sent. An absent one reports every flag as unset.
 func (f InputFlags) Present() bool {
 	return f.set
 }
 
-// Load returns whether the flag at index i is set. It returns false if the InputFlags is absent. If i is
-// beyond the size of a present InputFlags, a panic will occur.
+// Load returns whether the flag at index i is set. Indices beyond the size panic.
 func (f InputFlags) Load(i int) bool {
 	if !f.set {
 		return false
@@ -33,15 +28,13 @@ func (f InputFlags) Load(i int) bool {
 	return f.bits.Load(i)
 }
 
-// Set sets the flag at index i, marking the InputFlags as present. If i is beyond the size of the InputFlags,
-// a panic will occur.
+// Set sets the flag at index i and marks the InputFlags as present. Indices beyond the size panic.
 func (f *InputFlags) Set(i int) {
 	f.bits.Set(i)
 	f.set = true
 }
 
-// Unset unsets the flag at index i. It is a no-op if the InputFlags is absent. If i is beyond the size of a
-// present InputFlags, a panic will occur.
+// Unset unsets the flag at index i, doing nothing if the InputFlags is absent. Indices beyond the size panic.
 func (f *InputFlags) Unset(i int) {
 	if !f.set {
 		return
@@ -68,8 +61,8 @@ func (f InputFlags) ids() []int32 {
 	return ids
 }
 
-// InputFlagList reads/writes an InputFlags x holding flags in the range [0, size) as an optional list of the
-// IDs of the flags that are set. Flag IDs must be unique and within range: a Reader rejects input that is not.
+// InputFlagList reads/writes an InputFlags holding flags in the range [0, size) as a list of the flag IDs that
+// are set. Flag IDs must be unique and within range.
 func InputFlagList(r IO, x *InputFlags, size int) {
 	ids := x.ids()
 	present := x.set
@@ -79,8 +72,7 @@ func InputFlagList(r IO, x *InputFlags, size int) {
 		return
 	}
 
-	// Bound the count by the amount of distinct flags that can legally be sent before any of them are read, so
-	// that a peer cannot inflate the allocation up to maxSliceLength.
+	// Check the count before reading, so a peer cannot claim far more flags than can legally be sent.
 	count := uint32(len(ids))
 	r.Varuint32(&count)
 	if count > uint32(size) {
