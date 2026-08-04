@@ -7,9 +7,6 @@ import (
 // AnvilDamage is sent by the client to request the dealing damage to an anvil. This packet is completely
 // pointless and the server should never listen to it.
 type AnvilDamage struct {
-	// Damage is deprecated. As of 1.26.40, the damage amount is calculated by the server and is no longer
-	// encoded in this packet.
-	Damage uint8
 	// AnvilPosition is the position in the world that the anvil can be found at.
 	AnvilPosition protocol.BlockPos
 }

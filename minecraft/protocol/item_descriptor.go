@@ -35,10 +35,6 @@ func (*InvalidItemDescriptor) Marshal(IO) {}
 type DefaultItemDescriptor struct {
 	// Name is the identifier of the item, such as minecraft:stone.
 	Name string
-	// NetworkID is the numerical network ID of the item. This is sometimes a positive ID, and sometimes a
-	// negative ID, depending on what item it concerns.
-	// Deprecated: Item descriptors use Name on the wire as of 1.26.40.
-	NetworkID int16
 	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
 	// other items it is simply an identifier of a variant of the item.
 	MetadataValue int32

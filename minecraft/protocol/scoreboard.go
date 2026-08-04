@@ -88,13 +88,6 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 	}
 }
 
-// ScoreRemoveEntry encodes/decodes a ScoreboardEntry x as an entry for removal.
-func ScoreRemoveEntry(r IO, x *ScoreboardEntry) {
-	r.Varint64(&x.EntryID)
-	r.String(&x.ObjectiveName)
-	r.Int32(&x.Score)
-}
-
 // ScoreboardIdentityEntry holds an entry to either associate an identity with one of the entries in a
 // scoreboard, or to remove associations.
 type ScoreboardIdentityEntry struct {
@@ -104,15 +97,4 @@ type ScoreboardIdentityEntry struct {
 	// EntityUniqueID is the unique ID that the entry should be associated with. It is empty if the
 	// SetScoreboardIdentity packet is sent to remove associations with identities.
 	EntityUniqueID int64
-}
-
-// Marshal encodes/decodes a ScoreboardIdentityEntry.
-func (x *ScoreboardIdentityEntry) Marshal(r IO) {
-	r.Varint64(&x.EntryID)
-	r.Varint64(&x.EntityUniqueID)
-}
-
-// ScoreboardIdentityClearEntry encodes/decodes a ScoreboardIdentityEntry for clearing the entry.
-func ScoreboardIdentityClearEntry(r IO, x *ScoreboardIdentityEntry) {
-	r.Varint64(&x.EntryID)
 }

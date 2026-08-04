@@ -508,9 +508,6 @@ type AutoCraftRecipeStackRequestAction struct {
 	RecipeNetworkID uint32
 	// NumberOfCrafts is how many times the recipe was crafted.
 	NumberOfCrafts byte
-	// TimesCrafted is retained for source compatibility and is not encoded as of 1.26.40.
-	// Deprecated: Use NumberOfCrafts.
-	TimesCrafted byte
 	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
 	// It is not exactly clear what this is used for, but it is sent by the vanilla client.
 	Ingredients []ItemDescriptorCount
@@ -606,20 +603,13 @@ func (*CraftNonImplementedStackRequestAction) Marshal(IO) {}
 // This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
 // crafting, where the old item is consumed.
 type CraftResultsDeprecatedStackRequestAction struct {
-	ResultItems  []ItemStack
+	ResultItems  []StackRequestItem
 	TimesCrafted byte
 }
 
 // Marshal ...
 func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
-	switch r := r.(type) {
-	case *Writer:
-		FuncSlice(r, &a.ResultItems, r.StackRequestItem)
-	case *Reader:
-		FuncSlice(r, &a.ResultItems, r.StackRequestItem)
-	default:
-		r.InvalidValue(r, "craft results IO", "must be a protocol reader or writer")
-	}
+	FuncSlice(r, &a.ResultItems, r.StackRequestItem)
 	r.Uint8(&a.TimesCrafted)
 }
 

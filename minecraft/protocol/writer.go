@@ -339,43 +339,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 
 	runtimeID := uint32(x.BlockRuntimeID)
 	w.Varuint32(&runtimeID)
-
-	if x.NetworkID == 0 {
-		var zero uint32
-		w.Varuint32(&zero)
-		return
-	}
-
-	buf := internal.BufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer func() {
-		buf.Reset()
-		internal.BufferPool.Put(buf)
-	}()
-
-	bufWriter := NewWriter(buf, w.shieldID)
-
-	var length int16
-	if len(x.NBTData) != 0 {
-		length = int16(-1)
-		version := uint8(1)
-
-		bufWriter.Int16(&length)
-		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		bufWriter.Int16(&length)
-	}
-
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
-
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
-	}
-
-	b := buf.Bytes()
-	w.ByteSlice(&b)
+	w.itemUserData(itemStackUserData(x), x.NetworkID != 0, x.NetworkID == w.shieldID)
 }
 
 // Item writes an ItemStack x to the underlying buffer.
@@ -385,47 +349,12 @@ func (w *Writer) Item(x *ItemStack) {
 	w.Uint16(&x.Count)
 	w.Varuint32(&x.MetadataValue)
 	w.Varint32(&x.BlockRuntimeID)
-	if x.NetworkID == 0 {
-		var zero uint32
-		w.Varuint32(&zero)
-		return
-	}
-
-	buf := internal.BufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer func() {
-		buf.Reset()
-		internal.BufferPool.Put(buf)
-	}()
-
-	bufWriter := NewWriter(buf, w.shieldID)
-
-	var length int16
-	if len(x.NBTData) != 0 {
-		length = int16(-1)
-		version := uint8(1)
-
-		bufWriter.Int16(&length)
-		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		bufWriter.Int16(&length)
-	}
-
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
-
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
-	}
-
-	extraData := buf.Bytes()
-	w.ByteSlice(&extraData)
+	w.itemUserData(itemStackUserData(x), x.NetworkID != 0, x.NetworkID == w.shieldID)
 }
 
 // StackRequestItem writes the descriptor-based item format used by deprecated craft-result actions.
-func (w *Writer) StackRequestItem(x *ItemStack) {
-	hasItem := x.NetworkID != 0 || x.Identifier != ""
+func (w *Writer) StackRequestItem(x *StackRequestItem) {
+	hasItem := x.Identifier != ""
 	variant := uint32(0)
 	if hasItem {
 		variant = ItemDescriptorDefault
@@ -434,9 +363,6 @@ func (w *Writer) StackRequestItem(x *ItemStack) {
 	legacyVariant := uint8(variant)
 	w.Uint8(&legacyVariant)
 	if hasItem {
-		if x.Identifier == "" {
-			w.InvalidValue(x.Identifier, "stack request item identifier", "must be set for a non-air item")
-		}
 		w.String(&x.Identifier)
 		metadata := int32(x.MetadataValue)
 		w.Varint32(&metadata)
@@ -444,8 +370,11 @@ func (w *Writer) StackRequestItem(x *ItemStack) {
 	IntegerFunc(&x.Count, w.Int16)
 	runtimeID := uint32(x.BlockRuntimeID)
 	w.Varuint32(&runtimeID)
+	w.itemUserData(stackRequestItemUserData(x), hasItem, x.Identifier == "minecraft:shield")
+}
 
-	if !hasItem {
+func (w *Writer) itemUserData(x itemUserData, present, shield bool) {
+	if !present {
 		var zero uint32
 		w.Varuint32(&zero)
 		return
@@ -459,19 +388,19 @@ func (w *Writer) StackRequestItem(x *ItemStack) {
 	}()
 	bufWriter := NewWriter(buf, w.shieldID)
 	var length int16
-	if len(x.NBTData) != 0 {
+	if len(x.nbtData) != 0 {
 		length = -1
 		version := uint8(1)
 		bufWriter.Int16(&length)
 		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
+		bufWriter.NBT(&x.nbtData, nbt.LittleEndian)
 	} else {
 		bufWriter.Int16(&length)
 	}
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
+	FuncSliceUint32Length(bufWriter, &x.canBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, &x.canBreak, bufWriter.StringUTF)
+	if shield {
+		bufWriter.Int64(&x.blockingTick)
 	}
 	extraData := buf.Bytes()
 	w.ByteSlice(&extraData)
@@ -494,16 +423,6 @@ func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
 	w.Varint32(&mix)
 	Slice(w, &m.Outputs)
-}
-
-// Recipe writes a Recipe to the writer.
-func (w *Writer) Recipe(x *Recipe) {
-	var recipeType int32
-	if !lookupRecipeType(*x, &recipeType) {
-		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "crafting recipe type")
-	}
-	w.Varint32(&recipeType)
-	(*x).Marshal(w)
 }
 
 // EventType writes an Event to the writer.

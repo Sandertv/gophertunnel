@@ -441,48 +441,8 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 	var runtimeID uint32
 	r.Varuint32(&runtimeID)
 	x.BlockRuntimeID = int32(runtimeID)
-
-	var extraData []byte
-	r.ByteSlice(&extraData)
-
-	if len(extraData) == 0 {
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		x.BlockingTick = 0
-		return
-	}
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	switch length {
-	case 0:
-		x.NBTData = nil
-	case -1:
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	default:
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	} else {
-		x.BlockingTick = 0
-	}
+	data := r.itemUserData(x.NetworkID == r.shieldID)
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
 
 // Item reads an ItemStack x from the underlying buffer.
@@ -492,48 +452,12 @@ func (r *Reader) Item(x *ItemStack) {
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 	r.Varint32(&x.BlockRuntimeID)
-
-	var extraData []byte
-	r.ByteSlice(&extraData)
-	if len(extraData) == 0 {
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		x.BlockingTick = 0
-		return
-	}
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	if length == -1 {
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	} else if length > 0 {
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		x.NBTData = nil
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	}
+	data := r.itemUserData(x.NetworkID == r.shieldID)
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
 
 // StackRequestItem reads the descriptor-based item format used by deprecated craft-result actions.
-func (r *Reader) StackRequestItem(x *ItemStack) {
+func (r *Reader) StackRequestItem(x *StackRequestItem) {
 	var variant uint32
 	r.Varuint32(&variant)
 	var legacyVariant uint8
@@ -547,7 +471,6 @@ func (r *Reader) StackRequestItem(x *ItemStack) {
 		return
 	}
 	if hasItem {
-		x.NetworkID = 0
 		r.String(&x.Identifier)
 		var metadata int32
 		r.Varint32(&metadata)
@@ -555,19 +478,21 @@ func (r *Reader) StackRequestItem(x *ItemStack) {
 	} else {
 		x.Identifier = ""
 		x.MetadataValue = 0
-		x.NetworkID = 0
 	}
 	IntegerFunc(&x.Count, r.Int16)
 	var runtimeID uint32
 	r.Varuint32(&runtimeID)
 	x.BlockRuntimeID = int32(runtimeID)
+	data := r.itemUserData(x.Identifier == "minecraft:shield")
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
+}
 
+func (r *Reader) itemUserData(shield bool) itemUserData {
+	var x itemUserData
 	var extraData []byte
 	r.ByteSlice(&extraData)
 	if len(extraData) == 0 {
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		x.BlockingTick = 0
-		return
+		return x
 	}
 	buf := bytes.NewBuffer(extraData)
 	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
@@ -575,23 +500,24 @@ func (r *Reader) StackRequestItem(x *ItemStack) {
 	bufReader.Int16(&length)
 	switch length {
 	case 0:
-		x.NBTData = nil
+		x.nbtData = nil
 	case -1:
 		var version uint8
 		bufReader.Uint8(&version)
 		if version != 1 {
 			bufReader.UnknownEnumOption(version, "item user data version")
-			return
+			return x
 		}
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+		bufReader.NBT(&x.nbtData, nbt.LittleEndian)
 	default:
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+		bufReader.NBT(&x.nbtData, nbt.LittleEndian)
 	}
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
+	FuncSliceUint32Length(bufReader, &x.canBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, &x.canBreak, bufReader.StringUTF)
+	if shield {
+		bufReader.Int64(&x.blockingTick)
 	}
+	return x
 }
 
 // StackRequestAction reads a StackRequestAction from the reader.
@@ -616,17 +542,6 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	r.Varint32(&mix)
 	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
 	Slice(r, &m.Outputs)
-}
-
-// Recipe reads a Recipe from the reader.
-func (r *Reader) Recipe(x *Recipe) {
-	var recipeType int32
-	r.Varint32(&recipeType)
-	if !lookupRecipe(recipeType, x) {
-		r.UnknownEnumOption(recipeType, "crafting data recipe type")
-		return
-	}
-	(*x).Unmarshal(r)
 }
 
 // EventType reads an Event's type from the reader.

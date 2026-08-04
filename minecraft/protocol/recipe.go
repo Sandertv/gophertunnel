@@ -84,80 +84,6 @@ func (x *RecipeUnlockRequirement) Marshal(r IO) {
 	}
 }
 
-const (
-	RecipeShapeless int32 = iota
-	RecipeShaped
-	_
-	_
-	RecipeMulti
-	RecipeShulkerBox
-	RecipeShapelessChemistry
-	RecipeShapedChemistry
-	RecipeSmithingTransform
-	RecipeSmithingTrim
-)
-
-// Recipe represents a recipe that may be sent in a CraftingData packet to let the client know what recipes
-// are available server-side.
-type Recipe interface {
-	// Marshal encodes the recipe data to its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised recipe from Reader r into the recipe instance.
-	Unmarshal(r *Reader)
-}
-
-// lookupRecipe looks up the Recipe for a recipe type. False is returned if not
-// found.
-func lookupRecipe(recipeType int32, x *Recipe) bool {
-	switch recipeType {
-	case RecipeShapeless:
-		*x = &ShapelessRecipe{}
-	case RecipeShaped:
-		*x = &ShapedRecipe{}
-	case RecipeMulti:
-		*x = &MultiRecipe{}
-	case RecipeShulkerBox:
-		*x = &ShulkerBoxRecipe{}
-	case RecipeShapelessChemistry:
-		*x = &ShapelessChemistryRecipe{}
-	case RecipeShapedChemistry:
-		*x = &ShapedChemistryRecipe{}
-	case RecipeSmithingTransform:
-		*x = &SmithingTransformRecipe{}
-	case RecipeSmithingTrim:
-		*x = &SmithingTrimRecipe{}
-	default:
-		return false
-	}
-	return true
-}
-
-// lookupRecipeType looks up the recipe type for a Recipe. False is returned if
-// none was found.
-func lookupRecipeType(x Recipe, recipeType *int32) bool {
-	switch x.(type) {
-	case *ShapelessRecipe:
-		*recipeType = RecipeShapeless
-	case *ShapedRecipe:
-		*recipeType = RecipeShaped
-	case *MultiRecipe:
-		*recipeType = RecipeMulti
-	case *ShulkerBoxRecipe:
-		*recipeType = RecipeShulkerBox
-	case *ShapelessChemistryRecipe:
-		*recipeType = RecipeShapelessChemistry
-	case *ShapedChemistryRecipe:
-		*recipeType = RecipeShapedChemistry
-	case *SmithingTransformRecipe:
-		*recipeType = RecipeSmithingTransform
-	case *SmithingTrimRecipe:
-		*recipeType = RecipeSmithingTrim
-	default:
-		return false
-	}
-	return true
-}
-
 // ShapelessRecipe is a recipe that has no particular shape. Its functionality is shared with the
 // RecipeShulkerBox and RecipeShapelessChemistry types.
 type ShapelessRecipe struct {
@@ -298,80 +224,38 @@ type SmithingTrimRecipe struct {
 }
 
 // Marshal ...
-func (recipe *ShapelessRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, recipe, true)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessRecipe) Marshal(r IO) {
 	marshalShapeless(r, recipe, true)
 }
 
 // Marshal ...
-func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe, true)
-}
-
-// Unmarshal ...
-func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
+func (recipe *ShulkerBoxRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe, true)
 }
 
 // Marshal ...
-func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe, false)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessChemistryRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe, false)
 }
 
 // Marshal ...
-func (recipe *ShapedRecipe) Marshal(w *Writer) {
-	marshalShaped(w, recipe, true)
-}
-
-// Unmarshal ...
-func (recipe *ShapedRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedRecipe) Marshal(r IO) {
 	marshalShaped(r, recipe, true)
 }
 
 // Marshal ...
-func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
-	marshalShaped(w, &recipe.ShapedRecipe, false)
-}
-
-// Unmarshal ...
-func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedChemistryRecipe) Marshal(r IO) {
 	marshalShaped(r, &recipe.ShapedRecipe, false)
 }
 
 // Marshal ...
-func (recipe *MultiRecipe) Marshal(w *Writer) {
-	w.UUID(&recipe.UUID)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *MultiRecipe) Unmarshal(r *Reader) {
+func (recipe *MultiRecipe) Marshal(r IO) {
 	r.UUID(&recipe.UUID)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // Marshal ...
-func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.Item(&recipe.Result)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTransformRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
@@ -382,17 +266,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (recipe *SmithingTrimRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTrimRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
