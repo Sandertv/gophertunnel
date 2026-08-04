@@ -199,26 +199,16 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Float32(&pk.InteractYaw)
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
-	doubleOptional(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
-	doubleOptional(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
+	protocol.DoubleOptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
+	protocol.DoubleOptionalFunc(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
 		x.Marshal(io)
 	})
-	doubleOptional(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
+	protocol.DoubleOptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
 		protocol.Slice(io, x)
 	})
-	doubleOptional(io, &pk.VehicleRotation, io.Vec2)
-	doubleOptional(io, &pk.ClientPredictedVehicle, io.Varint64)
+	protocol.DoubleOptionalFunc(io, &pk.VehicleRotation, io.Vec2)
+	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.Varint64)
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
 	io.Vec2(&pk.RawMoveVector)
-}
-
-func doubleOptional[T any](io protocol.IO, value *protocol.Optional[T], payload func(*T)) {
-	outer := true
-	io.Bool(&outer)
-	if outer {
-		protocol.OptionalFunc(io, value, payload)
-	} else {
-		*value = protocol.Optional[T]{}
-	}
 }

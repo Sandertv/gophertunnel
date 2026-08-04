@@ -228,6 +228,17 @@ func OptionalFunc[T any](r IO, x *Optional[T], f func(*T)) any {
 	return x
 }
 
+// DoubleOptionalFunc reads/writes an Optional[T] nested inside an always-present outer optional.
+func DoubleOptionalFunc[T any](r IO, x *Optional[T], f func(*T)) {
+	outer := true
+	r.Bool(&outer)
+	if outer {
+		OptionalFunc(r, x, f)
+	} else {
+		*x = Optional[T]{}
+	}
+}
+
 // OptionalFuncIO reads/writes an Optional[T].
 func OptionalFuncIO[T any](r IO, x *Optional[T], f func(IO, *T)) any {
 	r.Bool(&x.set)
