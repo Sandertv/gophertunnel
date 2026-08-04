@@ -85,6 +85,6 @@ func (pk *ClientBoundMapItemData) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.XOffset, io.Varint32)
 	protocol.OptionalFunc(io, &pk.YOffset, io.Varint32)
 	protocol.OptionalFunc(io, &pk.Pixels, func(x *[]color.RGBA) {
-		protocol.FuncSlice(io, x, io.VarRGBA)
+		protocol.FuncSlice(io, x, io.RGBA)
 	})
 }

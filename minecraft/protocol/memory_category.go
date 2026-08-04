@@ -55,6 +55,7 @@ const (
 	MemoryCategoryMaterialVariationManager
 	MemoryCategoryMolang
 	MemoryCategoryOreUI
+	MemoryCategoryOreUIClient
 	MemoryCategoryPersona
 	MemoryCategoryPlayer
 	MemoryCategoryRenderChunk
@@ -147,6 +148,21 @@ func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.Uint64(&x.SystemIndex)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+}
+
+// SystemCategory maps an Entity System category name to the system index it applies to, so a debugger can
+// group systems visually.
+type SystemCategory struct {
+	// CategoryName is the name of the category that the system belongs to.
+	CategoryName string
+	// SystemIndex is the index of the system that the category applies to.
+	SystemIndex uint64
+}
+
+// Marshal encodes/decodes a SystemCategory.
+func (x *SystemCategory) Marshal(r IO) {
+	r.String(&x.CategoryName)
+	r.Uint64(&x.SystemIndex)
 }
 
 // WhiskerScopeDataSummary represents a whisker profiler scope diagnostic summary.

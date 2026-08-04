@@ -278,6 +278,7 @@ const (
 	EntityDataFlagUsesLegacyFriction
 	EntityDataFlagUsesUniformAirDrag
 	EntityDataFlagNameplateDepthTested
+	EntityDataFlagNotPickableFromInside
 	EntityDataFlagCount
 )
 

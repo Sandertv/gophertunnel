@@ -50,20 +50,14 @@ func (x *StoreEntryPointInfo) Marshal(r IO) {
 
 // PresenceInfo contains presence information about the experience.
 type PresenceInfo struct {
-	// ExperienceName is the optional name of the experience.
-	ExperienceName Optional[string]
-	// WorldName is the optional name of the world.
-	WorldName Optional[string]
-	// RichPresenceID is the rich presence ID overriding the client-driven
-	// rich presence.
-	RichPresenceID string
+	// RichPresenceID is the rich presence ID overriding the client-driven rich presence. It may be at most 50
+	// characters long and is rejected by the client when present but empty.
+	RichPresenceID Optional[string]
 }
 
 // Marshal encodes/decodes a PresenceInfo.
 func (x *PresenceInfo) Marshal(r IO) {
-	OptionalFunc(r, &x.ExperienceName, r.String)
-	OptionalFunc(r, &x.WorldName, r.String)
-	r.String(&x.RichPresenceID)
+	OptionalFunc(r, &x.RichPresenceID, r.String)
 }
 
 // ServerJoinInformation contains optional information about the server the player is joining.

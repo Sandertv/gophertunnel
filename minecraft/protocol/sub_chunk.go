@@ -47,34 +47,41 @@ type SubChunkEntry struct {
 
 // Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
 func (x *SubChunkEntry) Marshal(r IO) {
-	Single(r, &x.Offset)
-	r.Uint8(&x.Result)
-	if x.Result != SubChunkResultSuccessAllAir {
-		r.ByteSlice(&x.RawPayload)
-	}
-	r.Uint8(&x.HeightMapType)
-	if x.HeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
-	}
-	r.Uint8(&x.RenderHeightMapType)
-	if x.RenderHeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
-	}
-	r.Uint64(&x.BlobHash)
+	subChunkEntry(r, x, true)
 }
 
 // SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
 func SubChunkEntryNoCache(r IO, x *SubChunkEntry) {
+	subChunkEntry(r, x, false)
+}
+
+// subChunkEntry encodes/decodes a SubChunkEntry. Every field that used to be conditional now carries its own
+// presence byte, so the presence read from the stream is what decides whether a field follows, while encoding
+// derives it from the result and height map types it belongs to.
+func subChunkEntry(r IO, x *SubChunkEntry, cache bool) {
 	Single(r, &x.Offset)
 	r.Uint8(&x.Result)
-	r.ByteSlice(&x.RawPayload)
+
+	payload := x.Result == SubChunkResultSuccess
+	r.Bool(&payload)
+	if payload {
+		r.ByteSlice(&x.RawPayload)
+	}
 	r.Uint8(&x.HeightMapType)
-	if x.HeightMapType == HeightMapDataHasData {
+	heights := x.HeightMapType == HeightMapDataHasData
+	r.Bool(&heights)
+	if heights {
 		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
 	}
 	r.Uint8(&x.RenderHeightMapType)
-	if x.RenderHeightMapType == HeightMapDataHasData {
+	renderHeights := x.RenderHeightMapType == HeightMapDataHasData
+	r.Bool(&renderHeights)
+	if renderHeights {
 		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
+	}
+	r.Bool(&cache)
+	if cache {
+		r.Uint64(&x.BlobHash)
 	}
 }
 

@@ -24,10 +24,12 @@ func (*SubChunk) ID() uint32 {
 func (pk *SubChunk) Marshal(io protocol.IO) {
 	io.Bool(&pk.CacheEnabled)
 	io.Varint32(&pk.Dimension)
-	io.SubChunkPos(&pk.Position)
+	io.Int32(&pk.Position[0])
+	io.Int32(&pk.Position[1])
+	io.Int32(&pk.Position[2])
 	if pk.CacheEnabled {
-		protocol.SliceUint32Length(io, &pk.SubChunkEntries)
+		protocol.Slice(io, &pk.SubChunkEntries)
 	} else {
-		protocol.FuncIOSliceUint32Length(io, &pk.SubChunkEntries, protocol.SubChunkEntryNoCache)
+		protocol.FuncIOSlice(io, &pk.SubChunkEntries, protocol.SubChunkEntryNoCache)
 	}
 }

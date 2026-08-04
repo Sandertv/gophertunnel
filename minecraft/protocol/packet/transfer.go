@@ -13,6 +13,9 @@ type Transfer struct {
 	Port uint16
 	// ReloadWorld currently has an unknown usage.
 	ReloadWorld bool
+	// GatheringJoinInfo is optional information about the gathering (experience) that the player is being
+	// transferred into.
+	GatheringJoinInfo protocol.Optional[protocol.GatheringJoinInfo]
 }
 
 // ID ...
@@ -24,7 +27,5 @@ func (pk *Transfer) Marshal(io protocol.IO) {
 	io.String(&pk.Address)
 	io.Uint16(&pk.Port)
 	io.Bool(&pk.ReloadWorld)
-	// Optional GatheringsConfigurationJoinInfo (absent = false). Full type TBD.
-	var hasGatherings bool
-	io.Bool(&hasGatherings)
+	protocol.OptionalMarshaler(io, &pk.GatheringJoinInfo)
 }

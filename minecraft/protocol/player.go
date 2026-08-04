@@ -92,6 +92,14 @@ type PlayerListEntry struct {
 
 // Marshal encodes/decodes a PlayerListEntry.
 func (x *PlayerListEntry) Marshal(r IO) {
+	// The action is sent twice: first as the index of the entry variant (which is
+	// the inverse of ActionType, as an added entry is variant 1) and then as the
+	// action itself.
+	variant := uint32(0)
+	if x.ActionType == PlayerListActionAdd {
+		variant = 1
+	}
+	r.Varuint32(&variant)
 	r.Uint8(&x.ActionType)
 	r.UUID(&x.UUID)
 	if x.ActionType == PlayerListActionRemove {
@@ -139,11 +147,8 @@ type PlayerBlockAction struct {
 // Marshal encodes/decodes a PlayerBlockAction.
 func (x *PlayerBlockAction) Marshal(r IO) {
 	r.Varint32(&x.Action)
-	switch x.Action {
-	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
-		r.BlockPos(&x.BlockPos)
-		r.Varint32(&x.Face)
-	}
+	r.BlockPos(&x.BlockPos)
+	r.Varint32(&x.Face)
 }
 
 // PlayerArmourDamageEntry represents an entry for a single piece of armour that should be damaged.

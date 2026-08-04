@@ -193,35 +193,20 @@ func (w *Writer) UUID(x *uuid.UUID) {
 // PlayerInventoryAction writes a PlayerInventoryAction.
 func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varint32(&x.LegacyRequestID)
-	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
+	legacy := x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0
+	w.Bool(&legacy)
+	if legacy {
 		Slice(w, &x.LegacySetItemSlots)
 	}
-	FuncSlice(w, &x.Actions, w.inventoryActionOld)
-	w.Varuint32(&x.ActionType)
-	w.Varuint32(&x.TriggerType)
-	w.BlockPos(&x.BlockPosition)
-	w.Varint32(&x.BlockFace)
-	w.Varint32(&x.HotBarSlot)
-	w.ItemInstance(&x.HeldItem)
-	w.Vec3(&x.Position)
-	w.Vec3(&x.ClickedPosition)
-	w.Varuint32(&x.BlockRuntimeID)
-	w.Uint8(&x.ClientPrediction)
-	w.Uint8(&x.ClientCooldownState)
-}
-
-func (w *Writer) inventoryActionOld(x *InventoryAction) {
-	w.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		windowID := int32(x.WindowID)
-		w.Varint32(&windowID)
-	case InventoryActionSourceWorld:
-		w.Varuint32(&x.SourceFlags)
-	}
-	w.Varuint32(&x.InventorySlot)
-	w.ItemInstance(&x.OldItem)
-	w.ItemInstance(&x.NewItem)
+	// The actions are wrapped in a struct that is itself optional, so their
+	// presence is stated by two booleans rather than one.
+	present := true
+	w.Bool(&present)
+	w.Bool(&present)
+	Slice(w, &x.Actions)
+	// Everything from the action type onwards is identical to the transaction
+	// data carried by an InventoryTransaction packet.
+	x.Marshal(w)
 }
 
 // GameRule writes a GameRule x to the Writer.
@@ -270,40 +255,31 @@ func (w *Writer) EntityMetadata(x *EntityMetadata) {
 		w.Varuint32(&key)
 		switch v := value.(type) {
 		case byte:
-			entityDataTypeByte := EntityDataTypeByte
-			w.Varuint32(&entityDataTypeByte)
+			w.entityDataType(EntityDataTypeByte)
 			w.Uint8(&v)
 		case int16:
-			entityDataTypeInt16 := EntityDataTypeInt16
-			w.Varuint32(&entityDataTypeInt16)
+			w.entityDataType(EntityDataTypeInt16)
 			w.Int16(&v)
 		case int32:
-			entityDataTypeInt32 := EntityDataTypeInt32
-			w.Varuint32(&entityDataTypeInt32)
+			w.entityDataType(EntityDataTypeInt32)
 			w.Varint32(&v)
 		case float32:
-			entityDataTypeFloat32 := EntityDataTypeFloat32
-			w.Varuint32(&entityDataTypeFloat32)
+			w.entityDataType(EntityDataTypeFloat32)
 			w.Float32(&v)
 		case string:
-			entityDataTypeString := EntityDataTypeString
-			w.Varuint32(&entityDataTypeString)
+			w.entityDataType(EntityDataTypeString)
 			w.String(&v)
 		case map[string]any:
-			entityDataTypeCompoundTag := EntityDataTypeCompoundTag
-			w.Varuint32(&entityDataTypeCompoundTag)
+			w.entityDataType(EntityDataTypeCompoundTag)
 			w.NBT(&v, nbt.NetworkLittleEndian)
 		case BlockPos:
-			entityDataTypeBlockPos := EntityDataTypeBlockPos
-			w.Varuint32(&entityDataTypeBlockPos)
+			w.entityDataType(EntityDataTypeBlockPos)
 			w.BlockPos(&v)
 		case int64:
-			entityDataTypeInt64 := EntityDataTypeInt64
-			w.Varuint32(&entityDataTypeInt64)
+			w.entityDataType(EntityDataTypeInt64)
 			w.Varint64(&v)
 		case mgl32.Vec3:
-			entityDataTypeVec3 := EntityDataTypeVec3
-			w.Varuint32(&entityDataTypeVec3)
+			w.entityDataType(EntityDataTypeVec3)
 			w.Vec3(&v)
 		default:
 			w.UnknownEnumOption(reflect.TypeOf(value), "entity metadata")
@@ -311,29 +287,35 @@ func (w *Writer) EntityMetadata(x *EntityMetadata) {
 	}
 }
 
+// entityDataType writes the type of an entity metadata value. The type is sent
+// twice: first as a varuint32 and then as a byte.
+func (w *Writer) entityDataType(t uint32) {
+	b := byte(t)
+	w.Varuint32(&t)
+	w.Uint8(&b)
+}
+
 // ItemDescriptorCount writes an ItemDescriptorCount i to the underlying buffer.
 func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
-	var id byte
-	switch i.Descriptor.(type) {
-	case *InvalidItemDescriptor:
-		id = ItemDescriptorInvalid
-	case *DefaultItemDescriptor:
-		id = ItemDescriptorDefault
-	case *MoLangItemDescriptor:
-		id = ItemDescriptorMoLang
-	case *ItemTagItemDescriptor:
-		id = ItemDescriptorItemTag
-	case *DeferredItemDescriptor:
-		id = ItemDescriptorDeferred
-	case *ComplexAliasItemDescriptor:
-		id = ItemDescriptorComplexAlias
-	default:
+	var name string
+	if !lookupItemDescriptorName(i.Descriptor, &name) {
 		w.UnknownEnumOption(fmt.Sprintf("%T", i.Descriptor), "item descriptor type")
 		return
 	}
-	w.Uint8(&id)
+	present := uint32(1)
+	if name == "" {
+		present = 0
+	}
+	w.Varuint32(&present)
 
-	i.Descriptor.Marshal(w)
+	descriptor := i.Descriptor
+	if name == "" {
+		descriptor = &InvalidItemDescriptor{}
+	} else {
+		w.String(&name)
+	}
+
+	descriptor.Marshal(w)
 	w.Varint32(&i.Count)
 }
 
@@ -361,37 +343,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		w.Varuint32(&zero)
 		return
 	}
-
-	buf := internal.BufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer func() {
-		buf.Reset()
-		internal.BufferPool.Put(buf)
-	}()
-
-	bufWriter := NewWriter(buf, w.shieldID)
-
-	var length int16
-	if len(x.NBTData) != 0 {
-		length = int16(-1)
-		version := uint8(1)
-
-		bufWriter.Int16(&length)
-		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		bufWriter.Int16(&length)
-	}
-
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
-
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
-	}
-
-	b := buf.Bytes()
-	w.ByteSlice(&b)
+	w.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.NetworkID == w.shieldID)
 }
 
 // Item writes an ItemStack x to the underlying buffer.
@@ -402,32 +354,91 @@ func (w *Writer) Item(x *ItemStack) {
 	w.Varuint32(&x.MetadataValue)
 	w.Varint32(&x.BlockRuntimeID)
 
+	if x.NetworkID == 0 {
+		// Air items carry an empty user data buffer, matching the server.
+		var zero uint32
+		w.Varuint32(&zero)
+		return
+	}
+	w.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.NetworkID == w.shieldID)
+}
+
+// StackReqItemDescriptorCount writes an ItemDescriptorCount i as it appears in an ItemStackRequest. This
+// encoding differs from the one used by recipes: the type is a numeric variant index repeated as a byte
+// rather than a name, and the count is a little endian uint16.
+func (w *Writer) StackReqItemDescriptorCount(i *ItemDescriptorCount) {
+	var t uint8
+	if !lookupItemDescriptorType(i.Descriptor, &t) {
+		w.UnknownEnumOption(fmt.Sprintf("%T", i.Descriptor), "item descriptor type")
+		return
+	}
+	control := uint32(t)
+	w.Varuint32(&control)
+	w.Uint8(&t)
+
+	// The payload of a descriptor here is not the one a recipe ingredient uses: neither the invalid nor the
+	// item tag descriptor trails a metadata value.
+	switch d := i.Descriptor.(type) {
+	case *DeferredItemDescriptor:
+		w.String(&d.Name)
+		IntegerFunc(&d.MetadataValue, w.Varint32)
+	case *MoLangItemDescriptor:
+		w.String(&d.Expression)
+		w.Int16(&d.Version)
+	case *ItemTagItemDescriptor:
+		w.String(&d.Tag)
+	}
+
+	count := uint16(i.Count)
+	w.Uint16(&count)
+}
+
+// StackReqItem writes a StackRequestItem x to the writer.
+func (w *Writer) StackReqItem(x *StackRequestItem) {
+	t := ItemDescriptorTypeItemName
+	if x.Name == "" {
+		t = ItemDescriptorTypeInvalid
+	}
+	control := uint32(t)
+	w.Varuint32(&control)
+	w.Uint8(&t)
+	if t != ItemDescriptorTypeInvalid {
+		w.String(&x.Name)
+		w.Varint32(&x.MetadataValue)
+	}
+	w.Int16(&x.Count)
+	w.Varuint32(&x.BlockRuntimeID)
+	w.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.Name == ItemNameShield)
+}
+
+// itemUserData writes the user data buffer that trails an item, which holds its NBT and the blocks it may be
+// placed on or break. blocking is set for the shield only, which trails the tick it started blocking at.
+func (w *Writer) itemUserData(nbtData *map[string]any, canBePlacedOn, canBreak *[]string, blockingTick *int64, blocking bool) {
 	buf := internal.BufferPool.Get().(*bytes.Buffer)
 	buf.Reset()
 	defer func() {
 		buf.Reset()
 		internal.BufferPool.Put(buf)
 	}()
-
 	bufWriter := NewWriter(buf, w.shieldID)
 
 	var length int16
-	if len(x.NBTData) != 0 {
+	if len(*nbtData) != 0 {
 		length = int16(-1)
 		version := uint8(1)
 
 		bufWriter.Int16(&length)
 		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
+		bufWriter.NBT(nbtData, nbt.LittleEndian)
 	} else {
 		bufWriter.Int16(&length)
 	}
 
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, canBePlacedOn, bufWriter.StringUTF)
+	FuncSliceUint32Length(bufWriter, canBreak, bufWriter.StringUTF)
 
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
+	if blocking {
+		bufWriter.Int64(blockingTick)
 	}
 
 	extraData := buf.Bytes()
@@ -440,6 +451,10 @@ func (w *Writer) StackRequestAction(x *StackRequestAction) {
 	if !lookupStackRequestActionType(*x, &id) {
 		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "stack request action type")
 	}
+	// The variant is selected by its index in the variant list, and the type is
+	// then repeated as the variant's own first field.
+	control := stackRequestActionVariant(id)
+	w.Varuint32(&control)
 	w.Uint8(&id)
 	(*x).Marshal(w)
 }
@@ -449,16 +464,6 @@ func (w *Writer) MaterialReducer(m *MaterialReducer) {
 	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
 	w.Varint32(&mix)
 	Slice(w, &m.Outputs)
-}
-
-// Recipe writes a Recipe to the writer.
-func (w *Writer) Recipe(x *Recipe) {
-	var recipeType int32
-	if !lookupRecipeType(*x, &recipeType) {
-		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "crafting recipe type")
-	}
-	w.Varint32(&recipeType)
-	(*x).Marshal(w)
 }
 
 // EventType writes an Event to the writer.

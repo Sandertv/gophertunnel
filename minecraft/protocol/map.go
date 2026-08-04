@@ -52,13 +52,16 @@ type MapTrackedObject struct {
 // Marshal encodes/decodes a MapTrackedObject.
 func (x *MapTrackedObject) Marshal(r IO) {
 	r.Int32(&x.Type)
-	switch x.Type {
-	case MapObjectTypeEntity:
+
+	entity := x.Type == MapObjectTypeEntity
+	r.Bool(&entity)
+	if entity {
 		r.Varint64(&x.EntityUniqueID)
-	case MapObjectTypeBlock:
+	}
+	block := x.Type == MapObjectTypeBlock
+	r.Bool(&block)
+	if block {
 		r.BlockPos(&x.BlockPosition)
-	default:
-		r.UnknownEnumOption(x.Type, "map tracked object type")
 	}
 }
 
@@ -89,7 +92,7 @@ func (x *MapDecoration) Marshal(r IO) {
 	r.Uint8(&x.X)
 	r.Uint8(&x.Y)
 	r.String(&x.Label)
-	r.VarRGBA(&x.Colour)
+	r.RGBA(&x.Colour)
 }
 
 // PixelRequest is the request for the colour of a pixel in a MapInfoRequest packet.

@@ -268,36 +268,22 @@ func (r *Reader) UUID(x *uuid.UUID) {
 // PlayerInventoryAction reads a PlayerInventoryAction.
 func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
-	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
+	var legacy bool
+	r.Bool(&legacy)
+	if legacy && x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
 		Slice(r, &x.LegacySetItemSlots)
 	}
-	FuncSlice(r, &x.Actions, r.inventoryActionOld)
-	r.Varuint32(&x.ActionType)
-	r.Varuint32(&x.TriggerType)
-	r.BlockPos(&x.BlockPosition)
-	r.Varint32(&x.BlockFace)
-	r.Varint32(&x.HotBarSlot)
-	r.ItemInstance(&x.HeldItem)
-	r.Vec3(&x.Position)
-	r.Vec3(&x.ClickedPosition)
-	r.Varuint32(&x.BlockRuntimeID)
-	r.Uint8(&x.ClientPrediction)
-	r.Uint8(&x.ClientCooldownState)
-}
-
-func (r *Reader) inventoryActionOld(x *InventoryAction) {
-	r.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		var windowID int32
-		r.Varint32(&windowID)
-		x.WindowID = int8(windowID)
-	case InventoryActionSourceWorld:
-		r.Varuint32(&x.SourceFlags)
+	// The actions are wrapped in a struct that is itself optional, so their
+	// presence is stated by two booleans rather than one.
+	var outer, inner bool
+	r.Bool(&outer)
+	r.Bool(&inner)
+	if outer && inner {
+		Slice(r, &x.Actions)
 	}
-	r.Varuint32(&x.InventorySlot)
-	r.ItemInstance(&x.OldItem)
-	r.ItemInstance(&x.NewItem)
+	// Everything from the action type onwards is identical to the transaction
+	// data carried by an InventoryTransaction packet.
+	x.Marshal(r)
 }
 
 // GameRule reads a GameRule x from the Reader.
@@ -338,6 +324,9 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 		var key, dataType uint32
 		r.Varuint32(&key)
 		r.Varuint32(&dataType)
+		// The type of the value is sent a second time as a byte.
+		var legacyDataType uint8
+		r.Uint8(&legacyDataType)
 		switch dataType {
 		case EntityDataTypeByte:
 			var v byte
@@ -383,24 +372,28 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 
 // ItemDescriptorCount reads an ItemDescriptorCount i from the underlying buffer.
 func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
-	var id uint8
-	r.Uint8(&id)
+	var present uint32
+	r.Varuint32(&present)
 
-	switch id {
-	case ItemDescriptorInvalid:
+	if present == 0 {
 		i.Descriptor = &InvalidItemDescriptor{}
-	case ItemDescriptorDefault:
-		i.Descriptor = &DefaultItemDescriptor{}
-	case ItemDescriptorMoLang:
-		i.Descriptor = &MoLangItemDescriptor{}
-	case ItemDescriptorItemTag:
-		i.Descriptor = &ItemTagItemDescriptor{}
-	case ItemDescriptorDeferred:
+		i.Descriptor.Marshal(r)
+		r.Varint32(&i.Count)
+		return
+	}
+
+	var name string
+	r.String(&name)
+
+	switch name {
+	case ItemDescriptorNameItemName:
 		i.Descriptor = &DeferredItemDescriptor{}
-	case ItemDescriptorComplexAlias:
-		i.Descriptor = &ComplexAliasItemDescriptor{}
+	case ItemDescriptorNameMoLang:
+		i.Descriptor = &MoLangItemDescriptor{}
+	case ItemDescriptorNameItemTag:
+		i.Descriptor = &ItemTagItemDescriptor{}
 	default:
-		r.UnknownEnumOption(id, "item descriptor type")
+		r.UnknownEnumOption(name, "item descriptor type")
 		return
 	}
 
@@ -431,47 +424,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 	r.Varuint32(&runtimeID)
 	x.BlockRuntimeID = int32(runtimeID)
 
-	var extraData []byte
-	r.ByteSlice(&extraData)
-
-	if len(extraData) == 0 {
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		x.BlockingTick = 0
-		return
-	}
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	switch length {
-	case 0:
-		x.NBTData = nil
-	case -1:
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	default:
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	} else {
-		x.BlockingTick = 0
-	}
+	r.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.NetworkID == r.shieldID)
 }
 
 // Item reads an ItemStack x from the underlying buffer.
@@ -482,44 +435,123 @@ func (r *Reader) Item(x *ItemStack) {
 	r.Varuint32(&x.MetadataValue)
 	r.Varint32(&x.BlockRuntimeID)
 
+	r.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.NetworkID == r.shieldID)
+}
+
+// StackReqItemDescriptorCount reads an ItemDescriptorCount i as it appears in an ItemStackRequest. This
+// encoding differs from the one used by recipes: the type is a numeric variant index repeated as a byte
+// rather than a name, and the count is a little endian uint16.
+func (r *Reader) StackReqItemDescriptorCount(i *ItemDescriptorCount) {
+	var control uint32
+	r.Varuint32(&control)
+	var t uint8
+	r.Uint8(&t)
+	if uint32(t) != control {
+		r.InvalidValue(t, "item descriptor type", "variant and field type differ")
+		return
+	}
+	// The payload of a descriptor here is not the one a recipe ingredient uses: neither the invalid nor the
+	// item tag descriptor trails a metadata value.
+	switch t {
+	case ItemDescriptorTypeInvalid:
+		i.Descriptor = &InvalidItemDescriptor{}
+	case ItemDescriptorTypeItemName:
+		d := &DeferredItemDescriptor{}
+		r.String(&d.Name)
+		IntegerFunc(&d.MetadataValue, r.Varint32)
+		i.Descriptor = d
+	case ItemDescriptorTypeMoLang:
+		d := &MoLangItemDescriptor{}
+		r.String(&d.Expression)
+		r.Int16(&d.Version)
+		i.Descriptor = d
+	case ItemDescriptorTypeItemTag:
+		d := &ItemTagItemDescriptor{}
+		r.String(&d.Tag)
+		i.Descriptor = d
+	default:
+		r.UnknownEnumOption(t, "item descriptor type")
+		return
+	}
+
+	var count uint16
+	r.Uint16(&count)
+	i.Count = int32(count)
+}
+
+// StackReqItem reads a StackRequestItem x from the reader.
+func (r *Reader) StackReqItem(x *StackRequestItem) {
+	var control uint32
+	r.Varuint32(&control)
+	var t uint8
+	r.Uint8(&t)
+	if uint32(t) != control {
+		r.InvalidValue(t, "item descriptor type", "variant and field type differ")
+		return
+	}
+	if t != ItemDescriptorTypeInvalid {
+		r.String(&x.Name)
+		r.Varint32(&x.MetadataValue)
+	} else {
+		x.Name, x.MetadataValue = "", 0
+	}
+	r.Int16(&x.Count)
+	r.Varuint32(&x.BlockRuntimeID)
+	r.itemUserData(&x.NBTData, &x.CanBePlacedOn, &x.CanBreak, &x.BlockingTick, x.Name == ItemNameShield)
+}
+
+// itemUserData reads the user data buffer that trails an item, which holds its NBT and the blocks it may be
+// placed on or break. blocking is set for the shield only, which trails the tick it started blocking at.
+func (r *Reader) itemUserData(nbtData *map[string]any, canBePlacedOn, canBreak *[]string, blockingTick *int64, blocking bool) {
 	var extraData []byte
 	r.ByteSlice(&extraData)
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
+	if len(extraData) == 0 {
+		// Air items (and any item without user data) carry an empty user data
+		// buffer, so there is no length prefix to read here.
+		*nbtData, *canBePlacedOn, *canBreak, *blockingTick = nil, nil, nil, 0
+		return
+	}
+	bufReader := NewReader(bytes.NewBuffer(extraData), r.shieldID, r.limitsEnabled)
 
 	var length int16
 	bufReader.Int16(&length)
-
 	if length == -1 {
 		var version uint8
 		bufReader.Uint8(&version)
-
 		switch version {
 		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+			bufReader.NBT(nbtData, nbt.LittleEndian)
 		default:
 			bufReader.UnknownEnumOption(version, "item user data version")
 			return
 		}
 	} else if length > 0 {
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
+		bufReader.NBT(nbtData, nbt.LittleEndian)
 	} else {
-		x.NBTData = nil
+		*nbtData = nil
 	}
 
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, canBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, canBreak, bufReader.StringUTF)
 
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
+	*blockingTick = 0
+	if blocking {
+		bufReader.Int64(blockingTick)
 	}
 }
 
 // StackRequestAction reads a StackRequestAction from the reader.
 func (r *Reader) StackRequestAction(x *StackRequestAction) {
+	// The variant is selected by its index in the variant list, and the type is
+	// then repeated as the variant's own first field.
+	var control uint32
+	r.Varuint32(&control)
 	var id uint8
 	r.Uint8(&id)
+	if stackRequestActionVariant(id) != control {
+		r.InvalidValue(id, "stack request action type", "variant and field type differ")
+		return
+	}
 	if !lookupStackRequestAction(id, x) {
 		r.UnknownEnumOption(id, "stack request action type")
 		return
@@ -533,17 +565,6 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	r.Varint32(&mix)
 	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
 	Slice(r, &m.Outputs)
-}
-
-// Recipe reads a Recipe from the reader.
-func (r *Reader) Recipe(x *Recipe) {
-	var recipeType int32
-	r.Varint32(&recipeType)
-	if !lookupRecipe(recipeType, x) {
-		r.UnknownEnumOption(recipeType, "crafting data recipe type")
-		return
-	}
-	(*x).Unmarshal(r)
 }
 
 // EventType reads an Event's type from the reader.

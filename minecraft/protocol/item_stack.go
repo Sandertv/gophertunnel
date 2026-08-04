@@ -42,6 +42,17 @@ func (x *ItemStackRequest) Marshal(r IO) {
 	r.Int32(&x.FilterCause)
 }
 
+// stackRequestActionVariant returns the index of a stack request action type in the list of action variants.
+// PlaceInContainer and TakeOutContainer are no longer part of that list, but the type values after them kept
+// the numbers they had while they were, so every type above them sits two places earlier in the list than its
+// value suggests.
+func stackRequestActionVariant(id uint8) uint32 {
+	if id > StackRequestActionTakeOutContainer {
+		return uint32(id) - 2
+	}
+	return uint32(id)
+}
+
 // lookupStackRequestActionType looks up the ID of a StackRequestAction.
 func lookupStackRequestActionType(x StackRequestAction, id *uint8) bool {
 	switch x.(type) {
@@ -226,7 +237,15 @@ type ItemStackResponse struct {
 func (x *ItemStackResponse) Marshal(r IO) {
 	r.Uint8(&x.Status)
 	r.Varint32(&x.RequestID)
-	if x.Status == ItemStackResponseStatusOK {
+	// The container info is wrapped in a struct that is itself optional, so its presence is stated by two
+	// booleans rather than one. The outer one is always true.
+	outer, inner := true, len(x.ContainerInfo) > 0
+	r.Bool(&outer)
+	if !outer {
+		return
+	}
+	r.Bool(&inner)
+	if inner {
 		Slice(r, &x.ContainerInfo)
 	}
 }
@@ -272,7 +291,16 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
-	r.Varint32(&x.StackNetworkID)
+	// The stack network ID is wrapped in a struct that is itself optional, so its presence is stated by two
+	// booleans rather than one. The outer one is always true.
+	outer, inner := true, x.StackNetworkID > 0
+	r.Bool(&outer)
+	if outer {
+		r.Bool(&inner)
+		if inner {
+			r.Varint32(&x.StackNetworkID)
+		}
+	}
 	if x.Slot != x.HotbarSlot {
 		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
 	}
@@ -460,7 +488,7 @@ type MineBlockStackRequestAction struct {
 func (a *MineBlockStackRequestAction) Marshal(r IO) {
 	r.Varint32(&a.HotbarSlot)
 	r.Varint32(&a.PredictedDurability)
-	r.Varint32(&a.StackNetworkID)
+	r.Int32(&a.StackNetworkID)
 }
 
 // CraftRecipeStackRequestAction is sent by the client the moment it begins crafting an item. This is the
@@ -490,10 +518,8 @@ type AutoCraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
-	// NumberOfCrafts is how many times the recipe was crafted. This field is just a duplicate of TimesCrafted.
+	// NumberOfCrafts is how many times the recipe was crafted.
 	NumberOfCrafts byte
-	// TimesCrafted is how many times the recipe was crafted.
-	TimesCrafted byte
 	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
 	// It is not exactly clear what this is used for, but it is sent by the vanilla client.
 	Ingredients []ItemDescriptorCount
@@ -503,8 +529,7 @@ type AutoCraftRecipeStackRequestAction struct {
 func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
 	r.Uint8(&a.NumberOfCrafts)
-	r.Uint8(&a.TimesCrafted)
-	FuncSlice(r, &a.Ingredients, r.ItemDescriptorCount)
+	FuncSlice(r, &a.Ingredients, r.StackReqItemDescriptorCount)
 }
 
 // CraftCreativeStackRequestAction is sent by the client when it takes an item out fo the creative inventory.
@@ -558,7 +583,11 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 
 // Marshal ...
 func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
-	r.Varuint32(&c.RecipeNetworkID)
+	// Unlike the other recipe actions, this one carries the recipe as an item
+	// stack net ID variant, which is not compressed.
+	id := int32(c.RecipeNetworkID)
+	r.Int32(&id)
+	c.RecipeNetworkID = uint32(id)
 	r.Uint8(&c.NumberOfCrafts)
 	r.Varint32(&c.Cost)
 }
@@ -590,14 +619,39 @@ func (*CraftNonImplementedStackRequestAction) Marshal(IO) {}
 // This action is also sent when an item is enchanted. Enchanting should be treated mostly the same way as
 // crafting, where the old item is consumed.
 type CraftResultsDeprecatedStackRequestAction struct {
-	ResultItems  []ItemStack
+	ResultItems  []StackRequestItem
 	TimesCrafted byte
 }
 
 // Marshal ...
 func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
-	FuncSlice(r, &a.ResultItems, r.Item)
+	FuncSlice(r, &a.ResultItems, r.StackReqItem)
 	r.Uint8(&a.TimesCrafted)
+}
+
+// ItemNameShield is the name of the only item that trails a blocking tick in its user data.
+const ItemNameShield = "minecraft:shield"
+
+// StackRequestItem is an item as it appears in an ItemStackRequest. Unlike an ItemStack, it names the item
+// rather than identifying it by network ID, because the client is only predicting what the server will
+// produce.
+type StackRequestItem struct {
+	// Name is the name of the item, such as 'minecraft:stick'. It is empty if the item is air.
+	Name string
+	// MetadataValue is the metadata value of the item. For some items, this is the damage value, whereas for
+	// other items it is simply an identifier of a variant of the item.
+	MetadataValue int32
+	// Count is the count of items in the stack.
+	Count int16
+	// BlockRuntimeID is the runtime ID of the block, if the item is a block. It is 0 if the item is not.
+	BlockRuntimeID uint32
+	// NBTData is a map that is serialised to its NBT representation when sent in a packet.
+	NBTData map[string]any
+	// CanBePlacedOn and CanBreak are lists of block identifiers that the item may be placed on or break in
+	// adventure mode.
+	CanBePlacedOn, CanBreak []string
+	// BlockingTick is the tick at which the item started blocking. It is only present for the shield.
+	BlockingTick int64
 }
 
 // StackRequestSlotInfo holds information on a specific slot client-side.
@@ -616,5 +670,7 @@ type StackRequestSlotInfo struct {
 func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
 	Single(r, &x.Container)
 	r.Uint8(&x.Slot)
-	r.Varint32(&x.StackNetworkID)
+	// The stack net id is a Cereal variant index and is not compressed, unlike
+	// most other integers in a stack request.
+	r.Int32(&x.StackNetworkID)
 }
