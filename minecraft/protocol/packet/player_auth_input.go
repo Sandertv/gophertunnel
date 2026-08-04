@@ -120,9 +120,9 @@ type PlayerAuthInput struct {
 	MoveVector mgl32.Vec2
 	// HeadYaw is the horizontal rotation of the head that the player reports it has.
 	HeadYaw float32
-	// InputData is an optional list of input flag IDs that together specify how the player moved last tick.
-	// Each element is one of the InputFlag constants above.
-	InputData protocol.Optional[[]int32]
+	// InputData is the set of input flags that together specify the way the player moved last tick. It holds
+	// the flags above.
+	InputData protocol.InputFlags
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.
 	InputMode uint32
@@ -174,24 +174,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	if _, writing := io.(*protocol.Writer); writing {
-		if _, ok := pk.InputData.Value(); !ok {
-			pk.InputData = protocol.Option([]int32{})
-		}
-	}
-	protocol.OptionalFunc(io, &pk.InputData, func(i *[]int32) {
-		protocol.FuncSlice(io, i, io.Varint32)
-		seen := make(map[int32]struct{}, len(*i))
-		for _, flag := range *i {
-			if flag < 0 || flag >= PlayerAuthInputBitsetSize {
-				io.UnknownEnumOption(flag, "player auth input data")
-			}
-			if _, ok := seen[flag]; ok {
-				io.InvalidValue(flag, "player auth input data", "flags must be unique")
-			}
-			seen[flag] = struct{}{}
-		}
-	})
+	protocol.InputFlagList(io, &pk.InputData, PlayerAuthInputBitsetSize)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
 	io.Varint32(&pk.InteractionModel)
