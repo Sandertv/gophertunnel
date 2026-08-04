@@ -308,6 +308,9 @@ func (r *Reader) GameRule(x *GameRule) {
 	r.Varuint32(&t)
 
 	switch t {
+	case 0:
+		// Null variant: no value payload follows.
+		x.Value = nil
 	case 1:
 		var v bool
 		r.Bool(&v)
@@ -315,31 +318,6 @@ func (r *Reader) GameRule(x *GameRule) {
 	case 2:
 		var v uint32
 		r.Uint32(&v)
-		x.Value = v
-	case 3:
-		var v float32
-		r.Float32(&v)
-		x.Value = v
-	default:
-		r.UnknownEnumOption(t, "game rule type")
-	}
-}
-
-// GameRuleLegacy reads a legacy GameRule x from the Reader.
-func (r *Reader) GameRuleLegacy(x *GameRule) {
-	r.String(&x.Name)
-	r.Bool(&x.CanBeModifiedByPlayer)
-	var t uint32
-	r.Varuint32(&t)
-
-	switch t {
-	case 1:
-		var v bool
-		r.Bool(&v)
-		x.Value = v
-	case 2:
-		var v uint32
-		r.Varuint32(&v)
 		x.Value = v
 	case 3:
 		var v float32
@@ -433,66 +411,6 @@ func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
 // ItemInstance reads an ItemInstance i from the underlying buffer.
 func (r *Reader) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.BlockRuntimeID, i.StackNetworkID = 0, 0, 0, 0
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		return
-	}
-
-	r.Uint16(&x.Count)
-	r.Varuint32(&x.MetadataValue)
-
-	var hasNetID bool
-	r.Bool(&hasNetID)
-
-	if hasNetID {
-		r.Varint32(&i.StackNetworkID)
-	} else {
-		i.StackNetworkID = 0
-	}
-
-	r.Varint32(&x.BlockRuntimeID)
-
-	var extraData []byte
-	r.ByteSlice(&extraData)
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	if length == -1 {
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	} else if length > 0 {
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		x.NBTData = nil
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	}
-}
-
-// ItemInstanceNew reads an ItemInstance i from the underlying buffer in the new format.
-func (r *Reader) ItemInstanceNew(i *ItemInstance) {
-	x := &i.Stack
 	var id int16
 	r.Int16(&id)
 	x.NetworkID = int32(id)
@@ -504,8 +422,6 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	r.Bool(&hasNetID)
 
 	if hasNetID {
-		var empty uint32
-		r.Varuint32(&empty)
 		r.Varint32(&i.StackNetworkID)
 	} else {
 		i.StackNetworkID = 0
@@ -561,13 +477,6 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 // Item reads an ItemStack x from the underlying buffer.
 func (r *Reader) Item(x *ItemStack) {
 	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.BlockRuntimeID = 0, 0, 0
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		return
-	}
 
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)

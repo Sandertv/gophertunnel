@@ -230,6 +230,9 @@ func (w *Writer) GameRule(x *GameRule) {
 	w.Bool(&x.CanBeModifiedByPlayer)
 
 	switch v := x.Value.(type) {
+	case nil:
+		id := uint32(0)
+		w.Varuint32(&id)
 	case bool:
 		id := uint32(1)
 		w.Varuint32(&id)
@@ -238,29 +241,6 @@ func (w *Writer) GameRule(x *GameRule) {
 		id := uint32(2)
 		w.Varuint32(&id)
 		w.Uint32(&v)
-	case float32:
-		id := uint32(3)
-		w.Varuint32(&id)
-		w.Float32(&v)
-	default:
-		w.UnknownEnumOption(fmt.Sprintf("%T", v), "game rule type")
-	}
-}
-
-// GameRuleLegacy writes a legacy GameRule x to the Writer.
-func (w *Writer) GameRuleLegacy(x *GameRule) {
-	w.String(&x.Name)
-	w.Bool(&x.CanBeModifiedByPlayer)
-
-	switch v := x.Value.(type) {
-	case bool:
-		id := uint32(1)
-		w.Varuint32(&id)
-		w.Bool(&v)
-	case uint32:
-		id := uint32(2)
-		w.Varuint32(&id)
-		w.Varuint32(&v)
 	case float32:
 		id := uint32(3)
 		w.Varuint32(&id)
@@ -360,58 +340,6 @@ func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
 // ItemInstance writes an ItemInstance i to the underlying buffer.
 func (w *Writer) ItemInstance(i *ItemInstance) {
 	x := &i.Stack
-	w.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there's no more data to follow. Return immediately.
-		return
-	}
-
-	w.Uint16(&x.Count)
-	w.Varuint32(&x.MetadataValue)
-
-	hasNetID := i.StackNetworkID != 0
-	w.Bool(&hasNetID)
-
-	if hasNetID {
-		w.Varint32(&i.StackNetworkID)
-	}
-
-	w.Varint32(&x.BlockRuntimeID)
-	buf := internal.BufferPool.Get().(*bytes.Buffer)
-	buf.Reset()
-	defer func() {
-		buf.Reset()
-		internal.BufferPool.Put(buf)
-	}()
-
-	bufWriter := NewWriter(buf, w.shieldID)
-
-	var length int16
-	if len(x.NBTData) != 0 {
-		length = int16(-1)
-		version := uint8(1)
-
-		bufWriter.Int16(&length)
-		bufWriter.Uint8(&version)
-		bufWriter.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		bufWriter.Int16(&length)
-	}
-
-	FuncSliceUint32Length(bufWriter, &x.CanBePlacedOn, bufWriter.StringUTF)
-	FuncSliceUint32Length(bufWriter, &x.CanBreak, bufWriter.StringUTF)
-
-	if x.NetworkID == bufWriter.shieldID {
-		bufWriter.Int64(&x.BlockingTick)
-	}
-
-	b := buf.Bytes()
-	w.ByteSlice(&b)
-}
-
-// ItemInstanceNew writes an ItemInstance i to the underlying buffer in the new format.
-func (w *Writer) ItemInstanceNew(i *ItemInstance) {
-	x := &i.Stack
 	id := int16(x.NetworkID)
 	w.Int16(&id)
 
@@ -422,8 +350,6 @@ func (w *Writer) ItemInstanceNew(i *ItemInstance) {
 	w.Bool(&hasNetID)
 
 	if hasNetID {
-		var zero uint32
-		w.Varuint32(&zero)
 		w.Varint32(&i.StackNetworkID)
 	}
 
@@ -471,10 +397,6 @@ func (w *Writer) ItemInstanceNew(i *ItemInstance) {
 // Item writes an ItemStack x to the underlying buffer.
 func (w *Writer) Item(x *ItemStack) {
 	w.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there's no more data to follow. Return immediately.
-		return
-	}
 
 	w.Uint16(&x.Count)
 	w.Varuint32(&x.MetadataValue)

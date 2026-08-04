@@ -2,6 +2,14 @@ package protocol
 
 import (
 	"fmt"
+	"image/color"
+
+	"github.com/google/uuid"
+)
+
+const (
+	ArmSizeSlim = iota
+	ArmSizeWide
 )
 
 // Skin represents the skin of a player as sent over network. The skin holds a texture and a model, and
@@ -55,12 +63,10 @@ type Skin struct {
 	// FullID is an ID that represents the skin in full. The actual functionality is unknown: The client
 	// does not seem to send a value for this.
 	FullID string
-	// SkinColour is a hex representation (including #) of the base colour of the skin. An example of the
-	// colour sent here is '#b37b62'.
-	SkinColour string
-	// ArmSize is the size of the arms of the player's model. This is either 'wide' (generally for male skins)
-	// or 'slim' (generally for female skins).
-	ArmSize string
+	// SkinColour is a hex representation (including #) of the base colour of the skin.
+	SkinColour color.RGBA
+	// ArmSize is the size of the arms of the player's model. This is one of the ArmSize constants above.
+	ArmSize uint8
 	// PersonaPieces is a list of all persona pieces that the skin is composed of.
 	PersonaPieces []PersonaPiece
 	// PieceTintColours is a list of specific tint colours for (some of) the persona pieces found in the list
@@ -72,6 +78,8 @@ type Skin struct {
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
 	OverrideAppearance bool
+	TrustedSkinFlag    string
+	ProfileHash        string
 }
 
 // Marshal encodes/decodes a Skin.
@@ -82,7 +90,7 @@ func (x *Skin) Marshal(r IO) {
 	r.Uint32(&x.SkinImageWidth)
 	r.Uint32(&x.SkinImageHeight)
 	r.ByteSlice(&x.SkinData)
-	SliceUint32Length(r, &x.Animations)
+	Slice(r, &x.Animations)
 	r.Uint32(&x.CapeImageWidth)
 	r.Uint32(&x.CapeImageHeight)
 	r.ByteSlice(&x.CapeData)
@@ -91,10 +99,10 @@ func (x *Skin) Marshal(r IO) {
 	r.ByteSlice(&x.AnimationData)
 	r.String(&x.CapeID)
 	r.String(&x.FullID)
-	r.String(&x.ArmSize)
-	r.String(&x.SkinColour)
-	SliceUint32Length(r, &x.PersonaPieces)
-	SliceUint32Length(r, &x.PieceTintColours)
+	r.Uint8(&x.ArmSize)
+	r.ARGB(&x.SkinColour)
+	Slice(r, &x.PersonaPieces)
+	Slice(r, &x.PieceTintColours)
 	if err := x.validate(); err != nil {
 		r.InvalidValue(fmt.Sprintf("Skin %v", x.SkinID), "serialised skin", err.Error())
 	}
@@ -103,6 +111,8 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
+	r.String(&x.TrustedSkinFlag)
+	r.String(&x.ProfileHash)
 }
 
 // validate checks the skin and makes sure every one of its values are correct. It checks the image dimensions
@@ -126,7 +136,9 @@ const (
 	SkinAnimationHead = iota + 1
 	SkinAnimationBody32x32
 	SkinAnimationBody128x128
+)
 
+const (
 	ExpressionTypeLinear = iota
 	ExpressionTypeBlinking
 )
@@ -159,29 +171,49 @@ func (x *SkinAnimation) Marshal(r IO) {
 	r.Uint32(&x.ImageWidth)
 	r.Uint32(&x.ImageHeight)
 	r.ByteSlice(&x.ImageData)
-	r.Uint32(&x.AnimationType)
+	r.Varuint32(&x.AnimationType)
 	r.Float32(&x.FrameCount)
-	r.Uint32(&x.ExpressionType)
+	r.Varuint32(&x.ExpressionType)
 }
+
+const (
+	PieceTypeSkeleton = iota
+	PieceTypeBody
+	PieceTypeSkin
+	PieceTypeBottom
+	PieceTypeFeet
+	PieceTypeDress
+	PieceTypeTop
+	PieceTypeHighPants
+	PieceTypeHands
+	PieceTypeOuterwear
+	PieceTypeFacialHair
+	PieceTypeMouth
+	PieceTypeEyes
+	PieceTypeHair
+	PieceTypeHood
+	PieceTypeBack
+	PieceTypeFaceAccessory
+	PieceTypeHead
+	PieceTypeLegs
+	PieceTypeLeftLeg
+	PieceTypeRightLeg
+	PieceTypeArms
+	PieceTypeLeftArm
+	PieceTypeRightArm
+	PieceTypeCapes
+	PieceTypeClassicSkin
+	PieceTypeEmote
+)
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
 type PersonaPiece struct {
 	// PieceId is a UUID that identifies the piece itself, which is unique for each separate piece.
 	PieceID string
-	// PieceType holds the type of the piece. Several types I was able to find immediately are listed below.
-	// - persona_skeleton
-	// - persona_body
-	// - persona_skin
-	// - persona_bottom
-	// - persona_feet
-	// - persona_top
-	// - persona_mouth
-	// - persona_hair
-	// - persona_eyes
-	// - persona_facial_hair
-	PieceType string
+	// PieceType holds the type of the piece. This is one of the PieceType constants above.
+	PieceType uint32
 	// PackID is a UUID that identifies the pack that the persona piece belongs to.
-	PackID string
+	PackID uuid.UUID
 	// Default specifies if the piece is one of the default pieces. This is true when the piece is one of
 	// those that a Steve or Alex skin have.
 	Default bool
@@ -193,8 +225,8 @@ type PersonaPiece struct {
 // Marshal encodes/decodes a PersonaPiece.
 func (x *PersonaPiece) Marshal(r IO) {
 	r.String(&x.PieceID)
-	r.String(&x.PieceType)
-	r.String(&x.PackID)
+	r.Uint32(&x.PieceType)
+	r.UUID(&x.PackID)
 	r.Bool(&x.Default)
 	r.String(&x.ProductID)
 }
@@ -203,11 +235,8 @@ func (x *PersonaPiece) Marshal(r IO) {
 type PersonaPieceTintColour struct {
 	// PieceType is the type of the persona skin piece that this tint colour concerns. The piece type must
 	// always be present in the persona pieces list, but not each piece type has a tint colour sent.
-	// Pieces that do have a tint colour that I was able to find immediately are listed below.
-	// - persona_mouth
-	// - persona_eyes
-	// - persona_hair
-	PieceType string
+	// This is one of the PieceType constants above.
+	PieceType uint32
 	// Colours is a list four colours written in hex notation (note, that unlike the SkinColour field in
 	// the ClientData struct, this is actually ARGB, not just RGB).
 	// The colours refer to different parts of the skin piece. The 'persona_eyes' may have the following
@@ -220,6 +249,6 @@ type PersonaPieceTintColour struct {
 
 // Marshal encodes/decodes a PersonaPieceTintColour.
 func (x *PersonaPieceTintColour) Marshal(r IO) {
-	r.String(&x.PieceType)
+	r.Uint32(&x.PieceType)
 	FuncSliceUint32Length(r, &x.Colours, r.String)
 }

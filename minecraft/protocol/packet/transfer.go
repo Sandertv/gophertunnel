@@ -24,4 +24,7 @@ func (pk *Transfer) Marshal(io protocol.IO) {
 	io.String(&pk.Address)
 	io.Uint16(&pk.Port)
 	io.Bool(&pk.ReloadWorld)
+	// Optional GatheringsConfigurationJoinInfo (absent = false). Full type TBD.
+	var hasGatherings bool
+	io.Bool(&hasGatherings)
 }

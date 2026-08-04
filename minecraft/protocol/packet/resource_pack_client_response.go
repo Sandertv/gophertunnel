@@ -28,6 +28,34 @@ func (*ResourcePackClientResponse) ID() uint32 {
 }
 
 func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
-	io.Uint8(&pk.Response)
-	protocol.FuncSliceUint16Length(io, &pk.PacksToDownload, io.String)
+	// As of 1.26.400 the response is a varuint32 that is zero-indexed: the value on the wire is the
+	// response constant minus one. Adjust in both directions so pk.Response keeps using the 1-based
+	// constants above.
+	response := uint32(pk.Response) - 1
+	io.Varuint32(&response)
+	pk.Response = byte(response + 1)
+
+	// A varuint32 length-prefixed string follows the response. Its contents are ignored by the client,
+	// so we write the readable name of the response for parity and discard whatever is read.
+	name := resourcePackResponseToString(pk.Response)
+	io.String(&name)
+
+	if pk.Response == PackResponseSendPacks {
+		protocol.FuncSlice(io, &pk.PacksToDownload, io.String)
+	}
+}
+
+func resourcePackResponseToString(x uint8) string {
+	switch x {
+	case PackResponseRefused:
+		return "cancel"
+	case PackResponseSendPacks:
+		return "downloading"
+	case PackResponseAllPacksDownloaded:
+		return "downloadingfinished"
+	case PackResponseCompleted:
+		return "resourcepackstackfinished"
+	default:
+		return "unknown"
+	}
 }
