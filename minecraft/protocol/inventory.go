@@ -57,8 +57,8 @@ func (x *InventoryAction) Marshal(r IO) {
 		r.Varuint32(&x.SourceFlags)
 	}
 	r.Varuint32(&x.InventorySlot)
-	r.ItemInstanceNew(&x.OldItem)
-	r.ItemInstanceNew(&x.NewItem)
+	r.ItemInstance(&x.OldItem)
+	r.ItemInstance(&x.NewItem)
 }
 
 const (
@@ -258,7 +258,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.BlockPos(&data.BlockPosition)
 	IntegerFunc(&data.BlockFace, r.Uint8)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -271,7 +271,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -280,7 +280,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 

@@ -147,6 +147,15 @@ const (
 	EntityDataKeyNameplateRenderDistanceMax
 )
 
+// Entity data key 16 is a tagged union in 1.26.40. These aliases document the values that may occupy it.
+const (
+	EntityDataKeyDisplayBlockState     = EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyDisplayFirework       = EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyHorseFlags            = EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyWitherSkullDangerous  = EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyUnknownHorseInteger25 = EntityDataKeyUsingItem
+)
+
 const (
 	EntityDataFlagOnFire = iota
 	EntityDataFlagSneaking
@@ -278,6 +287,7 @@ const (
 	EntityDataFlagUsesLegacyFriction
 	EntityDataFlagUsesUniformAirDrag
 	EntityDataFlagNameplateDepthTested
+	EntityDataFlagNotPickableFromInside
 	EntityDataFlagCount
 )
 

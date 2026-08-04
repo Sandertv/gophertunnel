@@ -6,8 +6,10 @@ const (
 	MemoryCategoryActor
 	MemoryCategoryActorAnimation
 	MemoryCategoryActorRendering
+	MemoryCategoryBalancer
 	MemoryCategoryBlockTickingQueues
 	MemoryCategoryBiomeStorage
+	MemoryCategoryBlobs
 	MemoryCategoryCereal
 	MemoryCategoryCircuitSystem
 	MemoryCategoryClient
@@ -43,7 +45,6 @@ const (
 	MemoryCategoryLevelChunk
 	MemoryCategoryLevelChunkGen
 	MemoryCategoryLevelChunkGenThreadLocal
-	MemoryCategoryLightVolumeManager
 	MemoryCategoryNetwork
 	MemoryCategoryMarketplace
 	MemoryCategoryMaterialDragonCompiledDefinition
@@ -55,13 +56,29 @@ const (
 	MemoryCategoryMaterialVariationManager
 	MemoryCategoryMolang
 	MemoryCategoryOreUI
-	MemoryCategoryPersona
+	MemoryCategoryOreUIClient
+	MemoryCategoryPersonaPieces
+	MemoryCategoryPersonaAnimations
+	MemoryCategoryPersonaTextures
+	MemoryCategoryPersonaCharacters
+	MemoryCategoryPersonaSkinPacks
+	MemoryCategoryPersonaRepo
 	MemoryCategoryPlayer
 	MemoryCategoryRenderChunk
 	MemoryCategoryRenderChunkIndexBuffer
 	MemoryCategoryRenderChunkVertexBuffer
 	MemoryCategoryRendering
+	MemoryCategoryRenderingBGFXInit
+	MemoryCategoryRenderingBGFXStartFrame
+	MemoryCategoryRenderingBlockTessellator
+	MemoryCategoryRenderingEndFrame
+	MemoryCategoryRenderingGraphicsTasksInit
 	MemoryCategoryRenderingLibrary
+	MemoryCategoryRenderingPolygonOperatorPool
+	MemoryCategoryRenderingPBRTextureData
+	MemoryCategoryRenderingRenderRegistry
+	MemoryCategoryRenderingSetup
+	MemoryCategoryRenderingVertices
 	MemoryCategoryRequestLog
 	MemoryCategoryResourcePacks
 	MemoryCategorySound
@@ -69,11 +86,11 @@ const (
 	MemoryCategorySubChunkBlockData
 	MemoryCategorySubChunkLightData
 	MemoryCategoryTextures
-	MemoryCategoryVR
 	MemoryCategoryWeatherRenderer
 	MemoryCategoryWorldGenerator
 	MemoryCategoryTasks
 	MemoryCategoryTest
+	MemoryCategoryTestLoadTestTags
 	MemoryCategoryScripting
 	MemoryCategoryScriptingRuntime
 	MemoryCategoryScriptingContext
@@ -93,6 +110,9 @@ const (
 	MemoryCategoryGamefaceMedia
 	MemoryCategoryGamefaceJSON
 	MemoryCategoryGamefaceScriptEngine
+	MemoryCategoryGamefaceScript
+	MemoryCategoryGamefaceLayout
+	MemoryCategoryVR
 )
 
 // MemoryCategoryCounter represents a memory usage counter for a specific category.
@@ -139,6 +159,18 @@ type SystemDiagnosticTimingInfo struct {
 	DurationNanos uint64
 	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
 	PercentOfTotal byte
+}
+
+// SystemCategory maps a diagnostics category name to a system index.
+type SystemCategory struct {
+	CategoryName string
+	SystemIndex  uint64
+}
+
+// Marshal encodes/decodes a SystemCategory.
+func (x *SystemCategory) Marshal(r IO) {
+	r.String(&x.CategoryName)
+	r.Uint64(&x.SystemIndex)
 }
 
 // Marshal encodes/decodes a SystemDiagnosticTimingInfo.

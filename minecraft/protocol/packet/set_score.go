@@ -28,13 +28,22 @@ func (*SetScore) ID() uint32 {
 }
 
 func (pk *SetScore) Marshal(io protocol.IO) {
-	io.Uint8(&pk.ActionType)
-	switch pk.ActionType {
-	case ScoreboardActionRemove:
-		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreRemoveEntry)
-	case ScoreboardActionModify:
-		protocol.Slice(io, &pk.Entries)
-	default:
-		io.UnknownEnumOption(pk.ActionType, "set score action type")
+	if pk.ActionType == ScoreboardActionRemove {
+		for i := range pk.Entries {
+			pk.Entries[i].IdentityType = protocol.ScoreboardIdentityRemove
+		}
+	}
+	protocol.Slice(io, &pk.Entries)
+	if _, reading := io.(*protocol.Reader); reading {
+		pk.ActionType = ScoreboardActionModify
+		if len(pk.Entries) != 0 {
+			pk.ActionType = ScoreboardActionRemove
+			for _, entry := range pk.Entries {
+				if entry.IdentityType != protocol.ScoreboardIdentityRemove {
+					pk.ActionType = ScoreboardActionModify
+					break
+				}
+			}
+		}
 	}
 }

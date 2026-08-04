@@ -104,10 +104,6 @@ func lookupStackRequestAction(id uint8, x *StackRequestAction) bool {
 		*x = &ConsumeStackRequestAction{}
 	case StackRequestActionCreate:
 		*x = &CreateStackRequestAction{}
-	case StackRequestActionPlaceInContainer:
-		*x = &PlaceInContainerStackRequestAction{}
-	case StackRequestActionTakeOutContainer:
-		*x = &TakeOutContainerStackRequestAction{}
 	case StackRequestActionLabTableCombine:
 		*x = &LabTableCombineStackRequestAction{}
 	case StackRequestActionBeaconPayment:
@@ -226,8 +222,18 @@ type ItemStackResponse struct {
 func (x *ItemStackResponse) Marshal(r IO) {
 	r.Uint8(&x.Status)
 	r.Varint32(&x.RequestID)
-	if x.Status == ItemStackResponseStatusOK {
-		Slice(r, &x.ContainerInfo)
+	wrapper := true
+	r.Bool(&wrapper)
+	if wrapper {
+		present := len(x.ContainerInfo) != 0
+		r.Bool(&present)
+		if present {
+			Slice(r, &x.ContainerInfo)
+		} else {
+			x.ContainerInfo = nil
+		}
+	} else {
+		x.ContainerInfo = nil
 	}
 }
 
@@ -272,13 +278,25 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
-	r.Varint32(&x.StackNetworkID)
-	if x.Slot != x.HotbarSlot {
-		r.InvalidValue(x.HotbarSlot, "hotbar slot", "hot bar slot must be equal to normal slot")
+	wrapper := true
+	r.Bool(&wrapper)
+	if wrapper {
+		present := x.StackNetworkID > 0
+		r.Bool(&present)
+		if present {
+			r.Varint32(&x.StackNetworkID)
+		} else {
+			x.StackNetworkID = 0
+		}
+	} else {
+		x.StackNetworkID = 0
 	}
 	r.String(&x.CustomName)
 	r.String(&x.FilteredCustomName)
 	r.Varint32(&x.DurabilityCorrection)
+	if x.DurabilityCorrection < -32768 || x.DurabilityCorrection > 32767 {
+		r.InvalidValue(x.DurabilityCorrection, "durability correction", "must fit in an int16")
+	}
 }
 
 // StackRequestAction represents a single action related to the inventory present in an ItemStackRequest.
@@ -296,8 +314,6 @@ const (
 	StackRequestActionDestroy
 	StackRequestActionConsume
 	StackRequestActionCreate
-	StackRequestActionPlaceInContainer
-	StackRequestActionTakeOutContainer
 	StackRequestActionLabTableCombine
 	StackRequestActionBeaconPayment
 	StackRequestActionMineBlock
@@ -460,7 +476,7 @@ type MineBlockStackRequestAction struct {
 func (a *MineBlockStackRequestAction) Marshal(r IO) {
 	r.Varint32(&a.HotbarSlot)
 	r.Varint32(&a.PredictedDurability)
-	r.Varint32(&a.StackNetworkID)
+	r.Int32(&a.StackNetworkID)
 }
 
 // CraftRecipeStackRequestAction is sent by the client the moment it begins crafting an item. This is the
@@ -490,9 +506,10 @@ type AutoCraftRecipeStackRequestAction struct {
 	// one of the recipes sent in the CraftingData packet, where each of the recipes have a RecipeNetworkID as
 	// of 1.16.
 	RecipeNetworkID uint32
-	// NumberOfCrafts is how many times the recipe was crafted. This field is just a duplicate of TimesCrafted.
+	// NumberOfCrafts is how many times the recipe was crafted.
 	NumberOfCrafts byte
-	// TimesCrafted is how many times the recipe was crafted.
+	// TimesCrafted is retained for source compatibility and is not encoded as of 1.26.40.
+	// Deprecated: Use NumberOfCrafts.
 	TimesCrafted byte
 	// Ingredients is a slice of ItemDescriptorCount that contains the ingredients that were used to craft the recipe.
 	// It is not exactly clear what this is used for, but it is sent by the vanilla client.
@@ -503,8 +520,7 @@ type AutoCraftRecipeStackRequestAction struct {
 func (a *AutoCraftRecipeStackRequestAction) Marshal(r IO) {
 	r.Varuint32(&a.RecipeNetworkID)
 	r.Uint8(&a.NumberOfCrafts)
-	r.Uint8(&a.TimesCrafted)
-	FuncSlice(r, &a.Ingredients, r.ItemDescriptorCount)
+	FuncIOSlice(r, &a.Ingredients, StackRequestItemDescriptorCount)
 }
 
 // CraftCreativeStackRequestAction is sent by the client when it takes an item out fo the creative inventory.
@@ -558,7 +574,7 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 
 // Marshal ...
 func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
-	r.Varuint32(&c.RecipeNetworkID)
+	IntegerFunc(&c.RecipeNetworkID, r.Int32)
 	r.Uint8(&c.NumberOfCrafts)
 	r.Varint32(&c.Cost)
 }
@@ -596,7 +612,14 @@ type CraftResultsDeprecatedStackRequestAction struct {
 
 // Marshal ...
 func (a *CraftResultsDeprecatedStackRequestAction) Marshal(r IO) {
-	FuncSlice(r, &a.ResultItems, r.Item)
+	switch r := r.(type) {
+	case *Writer:
+		FuncSlice(r, &a.ResultItems, r.StackRequestItem)
+	case *Reader:
+		FuncSlice(r, &a.ResultItems, r.StackRequestItem)
+	default:
+		r.InvalidValue(r, "craft results IO", "must be a protocol reader or writer")
+	}
 	r.Uint8(&a.TimesCrafted)
 }
 
@@ -616,5 +639,5 @@ type StackRequestSlotInfo struct {
 func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
 	Single(r, &x.Container)
 	r.Uint8(&x.Slot)
-	r.Varint32(&x.StackNetworkID)
+	r.Int32(&x.StackNetworkID)
 }

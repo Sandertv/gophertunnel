@@ -43,6 +43,9 @@ type ItemStack struct {
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually
 // be changed unless a new item is obtained.
 type ItemType struct {
+	// Identifier is the namespaced item identifier. It is used by item descriptors that no longer carry a
+	// numeric runtime ID, such as deprecated craft-result stack request actions.
+	Identifier string
 	// NetworkID is the numerical network ID of the item. This is sometimes a positive ID, and sometimes a
 	// negative ID, depending on what item it concerns.
 	NetworkID int32

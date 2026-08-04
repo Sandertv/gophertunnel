@@ -580,6 +580,9 @@ const (
 	SoundEventBucketEmptyLandAnimal              = "bucket.empty.land_animal"
 	SoundEventGeyserContinuousEruptionStart      = "geyser_continuous_eruption_start"
 	SoundEventGeyserContinuousEruptionActive     = "geyser_continuous_eruption_active"
+	SoundEventMount                              = "mount"
+	SoundEventDismount                           = "dismount"
+	SoundEventStrawBedBreakLeave                 = "straw_bed.break_leave"
 	SoundEventUndefined                          = "undefined"
 )
 

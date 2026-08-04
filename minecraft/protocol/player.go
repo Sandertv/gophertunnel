@@ -1,8 +1,14 @@
 package protocol
 
 import (
-	"github.com/google/uuid"
 	"image/color"
+
+	"github.com/google/uuid"
+)
+
+const (
+	PlayerListActionAdd = iota
+	PlayerListActionRemove
 )
 
 const (
@@ -42,13 +48,17 @@ const (
 	PlayerActionStopCrawling
 	PlayerActionStartFlying
 	PlayerActionStopFlying
-	_
+	PlayerActionReceivedServerData
 	PlayerActionStartUsingItem
+	PlayerActionInternalUpdate
+	PlayerActionCount
 )
 
 // PlayerListEntry is an entry found in the PlayerList packet. It represents a single player using the UUID
 // found in the entry, and contains several properties such as the skin.
 type PlayerListEntry struct {
+	// ActionType is the action to execute upon the player list.
+	ActionType byte
 	// UUID is the UUID of the player as sent in the Login packet when the client joined the server. It must
 	// match this UUID exactly for the correct XBOX Live icon to show up in the list.
 	UUID uuid.UUID
@@ -84,7 +94,28 @@ type PlayerListEntry struct {
 
 // Marshal encodes/decodes a PlayerListEntry.
 func (x *PlayerListEntry) Marshal(r IO) {
+	variant := uint32(0)
+	if x.ActionType == PlayerListActionAdd {
+		variant = 1
+	}
+	r.Varuint32(&variant)
+
+	legacyAction := x.ActionType
+	r.Uint8(&legacyAction)
+	x.ActionType = PlayerListActionRemove
+	if variant == 1 {
+		x.ActionType = PlayerListActionAdd
+	} else if variant != 0 {
+		r.UnknownEnumOption(variant, "player list entry variant")
+	}
+	if legacyAction != x.ActionType {
+		r.InvalidValue(legacyAction, "player list action type", "does not match entry variant")
+	}
 	r.UUID(&x.UUID)
+	if x.ActionType == PlayerListActionRemove {
+		return
+	}
+
 	r.Varint64(&x.EntityUniqueID)
 	r.String(&x.Username)
 	r.String(&x.XUID)
@@ -94,12 +125,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
 	r.Bool(&x.SubClient)
-	r.ARGB(&x.PlayerColour)
-}
-
-// PlayerListRemoveEntry encodes/decodes a PlayerListEntry for removal from the list.
-func PlayerListRemoveEntry(r IO, x *PlayerListEntry) {
-	r.UUID(&x.UUID)
+	r.BEARGB(&x.PlayerColour)
 }
 
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
@@ -131,11 +157,8 @@ type PlayerBlockAction struct {
 // Marshal encodes/decodes a PlayerBlockAction.
 func (x *PlayerBlockAction) Marshal(r IO) {
 	r.Varint32(&x.Action)
-	switch x.Action {
-	case PlayerActionStartBreak, PlayerActionAbortBreak, PlayerActionCrackBreak, PlayerActionPredictDestroyBlock, PlayerActionContinueDestroyBlock:
-		r.BlockPos(&x.BlockPos)
-		r.Varint32(&x.Face)
-	}
+	r.BlockPos(&x.BlockPos)
+	r.Varint32(&x.Face)
 }
 
 // PlayerArmourDamageEntry represents an entry for a single piece of armour that should be damaged.
@@ -150,4 +173,17 @@ type PlayerArmourDamageEntry struct {
 func (x *PlayerArmourDamageEntry) Marshal(r IO) {
 	r.Varint32(&x.ArmourSlot)
 	r.Int16(&x.Damage)
+}
+
+type TeleportData struct {
+	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
+	// which is one of the constants above.
+	TeleportCause int32
+	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
+	TeleportSourceEntityType int32
+}
+
+func (x *TeleportData) Marshal(r IO) {
+	r.Int32(&x.TeleportCause)
+	r.Int32(&x.TeleportSourceEntityType)
 }

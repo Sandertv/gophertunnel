@@ -20,6 +20,8 @@ type PlaySound struct {
 	// Pitch is the pitch of the sound to play. Some sounds completely ignore this field, whereas others use
 	// it to specify the pitch as the field is intended.
 	Pitch float32
+	// LoopCount is the number of times to loop the sound before stopping.
+	LoopCount uint32
 	// Handle is an optional sound handle ID. It is currently unknown what this is for, and is not required
 	// to be set by servers.
 	Handle protocol.Optional[uint64]
@@ -35,5 +37,6 @@ func (pk *PlaySound) Marshal(io protocol.IO) {
 	io.SoundPos(&pk.Position)
 	io.Float32(&pk.Volume)
 	io.Float32(&pk.Pitch)
+	io.Varuint32(&pk.LoopCount)
 	protocol.OptionalFunc(io, &pk.Handle, io.Uint64)
 }

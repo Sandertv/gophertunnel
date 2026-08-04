@@ -30,10 +30,14 @@ func (*SetScoreboardIdentity) ID() uint32 {
 
 func (pk *SetScoreboardIdentity) Marshal(io protocol.IO) {
 	io.Uint8(&pk.ActionType)
-	switch pk.ActionType {
-	case ScoreboardIdentityActionRegister:
-		protocol.Slice(io, &pk.Entries)
-	case ScoreboardIdentityActionClear:
-		protocol.FuncIOSlice(io, &pk.Entries, protocol.ScoreboardIdentityClearEntry)
-	}
+	protocol.FuncIOSlice(io, &pk.Entries, func(io protocol.IO, entry *protocol.ScoreboardIdentityEntry) {
+		io.Varint64(&entry.EntryID)
+		hasEntityUniqueID := pk.ActionType == ScoreboardIdentityActionRegister
+		io.Bool(&hasEntityUniqueID)
+		if hasEntityUniqueID {
+			io.Varint64(&entry.EntityUniqueID)
+		} else {
+			entry.EntityUniqueID = 0
+		}
+	})
 }

@@ -67,16 +67,20 @@ const (
 // for both shaped and shapeless recipes.
 type RecipeUnlockRequirement struct {
 	// Context is the context in which the recipe is unlocked. This is one of the constants above.
-	Context byte
+	Context int32
 	// Ingredients are the ingredients required to unlock the recipe and only used if Context is set to none.
 	Ingredients []ItemDescriptorCount
 }
 
 // Marshal ...
 func (x *RecipeUnlockRequirement) Marshal(r IO) {
-	r.Uint8(&x.Context)
-	if x.Context == RecipeUnlockContextNone {
+	r.Varint32(&x.Context)
+	present := x.Context == RecipeUnlockContextNone
+	r.Bool(&present)
+	if present {
 		FuncSlice(r, &x.Ingredients, r.ItemDescriptorCount)
+	} else {
+		x.Ingredients = nil
 	}
 }
 
@@ -295,52 +299,52 @@ type SmithingTrimRecipe struct {
 
 // Marshal ...
 func (recipe *ShapelessRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, recipe)
+	marshalShapeless(w, recipe, true)
 }
 
 // Unmarshal ...
 func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
-	marshalShapeless(r, recipe)
+	marshalShapeless(r, recipe, true)
 }
 
 // Marshal ...
 func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
+	marshalShapeless(w, &recipe.ShapelessRecipe, true)
 }
 
 // Unmarshal ...
 func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
-	marshalShapeless(r, &recipe.ShapelessRecipe)
+	marshalShapeless(r, &recipe.ShapelessRecipe, true)
 }
 
 // Marshal ...
 func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
+	marshalShapeless(w, &recipe.ShapelessRecipe, false)
 }
 
 // Unmarshal ...
 func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
-	marshalShapeless(r, &recipe.ShapelessRecipe)
+	marshalShapeless(r, &recipe.ShapelessRecipe, false)
 }
 
 // Marshal ...
 func (recipe *ShapedRecipe) Marshal(w *Writer) {
-	marshalShaped(w, recipe)
+	marshalShaped(w, recipe, true)
 }
 
 // Unmarshal ...
 func (recipe *ShapedRecipe) Unmarshal(r *Reader) {
-	marshalShaped(r, recipe)
+	marshalShaped(r, recipe, true)
 }
 
 // Marshal ...
 func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
-	marshalShaped(w, &recipe.ShapedRecipe)
+	marshalShaped(w, &recipe.ShapedRecipe, false)
 }
 
 // Unmarshal ...
 func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
-	marshalShaped(r, &recipe.ShapedRecipe)
+	marshalShaped(r, &recipe.ShapedRecipe, false)
 }
 
 // Marshal ...
@@ -398,28 +402,39 @@ func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
 }
 
 // marshalShaped ...
-func marshalShaped(r IO, recipe *ShapedRecipe) {
+func marshalShaped(r IO, recipe *ShapedRecipe, withRequirement bool) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
-	FuncSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, r.ItemDescriptorCount)
+	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
+	if len(recipe.Input) != int(recipe.Width*recipe.Height) {
+		r.InvalidValue(len(recipe.Input), "shaped recipe ingredients", "must equal width multiplied by height")
+	}
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
 	r.Bool(&recipe.AssumeSymmetry)
-	Single(r, &recipe.UnlockRequirement)
+	present := withRequirement
+	r.Bool(&present)
+	if present {
+		Single(r, &recipe.UnlockRequirement)
+	}
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // marshalShapeless ...
-func marshalShapeless(r IO, recipe *ShapelessRecipe) {
+func marshalShapeless(r IO, recipe *ShapelessRecipe, withRequirement bool) {
 	r.String(&recipe.RecipeID)
 	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
-	Single(r, &recipe.UnlockRequirement)
+	present := withRequirement
+	r.Bool(&present)
+	if present {
+		Single(r, &recipe.UnlockRequirement)
+	}
 	r.Varuint32(&recipe.RecipeNetworkID)
 }

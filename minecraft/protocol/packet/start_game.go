@@ -261,9 +261,6 @@ type StartGame struct {
 	UseBlockNetworkIDHashes bool
 	// ServerAuthoritativeSound is currently unknown as to what it does.
 	ServerAuthoritativeSound bool
-	// IsLoggingChat indicates that the server owner is logging chat messages
-	// on the server machine. Education Edition only.
-	IsLoggingChat bool
 	// ServerJoinInformation contains optional information about the server the player is joining.
 	ServerJoinInformation protocol.Optional[protocol.ServerJoinInformation]
 	// ServerID is the server identifier for telemetry.
@@ -302,7 +299,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.CreatedInEditor)
 	io.Bool(&pk.ExportedFromEditor)
 	io.Varint32(&pk.DayCycleLockTime)
-	io.Varint32(&pk.EducationEditionOffer)
+	protocol.IntegerFunc(&pk.EducationEditionOffer, io.Varuint32)
 	io.Bool(&pk.EducationFeaturesEnabled)
 	io.String(&pk.EducationProductID)
 	io.Float32(&pk.RainLevel)
@@ -314,12 +311,12 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.PlatformBroadcastMode)
 	io.Bool(&pk.CommandsEnabled)
 	io.Bool(&pk.TexturePackRequired)
-	protocol.FuncSlice(io, &pk.GameRules, io.GameRuleLegacy)
+	protocol.FuncSlice(io, &pk.GameRules, io.GameRule)
 	protocol.SliceUint32Length(io, &pk.Experiments)
 	io.Bool(&pk.ExperimentsPreviouslyToggled)
 	io.Bool(&pk.BonusChestEnabled)
 	io.Bool(&pk.StartWithMapEnabled)
-	io.Varint32(&pk.PlayerPermissions)
+	protocol.IntegerFunc(&pk.PlayerPermissions, io.Uint8)
 	io.Int32(&pk.ServerChunkTickRadius)
 	io.Bool(&pk.HasLockedBehaviourPack)
 	io.Bool(&pk.HasLockedTexturePack)
@@ -358,7 +355,6 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
 	io.Bool(&pk.ServerAuthoritativeSound)
-	io.Bool(&pk.IsLoggingChat)
 	protocol.OptionalMarshaler(io, &pk.ServerJoinInformation)
 	io.String(&pk.ServerID)
 	io.String(&pk.ScenarioID)

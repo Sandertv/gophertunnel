@@ -9,29 +9,29 @@ type GatheringJoinInfo struct {
 	// ExperienceName is the name of the experience.
 	ExperienceName string
 	// ExperienceWorldID is the UUID of the experience world.
-	ExperienceWorldID uuid.UUID
+	ExperienceWorldID Optional[uuid.UUID]
 	// ExperienceWorldName is the world name of the experience.
-	ExperienceWorldName string
+	ExperienceWorldName Optional[string]
 	// CreatorID is the ID of the creator.
 	CreatorID string
 	// TargetID is the session ID of the experience.
-	TargetID uuid.UUID
+	TargetID Optional[uuid.UUID]
 	// ScenarioID is the scenario ID of experience.
-	ScenarioID string
+	ScenarioID Optional[string]
 	// ServerID is the server identifier.
-	ServerID string
+	ServerID Optional[string]
 }
 
 // Marshal encodes/decodes a GatheringJoinInfo.
 func (x *GatheringJoinInfo) Marshal(r IO) {
 	r.UUID(&x.ExperienceID)
 	r.String(&x.ExperienceName)
-	r.UUID(&x.ExperienceWorldID)
-	r.String(&x.ExperienceWorldName)
+	OptionalFunc(r, &x.ExperienceWorldID, r.UUID)
+	OptionalFunc(r, &x.ExperienceWorldName, r.String)
 	r.String(&x.CreatorID)
-	r.UUID(&x.TargetID)
-	r.String(&x.ScenarioID)
-	r.String(&x.ServerID)
+	OptionalFunc(r, &x.TargetID, r.UUID)
+	OptionalFunc(r, &x.ScenarioID, r.String)
+	OptionalFunc(r, &x.ServerID, r.String)
 }
 
 // StoreEntryPointInfo contains information about the store entry point.

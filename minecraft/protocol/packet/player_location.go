@@ -30,8 +30,12 @@ func (*PlayerLocation) ID() uint32 {
 }
 
 func (pk *PlayerLocation) Marshal(io protocol.IO) {
-	io.Int32(&pk.Type)
 	io.Varint64(&pk.EntityUniqueID)
+	t := uint32(pk.Type)
+	io.Varuint32(&t)
+	pk.Type = int32(t)
+	var legacyType int32
+	io.Varint32(&legacyType)
 	if pk.Type == PlayerLocationTypeCoordinates {
 		io.Vec3(&pk.Position)
 	}

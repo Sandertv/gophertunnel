@@ -1,7 +1,8 @@
 package protocol
 
 const (
-	ScoreboardIdentityPlayer = iota + 1
+	ScoreboardIdentityRemove = iota
+	ScoreboardIdentityPlayer
 	ScoreboardIdentityEntity
 	ScoreboardIdentityFakePlayer
 )
@@ -36,13 +37,52 @@ type ScoreboardEntry struct {
 
 // Marshal encodes/decodes a ScoreboardEntry x as an entry for modification.
 func (x *ScoreboardEntry) Marshal(r IO) {
-	ScoreRemoveEntry(r, x)
-	r.Uint8(&x.IdentityType)
+	variant := uint32(x.IdentityType)
+	r.Varuint32(&variant)
+	x.IdentityType = byte(variant)
+
+	typeNames := [...]string{"remove", "changeplayer", "changeentity", "changefakeplayer"}
+	if variant >= uint32(len(typeNames)) {
+		r.UnknownEnumOption(variant, "scoreboard entry variant")
+		return
+	}
+	typeName := typeNames[variant]
+	r.String(&typeName)
+	if typeName != typeNames[variant] {
+		r.InvalidValue(typeName, "scoreboard entry type name", "does not match entry variant")
+	}
+	r.Varint64(&x.EntryID)
 	switch x.IdentityType {
+	case ScoreboardIdentityRemove:
+		objective := Optional[string]{}
+		if x.ObjectiveName != "" {
+			objective = Option(x.ObjectiveName)
+		}
+		OptionalFunc(r, &objective, r.String)
+		x.ObjectiveName, _ = objective.Value()
 	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
+		objectiveName := x.ObjectiveName
+		if objectiveName == "" {
+			objectiveName = " "
+		}
+		r.String(&objectiveName)
+		x.ObjectiveName = objectiveName
+		r.Int32(&x.Score)
 		r.Varint64(&x.EntityUniqueID)
 	case ScoreboardIdentityFakePlayer:
-		r.String(&x.DisplayName)
+		objectiveName := x.ObjectiveName
+		if objectiveName == "" {
+			objectiveName = " "
+		}
+		r.String(&objectiveName)
+		x.ObjectiveName = objectiveName
+		r.Int32(&x.Score)
+		displayName := x.DisplayName
+		if displayName == "" {
+			displayName = " "
+		}
+		r.String(&displayName)
+		x.DisplayName = displayName
 	default:
 		r.UnknownEnumOption(x.IdentityType, "scoreboard entry identity type")
 	}
