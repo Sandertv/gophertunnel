@@ -24,7 +24,7 @@ func (*MotionPredictionHints) ID() uint32 {
 }
 
 func (pk *MotionPredictionHints) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Velocity)
 	io.Bool(&pk.OnGround)
 }

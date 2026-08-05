@@ -257,7 +257,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 
 // Marshal ...
 func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
-	r.Varuint64(&data.TargetEntityRuntimeID)
+	r.ActorRuntimeID(&data.TargetEntityRuntimeID)
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)

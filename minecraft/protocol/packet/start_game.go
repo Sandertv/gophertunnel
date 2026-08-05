@@ -279,8 +279,8 @@ func (*StartGame) ID() uint32 {
 }
 
 func (pk *StartGame) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Varint32(&pk.PlayerGameMode)
 	io.Vec3(&pk.PlayerPosition)
 	io.Float32(&pk.Pitch)

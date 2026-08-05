@@ -35,5 +35,5 @@ func (*Respawn) ID() uint32 {
 func (pk *Respawn) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Uint8(&pk.State)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 }

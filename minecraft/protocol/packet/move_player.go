@@ -57,14 +57,14 @@ func (*MovePlayer) ID() uint32 {
 }
 
 func (pk *MovePlayer) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Position)
 	io.Float32(&pk.Pitch)
 	io.Float32(&pk.Yaw)
 	io.Float32(&pk.HeadYaw)
 	io.Uint8(&pk.Mode)
 	io.Bool(&pk.OnGround)
-	io.Varuint64(&pk.RiddenEntityRuntimeID)
+	io.ActorRuntimeID(&pk.RiddenEntityRuntimeID)
 	protocol.OptionalMarshaler(io, &pk.TeleportData)
 	io.Varuint64(&pk.Tick)
 }

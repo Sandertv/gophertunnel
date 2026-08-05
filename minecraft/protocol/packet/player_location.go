@@ -30,7 +30,7 @@ func (*PlayerLocation) ID() uint32 {
 }
 
 func (pk *PlayerLocation) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	protocol.IntegerFunc(&pk.Type, io.Varuint32)
 
 	var reserved int32

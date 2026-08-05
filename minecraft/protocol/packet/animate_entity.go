@@ -41,5 +41,5 @@ func (pk *AnimateEntity) Marshal(io protocol.IO) {
 	io.Int32(&pk.StopConditionVersion)
 	io.String(&pk.Controller)
 	io.Float32(&pk.BlendOutTime)
-	protocol.FuncSlice(io, &pk.EntityRuntimeIDs, io.Varuint64)
+	protocol.FuncSlice(io, &pk.EntityRuntimeIDs, io.ActorRuntimeID)
 }

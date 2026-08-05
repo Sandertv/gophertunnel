@@ -38,7 +38,7 @@ func (*MoveActorDelta) ID() uint32 {
 }
 
 func (pk *MoveActorDelta) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	protocol.OptionalFunc(io, &pk.PositionX, io.Float32)
 	protocol.OptionalFunc(io, &pk.PositionY, io.Float32)
 	protocol.OptionalFunc(io, &pk.PositionZ, io.Float32)

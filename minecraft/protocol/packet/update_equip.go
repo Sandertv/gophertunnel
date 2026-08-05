@@ -35,6 +35,6 @@ func (pk *UpdateEquip) Marshal(io protocol.IO) {
 	io.Uint8(&pk.WindowID)
 	io.Uint8(&pk.WindowType)
 	io.Varint32(&pk.Size)
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.Bytes(&pk.SerialisedInventoryData)
 }

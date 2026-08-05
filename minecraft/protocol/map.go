@@ -50,7 +50,7 @@ type MapTrackedObject struct {
 // Marshal encodes/decodes a MapTrackedObject.
 func (x *MapTrackedObject) Marshal(r IO) {
 	r.Int32(&x.Type)
-	OptionalFunc(r, &x.EntityUniqueID, r.Varint64)
+	OptionalFunc(r, &x.EntityUniqueID, r.ActorUniqueID)
 	OptionalFunc(r, &x.BlockPosition, r.BlockPos)
 	if x.Type != MapObjectTypeEntity && x.Type != MapObjectTypeBlock {
 		r.UnknownEnumOption(x.Type, "map tracked object type")

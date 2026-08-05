@@ -60,7 +60,7 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 	case ScoreboardIdentityEntity, ScoreboardIdentityPlayer:
 		r.String(&x.ObjectiveName)
 		r.Int32(&x.Score)
-		r.Varint64(&x.EntityUniqueID)
+		r.ActorUniqueID(&x.EntityUniqueID)
 	case ScoreboardIdentityFakePlayer:
 		r.String(&x.ObjectiveName)
 		r.Int32(&x.Score)
@@ -81,5 +81,5 @@ type ScoreboardIdentityEntry struct {
 // Marshal encodes/decodes a ScoreboardIdentityEntry.
 func (x *ScoreboardIdentityEntry) Marshal(r IO) {
 	r.Varint64(&x.EntryID)
-	OptionalFunc(r, &x.EntityUniqueID, r.Varint64)
+	OptionalFunc(r, &x.EntityUniqueID, r.ActorUniqueID)
 }

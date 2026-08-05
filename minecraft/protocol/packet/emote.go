@@ -36,7 +36,7 @@ func (*Emote) ID() uint32 {
 }
 
 func (pk *Emote) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.String(&pk.EmoteID)
 	io.Varuint32(&pk.EmoteLength)
 	io.String(&pk.XUID)

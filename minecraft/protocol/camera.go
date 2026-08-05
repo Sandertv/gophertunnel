@@ -299,7 +299,7 @@ type CameraInstructionTarget struct {
 // Marshal encodes/decodes a CameraInstructionTarget.
 func (x *CameraInstructionTarget) Marshal(r IO) {
 	OptionalFunc(r, &x.CenterOffset, r.Vec3)
-	r.Int64(&x.EntityUniqueID)
+	r.ActorUniqueIDInt64(&x.EntityUniqueID)
 }
 
 // CameraInstructionFieldOfView represents a camera instruction that updates the field of view.

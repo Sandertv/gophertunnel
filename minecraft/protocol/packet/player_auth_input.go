@@ -191,7 +191,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 		protocol.Slice(io, x)
 	})
 	protocol.DoubleOptionalFunc(io, &pk.VehicleRotation, io.Vec2)
-	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.Varint64)
+	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.ActorUniqueID)
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
 	io.Vec2(&pk.RawMoveVector)
