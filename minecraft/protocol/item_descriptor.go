@@ -1,5 +1,7 @@
 package protocol
 
+import "fmt"
+
 // ItemDescriptorCount represents an item descriptor that has a count attached with it, such as a recipe ingredient.
 type ItemDescriptorCount struct {
 	// Descriptor represents how the item is described over the network. It is one of the descriptors above.
@@ -92,25 +94,31 @@ func itemDescriptorFromType(id uint8) (ItemDescriptor, bool) {
 func StackRequestItemDescriptorCount(r IO, x *ItemDescriptorCount) {
 	id, _, ok := itemDescriptorType(x.Descriptor)
 	if !ok {
-		r.UnknownEnumOption(x.Descriptor, "stack request item descriptor type")
+		r.UnknownEnumOption(fmt.Sprintf("%T", x.Descriptor), "stack request item descriptor type")
 		return
 	}
 	variant := uint32(id)
 	r.Varuint32(&variant)
-	var legacyID = id
+	legacyID := id
 	r.Uint8(&legacyID)
-	if variant != uint32(legacyID) {
-		r.InvalidValue(legacyID, "legacy item descriptor type", "does not match Cereal descriptor variant")
+	if variant > ItemDescriptorItemTag {
+		r.UnknownEnumOption(variant, "stack request item descriptor type")
+		return
 	}
-	if x.Descriptor == nil || uint32(id) != variant {
+	descriptor := x.Descriptor
+	if descriptor == nil {
+		descriptor = &InvalidItemDescriptor{}
+	}
+	if uint32(id) != variant {
 		var found bool
-		x.Descriptor, found = itemDescriptorFromType(legacyID)
+		descriptor, found = itemDescriptorFromType(uint8(variant))
 		if !found {
 			r.UnknownEnumOption(variant, "stack request item descriptor type")
 			return
 		}
+		x.Descriptor = descriptor
 	}
-	x.Descriptor.Marshal(r)
+	descriptor.Marshal(r)
 	IntegerFunc(&x.Count, r.Uint16)
 }
 

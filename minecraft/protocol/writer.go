@@ -162,22 +162,10 @@ func (w *Writer) RGBA(x *color.RGBA) {
 	w.Uint32(&val)
 }
 
-// ARGB writes a color.RGBA x as a int32 to the underlying buffer.
-func (w *Writer) ARGB(x *color.RGBA) {
-	val := int32(x.A) | int32(x.R)<<8 | int32(x.G)<<16 | int32(x.B)<<24
-	w.Int32(&val)
-}
-
 // BEARGB writes a color.RGBA x as a big endian int32 to the underlying buffer.
 func (w *Writer) BEARGB(x *color.RGBA) {
 	val := int32(x.A) | int32(x.R)<<8 | int32(x.G)<<16 | int32(x.B)<<24
 	w.BEInt32(&val)
-}
-
-// VarRGBA writes a color.RGBA x as a varuint32 to the underlying buffer.
-func (w *Writer) VarRGBA(x *color.RGBA) {
-	val := uint32(x.R) | uint32(x.G)<<8 | uint32(x.B)<<16 | uint32(x.A)<<24
-	w.Varuint32(&val)
 }
 
 // UUID writes a UUID to the underlying buffer.
@@ -336,8 +324,7 @@ func (w *Writer) ItemInstance(i *ItemInstance) {
 		w.Varint32(&i.StackNetworkID)
 	}
 
-	runtimeID := uint32(x.BlockRuntimeID)
-	w.Varuint32(&runtimeID)
+	IntegerFunc(&x.BlockRuntimeID, w.Varuint32)
 	w.itemUserData(itemStackUserData(x), x.NetworkID != 0, x.NetworkID == w.shieldID)
 }
 
@@ -363,12 +350,10 @@ func (w *Writer) StackRequestItem(x *StackRequestItem) {
 	w.Uint8(&legacyVariant)
 	if hasItem {
 		w.String(&x.Identifier)
-		metadata := int32(x.MetadataValue)
-		w.Varint32(&metadata)
+		IntegerFunc(&x.MetadataValue, w.Varint32)
 	}
 	IntegerFunc(&x.Count, w.Int16)
-	runtimeID := uint32(x.BlockRuntimeID)
-	w.Varuint32(&runtimeID)
+	IntegerFunc(&x.BlockRuntimeID, w.Varuint32)
 	w.itemUserData(stackRequestItemUserData(x), hasItem, x.Identifier == "minecraft:shield")
 }
 

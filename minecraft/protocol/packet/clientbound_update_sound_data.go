@@ -8,20 +8,13 @@ import "github.com/sandertv/gophertunnel/minecraft/protocol"
 type ClientboundUpdateSoundData struct {
 	// ServerSoundHandle is the server-side handle of the sound to update.
 	ServerSoundHandle uint64
-	// Stop is the optional sound update slot named Stop.
-	Stop protocol.Optional[protocol.SoundDataUpdate]
-	// SetVolume is the optional sound update slot named SetVolume.
-	SetVolume protocol.Optional[protocol.SoundDataUpdate]
-	// SetPitch is the optional sound update slot named SetPitch.
-	SetPitch protocol.Optional[protocol.SoundDataUpdate]
-	// Fade is the optional sound update slot named Fade.
-	Fade protocol.Optional[protocol.SoundDataUpdate]
-	// SeekTo is the optional sound update slot named SeekTo.
-	SeekTo protocol.Optional[protocol.SoundDataUpdate]
-	// Pause is the optional sound update slot named Pause.
-	Pause protocol.Optional[protocol.SoundDataUpdate]
-	// Resume is the optional sound update slot named Resume.
-	Resume protocol.Optional[protocol.SoundDataUpdate]
+	Stop              protocol.Optional[protocol.SoundDataUpdate]
+	SetVolume         protocol.Optional[protocol.SoundDataUpdate]
+	SetPitch          protocol.Optional[protocol.SoundDataUpdate]
+	Fade              protocol.Optional[protocol.SoundDataUpdate]
+	SeekTo            protocol.Optional[protocol.SoundDataUpdate]
+	Pause             protocol.Optional[protocol.SoundDataUpdate]
+	Resume            protocol.Optional[protocol.SoundDataUpdate]
 }
 
 // ID ...

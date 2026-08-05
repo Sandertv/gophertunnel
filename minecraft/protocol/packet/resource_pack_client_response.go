@@ -44,16 +44,6 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 }
 
 func resourcePackResponseToString(x uint8) string {
-	switch x {
-	case PackResponseRefused:
-		return "cancel"
-	case PackResponseSendPacks:
-		return "downloading"
-	case PackResponseAllPacksDownloaded:
-		return "downloadingfinished"
-	case PackResponseCompleted:
-		return "resourcepackstackfinished"
-	default:
-		return "unknown"
-	}
+	names := [...]string{"cancel", "downloading", "downloadingfinished", "resourcepackstackfinished"}
+	return names[x]
 }

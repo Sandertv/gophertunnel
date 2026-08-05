@@ -183,18 +183,6 @@ func (r *Reader) RGBA(x *color.RGBA) {
 	}
 }
 
-// ARGB reads a color.ARGB x from a int32.
-func (r *Reader) ARGB(x *color.RGBA) {
-	var v int32
-	r.Int32(&v)
-	*x = color.RGBA{
-		A: byte(v),
-		R: byte(v >> 8),
-		G: byte(v >> 16),
-		B: byte(v >> 24),
-	}
-}
-
 // BEARGB reads a color.ARGB x from a big endian int32.
 func (r *Reader) BEARGB(x *color.RGBA) {
 	var v int32
@@ -204,18 +192,6 @@ func (r *Reader) BEARGB(x *color.RGBA) {
 		R: byte(v >> 8),
 		G: byte(v >> 16),
 		B: byte(v >> 24),
-	}
-}
-
-// VarRGBA reads a color.RGBA x from a varuint32.
-func (r *Reader) VarRGBA(x *color.RGBA) {
-	var v uint32
-	r.Varuint32(&v)
-	*x = color.RGBA{
-		R: byte(v),
-		G: byte(v >> 8),
-		B: byte(v >> 16),
-		A: byte(v >> 24),
 	}
 }
 
@@ -427,9 +403,7 @@ func (r *Reader) ItemInstance(i *ItemInstance) {
 		i.StackNetworkID = 0
 	}
 
-	var runtimeID uint32
-	r.Varuint32(&runtimeID)
-	x.BlockRuntimeID = int32(runtimeID)
+	IntegerFunc(&x.BlockRuntimeID, r.Varuint32)
 	data := r.itemUserData(x.NetworkID == r.shieldID)
 	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
@@ -451,9 +425,6 @@ func (r *Reader) StackRequestItem(x *StackRequestItem) {
 	r.Varuint32(&variant)
 	var legacyVariant uint8
 	r.Uint8(&legacyVariant)
-	if variant != uint32(legacyVariant) {
-		r.InvalidValue(legacyVariant, "legacy stack request item descriptor", "does not match Cereal descriptor variant")
-	}
 	hasItem := variant == ItemDescriptorDefault
 	if variant != ItemDescriptorInvalid && !hasItem {
 		r.UnknownEnumOption(variant, "stack request item descriptor")
@@ -461,17 +432,13 @@ func (r *Reader) StackRequestItem(x *StackRequestItem) {
 	}
 	if hasItem {
 		r.String(&x.Identifier)
-		var metadata int32
-		r.Varint32(&metadata)
-		x.MetadataValue = uint32(metadata)
+		IntegerFunc(&x.MetadataValue, r.Varint32)
 	} else {
 		x.Identifier = ""
 		x.MetadataValue = 0
 	}
 	IntegerFunc(&x.Count, r.Int16)
-	var runtimeID uint32
-	r.Varuint32(&runtimeID)
-	x.BlockRuntimeID = int32(runtimeID)
+	IntegerFunc(&x.BlockRuntimeID, r.Varuint32)
 	data := r.itemUserData(x.Identifier == "minecraft:shield")
 	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
@@ -513,11 +480,15 @@ func (r *Reader) itemUserData(shield bool) itemUserData {
 func (r *Reader) StackRequestAction(x *StackRequestAction) {
 	var variant uint32
 	r.Varuint32(&variant)
-	var id uint8
-	r.Uint8(&id)
-	if stackRequestActionVariant(id) != variant {
-		r.InvalidValue(id, "stack request action type", "does not match the variant it was sent under")
+	var legacyID uint8
+	r.Uint8(&legacyID)
+	if variant > stackRequestActionVariant(StackRequestActionCraftResultsDeprecated) {
+		r.UnknownEnumOption(variant, "stack request action variant")
 		return
+	}
+	id := uint8(variant)
+	if variant >= uint32(StackRequestActionPlaceInContainer) {
+		id += 2
 	}
 	if !lookupStackRequestAction(id, x) {
 		r.UnknownEnumOption(id, "stack request action type")

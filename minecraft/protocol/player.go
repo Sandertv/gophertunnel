@@ -127,9 +127,6 @@ func playerListAction(r IO, action *byte) {
 	} else if variant != 0 {
 		r.UnknownEnumOption(variant, "player list entry variant")
 	}
-	if legacyAction != *action {
-		r.InvalidValue(legacyAction, "player list action type", "does not match entry variant")
-	}
 }
 
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how

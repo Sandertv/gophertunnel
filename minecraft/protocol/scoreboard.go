@@ -49,9 +49,6 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 	}
 	typeName := scoreboardEntryTypeNames[variant]
 	r.String(&typeName)
-	if typeName != scoreboardEntryTypeNames[variant] {
-		r.InvalidValue(typeName, "scoreboard entry type name", "does not match entry variant")
-	}
 	r.Varint64(&x.EntryID)
 	switch x.IdentityType {
 	case ScoreboardIdentityRemove:

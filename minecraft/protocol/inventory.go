@@ -50,11 +50,7 @@ func (x *InventoryAction) Marshal(r IO) {
 		r.Bool(&hasContainerID)
 		if hasContainerID {
 			r.Int8(&x.WindowID)
-		} else {
-			x.WindowID = 0
 		}
-	} else {
-		x.WindowID = 0
 	}
 	present = true
 	r.Bool(&present)
@@ -63,11 +59,7 @@ func (x *InventoryAction) Marshal(r IO) {
 		r.Bool(&hasFlags)
 		if hasFlags {
 			r.Varuint32(&x.SourceFlags)
-		} else {
-			x.SourceFlags = 0
 		}
-	} else {
-		x.SourceFlags = 0
 	}
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)

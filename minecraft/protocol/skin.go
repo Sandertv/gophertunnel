@@ -250,7 +250,9 @@ type PersonaPieceTintColour struct {
 func (x *PersonaPieceTintColour) Marshal(r IO) {
 	wireType := personaPieceTintWireType(x.PieceType)
 	r.String(&wireType)
-	x.PieceType = personaPieceTintLoginType(wireType)
+	if wireType != personaPieceTintWireType(x.PieceType) {
+		x.PieceType = personaPieceTintLoginType(wireType)
+	}
 	for i := range x.Colours {
 		r.BEARGB(&x.Colours[i])
 	}
