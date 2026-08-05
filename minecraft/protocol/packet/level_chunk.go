@@ -46,7 +46,13 @@ func (pk *LevelChunk) Marshal(io protocol.IO) {
 	io.ChunkPos(&pk.Position)
 	io.Varint32(&pk.Dimension)
 	io.Varuint32(&pk.SubChunkCount)
+	if pk.SubChunkCount > 64 {
+		io.InvalidValue(pk.SubChunkCount, "level chunk sub-chunk count", "must not exceed 64")
+	}
 	protocol.OptionalFunc(io, &pk.SubChunkLimit, io.Varint32)
+	if _, present := pk.SubChunkLimit.Value(); present && pk.SubChunkCount != 0 {
+		io.InvalidValue(pk.SubChunkCount, "level chunk sub-chunk count", "must be zero when the sub-chunk limit is present")
+	}
 	io.Bool(&pk.CacheEnabled)
 	protocol.FuncSlice(io, &pk.BlobHashes, io.Uint64)
 	io.ByteSlice(&pk.RawPayload)

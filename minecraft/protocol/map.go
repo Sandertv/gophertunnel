@@ -41,28 +41,18 @@ const (
 type MapTrackedObject struct {
 	// Type is the type of the tracked object. It is either MapObjectTypeEntity or MapObjectTypeBlock.
 	Type int32
-	// EntityUniqueID is the unique ID of the entity, if the tracked object was an entity. It needs not to be
-	// filled out if Type is not MapObjectTypeEntity.
-	EntityUniqueID int64
-	// BlockPosition is the position of the block, if the tracked object was a block. It needs not to be
-	// filled out if Type is not MapObjectTypeBlock.
-	BlockPosition BlockPos
+	// EntityUniqueID is the optional unique ID of the tracked entity.
+	EntityUniqueID Optional[int64]
+	// BlockPosition is the optional position of the tracked block.
+	BlockPosition Optional[BlockPos]
 }
 
 // Marshal encodes/decodes a MapTrackedObject.
 func (x *MapTrackedObject) Marshal(r IO) {
 	r.Int32(&x.Type)
-	entityPresent := x.Type == MapObjectTypeEntity
-	r.Bool(&entityPresent)
-	if entityPresent {
-		r.Varint64(&x.EntityUniqueID)
-	}
-	blockPresent := x.Type == MapObjectTypeBlock
-	r.Bool(&blockPresent)
-	if blockPresent {
-		r.BlockPos(&x.BlockPosition)
-	}
-	if !entityPresent && !blockPresent {
+	OptionalFunc(r, &x.EntityUniqueID, r.Varint64)
+	OptionalFunc(r, &x.BlockPosition, r.BlockPos)
+	if x.Type != MapObjectTypeEntity && x.Type != MapObjectTypeBlock {
 		r.UnknownEnumOption(x.Type, "map tracked object type")
 	}
 }

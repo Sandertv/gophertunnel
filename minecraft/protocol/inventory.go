@@ -170,12 +170,12 @@ type UseItemTransactionData struct {
 	// LegacySetItemSlots are only present if the LegacyRequestID is non-zero. These item slots inform the
 	// server of the slots that were changed during the inventory transaction, and the server should send
 	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
-	LegacySetItemSlots []LegacySetItemSlot
+	LegacySetItemSlots Optional[[]LegacySetItemSlot]
 	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
 	// no items are cheated into the inventory.
-	Actions []InventoryAction
+	Actions Optional[[]InventoryAction]
 	// ActionType is the type of the UseItem inventory transaction. It is one of the action types found above,
 	// and specifies the way the player interacted with the block.
 	ActionType uint32

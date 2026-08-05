@@ -44,9 +44,17 @@ func (pk *PlayerUpdateEntityOverrides) Marshal(io protocol.IO) {
 		io.InvalidValue(pk.Type, "entity override type", "does not match the variant it was sent under")
 		return
 	}
-	if pk.Type == PlayerUpdateEntityOverridesTypeInt {
+	switch pk.Type {
+	case PlayerUpdateEntityOverridesTypeClearAll, PlayerUpdateEntityOverridesTypeRemove:
+		pk.IntValue = 0
+		pk.FloatValue = 0
+	case PlayerUpdateEntityOverridesTypeInt:
 		io.Int32(&pk.IntValue)
-	} else if pk.Type == PlayerUpdateEntityOverridesTypeFloat {
+		pk.FloatValue = 0
+	case PlayerUpdateEntityOverridesTypeFloat:
 		io.Float32(&pk.FloatValue)
+		pk.IntValue = 0
+	default:
+		io.UnknownEnumOption(pk.Type, "entity override type")
 	}
 }

@@ -97,6 +97,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	playerListAction(r, &x.ActionType)
 	r.UUID(&x.UUID)
 	if x.ActionType == PlayerListActionRemove {
+		*x = PlayerListEntry{ActionType: x.ActionType, UUID: x.UUID}
 		return
 	}
 

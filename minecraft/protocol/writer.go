@@ -193,13 +193,10 @@ func (w *Writer) UUID(x *uuid.UUID) {
 // PlayerInventoryAction writes a PlayerInventoryAction.
 func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varint32(&x.LegacyRequestID)
-	legacySlotsPresent := x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0
-	w.Bool(&legacySlotsPresent)
-	if legacySlotsPresent {
-		Slice(w, &x.LegacySetItemSlots)
-	}
-	actions := Option(x.Actions)
-	DoubleOptionalFunc(w, &actions, func(actions *[]InventoryAction) {
+	OptionalFunc(w, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
+		Slice(w, slots)
+	})
+	DoubleOptionalFunc(w, &x.Actions, func(actions *[]InventoryAction) {
 		Slice(w, actions)
 	})
 	IntegerFunc(&x.ActionType, w.Varint32)

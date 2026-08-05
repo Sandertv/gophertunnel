@@ -33,20 +33,5 @@ func (pk *SetScoreboardIdentity) Marshal(io protocol.IO) {
 	if pk.ActionType != ScoreboardIdentityActionRegister && pk.ActionType != ScoreboardIdentityActionClear {
 		io.UnknownEnumOption(pk.ActionType, "scoreboard identity action type")
 	}
-	protocol.FuncIOSlice(io, &pk.Entries, pk.marshalEntry)
-}
-
-func (pk *SetScoreboardIdentity) marshalEntry(io protocol.IO, entry *protocol.ScoreboardIdentityEntry) {
-	io.Varint64(&entry.EntryID)
-	expectsEntityUniqueID := pk.ActionType == ScoreboardIdentityActionRegister
-	hasEntityUniqueID := expectsEntityUniqueID
-	io.Bool(&hasEntityUniqueID)
-	if hasEntityUniqueID != expectsEntityUniqueID {
-		io.InvalidValue(hasEntityUniqueID, "scoreboard identity entity unique ID presence", "does not match action type")
-	}
-	if hasEntityUniqueID {
-		io.Varint64(&entry.EntityUniqueID)
-	} else {
-		entry.EntityUniqueID = 0
-	}
+	protocol.Slice(io, &pk.Entries)
 }

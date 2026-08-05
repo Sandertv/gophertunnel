@@ -268,22 +268,12 @@ func (r *Reader) UUID(x *uuid.UUID) {
 // PlayerInventoryAction reads a PlayerInventoryAction.
 func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
-	var legacySlotsPresent bool
-	r.Bool(&legacySlotsPresent)
-	expectsLegacySlots := x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0
-	if legacySlotsPresent != expectsLegacySlots {
-		r.InvalidValue(legacySlotsPresent, "legacy set item slots presence", "does not match legacy request ID")
-	}
-	if legacySlotsPresent {
-		Slice(r, &x.LegacySetItemSlots)
-	} else {
-		x.LegacySetItemSlots = nil
-	}
-	var actions Optional[[]InventoryAction]
-	DoubleOptionalFunc(r, &actions, func(actions *[]InventoryAction) {
+	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
+		Slice(r, slots)
+	})
+	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
 		Slice(r, actions)
 	})
-	x.Actions, _ = actions.Value()
 	IntegerFunc(&x.ActionType, r.Varint32)
 	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)

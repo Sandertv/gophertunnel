@@ -77,7 +77,12 @@ type ScoreboardIdentityEntry struct {
 	// EntryID is the unique identifier of the entry that the identity should be associated with, or that
 	// associations should be cleared from.
 	EntryID int64
-	// EntityUniqueID is the unique ID that the entry should be associated with. It is empty if the
-	// SetScoreboardIdentity packet is sent to remove associations with identities.
-	EntityUniqueID int64
+	// EntityUniqueID is the optional unique ID that the entry should be associated with.
+	EntityUniqueID Optional[int64]
+}
+
+// Marshal encodes/decodes a ScoreboardIdentityEntry.
+func (x *ScoreboardIdentityEntry) Marshal(r IO) {
+	r.Varint64(&x.EntryID)
+	OptionalFunc(r, &x.EntityUniqueID, r.Varint64)
 }
