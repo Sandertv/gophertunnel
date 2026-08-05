@@ -22,13 +22,22 @@ type ResourcePackDeliveryConfig struct {
 	ChunkSendDelay time.Duration
 }
 
+// defaultResourcePackDeliveryConfig returns the default resource pack delivery configuration.
+func defaultResourcePackDeliveryConfig() ResourcePackDeliveryConfig {
+	return ResourcePackDeliveryConfig{
+		ChunkSize:      DefaultResourcePackChunkSize,
+		ChunkSendDelay: DefaultResourcePackChunkSendDelay,
+	}
+}
+
 // normalized returns the configuration with defaults filled in.
 func (config ResourcePackDeliveryConfig) normalized() ResourcePackDeliveryConfig {
+	defaults := defaultResourcePackDeliveryConfig()
 	if config.ChunkSize == 0 {
-		config.ChunkSize = DefaultResourcePackChunkSize
+		config.ChunkSize = defaults.ChunkSize
 	}
 	if config.ChunkSendDelay == 0 {
-		config.ChunkSendDelay = DefaultResourcePackChunkSendDelay
+		config.ChunkSendDelay = defaults.ChunkSendDelay
 	} else if config.ChunkSendDelay < 0 {
 		config.ChunkSendDelay = 0
 	}

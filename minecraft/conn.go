@@ -215,10 +215,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		proto:        proto,
 		readerLimits: limits,
 
-		resourcePackDelivery: ResourcePackDeliveryConfig{
-			ChunkSize:      DefaultResourcePackChunkSize,
-			ChunkSendDelay: DefaultResourcePackChunkSendDelay,
-		},
+		resourcePackDelivery: defaultResourcePackDeliveryConfig(),
 	}
 	if d, ok := netConn.(packet.EncryptionDisabler); ok {
 		conn.disableEncryption = d.DisableEncryption()
