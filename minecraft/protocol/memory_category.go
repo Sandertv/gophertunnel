@@ -161,24 +161,26 @@ type SystemDiagnosticTimingInfo struct {
 	PercentOfTotal byte
 }
 
-// SystemCategory maps a diagnostics category name to a system index.
-type SystemCategory struct {
-	CategoryName string
-	SystemIndex  uint64
-}
-
-// Marshal encodes/decodes a SystemCategory.
-func (x *SystemCategory) Marshal(r IO) {
-	r.String(&x.CategoryName)
-	r.Uint64(&x.SystemIndex)
-}
-
 // Marshal encodes/decodes a SystemDiagnosticTimingInfo.
 func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.DisplayName)
 	r.Uint64(&x.SystemIndex)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+}
+
+// SystemCategory maps a diagnostics category name to a system index.
+type SystemCategory struct {
+	// CategoryName is the display name of the diagnostics category.
+	CategoryName string
+	// SystemIndex identifies the system assigned to the category.
+	SystemIndex uint64
+}
+
+// Marshal encodes/decodes a SystemCategory.
+func (x *SystemCategory) Marshal(r IO) {
+	r.String(&x.CategoryName)
+	r.Uint64(&x.SystemIndex)
 }
 
 // WhiskerScopeDataSummary represents a whisker profiler scope diagnostic summary.

@@ -40,8 +40,6 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 
 	if pk.Response == PackResponseSendPacks {
 		protocol.FuncSlice(io, &pk.PacksToDownload, io.String)
-	} else {
-		pk.PacksToDownload = nil
 	}
 }
 

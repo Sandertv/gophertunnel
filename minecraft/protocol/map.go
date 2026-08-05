@@ -39,7 +39,8 @@ const (
 // MapTrackedObject is an object on a map that is 'tracked' by the client, such as an entity or a block. This
 // object may move, which is handled client-side.
 type MapTrackedObject struct {
-	// Type is the type of the tracked object. It is either MapObjectTypeEntity or MapObjectTypeBlock.
+	// Type is the declared kind of the tracked object. It is either MapObjectTypeEntity or MapObjectTypeBlock;
+	// the two following payloads nevertheless have independent presence flags on the wire.
 	Type int32
 	// EntityUniqueID is the optional unique ID of the tracked entity.
 	EntityUniqueID Optional[int64]

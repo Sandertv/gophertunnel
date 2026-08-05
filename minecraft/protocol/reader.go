@@ -133,17 +133,17 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
+// ChunkPos reads a ChunkPos as 2 varint32s from the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
 	r.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+// SubChunkPos reads a SubChunkPos as 3 little-endian int32s from the underlying buffer.
 func (r *Reader) SubChunkPos(x *SubChunkPos) {
-	r.Varint32(&x[0])
-	r.Varint32(&x[1])
-	r.Varint32(&x[2])
+	r.Int32(&x[0])
+	r.Int32(&x[1])
+	r.Int32(&x[2])
 }
 
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.

@@ -14,8 +14,8 @@ type LevelChunk struct {
 	// Dimension is the ID of the dimension that the chunk belongs to. This must always be set otherwise the
 	// client will always assume the chunk is part of the overworld dimension.
 	Dimension int32
-	// SubChunkCount is the amount of sub-chunks sent inline. It is zero when SubChunkLimit is present and the client
-	// should request sub-chunks instead.
+	// SubChunkCount is the amount of sub-chunks sent inline. BDS sets it to zero when SubChunkLimit is present and the
+	// client should request sub-chunks instead.
 	SubChunkCount uint32
 	// SubChunkLimit is the maximum amount of sub-chunks a client will request when in request mode. A value of -1
 	// means there is no limit.
@@ -50,9 +50,6 @@ func (pk *LevelChunk) Marshal(io protocol.IO) {
 		io.InvalidValue(pk.SubChunkCount, "level chunk sub-chunk count", "must not exceed 64")
 	}
 	protocol.OptionalFunc(io, &pk.SubChunkLimit, io.Varint32)
-	if _, present := pk.SubChunkLimit.Value(); present && pk.SubChunkCount != 0 {
-		io.InvalidValue(pk.SubChunkCount, "level chunk sub-chunk count", "must be zero when the sub-chunk limit is present")
-	}
 	io.Bool(&pk.CacheEnabled)
 	protocol.FuncSlice(io, &pk.BlobHashes, io.Uint64)
 	io.ByteSlice(&pk.RawPayload)

@@ -41,7 +41,6 @@ func (pk *PlayerLocation) Marshal(io protocol.IO) {
 	case PlayerLocationTypeCoordinates:
 		io.Vec3(&pk.Position)
 	case PlayerLocationTypeHide:
-		pk.Position = mgl32.Vec3{}
 	default:
 		io.UnknownEnumOption(pk.Type, "player location type")
 	}

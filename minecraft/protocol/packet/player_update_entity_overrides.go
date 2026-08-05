@@ -46,14 +46,10 @@ func (pk *PlayerUpdateEntityOverrides) Marshal(io protocol.IO) {
 	}
 	switch pk.Type {
 	case PlayerUpdateEntityOverridesTypeClearAll, PlayerUpdateEntityOverridesTypeRemove:
-		pk.IntValue = 0
-		pk.FloatValue = 0
 	case PlayerUpdateEntityOverridesTypeInt:
 		io.Int32(&pk.IntValue)
-		pk.FloatValue = 0
 	case PlayerUpdateEntityOverridesTypeFloat:
 		io.Float32(&pk.FloatValue)
-		pk.IntValue = 0
 	default:
 		io.UnknownEnumOption(pk.Type, "entity override type")
 	}

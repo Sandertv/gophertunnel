@@ -92,6 +92,7 @@ func itemDescriptorFromType(id uint8) (ItemDescriptor, bool) {
 
 // StackRequestItemDescriptorCount reads/writes the Cereal item descriptor format used by auto-craft actions.
 func StackRequestItemDescriptorCount(r IO, x *ItemDescriptorCount) {
+	// A nil descriptor represents the explicit invalid/empty Cereal variant.
 	id, _, ok := itemDescriptorType(x.Descriptor)
 	if !ok {
 		r.UnknownEnumOption(x.Descriptor, "stack request item descriptor type")

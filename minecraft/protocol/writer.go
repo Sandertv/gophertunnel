@@ -134,11 +134,11 @@ func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+// SubChunkPos writes a SubChunkPos as 3 little-endian int32s to the underlying buffer.
 func (w *Writer) SubChunkPos(x *SubChunkPos) {
-	w.Varint32(&x[0])
-	w.Varint32(&x[1])
-	w.Varint32(&x[2])
+	w.Int32(&x[0])
+	w.Int32(&x[1])
+	w.Int32(&x[2])
 }
 
 // SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
