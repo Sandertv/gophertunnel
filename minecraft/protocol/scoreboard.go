@@ -7,8 +7,6 @@ const (
 	ScoreboardIdentityFakePlayer
 )
 
-var scoreboardEntryTypeNames = [...]string{"remove", "changeplayer", "changeentity", "changefakeplayer"}
-
 // ScoreboardEntry represents a single entry that may be found on a scoreboard. These entries represent a
 // line on the scoreboard each.
 type ScoreboardEntry struct {
@@ -43,11 +41,12 @@ func (x *ScoreboardEntry) Marshal(r IO) {
 	r.Varuint32(&variant)
 	x.IdentityType = byte(variant)
 
-	if variant >= uint32(len(scoreboardEntryTypeNames)) {
+	typeNames := [...]string{"remove", "changeplayer", "changeentity", "changefakeplayer"}
+	if variant >= uint32(len(typeNames)) {
 		r.UnknownEnumOption(variant, "scoreboard entry variant")
 		return
 	}
-	typeName := scoreboardEntryTypeNames[variant]
+	typeName := typeNames[variant]
 	r.String(&typeName)
 	r.Varint64(&x.EntryID)
 	switch x.IdentityType {
