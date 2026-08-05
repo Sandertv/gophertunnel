@@ -63,8 +63,7 @@ type Skin struct {
 	CapeID string
 	// FullID is an ID that represents the skin in full. The actual functionality is unknown: The client
 	// does not seem to send a value for this.
-	FullID string
-	// SkinColour is the base colour of the skin.
+	FullID     string
 	SkinColour color.RGBA
 	// ArmSize is the size of the arms of the player's model. This is one of the ArmSize constants above.
 	ArmSize uint8
@@ -79,8 +78,7 @@ type Skin struct {
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
 	OverrideAppearance bool
-	// ProfileHash is a client-generated hash of the equipped persona skin.
-	ProfileHash string
+	ProfileHash        string
 }
 
 // Marshal encodes/decodes a Skin.
@@ -241,8 +239,8 @@ func (x *PersonaPiece) Marshal(r IO) {
 
 // PersonaPieceTintColour describes the tint colours of a specific piece of a persona skin.
 type PersonaPieceTintColour struct {
-	// PieceType is the login-data name of the persona skin piece that this tint colour concerns, such as
-	// persona_hair or persona_hand. Marshal converts it to the shorter protocol 2168 wire name.
+	// PieceType is the type of the persona skin piece that this tint colour concerns. The piece type must
+	// always be present in the persona pieces list, but not each piece type has a tint colour sent.
 	PieceType string
 	// Colours contains the four ARGB tint colours for the piece.
 	Colours [4]color.RGBA

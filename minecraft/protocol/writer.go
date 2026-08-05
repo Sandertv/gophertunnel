@@ -134,7 +134,6 @@ func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 little-endian int32s to the underlying buffer.
 func (w *Writer) SubChunkPos(x *SubChunkPos) {
 	w.Int32(&x[0])
 	w.Int32(&x[1])
@@ -373,7 +372,6 @@ func (w *Writer) StackRequestItem(x *StackRequestItem) {
 	w.itemUserData(stackRequestItemUserData(x), hasItem, x.Identifier == "minecraft:shield")
 }
 
-// itemUserData writes the length-delimited user-data payload shared by both item formats.
 func (w *Writer) itemUserData(x itemUserData, present, shield bool) {
 	if !present {
 		var zero uint32

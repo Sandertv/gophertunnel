@@ -133,13 +133,11 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// ChunkPos reads a ChunkPos as 2 varint32s from the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
 	r.Varint32(&x[1])
 }
 
-// SubChunkPos reads a SubChunkPos as 3 little-endian int32s from the underlying buffer.
 func (r *Reader) SubChunkPos(x *SubChunkPos) {
 	r.Int32(&x[0])
 	r.Int32(&x[1])
@@ -478,7 +476,6 @@ func (r *Reader) StackRequestItem(x *StackRequestItem) {
 	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
 
-// itemUserData reads the length-delimited user-data payload shared by both item formats.
 func (r *Reader) itemUserData(shield bool) itemUserData {
 	var x itemUserData
 	var extraData []byte

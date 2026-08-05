@@ -4,29 +4,27 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-// MoveActorDelta is sent by the server to move an entity. Each position and rotation component has an independent
-// presence flag so unchanged components may be omitted.
+// MoveActorDelta is sent by the server to move an entity. The packet is specifically optimised to save as
+// much space as possible, by only writing non-zero fields.
+// As of 1.16.100, this packet no longer actually contains any deltas.
 type MoveActorDelta struct {
 	// EntityRuntimeID is the runtime ID of the entity that is being moved. The packet works provided a
 	// non-player entity with this runtime ID is present.
 	EntityRuntimeID uint64
-	// PositionX, PositionY and PositionZ are the optional components of the entity's new absolute position.
+	// Position is the new position that the entity was moved to.
 	PositionX protocol.Optional[float32]
 	PositionY protocol.Optional[float32]
 	PositionZ protocol.Optional[float32]
-	// RotationX, RotationY and RotationYHead are the optional components of the entity's new absolute rotation.
+	// Rotation is the new absolute rotation. Unlike the position, it is not actually a delta. If any of the
+	// values of this rotation are not sent, these values are 0 and no flag for them is present.
 	RotationX     protocol.Optional[float32]
 	RotationY     protocol.Optional[float32]
 	RotationYHead protocol.Optional[float32]
 
-	// OnGround specifies whether the entity is on the ground after the movement.
-	OnGround bool
-	// ForceMove forces the movement to be applied.
-	ForceMove bool
-	// ForceMoveLocalEntity applies the forced movement to the local player entity.
+	OnGround             bool
+	ForceMove            bool
 	ForceMoveLocalEntity bool
-	// ForceCompletion forces the movement to complete immediately.
-	ForceCompletion bool
+	ForceCompletion      bool
 }
 
 // ID ...

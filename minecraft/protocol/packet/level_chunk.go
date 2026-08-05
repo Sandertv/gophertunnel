@@ -13,9 +13,7 @@ type LevelChunk struct {
 	Position protocol.ChunkPos
 	// Dimension is the ID of the dimension that the chunk belongs to. This must always be set otherwise the
 	// client will always assume the chunk is part of the overworld dimension.
-	Dimension int32
-	// SubChunkCount is the amount of sub-chunks sent inline. BDS sets it to zero when SubChunkLimit is present and the
-	// client should request sub-chunks instead.
+	Dimension     int32
 	SubChunkCount uint32
 	// SubChunkLimit is the maximum amount of sub-chunks a client will request when in request mode. A value of -1
 	// means there is no limit.

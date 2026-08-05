@@ -112,7 +112,6 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.BEARGB(&x.PlayerColour)
 }
 
-// playerListAction reads/writes the Cereal entry variant and its duplicated legacy action byte.
 func playerListAction(r IO, action *byte) {
 	variant := uint32(0)
 	if *action == PlayerListActionAdd {
@@ -180,7 +179,6 @@ func (x *PlayerArmourDamageEntry) Marshal(r IO) {
 	r.Int16(&x.Damage)
 }
 
-// TeleportData contains the additional MovePlayer fields sent only for teleport movement.
 type TeleportData struct {
 	// TeleportCause specifies why the teleport occurred. See the TeleportCause constants in the packet package.
 	// TeleportData is present only when MovePlayer uses teleport mode.
@@ -189,7 +187,6 @@ type TeleportData struct {
 	TeleportSourceEntityType int32
 }
 
-// Marshal encodes/decodes TeleportData.
 func (x *TeleportData) Marshal(r IO) {
 	r.Int32(&x.TeleportCause)
 	r.Int32(&x.TeleportSourceEntityType)

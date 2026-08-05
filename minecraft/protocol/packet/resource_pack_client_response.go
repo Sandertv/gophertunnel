@@ -43,7 +43,6 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 	}
 }
 
-// resourcePackResponseToString returns the compatibility name sent alongside a response variant.
 func resourcePackResponseToString(x uint8) string {
 	switch x {
 	case PackResponseRefused:

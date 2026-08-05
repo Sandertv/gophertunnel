@@ -107,9 +107,7 @@ type ShapelessRecipe struct {
 	// - campfire
 	Block string
 	// Priority ...
-	Priority int32
-	// UnlockRequirement optionally specifies a requirement that must be met to unlock the recipe. Its wire presence
-	// is independent of the recipe variant, although BDS only sets it for regular and shulker-box recipes.
+	Priority          int32
 	UnlockRequirement Optional[RecipeUnlockRequirement]
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
@@ -154,9 +152,7 @@ type ShapedRecipe struct {
 	Priority int32
 	// AssumeSymmetry specifies if the recipe is symmetrical. If this is set to true, the recipe will be
 	// mirrored along the diagonal axis. This means that the recipe will be the same if rotated 180 degrees.
-	AssumeSymmetry bool
-	// UnlockRequirement optionally specifies a requirement that must be met to unlock the recipe. Its wire presence
-	// is independent of the recipe variant, although BDS only sets it for regular shaped recipes.
+	AssumeSymmetry    bool
 	UnlockRequirement Optional[RecipeUnlockRequirement]
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
@@ -275,7 +271,6 @@ func (recipe *SmithingTrimRecipe) Marshal(r IO) {
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShaped reads/writes fields shared by shaped recipe variants.
 func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
@@ -293,7 +288,6 @@ func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShapeless reads/writes fields shared by shapeless recipe variants.
 func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
 	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)

@@ -171,10 +171,8 @@ func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 
 // SystemCategory maps a diagnostics category name to a system index.
 type SystemCategory struct {
-	// CategoryName is the display name of the diagnostics category.
 	CategoryName string
-	// SystemIndex identifies the system assigned to the category.
-	SystemIndex uint64
+	SystemIndex  uint64
 }
 
 // Marshal encodes/decodes a SystemCategory.
