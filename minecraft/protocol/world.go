@@ -1,5 +1,7 @@
 package protocol
 
+import "github.com/google/uuid"
+
 const (
 	GeneratorLegacy    = 0
 	GeneratorOverworld = 1
@@ -22,6 +24,8 @@ type DimensionDefinition struct {
 	// DimensionType is the numeric identifier of the dimension. This cannot override a vanilla dimension (0-2), but
 	// custom dimensions should start from 1000 like vanilla.
 	DimensionType int32
+	// PackID is the UUID of the behaviour pack which has added the dimension.
+	PackID uuid.UUID
 }
 
 // Marshal encodes/decodes a DimensionDefinition.
@@ -31,6 +35,7 @@ func (x *DimensionDefinition) Marshal(r IO) {
 	r.Varint32(&x.Range[1])
 	r.Varint32(&x.Generator)
 	r.Varint32(&x.DimensionType)
+	r.UUID(&x.PackID)
 }
 
 // GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.

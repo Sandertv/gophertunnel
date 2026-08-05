@@ -26,9 +26,9 @@ type InventoryAction struct {
 	SourceType uint32
 	// WindowID is the ID of the window that the client has opened. The window ID is not set if the SourceType
 	// is InventoryActionSourceWorld.
-	WindowID int8
+	WindowID Optional[int8]
 	// SourceFlags is a combination of flags that is only set if the SourceType is InventoryActionSourceWorld.
-	SourceFlags uint32
+	SourceFlags Optional[uint32]
 	// InventorySlot is the slot in which the action took place. Each action only describes the change of item
 	// in a single slot.
 	InventorySlot uint32
@@ -43,22 +43,11 @@ type InventoryAction struct {
 // Marshal encodes/decodes an InventoryAction.
 func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
-	present := true
-	r.Bool(&present)
-	hasContainerID := x.SourceType == InventoryActionSourceContainer || x.SourceType == InventoryActionSourceTODO
-	r.Bool(&hasContainerID)
-	if hasContainerID {
-		r.Int8(&x.WindowID)
-	}
-	r.Bool(&present)
-	hasFlags := x.SourceType == InventoryActionSourceWorld
-	r.Bool(&hasFlags)
-	if hasFlags {
-		r.Varuint32(&x.SourceFlags)
-	}
+	DoubleOptionalFunc(r, &x.WindowID, r.Int8)
+	DoubleOptionalFunc(r, &x.SourceFlags, r.Varuint32)
 	r.Varuint32(&x.InventorySlot)
-	r.ItemInstanceNew(&x.OldItem)
-	r.ItemInstanceNew(&x.NewItem)
+	r.ItemInstance(&x.OldItem)
+	r.ItemInstance(&x.NewItem)
 }
 
 const (
@@ -157,12 +146,12 @@ type UseItemTransactionData struct {
 	// LegacySetItemSlots are only present if the LegacyRequestID is non-zero. These item slots inform the
 	// server of the slots that were changed during the inventory transaction, and the server should send
 	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
-	LegacySetItemSlots []LegacySetItemSlot
+	LegacySetItemSlots Optional[[]LegacySetItemSlot]
 	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
 	// no items are cheated into the inventory.
-	Actions []InventoryAction
+	Actions Optional[[]InventoryAction]
 	// ActionType is the type of the UseItem inventory transaction. It is one of the action types found above,
 	// and specifies the way the player interacted with the block.
 	ActionType uint32
@@ -258,7 +247,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.BlockPos(&data.BlockPosition)
 	IntegerFunc(&data.BlockFace, r.Uint8)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
@@ -271,7 +260,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.Varuint64(&data.TargetEntityRuntimeID)
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 }
@@ -280,7 +269,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
-	r.ItemInstanceNew(&data.HeldItem)
+	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
 }
 

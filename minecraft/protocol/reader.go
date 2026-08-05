@@ -133,17 +133,15 @@ func (r *Reader) BlockPos(x *BlockPos) {
 	r.Varint32(&x[2])
 }
 
-// ChunkPos writes a ChunkPos as 2 varint32s to the underlying buffer.
 func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[0])
 	r.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
 func (r *Reader) SubChunkPos(x *SubChunkPos) {
-	r.Varint32(&x[0])
-	r.Varint32(&x[1])
-	r.Varint32(&x[2])
+	r.Int32(&x[0])
+	r.Int32(&x[1])
+	r.Int32(&x[2])
 }
 
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
@@ -185,18 +183,6 @@ func (r *Reader) RGBA(x *color.RGBA) {
 	}
 }
 
-// ARGB reads a color.ARGB x from a int32.
-func (r *Reader) ARGB(x *color.RGBA) {
-	var v int32
-	r.Int32(&v)
-	*x = color.RGBA{
-		A: byte(v),
-		R: byte(v >> 8),
-		G: byte(v >> 16),
-		B: byte(v >> 24),
-	}
-}
-
 // BEARGB reads a color.ARGB x from a big endian int32.
 func (r *Reader) BEARGB(x *color.RGBA) {
 	var v int32
@@ -206,18 +192,6 @@ func (r *Reader) BEARGB(x *color.RGBA) {
 		R: byte(v >> 8),
 		G: byte(v >> 16),
 		B: byte(v >> 24),
-	}
-}
-
-// VarRGBA reads a color.RGBA x from a varuint32.
-func (r *Reader) VarRGBA(x *color.RGBA) {
-	var v uint32
-	r.Varuint32(&v)
-	*x = color.RGBA{
-		R: byte(v),
-		G: byte(v >> 8),
-		B: byte(v >> 16),
-		A: byte(v >> 24),
 	}
 }
 
@@ -268,14 +242,16 @@ func (r *Reader) UUID(x *uuid.UUID) {
 // PlayerInventoryAction reads a PlayerInventoryAction.
 func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
-	if x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
-		Slice(r, &x.LegacySetItemSlots)
-	}
-	FuncSlice(r, &x.Actions, r.inventoryActionOld)
-	r.Varuint32(&x.ActionType)
-	r.Varuint32(&x.TriggerType)
+	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
+		Slice(r, slots)
+	})
+	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
+		Slice(r, actions)
+	})
+	IntegerFunc(&x.ActionType, r.Varint32)
+	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)
-	r.Varint32(&x.BlockFace)
+	IntegerFunc(&x.BlockFace, r.Uint8)
 	r.Varint32(&x.HotBarSlot)
 	r.ItemInstance(&x.HeldItem)
 	r.Vec3(&x.Position)
@@ -283,21 +259,6 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varuint32(&x.BlockRuntimeID)
 	r.Uint8(&x.ClientPrediction)
 	r.Uint8(&x.ClientCooldownState)
-}
-
-func (r *Reader) inventoryActionOld(x *InventoryAction) {
-	r.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		var windowID int32
-		r.Varint32(&windowID)
-		x.WindowID = int8(windowID)
-	case InventoryActionSourceWorld:
-		r.Varuint32(&x.SourceFlags)
-	}
-	r.Varuint32(&x.InventorySlot)
-	r.ItemInstance(&x.OldItem)
-	r.ItemInstance(&x.NewItem)
 }
 
 // GameRule reads a GameRule x from the Reader.
@@ -308,6 +269,8 @@ func (r *Reader) GameRule(x *GameRule) {
 	r.Varuint32(&t)
 
 	switch t {
+	case 0:
+		x.Value = nil
 	case 1:
 		var v bool
 		r.Bool(&v)
@@ -315,31 +278,6 @@ func (r *Reader) GameRule(x *GameRule) {
 	case 2:
 		var v uint32
 		r.Uint32(&v)
-		x.Value = v
-	case 3:
-		var v float32
-		r.Float32(&v)
-		x.Value = v
-	default:
-		r.UnknownEnumOption(t, "game rule type")
-	}
-}
-
-// GameRuleLegacy reads a legacy GameRule x from the Reader.
-func (r *Reader) GameRuleLegacy(x *GameRule) {
-	r.String(&x.Name)
-	r.Bool(&x.CanBeModifiedByPlayer)
-	var t uint32
-	r.Varuint32(&t)
-
-	switch t {
-	case 1:
-		var v bool
-		r.Bool(&v)
-		x.Value = v
-	case 2:
-		var v uint32
-		r.Varuint32(&v)
 		x.Value = v
 	case 3:
 		var v float32
@@ -360,6 +298,12 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 		var key, dataType uint32
 		r.Varuint32(&key)
 		r.Varuint32(&dataType)
+		var legacyDataType byte
+		r.Uint8(&legacyDataType)
+		if dataType != uint32(legacyDataType) {
+			r.InvalidValue(legacyDataType, "entity metadata type", fmt.Sprintf("does not match cereal selector %d", dataType))
+			return
+		}
 		switch dataType {
 		case EntityDataTypeByte:
 			var v byte
@@ -405,93 +349,43 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 
 // ItemDescriptorCount reads an ItemDescriptorCount i from the underlying buffer.
 func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
-	var id uint8
-	r.Uint8(&id)
-
-	switch id {
-	case ItemDescriptorInvalid:
+	var variant uint32
+	r.Varuint32(&variant)
+	if variant == ItemDescriptorInvalid {
 		i.Descriptor = &InvalidItemDescriptor{}
-	case ItemDescriptorDefault:
-		i.Descriptor = &DefaultItemDescriptor{}
-	case ItemDescriptorMoLang:
-		i.Descriptor = &MoLangItemDescriptor{}
-	case ItemDescriptorItemTag:
-		i.Descriptor = &ItemTagItemDescriptor{}
-	case ItemDescriptorDeferred:
-		i.Descriptor = &DeferredItemDescriptor{}
-	case ItemDescriptorComplexAlias:
-		i.Descriptor = &ComplexAliasItemDescriptor{}
-	default:
-		r.UnknownEnumOption(id, "item descriptor type")
-		return
+		var aux int32
+		r.Varint32(&aux)
+	} else {
+		if variant != ItemDescriptorDefault {
+			r.UnknownEnumOption(variant, "item descriptor variant")
+			return
+		}
+		var name string
+		r.String(&name)
+		var id uint8
+		switch name {
+		case "name":
+			id = ItemDescriptorDefault
+		case "molang":
+			id = ItemDescriptorMoLang
+		case "item_tag":
+			id = ItemDescriptorItemTag
+		default:
+			r.UnknownEnumOption(name, "item descriptor type")
+			return
+		}
+		i.Descriptor, _ = itemDescriptorFromType(id)
+		i.Descriptor.Marshal(r)
+		if id == ItemDescriptorItemTag {
+			var aux int32
+			r.Varint32(&aux)
+		}
 	}
-
-	i.Descriptor.Marshal(r)
 	r.Varint32(&i.Count)
 }
 
 // ItemInstance reads an ItemInstance i from the underlying buffer.
 func (r *Reader) ItemInstance(i *ItemInstance) {
-	x := &i.Stack
-	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.BlockRuntimeID, i.StackNetworkID = 0, 0, 0, 0
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		return
-	}
-
-	r.Uint16(&x.Count)
-	r.Varuint32(&x.MetadataValue)
-
-	var hasNetID bool
-	r.Bool(&hasNetID)
-
-	if hasNetID {
-		r.Varint32(&i.StackNetworkID)
-	} else {
-		i.StackNetworkID = 0
-	}
-
-	r.Varint32(&x.BlockRuntimeID)
-
-	var extraData []byte
-	r.ByteSlice(&extraData)
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	if length == -1 {
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	} else if length > 0 {
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		x.NBTData = nil
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	}
-}
-
-// ItemInstanceNew reads an ItemInstance i from the underlying buffer in the new format.
-func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	x := &i.Stack
 	var id int16
 	r.Int16(&id)
@@ -504,113 +398,98 @@ func (r *Reader) ItemInstanceNew(i *ItemInstance) {
 	r.Bool(&hasNetID)
 
 	if hasNetID {
-		var empty uint32
-		r.Varuint32(&empty)
 		r.Varint32(&i.StackNetworkID)
 	} else {
 		i.StackNetworkID = 0
 	}
 
-	var runtimeID uint32
-	r.Varuint32(&runtimeID)
-	x.BlockRuntimeID = int32(runtimeID)
-
-	var extraData []byte
-	r.ByteSlice(&extraData)
-
-	if len(extraData) == 0 {
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		x.BlockingTick = 0
-		return
-	}
-
-	buf := bytes.NewBuffer(extraData)
-	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
-	var length int16
-	bufReader.Int16(&length)
-
-	switch length {
-	case 0:
-		x.NBTData = nil
-	case -1:
-		var version uint8
-		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
-			bufReader.UnknownEnumOption(version, "item user data version")
-			return
-		}
-	default:
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
-	} else {
-		x.BlockingTick = 0
-	}
+	IntegerFunc(&x.BlockRuntimeID, r.Varuint32)
+	data := r.itemUserData(x.NetworkID == r.shieldID)
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
 
 // Item reads an ItemStack x from the underlying buffer.
 func (r *Reader) Item(x *ItemStack) {
 	r.Varint32(&x.NetworkID)
-	if x.NetworkID == 0 {
-		// The item was air, so there is no more data we should read for the item instance. After all, air
-		// items aren't really anything.
-		x.MetadataValue, x.Count, x.BlockRuntimeID = 0, 0, 0
-		x.NBTData, x.CanBePlacedOn, x.CanBreak = nil, nil, nil
-		return
-	}
 
 	r.Uint16(&x.Count)
 	r.Varuint32(&x.MetadataValue)
 	r.Varint32(&x.BlockRuntimeID)
+	data := r.itemUserData(x.NetworkID == r.shieldID)
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
+}
 
+// StackRequestItem reads the descriptor-based item format used by deprecated craft-result actions.
+func (r *Reader) StackRequestItem(x *StackRequestItem) {
+	var variant uint32
+	r.Varuint32(&variant)
+	var legacyVariant uint8
+	r.Uint8(&legacyVariant)
+	hasItem := variant == ItemDescriptorDefault
+	if variant != ItemDescriptorInvalid && !hasItem {
+		r.UnknownEnumOption(variant, "stack request item descriptor")
+		return
+	}
+	if hasItem {
+		r.String(&x.Identifier)
+		IntegerFunc(&x.MetadataValue, r.Varint32)
+	} else {
+		x.Identifier = ""
+		x.MetadataValue = 0
+	}
+	IntegerFunc(&x.Count, r.Int16)
+	IntegerFunc(&x.BlockRuntimeID, r.Varuint32)
+	data := r.itemUserData(x.Identifier == "minecraft:shield")
+	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
+}
+
+func (r *Reader) itemUserData(shield bool) itemUserData {
+	var x itemUserData
 	var extraData []byte
 	r.ByteSlice(&extraData)
-
+	if len(extraData) == 0 {
+		return x
+	}
 	buf := bytes.NewBuffer(extraData)
 	bufReader := NewReader(buf, r.shieldID, r.limitsEnabled)
-
 	var length int16
 	bufReader.Int16(&length)
-
-	if length == -1 {
+	switch length {
+	case 0:
+		x.nbtData = nil
+	case -1:
 		var version uint8
 		bufReader.Uint8(&version)
-
-		switch version {
-		case 1:
-			bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-		default:
+		if version != 1 {
 			bufReader.UnknownEnumOption(version, "item user data version")
-			return
+			return x
 		}
-	} else if length > 0 {
-		bufReader.NBT(&x.NBTData, nbt.LittleEndian)
-	} else {
-		x.NBTData = nil
+		bufReader.NBT(&x.nbtData, nbt.LittleEndian)
+	default:
+		bufReader.NBT(&x.nbtData, nbt.LittleEndian)
 	}
-
-	FuncSliceUint32Length(bufReader, &x.CanBePlacedOn, bufReader.StringUTF)
-	FuncSliceUint32Length(bufReader, &x.CanBreak, bufReader.StringUTF)
-
-	if x.NetworkID == bufReader.shieldID {
-		bufReader.Int64(&x.BlockingTick)
+	FuncSliceUint32Length(bufReader, &x.canBePlacedOn, bufReader.StringUTF)
+	FuncSliceUint32Length(bufReader, &x.canBreak, bufReader.StringUTF)
+	if shield {
+		bufReader.Int64(&x.blockingTick)
 	}
+	return x
 }
 
 // StackRequestAction reads a StackRequestAction from the reader.
 func (r *Reader) StackRequestAction(x *StackRequestAction) {
-	var id uint8
-	r.Uint8(&id)
+	var variant uint32
+	r.Varuint32(&variant)
+	var legacyID uint8
+	r.Uint8(&legacyID)
+	if variant > stackRequestActionVariant(StackRequestActionCraftResultsDeprecated) {
+		r.UnknownEnumOption(variant, "stack request action variant")
+		return
+	}
+	id := uint8(variant)
+	if variant >= uint32(StackRequestActionPlaceInContainer) {
+		id += 2
+	}
 	if !lookupStackRequestAction(id, x) {
 		r.UnknownEnumOption(id, "stack request action type")
 		return
@@ -624,17 +503,6 @@ func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	r.Varint32(&mix)
 	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
 	Slice(r, &m.Outputs)
-}
-
-// Recipe reads a Recipe from the reader.
-func (r *Reader) Recipe(x *Recipe) {
-	var recipeType int32
-	r.Varint32(&recipeType)
-	if !lookupRecipe(recipeType, x) {
-		r.UnknownEnumOption(recipeType, "crafting data recipe type")
-		return
-	}
-	(*x).Unmarshal(r)
 }
 
 // EventType reads an Event's type from the reader.

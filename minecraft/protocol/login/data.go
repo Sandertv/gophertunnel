@@ -250,6 +250,8 @@ type ClientData struct {
 	PartyID string `json:"PartyId"`
 	// PartyLeader is if the client is the leader of the party they are in.
 	PartyLeader bool `json:"IsPartyLeader"`
+	// ProfileHash is a client-generated hash of the equipped persona skin.
+	ProfileHash string `json:"ProfileHash"`
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
@@ -347,7 +349,7 @@ func (data ClientData) Validate() error {
 	if _, err := strconv.ParseUint(data.PlatformOnlineID, 10, 64); err != nil && len(data.PlatformOnlineID) != 0 {
 		return fmt.Errorf("PlatformOnlineID must be parseable as an int64 or empty, but got %v", data.PlatformOnlineID)
 	}
-	if _, err := uuid.Parse(data.SelfSignedID); err != nil {
+	if _, err := uuid.Parse(data.SelfSignedID); data.SelfSignedID != "" && err != nil {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
 	}
 	if strings.Contains(data.ServerAddress, "://") {

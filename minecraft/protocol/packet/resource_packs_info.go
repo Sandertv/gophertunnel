@@ -46,5 +46,5 @@ func (pk *ResourcePacksInfo) Marshal(io protocol.IO) {
 	io.Bool(&pk.ForceDisableVibrantVisuals)
 	io.UUID(&pk.WorldTemplateUUID)
 	io.String(&pk.WorldTemplateVersion)
-	protocol.SliceUint16Length(io, &pk.TexturePacks)
+	protocol.Slice(io, &pk.TexturePacks)
 }

@@ -109,7 +109,7 @@ type StartGame struct {
 	// EducationEditionOffer is some Minecraft: Education Edition field that specifies what 'region' the world
 	// was from, with 0 being None, 1 being RestOfWorld, and 2 being China.
 	// The actual use of this field is unknown.
-	EducationEditionOffer int32
+	EducationEditionOffer uint32
 	// EducationFeaturesEnabled specifies if the world has education edition features enabled, such as the
 	// blocks or entities specific to education edition.
 	EducationFeaturesEnabled bool
@@ -162,7 +162,7 @@ type StartGame struct {
 	StartWithMapEnabled bool
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions byte
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -261,9 +261,6 @@ type StartGame struct {
 	UseBlockNetworkIDHashes bool
 	// ServerAuthoritativeSound is currently unknown as to what it does.
 	ServerAuthoritativeSound bool
-	// IsLoggingChat indicates that the server owner is logging chat messages
-	// on the server machine. Education Edition only.
-	IsLoggingChat bool
 	// ServerJoinInformation contains optional information about the server the player is joining.
 	ServerJoinInformation protocol.Optional[protocol.ServerJoinInformation]
 	// ServerID is the server identifier for telemetry.
@@ -302,7 +299,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.CreatedInEditor)
 	io.Bool(&pk.ExportedFromEditor)
 	io.Varint32(&pk.DayCycleLockTime)
-	io.Varint32(&pk.EducationEditionOffer)
+	io.Varuint32(&pk.EducationEditionOffer)
 	io.Bool(&pk.EducationFeaturesEnabled)
 	io.String(&pk.EducationProductID)
 	io.Float32(&pk.RainLevel)
@@ -314,12 +311,12 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.PlatformBroadcastMode)
 	io.Bool(&pk.CommandsEnabled)
 	io.Bool(&pk.TexturePackRequired)
-	protocol.FuncSlice(io, &pk.GameRules, io.GameRuleLegacy)
+	protocol.FuncSlice(io, &pk.GameRules, io.GameRule)
 	protocol.SliceUint32Length(io, &pk.Experiments)
 	io.Bool(&pk.ExperimentsPreviouslyToggled)
 	io.Bool(&pk.BonusChestEnabled)
 	io.Bool(&pk.StartWithMapEnabled)
-	io.Varint32(&pk.PlayerPermissions)
+	io.Uint8(&pk.PlayerPermissions)
 	io.Int32(&pk.ServerChunkTickRadius)
 	io.Bool(&pk.HasLockedBehaviourPack)
 	io.Bool(&pk.HasLockedTexturePack)
@@ -358,7 +355,6 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Bool(&pk.ClientSideGeneration)
 	io.Bool(&pk.UseBlockNetworkIDHashes)
 	io.Bool(&pk.ServerAuthoritativeSound)
-	io.Bool(&pk.IsLoggingChat)
 	protocol.OptionalMarshaler(io, &pk.ServerJoinInformation)
 	io.String(&pk.ServerID)
 	io.String(&pk.ScenarioID)

@@ -8,9 +8,15 @@ import (
 // includes shapeless crafting, crafting table recipes, furnace recipes etc. Each crafting station's recipes
 // are included in it.
 type CraftingData struct {
-	// Recipes is a list of all recipes available on the server. It includes among others shapeless, shaped
-	// and furnace recipes. The client will only be able to craft these recipes.
-	Recipes []protocol.Recipe
+	// ShapedRecipes through SmithingTrimRecipes are the typed recipe vectors used by 1.26.40.
+	ShapedRecipes             []protocol.ShapedRecipe
+	ShapelessRecipes          []protocol.ShapelessRecipe
+	MultiRecipes              []protocol.MultiRecipe
+	ShulkerBoxRecipes         []protocol.ShulkerBoxRecipe
+	ShapelessChemistryRecipes []protocol.ShapelessChemistryRecipe
+	ShapedChemistryRecipes    []protocol.ShapedChemistryRecipe
+	SmithingTransformRecipes  []protocol.SmithingTransformRecipe
+	SmithingTrimRecipes       []protocol.SmithingTrimRecipe
 	// PotionRecipes is a list of all potion mixing recipes which may be used in the brewing stand.
 	PotionRecipes []protocol.PotionRecipe
 	// PotionContainerChangeRecipes is a list of all recipes to convert a potion from one type to another,
@@ -30,7 +36,14 @@ func (*CraftingData) ID() uint32 {
 }
 
 func (pk *CraftingData) Marshal(io protocol.IO) {
-	protocol.FuncSlice(io, &pk.Recipes, io.Recipe)
+	protocol.Slice(io, &pk.ShapedRecipes)
+	protocol.Slice(io, &pk.ShapelessRecipes)
+	protocol.Slice(io, &pk.MultiRecipes)
+	protocol.Slice(io, &pk.ShulkerBoxRecipes)
+	protocol.Slice(io, &pk.ShapelessChemistryRecipes)
+	protocol.Slice(io, &pk.ShapedChemistryRecipes)
+	protocol.Slice(io, &pk.SmithingTransformRecipes)
+	protocol.Slice(io, &pk.SmithingTrimRecipes)
 	protocol.Slice(io, &pk.PotionRecipes)
 	protocol.Slice(io, &pk.PotionContainerChangeRecipes)
 	protocol.FuncSlice(io, &pk.MaterialReducers, io.MaterialReducer)

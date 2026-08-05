@@ -50,7 +50,7 @@ type StructureBlockUpdate struct {
 	// RedstoneSaveMode is the mode that should be used to save the structure when used with redstone. In
 	// Java Edition, this is always stored in memory, but in Bedrock Edition it can be stored either to disk
 	// or memory. See the constants above for the options.
-	RedstoneSaveMode int32
+	RedstoneSaveMode uint8
 	// ShouldTrigger specifies if the structure block should be triggered immediately after this packet
 	// reaches the server.
 	ShouldTrigger bool
@@ -72,7 +72,7 @@ func (pk *StructureBlockUpdate) Marshal(io protocol.IO) {
 	io.Bool(&pk.ShowBoundingBox)
 	io.Varint32(&pk.StructureBlockType)
 	protocol.Single(io, &pk.Settings)
-	io.Varint32(&pk.RedstoneSaveMode)
+	io.Uint8(&pk.RedstoneSaveMode)
 	io.Bool(&pk.ShouldTrigger)
 	io.Bool(&pk.Waterlogged)
 }

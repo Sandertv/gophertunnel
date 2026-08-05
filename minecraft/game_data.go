@@ -100,7 +100,7 @@ type GameData struct {
 	Experiments []protocol.ExperimentData
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions byte
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32
