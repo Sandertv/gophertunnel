@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"context"
+	"crypto/ecdsa"
 	"errors"
 	"log/slog"
 	"net"
@@ -39,6 +40,19 @@ func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, e
 		n.Dialer.Log = n.Log
 	}
 	return n.Dialer.DialContext(ctx, address, n.Signaling)
+}
+
+// DialContextIdentity establishes a connection with the remote NetherNet peer using the
+// JWT token issued by the auth service and the private key bound to the Minecraft connection.
+// If [nethernet.Dialer.Identity] is already set, that identity is used instead.
+func (n NetherNet) DialContextIdentity(ctx context.Context, address string, token string, privateKey *ecdsa.PrivateKey) (net.Conn, error) {
+	if n.Dialer.Identity == nil {
+		n.Dialer.Identity = &nethernet.Identity{
+			PrivateKey: privateKey,
+			Token:      token,
+		}
+	}
+	return n.DialContext(ctx, address)
 }
 
 // PingContext ...
