@@ -37,14 +37,13 @@ func (*PlayerUpdateEntityOverrides) ID() uint32 {
 func (pk *PlayerUpdateEntityOverrides) Marshal(io protocol.IO) {
 	io.Varint64(&pk.EntityUniqueID)
 	io.Varuint32(&pk.PropertyIndex)
-	selector := uint32(pk.Type)
-	io.Varuint32(&selector)
-	legacyType := pk.Type
-	io.Uint8(&legacyType)
-	if selector != uint32(legacyType) {
-		io.InvalidValue(legacyType, "legacy entity override type", "does not match Cereal update variant")
+	variant := uint32(pk.Type)
+	io.Varuint32(&variant)
+	io.Uint8(&pk.Type)
+	if variant != uint32(pk.Type) {
+		io.InvalidValue(pk.Type, "entity override type", "does not match the variant it was sent under")
+		return
 	}
-	pk.Type = byte(selector)
 	if pk.Type == PlayerUpdateEntityOverridesTypeInt {
 		io.Int32(&pk.IntValue)
 	} else if pk.Type == PlayerUpdateEntityOverridesTypeFloat {

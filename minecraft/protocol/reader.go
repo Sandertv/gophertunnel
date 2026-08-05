@@ -310,6 +310,8 @@ func (r *Reader) GameRule(x *GameRule) {
 	r.Varuint32(&t)
 
 	switch t {
+	case 0:
+		x.Value = nil
 	case 1:
 		var v bool
 		r.Bool(&v)

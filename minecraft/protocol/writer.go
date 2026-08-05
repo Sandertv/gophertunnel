@@ -221,6 +221,9 @@ func (w *Writer) GameRule(x *GameRule) {
 	w.Bool(&x.CanBeModifiedByPlayer)
 
 	switch v := x.Value.(type) {
+	case nil:
+		id := uint32(0)
+		w.Varuint32(&id)
 	case bool:
 		id := uint32(1)
 		w.Varuint32(&id)
