@@ -32,5 +32,10 @@ func (*NetworkChunkPublisherUpdate) ID() uint32 {
 func (pk *NetworkChunkPublisherUpdate) Marshal(io protocol.IO) {
 	io.BlockPos(&pk.Position)
 	io.Varuint32(&pk.Radius)
-	protocol.FuncSliceUint32Length(io, &pk.SavedChunks, io.ChunkPos)
+	count := uint32(len(pk.SavedChunks))
+	io.Uint32(&count)
+	if count > 9216 {
+		io.InvalidValue(count, "savedChunks", "saved chunks exceeds maximum length of 9216 chunk positions")
+	}
+	protocol.FuncSliceOfLen(io, count, &pk.SavedChunks, io.ChunkPos)
 }
