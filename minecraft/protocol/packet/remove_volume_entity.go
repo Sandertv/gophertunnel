@@ -18,6 +18,6 @@ func (*RemoveVolumeEntity) ID() uint32 {
 }
 
 func (pk *RemoveVolumeEntity) Marshal(io protocol.IO) {
-	protocol.ActorRuntimeIDUint32(io, &pk.EntityRuntimeID)
+	io.ActorRuntimeIDVaruint32(&pk.EntityRuntimeID)
 	io.Varint32(&pk.Dimension)
 }

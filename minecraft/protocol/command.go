@@ -353,7 +353,7 @@ func CommandOriginData(r IO, x *CommandOrigin) {
 	r.String(&originStr)
 	r.UUID(&x.UUID)
 	r.String(&x.RequestID)
-	ActorUniqueIDFixed(r, &x.PlayerUniqueID)
+	r.ActorUniqueIDInt64(&x.PlayerUniqueID)
 	commandOriginFromString(r, &x.Origin, originStr)
 }
 

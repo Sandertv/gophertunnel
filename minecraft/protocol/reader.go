@@ -670,9 +670,34 @@ func (r *Reader) ActorRuntimeID(x *uint64) {
 	r.Varuint64(x)
 }
 
+// ActorRuntimeIDVarint64 reads an entity runtime ID encoded as a signed varint.
+func (r *Reader) ActorRuntimeIDVarint64(x *int64) {
+	r.Varint64(x)
+}
+
+// ActorRuntimeIDVaruint32 reads an entity runtime ID encoded as an unsigned 32-bit varint.
+func (r *Reader) ActorRuntimeIDVaruint32(x *uint32) {
+	r.Varuint32(x)
+}
+
 // ActorUniqueID reads an entity unique ID encoded as a signed varint.
 func (r *Reader) ActorUniqueID(x *int64) {
 	r.Varint64(x)
+}
+
+// ActorUniqueIDInt64 reads an entity unique ID encoded as a fixed-width signed integer.
+func (r *Reader) ActorUniqueIDInt64(x *int64) {
+	r.Int64(x)
+}
+
+// ActorUniqueIDUint64 reads an entity unique ID encoded as a fixed-width unsigned integer.
+func (r *Reader) ActorUniqueIDUint64(x *uint64) {
+	r.Uint64(x)
+}
+
+// ActorUniqueIDVaruint64 reads an entity unique ID encoded as an unsigned varint.
+func (r *Reader) ActorUniqueIDVaruint64(x *uint64) {
+	r.Varuint64(x)
 }
 
 // Varuint64 reads up to 10 bytes from the underlying buffer into a uint64.

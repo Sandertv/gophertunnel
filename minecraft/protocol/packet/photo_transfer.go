@@ -46,6 +46,6 @@ func (pk *PhotoTransfer) Marshal(io protocol.IO) {
 	io.String(&pk.BookID)
 	io.Uint8(&pk.PhotoType)
 	io.Uint8(&pk.SourceType)
-	protocol.ActorUniqueIDFixed(io, &pk.OwnerEntityUniqueID)
+	io.ActorUniqueIDInt64(&pk.OwnerEntityUniqueID)
 	io.String(&pk.NewPhotoName)
 }

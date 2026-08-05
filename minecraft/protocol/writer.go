@@ -528,9 +528,34 @@ func (w *Writer) ActorRuntimeID(x *uint64) {
 	w.Varuint64(x)
 }
 
+// ActorRuntimeIDVarint64 writes an entity runtime ID encoded as a signed varint.
+func (w *Writer) ActorRuntimeIDVarint64(x *int64) {
+	w.Varint64(x)
+}
+
+// ActorRuntimeIDVaruint32 writes an entity runtime ID encoded as an unsigned 32-bit varint.
+func (w *Writer) ActorRuntimeIDVaruint32(x *uint32) {
+	w.Varuint32(x)
+}
+
 // ActorUniqueID writes an entity unique ID encoded as a signed varint.
 func (w *Writer) ActorUniqueID(x *int64) {
 	w.Varint64(x)
+}
+
+// ActorUniqueIDInt64 writes an entity unique ID encoded as a fixed-width signed integer.
+func (w *Writer) ActorUniqueIDInt64(x *int64) {
+	w.Int64(x)
+}
+
+// ActorUniqueIDUint64 writes an entity unique ID encoded as a fixed-width unsigned integer.
+func (w *Writer) ActorUniqueIDUint64(x *uint64) {
+	w.Uint64(x)
+}
+
+// ActorUniqueIDVaruint64 writes an entity unique ID encoded as an unsigned varint.
+func (w *Writer) ActorUniqueIDVaruint64(x *uint64) {
+	w.Varuint64(x)
 }
 
 // Varuint64 writes a uint64 as 1-10 bytes to the underlying buffer.

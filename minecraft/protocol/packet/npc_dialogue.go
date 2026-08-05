@@ -30,7 +30,7 @@ func (*NPCDialogue) ID() uint32 {
 }
 
 func (pk *NPCDialogue) Marshal(io protocol.IO) {
-	protocol.ActorUniqueIDUint64(io, &pk.EntityUniqueID)
+	io.ActorUniqueIDUint64(&pk.EntityUniqueID)
 	io.Varint32(&pk.ActionType)
 	io.String(&pk.Dialogue)
 	io.String(&pk.SceneName)
