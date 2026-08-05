@@ -176,9 +176,9 @@ func (x *PlayerArmourDamageEntry) Marshal(r IO) {
 	r.Int16(&x.Damage)
 }
 
+// TeleportData holds the additional information accompanying a MovePlayer teleport.
 type TeleportData struct {
 	// TeleportCause specifies why the teleport occurred. See the TeleportCause constants in the packet package.
-	// TeleportData is present only when MovePlayer uses teleport mode.
 	TeleportCause int32
 	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
 	TeleportSourceEntityType int32
