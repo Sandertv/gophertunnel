@@ -3,11 +3,13 @@ package protocol
 import "math"
 
 const (
-	// SubChunkRequestModeLimitless is a SubChunkCount value that asks the client to request every sub-chunk
-	// at a LevelChunk position without a height limit.
+	// SubChunkRequestModeLimitless is the legacy SubChunkCount sentinel that asked the client to request
+	// every sub-chunk without a height limit. Deprecated as of 1.26.40: clients reject MaxUint32 counts.
+	// Use SubChunkCount 0 with SubChunkLimit unset instead.
 	SubChunkRequestModeLimitless = math.MaxUint32 - iota
-	// SubChunkRequestModeLimited is a SubChunkCount value that asks the client to request sub-chunks up to the
-	// SubChunkLimit of a LevelChunk.
+	// SubChunkRequestModeLimited is the legacy SubChunkCount sentinel that asked the client to request
+	// sub-chunks up to SubChunkLimit. Deprecated as of 1.26.40: clients reject MaxUint32-1 counts.
+	// Use SubChunkCount 0 with SubChunkLimit set instead.
 	SubChunkRequestModeLimited
 )
 
