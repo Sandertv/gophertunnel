@@ -42,16 +42,9 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 }
 
 func resourcePackResponseToString(x uint32) (string, bool) {
-	switch x {
-	case PackResponseRefused:
-		return "cancel", true
-	case PackResponseSendPacks:
-		return "downloading", true
-	case PackResponseAllPacksDownloaded:
-		return "downloadingfinished", true
-	case PackResponseCompleted:
-		return "resourcepackstackfinished", true
-	default:
+	names := [...]string{"cancel", "downloading", "downloadingfinished", "resourcepackstackfinished"}
+	if x >= uint32(len(names)) {
 		return "", false
 	}
+	return names[x], true
 }
