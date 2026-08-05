@@ -72,7 +72,7 @@ func (pk *CommandBlockUpdate) Marshal(io protocol.IO) {
 		io.Bool(&pk.NeedsRedstone)
 		io.Bool(&pk.Conditional)
 	} else {
-		io.Varuint64(&pk.MinecartEntityRuntimeID)
+		io.ActorRuntimeID(&pk.MinecartEntityRuntimeID)
 	}
 	io.String(&pk.Command)
 	io.String(&pk.LastOutput)

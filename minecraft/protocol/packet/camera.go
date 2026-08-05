@@ -21,6 +21,6 @@ func (*Camera) ID() uint32 {
 }
 
 func (pk *Camera) Marshal(io protocol.IO) {
-	io.Varint64(&pk.CameraEntityUniqueID)
-	io.Varint64(&pk.TargetPlayerUniqueID)
+	io.ActorUniqueID(&pk.CameraEntityUniqueID)
+	io.ActorUniqueID(&pk.TargetPlayerUniqueID)
 }

@@ -172,6 +172,10 @@ type Conn struct {
 	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
 	// func returning false for the specific pack.
 	ignoredResourcePacks []exemptedResourcePack
+	// resourcePackCache, if set, stores resource packs downloaded by a Dialer for reuse on later logins.
+	resourcePackCache ResourcePackCache
+	// resourcePackDelivery controls how a Listener connection sends resource pack data.
+	resourcePackDelivery ResourcePackDeliveryConfig
 
 	cacheEnabled bool
 
@@ -210,6 +214,8 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		hdr:          &packet.Header{},
 		proto:        proto,
 		readerLimits: limits,
+
+		resourcePackDelivery: defaultResourcePackDeliveryConfig(),
 	}
 	if d, ok := netConn.(packet.EncryptionDisabler); ok {
 		conn.disableEncryption = d.DisableEncryption()
@@ -656,7 +662,7 @@ func (conn *Conn) receive(data []byte) error {
 		if err != nil {
 			return err
 		}
-		_ = conn.close(conn.closeErr(pks[0].(*packet.Disconnect).Message))
+		_ = conn.close(conn.wrap(DisconnectError(pks[0].(*packet.Disconnect).Message), "receive"))
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
@@ -983,6 +989,26 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			conn.packQueue.packAmount--
 			continue
 		}
+
+		cacheKey := ResourcePackCacheKey{
+			UUID:    pack.UUID,
+			Version: pack.Version,
+			Size:    pack.Size,
+		}
+		if conn.resourcePackCache != nil {
+			cachedPack, err := conn.resourcePackCache.Load(conn.ctx, cacheKey)
+			switch {
+			case err != nil:
+				conn.log.Warn("handle ResourcePacksInfo: failed to load resource pack from cache", "UUID", pack.UUID, "version", pack.Version, "err", err)
+			case cachedPack != nil && !cacheKey.Matches(cachedPack):
+				conn.log.Warn("handle ResourcePacksInfo: cached resource pack did not match advertised pack", "UUID", pack.UUID, "version", pack.Version, "cached_UUID", cachedPack.UUID(), "cached_version", cachedPack.Version(), "cached_size", cachedPack.Len())
+			case cachedPack != nil:
+				conn.resourcePacks = append(conn.resourcePacks, cachedPack.WithContentKey(pack.ContentKey))
+				conn.packQueue.packAmount--
+				continue
+			}
+		}
+
 		// This UUID_Version is a hack Mojang put in place.
 		packsToDownload = append(packsToDownload, id+"_"+pack.Version)
 		conn.packQueue.downloadingPacks[id] = downloadingPack{
@@ -990,6 +1016,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			buf:        bytes.NewBuffer(make([]byte, 0, pack.Size)),
 			newFrag:    make(chan []byte),
 			contentKey: pack.ContentKey,
+			cacheKey:   cacheKey,
 		}
 	}
 
@@ -1005,6 +1032,17 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 	return nil
+}
+
+// storeResourcePack stores a downloaded pack in the Conn's ResourcePackCache, if any.
+func (conn *Conn) storeResourcePack(key ResourcePackCacheKey, pack *resource.Pack) {
+	if conn.resourcePackCache == nil || !key.Matches(pack) {
+		// A pack that does not match its own key would never be returned as a hit on a later login.
+		return
+	}
+	if err := conn.resourcePackCache.Store(conn.ctx, key, pack); err != nil {
+		conn.log.Warn("failed to store resource pack in cache", "UUID", pack.UUID(), "version", pack.Version(), "err", err)
+	}
 }
 
 // handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
@@ -1048,15 +1086,6 @@ func (conn *Conn) hasPack(uuid string, version string, hasBehaviours bool) bool 
 	return false
 }
 
-const (
-	// packChunkSize is the size of a single chunk of data from a resource pack: 128 KiB.
-	packChunkSize = 1024 * 128
-	// resourcePackChunkSendDelay spaces ResourcePackChunkData packets so slow clients are not flooded while
-	// downloading packs. Clients after 1.26.30 may fail resource pack downloads when pack chunks are sent
-	// too aggressively.
-	resourcePackChunkSendDelay = 200 * time.Millisecond
-)
-
 // handleResourcePackClientResponse handles an incoming resource pack client response packet. The packet is
 // handled differently depending on the response.
 func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClientResponse) error {
@@ -1067,7 +1096,10 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 		return conn.close(conn.closeErr("resource pack refused"))
 	case packet.PackResponseSendPacks:
 		packs := pk.PacksToDownload
-		conn.packQueue = &resourcePackQueue{packs: conn.resourcePacks}
+		conn.packQueue = &resourcePackQueue{
+			packs:     conn.resourcePacks,
+			chunkSize: conn.resourcePackDelivery.ChunkSize,
+		}
 		if err := conn.packQueue.Request(packs); err != nil {
 			return fmt.Errorf("lookup resource packs by UUID: %w", err)
 		}
@@ -1133,6 +1165,7 @@ func (conn *Conn) startGame() {
 		EmoteChatMuted:               data.EmoteChatMuted,
 		GameRules:                    data.GameRules,
 		Time:                         data.Time,
+		DayCycleLockTime:             data.DayCycleLockTime,
 		Blocks:                       data.CustomBlocks,
 		AchievementsDisabled:         true,
 		Generator:                    1,
@@ -1224,25 +1257,30 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 			}
 		}
 		conn.packMu.Lock()
-		defer conn.packMu.Unlock()
-
 		if pack.buf.Len() != int(pack.size) {
 			conn.log.Error(fmt.Sprintf("download resource pack: incorrect resource pack size: expected %v, got %v", pack.size, pack.buf.Len()), "UUID", id)
+			conn.packMu.Unlock()
 			return
 		}
 		// First parse the resource pack from the total byte buffer we obtained.
 		newPack, err := resource.Read(pack.buf)
 		if err != nil {
 			conn.log.Error("download resource pack: invalid full resource pack data: "+err.Error(), "UUID", id)
+			conn.packMu.Unlock()
 			return
 		}
+		newPack = newPack.WithContentKey(pack.contentKey)
 		conn.packQueue.packAmount--
 		// Finally we add the resource to the resource packs slice.
-		conn.resourcePacks = append(conn.resourcePacks, newPack.WithContentKey(pack.contentKey))
-		if conn.packQueue.packAmount == 0 {
+		conn.resourcePacks = append(conn.resourcePacks, newPack)
+		packAmount := conn.packQueue.packAmount
+		conn.packMu.Unlock()
+
+		if packAmount == 0 {
 			conn.expect(packet.IDResourcePackStack)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		}
+		conn.storeResourcePack(pack.cacheKey, newPack)
 	}()
 	return nil
 }
@@ -1275,20 +1313,21 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 // pack to be downloaded.
 func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
 	current := conn.packQueue.currentPack
+	chunkSize := uint64(conn.packQueue.chunkSize)
 	uuid, _, _ := strings.Cut(pk.UUID, "_")
 	if current.UUID().String() != uuid {
 		return fmt.Errorf("expected pack UUID %v, but got %v", current.UUID(), pk.UUID)
 	}
-	if conn.packQueue.currentOffset != uint64(pk.ChunkIndex)*packChunkSize {
-		return fmt.Errorf("expected pack UUID %v, but got %v", conn.packQueue.currentOffset/packChunkSize, pk.ChunkIndex)
+	if conn.packQueue.currentOffset != uint64(pk.ChunkIndex)*chunkSize {
+		return fmt.Errorf("expected chunk index %v, but got %v", conn.packQueue.currentOffset/chunkSize, pk.ChunkIndex)
 	}
 	response := &packet.ResourcePackChunkData{
 		UUID:       pk.UUID,
 		ChunkIndex: uint32(pk.ChunkIndex),
 		DataOffset: conn.packQueue.currentOffset,
-		Data:       make([]byte, packChunkSize),
+		Data:       make([]byte, chunkSize),
 	}
-	conn.packQueue.currentOffset += packChunkSize
+	conn.packQueue.currentOffset += chunkSize
 	// We read the data directly into the response's data.
 	if n, err := current.ReadAt(response.Data, int64(response.DataOffset)); err != nil {
 		// If we hit an EOF, we don't need to return an error, as we've simply reached the end of the content
@@ -1301,6 +1340,9 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	if err := conn.WritePacket(response); err != nil {
 		return fmt.Errorf("send ResourcePackChunkData: %w", err)
 	}
+	if err := conn.Flush(); err != nil {
+		return fmt.Errorf("flush ResourcePackChunkData: %w", err)
+	}
 
 	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Len())
 	if lastChunk {
@@ -1310,7 +1352,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 			conn.expect(packet.IDResourcePackClientResponse)
 		}
 	}
-	if err := waitResourcePackChunkSendDelay(conn.ctx); err != nil {
+	if err := waitResourcePackChunkSendDelay(conn.ctx, conn.resourcePackDelivery.ChunkSendDelay); err != nil {
 		return err
 	}
 
@@ -1318,8 +1360,11 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 }
 
 // waitResourcePackChunkSendDelay waits before processing the next resource pack chunk request.
-func waitResourcePackChunkSendDelay(ctx context.Context) error {
-	timer := time.NewTimer(resourcePackChunkSendDelay)
+func waitResourcePackChunkSendDelay(ctx context.Context, delay time.Duration) error {
+	if delay <= 0 {
+		return nil
+	}
+	timer := time.NewTimer(delay)
 	defer timer.Stop()
 
 	select {
@@ -1359,6 +1404,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		EmoteChatMuted:               pk.EmoteChatMuted,
 		GameRules:                    pk.GameRules,
 		Time:                         pk.Time,
+		DayCycleLockTime:             pk.DayCycleLockTime,
 		ServerBlockStateChecksum:     pk.ServerBlockStateChecksum,
 		CustomBlocks:                 pk.Blocks,
 		PlayerMovementSettings:       pk.PlayerMovementSettings,

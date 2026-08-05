@@ -69,7 +69,7 @@ func (e littleEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	b := *(*[]byte)(unsafe.Pointer(&x))
+	b := unsafe.Slice(unsafe.StringData(x), len(x))
 	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
@@ -127,6 +127,9 @@ func (e littleEndian) String(r *offsetReader) (string, error) {
 	if err != nil {
 		return "", BufferOverrunError{Op: "String"}
 	}
+	if strLen < 0 {
+		return "", BufferOverrunError{Op: "String"}
+	}
 	b := make([]byte, uint16(strLen))
 	if _, err := r.Read(b); err != nil {
 		return "", BufferOverrunError{Op: "String"}
@@ -138,6 +141,9 @@ func (e littleEndian) String(r *offsetReader) (string, error) {
 func (e littleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	n, err := e.Int32(r)
 	if err != nil {
+		return nil, BufferOverrunError{Op: "Int32Slice"}
+	}
+	if n < 0 {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
 	b := make([]byte, n*4)
@@ -154,6 +160,9 @@ func (e littleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 func (e littleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	n, err := e.Int32(r)
 	if err != nil {
+		return nil, BufferOverrunError{Op: "Int64Slice"}
+	}
+	if n < 0 {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
 	b := make([]byte, n*8)
@@ -227,7 +236,7 @@ func (e bigEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	b := *(*[]byte)(unsafe.Pointer(&x))
+	b := unsafe.Slice(unsafe.StringData(x), len(x))
 	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}

@@ -59,6 +59,6 @@ func (pk *ClientMovementPredictionSync) Marshal(io protocol.IO) {
 	io.Float32(&pk.FrictionModifier)
 	io.Float32(&pk.Bounciness)
 	io.Float32(&pk.AirDragModifier)
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.Bool(&pk.Flying)
 }

@@ -67,91 +67,19 @@ const (
 // for both shaped and shapeless recipes.
 type RecipeUnlockRequirement struct {
 	// Context is the context in which the recipe is unlocked. This is one of the constants above.
-	Context byte
+	Context int32
 	// Ingredients are the ingredients required to unlock the recipe and only used if Context is set to none.
 	Ingredients []ItemDescriptorCount
 }
 
 // Marshal ...
 func (x *RecipeUnlockRequirement) Marshal(r IO) {
-	r.Uint8(&x.Context)
-	if x.Context == RecipeUnlockContextNone {
+	r.Varint32(&x.Context)
+	present := x.Context == RecipeUnlockContextNone
+	r.Bool(&present)
+	if present {
 		FuncSlice(r, &x.Ingredients, r.ItemDescriptorCount)
 	}
-}
-
-const (
-	RecipeShapeless int32 = iota
-	RecipeShaped
-	_
-	_
-	RecipeMulti
-	RecipeShulkerBox
-	RecipeShapelessChemistry
-	RecipeShapedChemistry
-	RecipeSmithingTransform
-	RecipeSmithingTrim
-)
-
-// Recipe represents a recipe that may be sent in a CraftingData packet to let the client know what recipes
-// are available server-side.
-type Recipe interface {
-	// Marshal encodes the recipe data to its binary representation into buf.
-	Marshal(w *Writer)
-	// Unmarshal decodes a serialised recipe from Reader r into the recipe instance.
-	Unmarshal(r *Reader)
-}
-
-// lookupRecipe looks up the Recipe for a recipe type. False is returned if not
-// found.
-func lookupRecipe(recipeType int32, x *Recipe) bool {
-	switch recipeType {
-	case RecipeShapeless:
-		*x = &ShapelessRecipe{}
-	case RecipeShaped:
-		*x = &ShapedRecipe{}
-	case RecipeMulti:
-		*x = &MultiRecipe{}
-	case RecipeShulkerBox:
-		*x = &ShulkerBoxRecipe{}
-	case RecipeShapelessChemistry:
-		*x = &ShapelessChemistryRecipe{}
-	case RecipeShapedChemistry:
-		*x = &ShapedChemistryRecipe{}
-	case RecipeSmithingTransform:
-		*x = &SmithingTransformRecipe{}
-	case RecipeSmithingTrim:
-		*x = &SmithingTrimRecipe{}
-	default:
-		return false
-	}
-	return true
-}
-
-// lookupRecipeType looks up the recipe type for a Recipe. False is returned if
-// none was found.
-func lookupRecipeType(x Recipe, recipeType *int32) bool {
-	switch x.(type) {
-	case *ShapelessRecipe:
-		*recipeType = RecipeShapeless
-	case *ShapedRecipe:
-		*recipeType = RecipeShaped
-	case *MultiRecipe:
-		*recipeType = RecipeMulti
-	case *ShulkerBoxRecipe:
-		*recipeType = RecipeShulkerBox
-	case *ShapelessChemistryRecipe:
-		*recipeType = RecipeShapelessChemistry
-	case *ShapedChemistryRecipe:
-		*recipeType = RecipeShapedChemistry
-	case *SmithingTransformRecipe:
-		*recipeType = RecipeSmithingTransform
-	case *SmithingTrimRecipe:
-		*recipeType = RecipeSmithingTrim
-	default:
-		return false
-	}
-	return true
 }
 
 // ShapelessRecipe is a recipe that has no particular shape. Its functionality is shared with the
@@ -179,9 +107,8 @@ type ShapelessRecipe struct {
 	// - campfire
 	Block string
 	// Priority ...
-	Priority int32
-	// UnlockRequirement is a requirement that must be met in order to unlock the recipe.
-	UnlockRequirement RecipeUnlockRequirement
+	Priority          int32
+	UnlockRequirement Optional[RecipeUnlockRequirement]
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
@@ -225,9 +152,8 @@ type ShapedRecipe struct {
 	Priority int32
 	// AssumeSymmetry specifies if the recipe is symmetrical. If this is set to true, the recipe will be
 	// mirrored along the diagonal axis. This means that the recipe will be the same if rotated 180 degrees.
-	AssumeSymmetry bool
-	// UnlockRequirement is a requirement that must be met in order to unlock the recipe.
-	UnlockRequirement RecipeUnlockRequirement
+	AssumeSymmetry    bool
+	UnlockRequirement Optional[RecipeUnlockRequirement]
 	// RecipeNetworkID is a unique ID used to identify the recipe over network. Each recipe must have a unique
 	// network ID. Recommended is to just increment a variable for each unique recipe registered.
 	// This field must never be 0.
@@ -294,80 +220,38 @@ type SmithingTrimRecipe struct {
 }
 
 // Marshal ...
-func (recipe *ShapelessRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, recipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessRecipe) Marshal(r IO) {
 	marshalShapeless(r, recipe)
 }
 
 // Marshal ...
-func (recipe *ShulkerBoxRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShulkerBoxRecipe) Unmarshal(r *Reader) {
+func (recipe *ShulkerBoxRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
-func (recipe *ShapelessChemistryRecipe) Marshal(w *Writer) {
-	marshalShapeless(w, &recipe.ShapelessRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapelessChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapelessChemistryRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 
 // Marshal ...
-func (recipe *ShapedRecipe) Marshal(w *Writer) {
-	marshalShaped(w, recipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapedRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedRecipe) Marshal(r IO) {
 	marshalShaped(r, recipe)
 }
 
 // Marshal ...
-func (recipe *ShapedChemistryRecipe) Marshal(w *Writer) {
-	marshalShaped(w, &recipe.ShapedRecipe)
-}
-
-// Unmarshal ...
-func (recipe *ShapedChemistryRecipe) Unmarshal(r *Reader) {
+func (recipe *ShapedChemistryRecipe) Marshal(r IO) {
 	marshalShaped(r, &recipe.ShapedRecipe)
 }
 
 // Marshal ...
-func (recipe *MultiRecipe) Marshal(w *Writer) {
-	w.UUID(&recipe.UUID)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *MultiRecipe) Unmarshal(r *Reader) {
+func (recipe *MultiRecipe) Marshal(r IO) {
 	r.UUID(&recipe.UUID)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
 // Marshal ...
-func (recipe *SmithingTransformRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.Item(&recipe.Result)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTransformRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
@@ -378,17 +262,7 @@ func (recipe *SmithingTransformRecipe) Unmarshal(r *Reader) {
 }
 
 // Marshal ...
-func (recipe *SmithingTrimRecipe) Marshal(w *Writer) {
-	w.String(&recipe.RecipeID)
-	w.ItemDescriptorCount(&recipe.Template)
-	w.ItemDescriptorCount(&recipe.Base)
-	w.ItemDescriptorCount(&recipe.Addition)
-	w.String(&recipe.Block)
-	w.Varuint32(&recipe.RecipeNetworkID)
-}
-
-// Unmarshal ...
-func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
+func (recipe *SmithingTrimRecipe) Marshal(r IO) {
 	r.String(&recipe.RecipeID)
 	r.ItemDescriptorCount(&recipe.Template)
 	r.ItemDescriptorCount(&recipe.Base)
@@ -397,22 +271,23 @@ func (recipe *SmithingTrimRecipe) Unmarshal(r *Reader) {
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShaped ...
 func marshalShaped(r IO, recipe *ShapedRecipe) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
 	r.Varint32(&recipe.Height)
-	FuncSliceOfLen(r, uint32(recipe.Width*recipe.Height), &recipe.Input, r.ItemDescriptorCount)
+	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
+	if int64(len(recipe.Input)) != int64(recipe.Width)*int64(recipe.Height) {
+		r.InvalidValue(len(recipe.Input), "shaped recipe ingredients", "must equal width multiplied by height")
+	}
 	FuncSlice(r, &recipe.Output, r.Item)
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
 	r.Bool(&recipe.AssumeSymmetry)
-	Single(r, &recipe.UnlockRequirement)
+	OptionalMarshaler(r, &recipe.UnlockRequirement)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShapeless ...
 func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.String(&recipe.RecipeID)
 	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)
@@ -420,6 +295,6 @@ func marshalShapeless(r IO, recipe *ShapelessRecipe) {
 	r.UUID(&recipe.UUID)
 	r.String(&recipe.Block)
 	r.Varint32(&recipe.Priority)
-	Single(r, &recipe.UnlockRequirement)
+	OptionalMarshaler(r, &recipe.UnlockRequirement)
 	r.Varuint32(&recipe.RecipeNetworkID)
 }

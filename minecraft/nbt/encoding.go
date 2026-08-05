@@ -107,7 +107,7 @@ func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	if _, err := w.Write(*(*[]byte)(unsafe.Pointer(&x))); err != nil {
+	if _, err := w.Write(unsafe.Slice(unsafe.StringData(x), len(x))); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	return nil
@@ -191,6 +191,9 @@ func (e networkLittleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
+	if n < 0 {
+		return nil, BufferOverrunError{Op: "Int32Slice"}
+	}
 	m := make([]int32, n)
 	for i := int32(0); i < n; i++ {
 		m[i], err = e.Int32(r)
@@ -205,6 +208,9 @@ func (e networkLittleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 func (e networkLittleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	n, err := e.Int32(r)
 	if err != nil {
+		return nil, BufferOverrunError{Op: "Int64Slice"}
+	}
+	if n < 0 {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
 	m := make([]int64, n)

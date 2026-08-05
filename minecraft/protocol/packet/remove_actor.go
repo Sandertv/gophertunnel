@@ -19,5 +19,5 @@ func (*RemoveActor) ID() uint32 {
 }
 
 func (pk *RemoveActor) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 }

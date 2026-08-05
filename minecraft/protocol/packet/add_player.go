@@ -72,7 +72,7 @@ func (*AddPlayer) ID() uint32 {
 func (pk *AddPlayer) Marshal(io protocol.IO) {
 	io.UUID(&pk.UUID)
 	io.String(&pk.Username)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.String(&pk.PlatformChatID)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Velocity)

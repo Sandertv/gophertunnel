@@ -1,7 +1,5 @@
 package protocol
 
-import "math"
-
 const (
 	HeightMapDataNone = iota
 	HeightMapDataHasData
@@ -11,12 +9,8 @@ const (
 )
 
 const (
-	SubChunkRequestModeLimitless = math.MaxUint32 - iota
-	SubChunkRequestModeLimited
-)
-
-const (
-	SubChunkResultSuccess = iota + 1
+	SubChunkResultUndefined = iota
+	SubChunkResultSuccess
 	SubChunkResultChunkNotFound
 	SubChunkResultInvalidDimension
 	SubChunkResultPlayerNotFound
@@ -31,51 +25,34 @@ type SubChunkEntry struct {
 	Offset SubChunkOffset
 	// Result is always one of the constants defined in the SubChunkResult constants.
 	Result byte
-	// RawPayload contains the serialized sub-chunk data.
-	RawPayload []byte
+	// RawPayload contains the serialized sub-chunk data, if present.
+	RawPayload Optional[[]byte]
 	// HeightMapType is always one of the constants defined in the HeightMapData constants.
 	HeightMapType byte
-	// HeightMapData is the data for the height map.
-	HeightMapData []int8
+	// HeightMapData is the data for the height map, if present.
+	HeightMapData Optional[[]int8]
 	// RenderHeightMapType is always one of the constants defined in the HeightMapData constants.
 	RenderHeightMapType byte
-	// RenderHeightMapData is the data for the render height map.
-	RenderHeightMapData []int8
-	// BlobHash is the hash of the blob.
-	BlobHash uint64
+	// RenderHeightMapData is the data for the render height map, if present.
+	RenderHeightMapData Optional[[]int8]
+	// BlobHash is the hash of the blob, if present.
+	BlobHash Optional[uint64]
 }
 
-// Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
+// Marshal encodes/decodes a SubChunkEntry.
 func (x *SubChunkEntry) Marshal(r IO) {
 	Single(r, &x.Offset)
 	r.Uint8(&x.Result)
-	if x.Result != SubChunkResultSuccessAllAir {
-		r.ByteSlice(&x.RawPayload)
-	}
+	OptionalFunc(r, &x.RawPayload, r.ByteSlice)
 	r.Uint8(&x.HeightMapType)
-	if x.HeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
-	}
+	OptionalFunc(r, &x.HeightMapData, func(data *[]int8) {
+		FuncSliceOfLen(r, 256, data, r.Int8)
+	})
 	r.Uint8(&x.RenderHeightMapType)
-	if x.RenderHeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
-	}
-	r.Uint64(&x.BlobHash)
-}
-
-// SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
-func SubChunkEntryNoCache(r IO, x *SubChunkEntry) {
-	Single(r, &x.Offset)
-	r.Uint8(&x.Result)
-	r.ByteSlice(&x.RawPayload)
-	r.Uint8(&x.HeightMapType)
-	if x.HeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
-	}
-	r.Uint8(&x.RenderHeightMapType)
-	if x.RenderHeightMapType == HeightMapDataHasData {
-		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
-	}
+	OptionalFunc(r, &x.RenderHeightMapData, func(data *[]int8) {
+		FuncSliceOfLen(r, 256, data, r.Int8)
+	})
+	OptionalFunc(r, &x.BlobHash, r.Uint64)
 }
 
 // SubChunkOffset represents an offset from the base position of another sub chunk.

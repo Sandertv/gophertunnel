@@ -5,8 +5,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const PlayerAuthInputBitsetSize = 65
-
 const (
 	InputFlagAscend = iota
 	InputFlagDescend
@@ -73,31 +71,40 @@ const (
 	InputFlagSneakReleasedRaw
 	InputFlagSneakPressedRaw
 	InputFlagSneakCurrentRaw
+	InputFlagInternalUpdate
+
+	// InputFlagCount is the number of supported PlayerAuthInput flags.
+	InputFlagCount
 )
 
 const (
-    InputModeMouse = iota + 1
-    InputModeTouch
-    InputModeGamePad
+	InputModeUndefined = iota
+	InputModeMouse
+	InputModeTouch
+	InputModeGamePad
+	InputModeMotionController
+	InputModeCount
 )
 
 const (
-    PlayModeNormal = iota
-    PlayModeTeaser
-    PlayModeScreen
-    _
-    _
-    _
-    _
-    PlayModeExitLevel
-    _
-    PlayModeNumModes
+	PlayModeNormal = iota
+	PlayModeTeaser
+	PlayModeScreen
+	PlayModeViewer
+	PlayModeReality
+	PlayModePlacement
+	PlayModeLivingRoom
+	PlayModeExitLevel
+	PlayModeExitLevelLivingRoom
 )
+
+const PlayModeNumModes = PlayModeExitLevelLivingRoom + 1
 
 const (
 	InteractionModelTouch = iota
 	InteractionModelCrosshair
 	InteractionModelClassic
+	InteractionModelCount
 )
 
 // PlayerAuthInput is sent by the client to allow for server authoritative movement. It is used to synchronise
@@ -114,9 +121,9 @@ type PlayerAuthInput struct {
 	MoveVector mgl32.Vec2
 	// HeadYaw is the horizontal rotation of the head that the player reports it has.
 	HeadYaw float32
-	// InputData is a combination of bit flags that together specify the way the player moved last tick. It
-	// is a combination of the flags above.
-	InputData protocol.Bitset
+	// InputData is the set of input flags that together specify the way the player moved last tick. It holds
+	// the flags above.
+	InputData protocol.InputFlags
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.
 	InputMode uint32
@@ -125,7 +132,7 @@ type PlayerAuthInput struct {
 	PlayMode uint32
 	// InteractionModel is a constant representing the interaction model the player is using. It is one of the
 	// constants that may be found above.
-	InteractionModel uint32
+	InteractionModel int32
 	// InteractPitch and interactYaw is the rotation the player is looking that they intend to use for
 	// interactions. This is only different to Pitch and Yaw in cases such as VR or when custom cameras
 	// being used.
@@ -137,15 +144,15 @@ type PlayerAuthInput struct {
 	// as it can be calculated by the server itself.
 	Delta mgl32.Vec3
 	// ItemInteractionData is the transaction data if the InputData includes an item interaction.
-	ItemInteractionData protocol.UseItemTransactionData
+	ItemInteractionData protocol.Optional[protocol.UseItemTransactionData]
 	// ItemStackRequest is sent by the client to change an item in their inventory.
-	ItemStackRequest protocol.ItemStackRequest
+	ItemStackRequest protocol.Optional[protocol.ItemStackRequest]
 	// BlockActions is a slice of block actions that the client has interacted with.
-	BlockActions []protocol.PlayerBlockAction
+	BlockActions protocol.Optional[[]protocol.PlayerBlockAction]
 	// VehicleRotation is the rotation of the vehicle that the player is in, if any.
-	VehicleRotation mgl32.Vec2
+	VehicleRotation protocol.Optional[mgl32.Vec2]
 	// ClientPredictedVehicle is the unique ID of the vehicle that the client predicts the player to be in.
-	ClientPredictedVehicle int64
+	ClientPredictedVehicle protocol.Optional[int64]
 	// AnalogueMoveVector is a Vec2 that specifies the direction in which the player moved, as a combination
 	// of X/Z values which are created using an analogue input.
 	AnalogueMoveVector mgl32.Vec2
@@ -168,32 +175,23 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	io.Bitset(&pk.InputData, PlayerAuthInputBitsetSize)
+	protocol.InputFlagList(io, &pk.InputData, InputFlagCount)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
-	io.Varuint32(&pk.InteractionModel)
+	io.Varint32(&pk.InteractionModel)
 	io.Float32(&pk.InteractPitch)
 	io.Float32(&pk.InteractYaw)
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
-
-	if pk.InputData.Load(InputFlagPerformItemInteraction) {
-		io.PlayerInventoryAction(&pk.ItemInteractionData)
-	}
-
-	if pk.InputData.Load(InputFlagPerformItemStackRequest) {
-		protocol.Single(io, &pk.ItemStackRequest)
-	}
-
-	if pk.InputData.Load(InputFlagPerformBlockActions) {
-		protocol.SliceVarint32Length(io, &pk.BlockActions)
-	}
-
-	if pk.InputData.Load(InputFlagClientPredictedVehicle) {
-		io.Vec2(&pk.VehicleRotation)
-		io.Varint64(&pk.ClientPredictedVehicle)
-	}
-
+	protocol.DoubleOptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
+	protocol.DoubleOptionalFunc(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
+		x.Marshal(io)
+	})
+	protocol.DoubleOptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
+		protocol.Slice(io, x)
+	})
+	protocol.DoubleOptionalFunc(io, &pk.VehicleRotation, io.Vec2)
+	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.ActorUniqueID)
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
 	io.Vec2(&pk.RawMoveVector)

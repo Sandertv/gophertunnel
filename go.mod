@@ -15,6 +15,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/klauspost/compress v1.18.1
 	github.com/pelletier/go-toml v1.9.5
+	github.com/sandertv/go-raknet v1.15.2-0.20260705184311-0d1fd09e2cf6
 	github.com/pion/ice/v4 v4.2.7
 	github.com/pion/webrtc/v4 v4.2.16-0.20260627075746-7a223a6f4d4f
 	github.com/sandertv/go-raknet v1.14.3-0.20250305181847-6af3e95113d6

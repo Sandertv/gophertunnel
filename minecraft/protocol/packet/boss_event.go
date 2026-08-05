@@ -77,8 +77,8 @@ func (*BossEvent) ID() uint32 {
 }
 
 func (pk *BossEvent) Marshal(io protocol.IO) {
-	io.Varint64(&pk.BossEntityUniqueID)
-	io.Varint64(&pk.PlayerUniqueID)
+	io.ActorUniqueID(&pk.BossEntityUniqueID)
+	io.ActorUniqueID(&pk.PlayerUniqueID)
 	io.Uint8(&pk.EventType)
 	io.String(&pk.BossBarTitle)
 	io.String(&pk.FilteredBossBarTitle)
