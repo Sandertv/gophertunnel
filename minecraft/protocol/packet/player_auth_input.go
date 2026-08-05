@@ -77,11 +77,6 @@ const (
 	InputFlagCount
 )
 
-// NewPlayerAuthInputFlags creates an empty, present set of PlayerAuthInput flags.
-func NewPlayerAuthInputFlags() protocol.InputFlags {
-	return protocol.NewInputFlags(InputFlagCount)
-}
-
 const (
 	InputModeUndefined = iota
 	InputModeMouse
