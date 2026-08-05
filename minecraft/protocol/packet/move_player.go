@@ -47,7 +47,7 @@ type MovePlayer struct {
 	// riding, this should be left 0.
 	RiddenEntityRuntimeID uint64
 	// TeleportData holds metadata present only when Mode is MoveModeTeleport.
-	TeleportData protocol.Optional[protocol.TeleportData]
+	TeleportData protocol.TeleportData
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
 }
@@ -66,15 +66,16 @@ func (pk *MovePlayer) Marshal(io protocol.IO) {
 	io.Uint8(&pk.Mode)
 	io.Bool(&pk.OnGround)
 	io.Varuint64(&pk.RiddenEntityRuntimeID)
-	if _, writing := io.(*protocol.Writer); writing {
-		if pk.Mode == MoveModeTeleport {
-			if _, ok := pk.TeleportData.Value(); !ok {
-				pk.TeleportData = protocol.Option(protocol.TeleportData{})
-			}
-		} else {
-			pk.TeleportData = protocol.Optional[protocol.TeleportData]{}
-		}
+	expectsTeleportData := pk.Mode == MoveModeTeleport
+	hasTeleportData := expectsTeleportData
+	io.Bool(&hasTeleportData)
+	if hasTeleportData != expectsTeleportData {
+		io.InvalidValue(hasTeleportData, "move player teleport data presence", "does not match movement mode")
 	}
-	protocol.OptionalMarshaler(io, &pk.TeleportData)
+	if hasTeleportData {
+		pk.TeleportData.Marshal(io)
+	} else {
+		pk.TeleportData = protocol.TeleportData{}
+	}
 	io.Varuint64(&pk.Tick)
 }
