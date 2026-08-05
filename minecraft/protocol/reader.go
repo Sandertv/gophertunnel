@@ -478,6 +478,7 @@ func (r *Reader) StackRequestItem(x *StackRequestItem) {
 	x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick = data.nbtData, data.canBePlacedOn, data.canBreak, data.blockingTick
 }
 
+// itemUserData reads the length-delimited user-data payload shared by both item formats.
 func (r *Reader) itemUserData(shield bool) itemUserData {
 	var x itemUserData
 	var extraData []byte

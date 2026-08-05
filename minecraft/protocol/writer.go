@@ -373,6 +373,7 @@ func (w *Writer) StackRequestItem(x *StackRequestItem) {
 	w.itemUserData(stackRequestItemUserData(x), hasItem, x.Identifier == "minecraft:shield")
 }
 
+// itemUserData writes the length-delimited user-data payload shared by both item formats.
 func (w *Writer) itemUserData(x itemUserData, present, shield bool) {
 	if !present {
 		var zero uint32

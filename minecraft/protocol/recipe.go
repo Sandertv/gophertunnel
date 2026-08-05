@@ -275,7 +275,7 @@ func (recipe *SmithingTrimRecipe) Marshal(r IO) {
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShaped ...
+// marshalShaped reads/writes fields shared by shaped recipe variants.
 func marshalShaped(r IO, recipe *ShapedRecipe, withRequirement bool) {
 	r.String(&recipe.RecipeID)
 	r.Varint32(&recipe.Width)
@@ -303,7 +303,7 @@ func marshalShaped(r IO, recipe *ShapedRecipe, withRequirement bool) {
 	r.Varuint32(&recipe.RecipeNetworkID)
 }
 
-// marshalShapeless ...
+// marshalShapeless reads/writes fields shared by shapeless recipe variants.
 func marshalShapeless(r IO, recipe *ShapelessRecipe, withRequirement bool) {
 	r.String(&recipe.RecipeID)
 	FuncSlice(r, &recipe.Input, r.ItemDescriptorCount)

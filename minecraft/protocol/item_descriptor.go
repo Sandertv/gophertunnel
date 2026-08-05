@@ -58,6 +58,7 @@ func (x *MoLangItemDescriptor) Marshal(r IO) {
 	r.Int16(&x.Version)
 }
 
+// itemDescriptorType returns the Cereal variant ID and compatibility name for an item descriptor.
 func itemDescriptorType(x ItemDescriptor) (uint8, string, bool) {
 	switch x.(type) {
 	case nil, *InvalidItemDescriptor:
@@ -73,6 +74,7 @@ func itemDescriptorType(x ItemDescriptor) (uint8, string, bool) {
 	}
 }
 
+// itemDescriptorFromType creates the item descriptor represented by a Cereal variant ID.
 func itemDescriptorFromType(id uint8) (ItemDescriptor, bool) {
 	switch id {
 	case ItemDescriptorInvalid:

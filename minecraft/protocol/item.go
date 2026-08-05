@@ -59,6 +59,7 @@ type StackRequestItem struct {
 	BlockingTick int64
 }
 
+// itemUserData is the user-data subset shared by numeric and descriptor-backed item stacks.
 type itemUserData struct {
 	nbtData       map[string]any
 	canBePlacedOn []string
@@ -66,6 +67,7 @@ type itemUserData struct {
 	blockingTick  int64
 }
 
+// itemStackUserData projects the shared user-data fields from an ItemStack.
 func itemStackUserData(x *ItemStack) itemUserData {
 	return itemUserData{
 		nbtData:       x.NBTData,
@@ -75,6 +77,7 @@ func itemStackUserData(x *ItemStack) itemUserData {
 	}
 }
 
+// stackRequestItemUserData projects the shared user-data fields from a StackRequestItem.
 func stackRequestItemUserData(x *StackRequestItem) itemUserData {
 	return itemUserData{
 		nbtData:       x.NBTData,
