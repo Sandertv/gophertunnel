@@ -26,9 +26,9 @@ type InventoryAction struct {
 	SourceType uint32
 	// WindowID is the ID of the window that the client has opened. The window ID is not set if the SourceType
 	// is InventoryActionSourceWorld.
-	WindowID int8
+	WindowID Optional[int8]
 	// SourceFlags is a combination of flags that is only set if the SourceType is InventoryActionSourceWorld.
-	SourceFlags uint32
+	SourceFlags Optional[uint32]
 	// InventorySlot is the slot in which the action took place. Each action only describes the change of item
 	// in a single slot.
 	InventorySlot uint32
@@ -43,24 +43,8 @@ type InventoryAction struct {
 // Marshal encodes/decodes an InventoryAction.
 func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
-	present := true
-	r.Bool(&present)
-	hasContainerID := x.SourceType == InventoryActionSourceContainer || x.SourceType == InventoryActionSourceTODO
-	if present {
-		r.Bool(&hasContainerID)
-		if hasContainerID {
-			r.Int8(&x.WindowID)
-		}
-	}
-	present = true
-	r.Bool(&present)
-	hasFlags := x.SourceType == InventoryActionSourceWorld
-	if present {
-		r.Bool(&hasFlags)
-		if hasFlags {
-			r.Varuint32(&x.SourceFlags)
-		}
-	}
+	DoubleOptionalFunc(r, &x.WindowID, r.Int8)
+	DoubleOptionalFunc(r, &x.SourceFlags, r.Varuint32)
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)
 	r.ItemInstance(&x.NewItem)
