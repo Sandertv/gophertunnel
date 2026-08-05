@@ -5,12 +5,6 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const (
-	ParticleTypeOrangePoplarLeaves = 102
-	ParticleTypeRedPoplarLeaves    = 103
-	ParticleTypeYellowPoplarLeaves = 104
-)
-
 // noinspection SpellCheckingInspection
 const (
 	LevelEventSoundClick                            = 1000
