@@ -1,5 +1,16 @@
 package protocol
 
+import "math"
+
+const (
+	// SubChunkRequestModeLimitless is a SubChunkCount value that asks the client to request every sub-chunk
+	// at a LevelChunk position without a height limit.
+	SubChunkRequestModeLimitless = math.MaxUint32 - iota
+	// SubChunkRequestModeLimited is a SubChunkCount value that asks the client to request sub-chunks up to the
+	// SubChunkLimit of a LevelChunk.
+	SubChunkRequestModeLimited
+)
+
 const (
 	HeightMapDataNone = iota
 	HeightMapDataHasData
