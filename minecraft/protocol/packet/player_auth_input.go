@@ -5,7 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const PlayerAuthInputBitsetSize = 65
+const PlayerAuthInputFlagCount = 66
 
 const (
 	InputFlagAscend = iota
@@ -73,31 +73,37 @@ const (
 	InputFlagSneakReleasedRaw
 	InputFlagSneakPressedRaw
 	InputFlagSneakCurrentRaw
+	InputFlagInternalUpdate
 )
 
 const (
-	InputModeMouse = iota + 1
+	InputModeUndefined = iota
+	InputModeMouse
 	InputModeTouch
 	InputModeGamePad
+	InputModeMotionController
+	InputModeCount
 )
 
 const (
 	PlayModeNormal = iota
 	PlayModeTeaser
 	PlayModeScreen
-	_
-	_
-	_
-	_
+	PlayModeViewer
+	PlayModeReality
+	PlayModePlacement
+	PlayModeLivingRoom
 	PlayModeExitLevel
-	_
-	PlayModeNumModes
+	PlayModeExitLevelLivingRoom
 )
+
+const PlayModeNumModes = PlayModeExitLevelLivingRoom + 1
 
 const (
 	InteractionModelTouch = iota
 	InteractionModelCrosshair
 	InteractionModelClassic
+	InteractionModelCount
 )
 
 // PlayerAuthInput is sent by the client to allow for server authoritative movement. It is used to synchronise
@@ -114,9 +120,9 @@ type PlayerAuthInput struct {
 	MoveVector mgl32.Vec2
 	// HeadYaw is the horizontal rotation of the head that the player reports it has.
 	HeadYaw float32
-	// InputData is a combination of bit flags that together specify the way the player moved last tick. It
-	// is a combination of the flags above.
-	InputData protocol.Optional[[]int32]
+	// InputData is the set of input flags that together specify the way the player moved last tick. It holds
+	// the flags above.
+	InputData protocol.InputFlags
 	// InputMode specifies the way that the client inputs data to the screen. It is one of the constants that
 	// may be found above.
 	InputMode uint32
@@ -168,9 +174,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	protocol.OptionalFunc(io, &pk.InputData, func(i *[]int32) {
-		protocol.FuncSlice(io, i, io.Varint32)
-	})
+	protocol.InputFlagList(io, &pk.InputData, PlayerAuthInputFlagCount)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
 	io.Varint32(&pk.InteractionModel)
@@ -178,19 +182,15 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Float32(&pk.InteractYaw)
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
-	var t = true
-	io.Bool(&t)
-	protocol.OptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
-	io.Bool(&t)
-	protocol.OptionalMarshaler(io, &pk.ItemStackRequest)
-	io.Bool(&t)
-	protocol.OptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
+	protocol.DoubleOptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
+	protocol.DoubleOptionalFunc(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
+		x.Marshal(io)
+	})
+	protocol.DoubleOptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
 		protocol.Slice(io, x)
 	})
-	io.Bool(&t)
-	protocol.OptionalFunc(io, &pk.VehicleRotation, io.Vec2)
-	io.Bool(&t)
-	protocol.OptionalFunc(io, &pk.ClientPredictedVehicle, io.Varint64)
+	protocol.DoubleOptionalFunc(io, &pk.VehicleRotation, io.Vec2)
+	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.Varint64)
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
 	io.Vec2(&pk.RawMoveVector)

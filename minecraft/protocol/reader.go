@@ -139,11 +139,11 @@ func (r *Reader) ChunkPos(x *ChunkPos) {
 	r.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+// SubChunkPos reads a SubChunkPos as 3 int32s from the underlying buffer.
 func (r *Reader) SubChunkPos(x *SubChunkPos) {
-	r.Varint32(&x[0])
-	r.Varint32(&x[1])
-	r.Varint32(&x[2])
+	r.Int32(&x[0])
+	r.Int32(&x[1])
+	r.Int32(&x[2])
 }
 
 // SoundPos reads an mgl32.Vec3 that serves as a position for a sound.
@@ -268,22 +268,23 @@ func (r *Reader) UUID(x *uuid.UUID) {
 // PlayerInventoryAction reads a PlayerInventoryAction.
 func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.Varint32(&x.LegacyRequestID)
-	var legacy bool
-	r.Bool(&legacy)
-	if legacy && x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0 {
-		Slice(r, &x.LegacySetItemSlots)
-	}
-	// The actions are wrapped in a struct that is itself optional, so their
-	// presence is stated by two booleans rather than one.
-	var outer, inner bool
-	r.Bool(&outer)
-	r.Bool(&inner)
-	if outer && inner {
-		Slice(r, &x.Actions)
-	}
-	// Everything from the action type onwards is identical to the transaction
-	// data carried by an InventoryTransaction packet.
-	x.Marshal(r)
+	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
+		Slice(r, slots)
+	})
+	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
+		Slice(r, actions)
+	})
+	IntegerFunc(&x.ActionType, r.Varint32)
+	IntegerFunc(&x.TriggerType, r.Uint8)
+	r.BlockPos(&x.BlockPosition)
+	IntegerFunc(&x.BlockFace, r.Uint8)
+	r.Varint32(&x.HotBarSlot)
+	r.ItemInstance(&x.HeldItem)
+	r.Vec3(&x.Position)
+	r.Vec3(&x.ClickedPosition)
+	r.Varuint32(&x.BlockRuntimeID)
+	r.Uint8(&x.ClientPrediction)
+	r.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule reads a GameRule x from the Reader.
@@ -295,7 +296,6 @@ func (r *Reader) GameRule(x *GameRule) {
 
 	switch t {
 	case 0:
-		// Null variant: no value payload follows.
 		x.Value = nil
 	case 1:
 		var v bool
@@ -324,9 +324,12 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 		var key, dataType uint32
 		r.Varuint32(&key)
 		r.Varuint32(&dataType)
-		// The type of the value is sent a second time as a byte.
-		var legacyDataType uint8
+		var legacyDataType byte
 		r.Uint8(&legacyDataType)
+		if dataType != uint32(legacyDataType) {
+			r.InvalidValue(legacyDataType, "entity metadata type", fmt.Sprintf("does not match cereal selector %d", dataType))
+			return
+		}
 		switch dataType {
 		case EntityDataTypeByte:
 			var v byte
@@ -372,10 +375,10 @@ func (r *Reader) EntityMetadata(x *EntityMetadata) {
 
 // ItemDescriptorCount reads an ItemDescriptorCount i from the underlying buffer.
 func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
-	var present uint32
-	r.Varuint32(&present)
+	var present bool
+	r.Bool(&present)
 
-	if present == 0 {
+	if !present {
 		i.Descriptor = &InvalidItemDescriptor{}
 		i.Descriptor.Marshal(r)
 		r.Varint32(&i.Count)
@@ -450,8 +453,6 @@ func (r *Reader) StackReqItemDescriptorCount(i *ItemDescriptorCount) {
 		r.InvalidValue(t, "item descriptor type", "variant and field type differ")
 		return
 	}
-	// The payload of a descriptor here is not the one a recipe ingredient uses: neither the invalid nor the
-	// item tag descriptor trails a metadata value.
 	switch t {
 	case ItemDescriptorTypeInvalid:
 		i.Descriptor = &InvalidItemDescriptor{}

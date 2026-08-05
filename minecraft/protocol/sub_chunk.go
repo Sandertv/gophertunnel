@@ -1,7 +1,5 @@
 package protocol
 
-import "math"
-
 const (
 	HeightMapDataNone = iota
 	HeightMapDataHasData
@@ -11,12 +9,8 @@ const (
 )
 
 const (
-	SubChunkRequestModeLimitless = math.MaxUint32 - iota
-	SubChunkRequestModeLimited
-)
-
-const (
-	SubChunkResultSuccess = iota + 1
+	SubChunkResultUndefined = iota
+	SubChunkResultSuccess
 	SubChunkResultChunkNotFound
 	SubChunkResultInvalidDimension
 	SubChunkResultPlayerNotFound
@@ -31,58 +25,34 @@ type SubChunkEntry struct {
 	Offset SubChunkOffset
 	// Result is always one of the constants defined in the SubChunkResult constants.
 	Result byte
-	// RawPayload contains the serialized sub-chunk data.
-	RawPayload []byte
+	// RawPayload contains the serialized sub-chunk data, if present.
+	RawPayload Optional[[]byte]
 	// HeightMapType is always one of the constants defined in the HeightMapData constants.
 	HeightMapType byte
-	// HeightMapData is the data for the height map.
-	HeightMapData []int8
+	// HeightMapData is the data for the height map, if present.
+	HeightMapData Optional[[]int8]
 	// RenderHeightMapType is always one of the constants defined in the HeightMapData constants.
 	RenderHeightMapType byte
-	// RenderHeightMapData is the data for the render height map.
-	RenderHeightMapData []int8
-	// BlobHash is the hash of the blob.
-	BlobHash uint64
+	// RenderHeightMapData is the data for the render height map, if present.
+	RenderHeightMapData Optional[[]int8]
+	// BlobHash is the hash of the blob, if present.
+	BlobHash Optional[uint64]
 }
 
-// Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
+// Marshal encodes/decodes a SubChunkEntry.
 func (x *SubChunkEntry) Marshal(r IO) {
-	subChunkEntry(r, x, true)
-}
-
-// SubChunkEntryNoCache encodes/decodes a SubChunkEntry assuming the blob cache is not enabled.
-func SubChunkEntryNoCache(r IO, x *SubChunkEntry) {
-	subChunkEntry(r, x, false)
-}
-
-// subChunkEntry encodes/decodes a SubChunkEntry. Every field that used to be conditional now carries its own
-// presence byte, so the presence read from the stream is what decides whether a field follows, while encoding
-// derives it from the result and height map types it belongs to.
-func subChunkEntry(r IO, x *SubChunkEntry, cache bool) {
 	Single(r, &x.Offset)
 	r.Uint8(&x.Result)
-
-	payload := x.Result == SubChunkResultSuccess
-	r.Bool(&payload)
-	if payload {
-		r.ByteSlice(&x.RawPayload)
-	}
+	OptionalFunc(r, &x.RawPayload, r.ByteSlice)
 	r.Uint8(&x.HeightMapType)
-	heights := x.HeightMapType == HeightMapDataHasData
-	r.Bool(&heights)
-	if heights {
-		FuncSliceOfLen(r, 256, &x.HeightMapData, r.Int8)
-	}
+	OptionalFunc(r, &x.HeightMapData, func(data *[]int8) {
+		FuncSliceOfLen(r, 256, data, r.Int8)
+	})
 	r.Uint8(&x.RenderHeightMapType)
-	renderHeights := x.RenderHeightMapType == HeightMapDataHasData
-	r.Bool(&renderHeights)
-	if renderHeights {
-		FuncSliceOfLen(r, 256, &x.RenderHeightMapData, r.Int8)
-	}
-	r.Bool(&cache)
-	if cache {
-		r.Uint64(&x.BlobHash)
-	}
+	OptionalFunc(r, &x.RenderHeightMapData, func(data *[]int8) {
+		FuncSliceOfLen(r, 256, data, r.Int8)
+	})
+	OptionalFunc(r, &x.BlobHash, r.Uint64)
 }
 
 // SubChunkOffset represents an offset from the base position of another sub chunk.

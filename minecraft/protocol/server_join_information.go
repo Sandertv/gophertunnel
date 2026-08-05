@@ -9,29 +9,29 @@ type GatheringJoinInfo struct {
 	// ExperienceName is the name of the experience.
 	ExperienceName string
 	// ExperienceWorldID is the UUID of the experience world.
-	ExperienceWorldID uuid.UUID
+	ExperienceWorldID Optional[uuid.UUID]
 	// ExperienceWorldName is the world name of the experience.
-	ExperienceWorldName string
+	ExperienceWorldName Optional[string]
 	// CreatorID is the ID of the creator.
 	CreatorID string
 	// TargetID is the session ID of the experience.
-	TargetID uuid.UUID
+	TargetID Optional[uuid.UUID]
 	// ScenarioID is the scenario ID of experience.
-	ScenarioID string
+	ScenarioID Optional[string]
 	// ServerID is the server identifier.
-	ServerID string
+	ServerID Optional[string]
 }
 
 // Marshal encodes/decodes a GatheringJoinInfo.
 func (x *GatheringJoinInfo) Marshal(r IO) {
 	r.UUID(&x.ExperienceID)
 	r.String(&x.ExperienceName)
-	r.UUID(&x.ExperienceWorldID)
-	r.String(&x.ExperienceWorldName)
+	OptionalFunc(r, &x.ExperienceWorldID, r.UUID)
+	OptionalFunc(r, &x.ExperienceWorldName, r.String)
 	r.String(&x.CreatorID)
-	r.UUID(&x.TargetID)
-	r.String(&x.ScenarioID)
-	r.String(&x.ServerID)
+	OptionalFunc(r, &x.TargetID, r.UUID)
+	OptionalFunc(r, &x.ScenarioID, r.String)
+	OptionalFunc(r, &x.ServerID, r.String)
 }
 
 // StoreEntryPointInfo contains information about the store entry point.
@@ -50,14 +50,20 @@ func (x *StoreEntryPointInfo) Marshal(r IO) {
 
 // PresenceInfo contains presence information about the experience.
 type PresenceInfo struct {
-	// RichPresenceID is the rich presence ID overriding the client-driven rich presence. It may be at most 50
-	// characters long and is rejected by the client when present but empty.
-	RichPresenceID Optional[string]
+	// ExperienceName is the optional name of the experience.
+	ExperienceName Optional[string]
+	// WorldName is the optional name of the world.
+	WorldName Optional[string]
+	// RichPresenceID is the rich presence ID overriding the client-driven
+	// rich presence.
+	RichPresenceID string
 }
 
 // Marshal encodes/decodes a PresenceInfo.
 func (x *PresenceInfo) Marshal(r IO) {
-	OptionalFunc(r, &x.RichPresenceID, r.String)
+	OptionalFunc(r, &x.ExperienceName, r.String)
+	OptionalFunc(r, &x.WorldName, r.String)
+	r.String(&x.RichPresenceID)
 }
 
 // ServerJoinInformation contains optional information about the server the player is joining.

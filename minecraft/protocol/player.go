@@ -48,8 +48,10 @@ const (
 	PlayerActionStopCrawling
 	PlayerActionStartFlying
 	PlayerActionStopFlying
-	_
+	PlayerActionReceivedServerData
 	PlayerActionStartUsingItem
+	PlayerActionInternalUpdate
+	PlayerActionCount
 )
 
 // PlayerListEntry is an entry found in the PlayerList packet. It represents a single player using the UUID
@@ -92,15 +94,7 @@ type PlayerListEntry struct {
 
 // Marshal encodes/decodes a PlayerListEntry.
 func (x *PlayerListEntry) Marshal(r IO) {
-	// The action is sent twice: first as the index of the entry variant (which is
-	// the inverse of ActionType, as an added entry is variant 1) and then as the
-	// action itself.
-	variant := uint32(0)
-	if x.ActionType == PlayerListActionAdd {
-		variant = 1
-	}
-	r.Varuint32(&variant)
-	r.Uint8(&x.ActionType)
+	playerListAction(r, &x.ActionType)
 	r.UUID(&x.UUID)
 	if x.ActionType == PlayerListActionRemove {
 		return
@@ -115,7 +109,27 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.Bool(&x.Teacher)
 	r.Bool(&x.Host)
 	r.Bool(&x.SubClient)
-	r.ARGB(&x.PlayerColour)
+	r.BEARGB(&x.PlayerColour)
+}
+
+func playerListAction(r IO, action *byte) {
+	variant := uint32(0)
+	if *action == PlayerListActionAdd {
+		variant = 1
+	}
+	r.Varuint32(&variant)
+
+	legacyAction := *action
+	r.Uint8(&legacyAction)
+	*action = PlayerListActionRemove
+	if variant == 1 {
+		*action = PlayerListActionAdd
+	} else if variant != 0 {
+		r.UnknownEnumOption(variant, "player list entry variant")
+	}
+	if legacyAction != *action {
+		r.InvalidValue(legacyAction, "player list action type", "does not match entry variant")
+	}
 }
 
 // PlayerMovementSettings represents the different server authoritative movement settings. These control how
@@ -166,8 +180,8 @@ func (x *PlayerArmourDamageEntry) Marshal(r IO) {
 }
 
 type TeleportData struct {
-	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
-	// which is one of the constants above.
+	// TeleportCause specifies why the teleport occurred. See the TeleportCause constants in the packet package.
+	// TeleportData is present only when MovePlayer uses teleport mode.
 	TeleportCause int32
 	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
 	TeleportSourceEntityType int32

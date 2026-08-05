@@ -583,8 +583,6 @@ type CraftGrindstoneRecipeStackRequestAction struct {
 
 // Marshal ...
 func (c *CraftGrindstoneRecipeStackRequestAction) Marshal(r IO) {
-	// Unlike the other recipe actions, this one carries the recipe as an item
-	// stack net ID variant, which is not compressed.
 	id := int32(c.RecipeNetworkID)
 	r.Int32(&id)
 	c.RecipeNetworkID = uint32(id)
@@ -670,7 +668,5 @@ type StackRequestSlotInfo struct {
 func StackReqSlotInfo(r IO, x *StackRequestSlotInfo) {
 	Single(r, &x.Container)
 	r.Uint8(&x.Slot)
-	// The stack net id is a Cereal variant index and is not compressed, unlike
-	// most other integers in a stack request.
 	r.Int32(&x.StackNetworkID)
 }

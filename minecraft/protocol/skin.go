@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 	"image/color"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -63,7 +64,7 @@ type Skin struct {
 	// FullID is an ID that represents the skin in full. The actual functionality is unknown: The client
 	// does not seem to send a value for this.
 	FullID string
-	// SkinColour is a hex representation (including #) of the base colour of the skin.
+	// SkinColour is the base colour of the skin as big-endian ARGB.
 	SkinColour color.RGBA
 	// ArmSize is the size of the arms of the player's model. This is one of the ArmSize constants above.
 	ArmSize uint8
@@ -78,8 +79,8 @@ type Skin struct {
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
 	OverrideAppearance bool
-	TrustedSkinFlag    string
-	ProfileHash        string
+	// ProfileHash is a hash of the skin profile used for verification.
+	ProfileHash string
 }
 
 // Marshal encodes/decodes a Skin.
@@ -100,7 +101,7 @@ func (x *Skin) Marshal(r IO) {
 	r.String(&x.CapeID)
 	r.String(&x.FullID)
 	r.Uint8(&x.ArmSize)
-	r.ARGB(&x.SkinColour)
+	r.BEARGB(&x.SkinColour)
 	Slice(r, &x.PersonaPieces)
 	Slice(r, &x.PieceTintColours)
 	if err := x.validate(); err != nil {
@@ -111,7 +112,12 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
-	r.String(&x.TrustedSkinFlag)
+	trusted := "false"
+	if x.Trusted {
+		trusted = "true"
+	}
+	r.String(&trusted)
+	x.Trusted = strings.EqualFold(trusted, "true")
 	r.String(&x.ProfileHash)
 }
 
@@ -177,7 +183,8 @@ func (x *SkinAnimation) Marshal(r IO) {
 }
 
 const (
-	PieceTypeSkeleton = iota
+	PieceTypeUnknown = iota
+	PieceTypeSkeleton
 	PieceTypeBody
 	PieceTypeSkin
 	PieceTypeBottom
@@ -204,6 +211,7 @@ const (
 	PieceTypeCapes
 	PieceTypeClassicSkin
 	PieceTypeEmote
+	PieceTypeUnsupported
 )
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
@@ -235,20 +243,37 @@ func (x *PersonaPiece) Marshal(r IO) {
 type PersonaPieceTintColour struct {
 	// PieceType is the type of the persona skin piece that this tint colour concerns. The piece type must
 	// always be present in the persona pieces list, but not each piece type has a tint colour sent.
-	// This is one of the PieceType constants above.
-	PieceType uint32
-	// Colours is a list four colours written in hex notation (note, that unlike the SkinColour field in
-	// the ClientData struct, this is actually ARGB, not just RGB).
-	// The colours refer to different parts of the skin piece. The 'persona_eyes' may have the following
-	// colours: ["#ffa12722","#ff2f1f0f","#ff3aafd9","#0"]
-	// The first hex colour represents the tint colour of the iris, the second hex colour represents the
-	// eyebrows and the third represents the sclera. The fourth is #0 because there are only 3 parts of the
-	// persona_eyes skin piece.
-	Colours []string
+	PieceType string
+	// Colours contains the four ARGB tint colours for the piece.
+	Colours [4]color.RGBA
 }
 
 // Marshal encodes/decodes a PersonaPieceTintColour.
 func (x *PersonaPieceTintColour) Marshal(r IO) {
-	r.Uint32(&x.PieceType)
-	FuncSliceUint32Length(r, &x.Colours, r.String)
+	wireType := personaPieceTintWireType(x.PieceType)
+	r.String(&wireType)
+	x.PieceType = personaPieceTintLoginType(wireType)
+	for i := range x.Colours {
+		r.BEARGB(&x.Colours[i])
+	}
+}
+
+// personaPieceTintWireType converts the persona_* names used in login data to the shorter names used by the
+// v2168 skin codec. The hands type is singular in login data but plural on the wire.
+func personaPieceTintWireType(pieceType string) string {
+	if pieceType == "persona_hand" {
+		return "hands"
+	}
+	return strings.TrimPrefix(pieceType, "persona_")
+}
+
+// personaPieceTintLoginType converts v2168 wire names back to the persona_* names used in login data.
+func personaPieceTintLoginType(pieceType string) string {
+	if pieceType == "hands" {
+		return "persona_hand"
+	}
+	if pieceType == "unsupported" {
+		return pieceType
+	}
+	return "persona_" + pieceType
 }

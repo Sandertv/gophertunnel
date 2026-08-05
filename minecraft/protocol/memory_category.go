@@ -6,8 +6,10 @@ const (
 	MemoryCategoryActor
 	MemoryCategoryActorAnimation
 	MemoryCategoryActorRendering
+	MemoryCategoryBalancer
 	MemoryCategoryBlockTickingQueues
 	MemoryCategoryBiomeStorage
+	MemoryCategoryBlobs
 	MemoryCategoryCereal
 	MemoryCategoryCircuitSystem
 	MemoryCategoryClient
@@ -43,7 +45,6 @@ const (
 	MemoryCategoryLevelChunk
 	MemoryCategoryLevelChunkGen
 	MemoryCategoryLevelChunkGenThreadLocal
-	MemoryCategoryLightVolumeManager
 	MemoryCategoryNetwork
 	MemoryCategoryMarketplace
 	MemoryCategoryMaterialDragonCompiledDefinition
@@ -56,13 +57,28 @@ const (
 	MemoryCategoryMolang
 	MemoryCategoryOreUI
 	MemoryCategoryOreUIClient
-	MemoryCategoryPersona
+	MemoryCategoryPersonaPieces
+	MemoryCategoryPersonaAnimations
+	MemoryCategoryPersonaTextures
+	MemoryCategoryPersonaCharacters
+	MemoryCategoryPersonaSkinPacks
+	MemoryCategoryPersonaRepo
 	MemoryCategoryPlayer
 	MemoryCategoryRenderChunk
 	MemoryCategoryRenderChunkIndexBuffer
 	MemoryCategoryRenderChunkVertexBuffer
 	MemoryCategoryRendering
+	MemoryCategoryRenderingBGFXInit
+	MemoryCategoryRenderingBGFXStartFrame
+	MemoryCategoryRenderingBlockTessellator
+	MemoryCategoryRenderingEndFrame
+	MemoryCategoryRenderingGraphicsTasksInit
 	MemoryCategoryRenderingLibrary
+	MemoryCategoryRenderingPolygonOperatorPool
+	MemoryCategoryRenderingPBRTextureData
+	MemoryCategoryRenderingRenderRegistry
+	MemoryCategoryRenderingSetup
+	MemoryCategoryRenderingVertices
 	MemoryCategoryRequestLog
 	MemoryCategoryResourcePacks
 	MemoryCategorySound
@@ -70,11 +86,11 @@ const (
 	MemoryCategorySubChunkBlockData
 	MemoryCategorySubChunkLightData
 	MemoryCategoryTextures
-	MemoryCategoryVR
 	MemoryCategoryWeatherRenderer
 	MemoryCategoryWorldGenerator
 	MemoryCategoryTasks
 	MemoryCategoryTest
+	MemoryCategoryTestLoadTestTags
 	MemoryCategoryScripting
 	MemoryCategoryScriptingRuntime
 	MemoryCategoryScriptingContext
@@ -94,6 +110,9 @@ const (
 	MemoryCategoryGamefaceMedia
 	MemoryCategoryGamefaceJSON
 	MemoryCategoryGamefaceScriptEngine
+	MemoryCategoryGamefaceScript
+	MemoryCategoryGamefaceLayout
+	MemoryCategoryVR
 )
 
 // MemoryCategoryCounter represents a memory usage counter for a specific category.
@@ -150,13 +169,10 @@ func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.Uint8(&x.PercentOfTotal)
 }
 
-// SystemCategory maps an Entity System category name to the system index it applies to, so a debugger can
-// group systems visually.
+// SystemCategory maps a diagnostics category name to a system index.
 type SystemCategory struct {
-	// CategoryName is the name of the category that the system belongs to.
 	CategoryName string
-	// SystemIndex is the index of the system that the category applies to.
-	SystemIndex uint64
+	SystemIndex  uint64
 }
 
 // Marshal encodes/decodes a SystemCategory.

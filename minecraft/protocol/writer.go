@@ -134,11 +134,11 @@ func (w *Writer) ChunkPos(x *ChunkPos) {
 	w.Varint32(&x[1])
 }
 
-// SubChunkPos writes a SubChunkPos as 3 varint32s to the underlying buffer.
+// SubChunkPos writes a SubChunkPos as 3 int32s to the underlying buffer.
 func (w *Writer) SubChunkPos(x *SubChunkPos) {
-	w.Varint32(&x[0])
-	w.Varint32(&x[1])
-	w.Varint32(&x[2])
+	w.Int32(&x[0])
+	w.Int32(&x[1])
+	w.Int32(&x[2])
 }
 
 // SoundPos writes an mgl32.Vec3 that serves as a position for a sound.
@@ -193,20 +193,23 @@ func (w *Writer) UUID(x *uuid.UUID) {
 // PlayerInventoryAction writes a PlayerInventoryAction.
 func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	w.Varint32(&x.LegacyRequestID)
-	legacy := x.LegacyRequestID < -1 && (x.LegacyRequestID&1) == 0
-	w.Bool(&legacy)
-	if legacy {
-		Slice(w, &x.LegacySetItemSlots)
-	}
-	// The actions are wrapped in a struct that is itself optional, so their
-	// presence is stated by two booleans rather than one.
-	present := true
-	w.Bool(&present)
-	w.Bool(&present)
-	Slice(w, &x.Actions)
-	// Everything from the action type onwards is identical to the transaction
-	// data carried by an InventoryTransaction packet.
-	x.Marshal(w)
+	OptionalFunc(w, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
+		Slice(w, slots)
+	})
+	DoubleOptionalFunc(w, &x.Actions, func(actions *[]InventoryAction) {
+		Slice(w, actions)
+	})
+	IntegerFunc(&x.ActionType, w.Varint32)
+	IntegerFunc(&x.TriggerType, w.Uint8)
+	w.BlockPos(&x.BlockPosition)
+	IntegerFunc(&x.BlockFace, w.Uint8)
+	w.Varint32(&x.HotBarSlot)
+	w.ItemInstance(&x.HeldItem)
+	w.Vec3(&x.Position)
+	w.Vec3(&x.ClickedPosition)
+	w.Varuint32(&x.BlockRuntimeID)
+	w.Uint8(&x.ClientPrediction)
+	w.Uint8(&x.ClientCooldownState)
 }
 
 // GameRule writes a GameRule x to the Writer.
@@ -253,46 +256,43 @@ func (w *Writer) EntityMetadata(x *EntityMetadata) {
 		key := uint32(k)
 		value := (*x)[uint32(k)]
 		w.Varuint32(&key)
+		writeType := func(dataType uint32) {
+			w.Varuint32(&dataType)
+			legacyDataType := byte(dataType)
+			w.Uint8(&legacyDataType)
+		}
 		switch v := value.(type) {
 		case byte:
-			w.entityDataType(EntityDataTypeByte)
+			writeType(EntityDataTypeByte)
 			w.Uint8(&v)
 		case int16:
-			w.entityDataType(EntityDataTypeInt16)
+			writeType(EntityDataTypeInt16)
 			w.Int16(&v)
 		case int32:
-			w.entityDataType(EntityDataTypeInt32)
+			writeType(EntityDataTypeInt32)
 			w.Varint32(&v)
 		case float32:
-			w.entityDataType(EntityDataTypeFloat32)
+			writeType(EntityDataTypeFloat32)
 			w.Float32(&v)
 		case string:
-			w.entityDataType(EntityDataTypeString)
+			writeType(EntityDataTypeString)
 			w.String(&v)
 		case map[string]any:
-			w.entityDataType(EntityDataTypeCompoundTag)
+			writeType(EntityDataTypeCompoundTag)
 			w.NBT(&v, nbt.NetworkLittleEndian)
 		case BlockPos:
-			w.entityDataType(EntityDataTypeBlockPos)
+			writeType(EntityDataTypeBlockPos)
 			w.BlockPos(&v)
 		case int64:
-			w.entityDataType(EntityDataTypeInt64)
+			writeType(EntityDataTypeInt64)
 			w.Varint64(&v)
 		case mgl32.Vec3:
-			w.entityDataType(EntityDataTypeVec3)
+			writeType(EntityDataTypeVec3)
 			w.Vec3(&v)
 		default:
 			w.UnknownEnumOption(reflect.TypeOf(value), "entity metadata")
 		}
 	}
-}
-
-// entityDataType writes the type of an entity metadata value. The type is sent
-// twice: first as a varuint32 and then as a byte.
-func (w *Writer) entityDataType(t uint32) {
-	b := byte(t)
-	w.Varuint32(&t)
-	w.Uint8(&b)
 }
 
 // ItemDescriptorCount writes an ItemDescriptorCount i to the underlying buffer.
@@ -302,11 +302,8 @@ func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
 		w.UnknownEnumOption(fmt.Sprintf("%T", i.Descriptor), "item descriptor type")
 		return
 	}
-	present := uint32(1)
-	if name == "" {
-		present = 0
-	}
-	w.Varuint32(&present)
+	present := name != ""
+	w.Bool(&present)
 
 	descriptor := i.Descriptor
 	if name == "" {
