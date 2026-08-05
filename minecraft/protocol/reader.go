@@ -526,14 +526,15 @@ func (r *Reader) itemUserData(shield bool) itemUserData {
 
 // StackRequestAction reads a StackRequestAction from the reader.
 func (r *Reader) StackRequestAction(x *StackRequestAction) {
-	var id uint32
-	r.Varuint32(&id)
-	var legacyID uint8
-	r.Uint8(&legacyID)
-	if id != uint32(legacyID) {
-		r.InvalidValue(legacyID, "legacy stack request action type", "does not match Cereal action variant")
+	var variant uint32
+	r.Varuint32(&variant)
+	var id uint8
+	r.Uint8(&id)
+	if stackRequestActionVariant(id) != variant {
+		r.InvalidValue(id, "stack request action type", "does not match the variant it was sent under")
+		return
 	}
-	if !lookupStackRequestAction(legacyID, x) {
+	if !lookupStackRequestAction(id, x) {
 		r.UnknownEnumOption(id, "stack request action type")
 		return
 	}

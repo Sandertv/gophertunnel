@@ -42,6 +42,15 @@ func (x *ItemStackRequest) Marshal(r IO) {
 	r.Int32(&x.FilterCause)
 }
 
+// stackRequestActionVariant maps an action type to its index in the variant list the action is sent under.
+// The list leaves out the two container actions that are never sent, so the two run out of step above them.
+func stackRequestActionVariant(id uint8) uint32 {
+	if id > StackRequestActionTakeOutContainer {
+		return uint32(id) - 2
+	}
+	return uint32(id)
+}
+
 // lookupStackRequestActionType looks up the ID of a StackRequestAction.
 func lookupStackRequestActionType(x StackRequestAction, id *uint8) bool {
 	switch x.(type) {
@@ -314,6 +323,10 @@ const (
 	StackRequestActionDestroy
 	StackRequestActionConsume
 	StackRequestActionCreate
+	// StackRequestActionPlaceInContainer and StackRequestActionTakeOutContainer are never sent, but still
+	// take up their IDs in the action type the client repeats inside each action.
+	StackRequestActionPlaceInContainer
+	StackRequestActionTakeOutContainer
 	StackRequestActionLabTableCombine
 	StackRequestActionBeaconPayment
 	StackRequestActionMineBlock

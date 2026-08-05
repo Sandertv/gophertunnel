@@ -412,7 +412,7 @@ func (w *Writer) StackRequestAction(x *StackRequestAction) {
 	if !lookupStackRequestActionType(*x, &id) {
 		w.UnknownEnumOption(fmt.Sprintf("%T", *x), "stack request action type")
 	}
-	variant := uint32(id)
+	variant := stackRequestActionVariant(id)
 	w.Varuint32(&variant)
 	w.Uint8(&id)
 	(*x).Marshal(w)
