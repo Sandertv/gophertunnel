@@ -107,7 +107,7 @@ func (networkLittleEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	if _, err := w.Write(*(*[]byte)(unsafe.Pointer(&x))); err != nil {
+	if _, err := w.Write(unsafe.Slice(unsafe.StringData(x), len(x))); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	return nil
