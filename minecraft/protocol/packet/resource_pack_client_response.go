@@ -29,11 +29,11 @@ func (*ResourcePackClientResponse) ID() uint32 {
 
 func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.Response)
-	if pk.Response > PackResponseCompleted {
+	name, ok := resourcePackResponseToString(pk.Response)
+	if !ok {
 		io.UnknownEnumOption(pk.Response, "resource pack response")
+		return
 	}
-
-	name := resourcePackResponseToString(pk.Response)
 	io.String(&name)
 
 	if pk.Response == PackResponseSendPacks {
@@ -41,7 +41,17 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 	}
 }
 
-func resourcePackResponseToString(x uint32) string {
-	names := [...]string{"cancel", "downloading", "downloadingfinished", "resourcepackstackfinished"}
-	return names[x]
+func resourcePackResponseToString(x uint32) (string, bool) {
+	switch x {
+	case PackResponseRefused:
+		return "cancel", true
+	case PackResponseSendPacks:
+		return "downloading", true
+	case PackResponseAllPacksDownloaded:
+		return "downloadingfinished", true
+	case PackResponseCompleted:
+		return "resourcepackstackfinished", true
+	default:
+		return "", false
+	}
 }
