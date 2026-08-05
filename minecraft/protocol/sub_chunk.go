@@ -16,7 +16,8 @@ const (
 )
 
 const (
-	SubChunkResultSuccess = iota
+	SubChunkResultUndefined = iota
+	SubChunkResultSuccess
 	SubChunkResultChunkNotFound
 	SubChunkResultInvalidDimension
 	SubChunkResultPlayerNotFound
@@ -45,7 +46,7 @@ type SubChunkEntry struct {
 	BlobHash uint64
 }
 
-// Marshal encodes/decodes a SubChunkEntry assuming the blob cache is enabled.
+// Marshal encodes/decodes a SubChunkEntry.
 func (x *SubChunkEntry) Marshal(r IO) {
 	Single(r, &x.Offset)
 	r.Uint8(&x.Result)
