@@ -76,6 +76,9 @@ type Dialer struct {
 	// and version of the resource pack, the number of the current pack being downloaded, and the total amount of packs.
 	// The boolean returned determines if the pack will be downloaded or not.
 	DownloadResourcePack func(id uuid.UUID, version string, current, total int) bool
+	// ResourcePackCache, if set, reuses resource packs downloaded on earlier logins. Misses and errors
+	// fall back to a normal download.
+	ResourcePackCache ResourcePackCache
 
 	// DisconnectOnUnknownPackets specifies if the connection should disconnect if packets received are not present
 	// in the packet pool. If true, such packets lead to the connection being closed immediately.
@@ -249,6 +252,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc
 	conn.downloadResourcePack = d.DownloadResourcePack
+	conn.resourcePackCache = d.ResourcePackCache
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
