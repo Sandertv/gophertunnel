@@ -231,17 +231,15 @@ type ItemStackResponse struct {
 func (x *ItemStackResponse) Marshal(r IO) {
 	r.Uint8(&x.Status)
 	r.Varint32(&x.RequestID)
-	wrapper := true
-	r.Bool(&wrapper)
-	if wrapper {
-		present := len(x.ContainerInfo) != 0
-		r.Bool(&present)
-		if present {
-			Slice(r, &x.ContainerInfo)
-		} else {
-			x.ContainerInfo = nil
-		}
-	} else {
+	var containerInfo Optional[[]StackResponseContainerInfo]
+	if len(x.ContainerInfo) != 0 {
+		containerInfo = Option(x.ContainerInfo)
+	}
+	DoubleOptionalFunc(r, &containerInfo, func(containerInfo *[]StackResponseContainerInfo) {
+		Slice(r, containerInfo)
+	})
+	var ok bool
+	if x.ContainerInfo, ok = containerInfo.Value(); !ok {
 		x.ContainerInfo = nil
 	}
 }
@@ -287,16 +285,13 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 	r.Uint8(&x.Slot)
 	r.Uint8(&x.HotbarSlot)
 	r.Uint8(&x.Count)
-	wrapper := true
-	r.Bool(&wrapper)
-	if wrapper {
-		present := x.StackNetworkID > 0
-		r.Bool(&present)
-		if present {
-			r.Varint32(&x.StackNetworkID)
-		} else {
-			x.StackNetworkID = 0
-		}
+	var stackNetworkID Optional[int32]
+	if x.StackNetworkID > 0 {
+		stackNetworkID = Option(x.StackNetworkID)
+	}
+	DoubleOptionalFunc(r, &stackNetworkID, r.Varint32)
+	if value, ok := stackNetworkID.Value(); ok {
+		x.StackNetworkID = value
 	} else {
 		x.StackNetworkID = 0
 	}

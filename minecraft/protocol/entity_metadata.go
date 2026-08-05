@@ -17,7 +17,7 @@ const (
 	EntityDataKeyRowTimeLeft
 	EntityDataKeyRowTimeRight
 	EntityDataKeyValue
-	EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyDisplayBlockState
 	EntityDataKeyDisplayOffset
 	EntityDataKeyCustomDisplay
 	EntityDataKeySwell
@@ -147,12 +147,12 @@ const (
 	EntityDataKeyNameplateRenderDistanceMax
 )
 
-// Entity data key 16 is a tagged union in 1.26.40. These aliases document the values that may occupy it.
+// Some entity data keys have actor-specific meanings.
 const (
-	EntityDataKeyDisplayBlockState     = EntityDataKeyDisplayTileRuntimeID
-	EntityDataKeyDisplayFirework       = EntityDataKeyDisplayTileRuntimeID
-	EntityDataKeyHorseFlags            = EntityDataKeyDisplayTileRuntimeID
-	EntityDataKeyWitherSkullDangerous  = EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyDisplayFirework      = EntityDataKeyDisplayBlockState
+	EntityDataKeyHorseFlags           = EntityDataKeyDisplayBlockState
+	EntityDataKeyWitherSkullDangerous = EntityDataKeyDisplayBlockState
+
 	EntityDataKeyUnknownHorseInteger25 = EntityDataKeyUsingItem
 )
 

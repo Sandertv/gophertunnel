@@ -198,10 +198,10 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	if legacySlotsPresent {
 		Slice(w, &x.LegacySetItemSlots)
 	}
-	actionsWrapper, actionsPresent := true, true
-	w.Bool(&actionsWrapper)
-	w.Bool(&actionsPresent)
-	Slice(w, &x.Actions)
+	actions := Option(x.Actions)
+	DoubleOptionalFunc(w, &actions, func(actions *[]InventoryAction) {
+		Slice(w, actions)
+	})
 	IntegerFunc(&x.ActionType, w.Varint32)
 	IntegerFunc(&x.TriggerType, w.Uint8)
 	w.BlockPos(&x.BlockPosition)

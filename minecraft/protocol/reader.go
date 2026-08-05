@@ -279,16 +279,11 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	} else {
 		x.LegacySetItemSlots = nil
 	}
-	var actionsWrapper, actionsPresent bool
-	r.Bool(&actionsWrapper)
-	if actionsWrapper {
-		r.Bool(&actionsPresent)
-	}
-	if actionsPresent {
-		Slice(r, &x.Actions)
-	} else {
-		x.Actions = nil
-	}
+	var actions Optional[[]InventoryAction]
+	DoubleOptionalFunc(r, &actions, func(actions *[]InventoryAction) {
+		Slice(r, actions)
+	})
+	x.Actions, _ = actions.Value()
 	IntegerFunc(&x.ActionType, r.Varint32)
 	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)

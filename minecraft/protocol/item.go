@@ -67,11 +67,21 @@ type itemUserData struct {
 }
 
 func itemStackUserData(x *ItemStack) itemUserData {
-	return itemUserData{x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick}
+	return itemUserData{
+		nbtData:       x.NBTData,
+		canBePlacedOn: x.CanBePlacedOn,
+		canBreak:      x.CanBreak,
+		blockingTick:  x.BlockingTick,
+	}
 }
 
 func stackRequestItemUserData(x *StackRequestItem) itemUserData {
-	return itemUserData{x.NBTData, x.CanBePlacedOn, x.CanBreak, x.BlockingTick}
+	return itemUserData{
+		nbtData:       x.NBTData,
+		canBePlacedOn: x.CanBePlacedOn,
+		canBreak:      x.CanBreak,
+		blockingTick:  x.BlockingTick,
+	}
 }
 
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually
