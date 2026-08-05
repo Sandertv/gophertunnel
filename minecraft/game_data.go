@@ -80,6 +80,9 @@ type GameData struct {
 	GameRules []protocol.GameRule
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
+	// DayCycleLockTime is the time at which the day cycle was locked when the doDaylightCycle game rule is
+	// disabled.
+	DayCycleLockTime int32
 	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
 	// This can simply be left empty, and the client will avoid trying to verify it.
 	ServerBlockStateChecksum uint64
