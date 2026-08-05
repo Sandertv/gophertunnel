@@ -318,8 +318,6 @@ const (
 	StackRequestActionDestroy
 	StackRequestActionConsume
 	StackRequestActionCreate
-	// StackRequestActionPlaceInContainer and StackRequestActionTakeOutContainer are never sent, but still
-	// take up their IDs in the action type the client repeats inside each action.
 	StackRequestActionPlaceInContainer
 	StackRequestActionTakeOutContainer
 	StackRequestActionLabTableCombine

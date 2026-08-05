@@ -18,6 +18,15 @@ func NewInputFlags(size int) InputFlags {
 	return InputFlags{set: true, size: size}
 }
 
+// NewInputFlagsFromIDs creates an InputFlags holding the IDs passed. Duplicate IDs are ignored.
+func NewInputFlagsFromIDs(size int, ids []int32) InputFlags {
+	flags := NewInputFlags(size)
+	for _, id := range ids {
+		flags.Set(int(id))
+	}
+	return flags
+}
+
 // Present returns whether the InputFlags was sent. An absent one reports every flag as unset.
 func (f InputFlags) Present() bool {
 	return f.set

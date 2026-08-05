@@ -35,8 +35,6 @@ func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
 	}
 	pk.Response = byte(response)
 
-	// A varuint32 length-prefixed string follows the response. Its contents are ignored by the client,
-	// so we write the readable name of the response for parity and discard whatever is read.
 	name := resourcePackResponseToString(pk.Response)
 	io.String(&name)
 
