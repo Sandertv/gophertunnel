@@ -409,7 +409,7 @@ const (
 	SoundEventFrogspawnBreak                     = "block.frog_spawn.break"
 	SoundEventSonicBoom                          = "sonic_boom"
 	SoundEventSonicCharge                        = "sonic_charge"
-	SoundeventItemThrown                         = "item_thrown"
+	SoundEventItemThrown                         = "item_thrown"
 	SoundEventRecord5                            = "record.5"
 	SoundEventConvertToFrog                      = "convert_to_frog"
 	SoundEventRecordPlaying                      = "record.playing"
