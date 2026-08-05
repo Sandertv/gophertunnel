@@ -5,7 +5,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
-const PlayerAuthInputBitsetSize = 66
+const PlayerAuthInputFlagCount = 66
 
 const (
 	InputFlagAscend = iota
@@ -174,7 +174,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	protocol.InputFlagList(io, &pk.InputData, PlayerAuthInputBitsetSize)
+	protocol.InputFlagList(io, &pk.InputData, PlayerAuthInputFlagCount)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
 	io.Varint32(&pk.InteractionModel)

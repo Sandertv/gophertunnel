@@ -112,8 +112,6 @@ type TextShape struct {
 	UseRotation bool
 	// BackgroundColour is the RGBA colour to use for the text background. This is a translucent black colour by default.
 	BackgroundColour Optional[color.RGBA]
-	// LineGapHeight is the gap between lines used when rendering multiline text.
-	LineGapHeight float32
 	// DepthTest is whether the text should show through walls. Use true for default behaviour.
 	DepthTest bool
 	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
@@ -129,7 +127,6 @@ func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
 	io.Bool(&shape.UseRotation)
 	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
-	io.Float32(&shape.LineGapHeight)
 	io.Bool(&shape.DepthTest)
 	io.Bool(&shape.ShowBackface)
 	io.Bool(&shape.ShowBackfaceText)
