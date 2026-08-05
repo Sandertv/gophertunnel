@@ -34,10 +34,54 @@ type ItemStack struct {
 	CanBePlacedOn []string
 	// CanBreak is a list of block identifiers like 'minecraft:dirt' that the item is able to break.
 	CanBreak []string
-	// HasNetworkID ...
-	HasNetworkID bool
 	// BlockingTick is the tick at which a shield started blocking. It is only used for shield items.
 	BlockingTick int64
+}
+
+// StackRequestItem is the descriptor-backed item format used by deprecated craft-result stack request actions.
+// Unlike ordinary item stacks, it identifies the item by name instead of a numeric network ID.
+type StackRequestItem struct {
+	// Identifier is the namespaced item identifier, such as minecraft:stone.
+	Identifier string
+	// MetadataValue is the metadata value or damage value of the item.
+	MetadataValue uint32
+	// BlockRuntimeID is the runtime ID of the block represented by the item, if any.
+	BlockRuntimeID int32
+	// Count is the number of items in the stack.
+	Count uint16
+	// NBTData is the item's compound tag.
+	NBTData map[string]any
+	// CanBePlacedOn contains the block identifiers this item may be placed on.
+	CanBePlacedOn []string
+	// CanBreak contains the block identifiers this item may break.
+	CanBreak []string
+	// BlockingTick is the tick at which a shield started blocking.
+	BlockingTick int64
+}
+
+type itemUserData struct {
+	nbtData       map[string]any
+	canBePlacedOn []string
+	canBreak      []string
+	blockingTick  int64
+}
+
+func itemStackUserData(x *ItemStack) itemUserData {
+	return itemUserData{
+		nbtData:       x.NBTData,
+		canBePlacedOn: x.CanBePlacedOn,
+		canBreak:      x.CanBreak,
+		blockingTick:  x.BlockingTick,
+	}
+}
+
+func stackRequestItemUserData(x *StackRequestItem) itemUserData {
+	return itemUserData{
+		nbtData:       x.NBTData,
+		canBePlacedOn: x.CanBePlacedOn,
+		canBreak:      x.CanBreak,
+		blockingTick:  x.BlockingTick,
+	}
 }
 
 // ItemType represents a consistent combination of network ID and metadata value of an item. It cannot usually

@@ -69,7 +69,7 @@ func (e bigEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	b := *(*[]byte)(unsafe.Pointer(&x))
+	b := unsafe.Slice(unsafe.StringData(x), len(x))
 	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
@@ -227,7 +227,7 @@ func (e littleEndian) WriteString(w *offsetWriter, x string) error {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}
 	// Use unsafe conversion from a string to a byte slice to prevent copying.
-	b := *(*[]byte)(unsafe.Pointer(&x))
+	b := unsafe.Slice(unsafe.StringData(x), len(x))
 	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteString", Off: w.off}
 	}

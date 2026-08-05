@@ -1301,6 +1301,9 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 	if err := conn.WritePacket(response); err != nil {
 		return fmt.Errorf("send ResourcePackChunkData: %w", err)
 	}
+	if err := conn.Flush(); err != nil {
+		return fmt.Errorf("flush ResourcePackChunkData: %w", err)
+	}
 
 	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Len())
 	if lastChunk {
