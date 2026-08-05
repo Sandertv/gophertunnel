@@ -1,18 +1,11 @@
 package protocol
 
-import "math"
-
 const (
 	HeightMapDataNone = iota
 	HeightMapDataHasData
 	HeightMapDataTooHigh
 	HeightMapDataTooLow
 	HeightMapDataAllCopied
-)
-
-const (
-	SubChunkRequestModeLimitless = math.MaxUint32 - iota
-	SubChunkRequestModeLimited
 )
 
 const (
