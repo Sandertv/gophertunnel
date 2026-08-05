@@ -72,12 +72,14 @@ const (
 	InputFlagSneakPressedRaw
 	InputFlagSneakCurrentRaw
 	InputFlagInternalUpdate
-	inputFlagCount
+
+	// InputFlagCount is the number of supported PlayerAuthInput flags.
+	InputFlagCount
 )
 
 // NewPlayerAuthInputFlags creates an empty, present set of PlayerAuthInput flags.
 func NewPlayerAuthInputFlags() protocol.InputFlags {
-	return protocol.NewInputFlags(inputFlagCount)
+	return protocol.NewInputFlags(InputFlagCount)
 }
 
 const (
@@ -178,7 +180,7 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Vec3(&pk.Position)
 	io.Vec2(&pk.MoveVector)
 	io.Float32(&pk.HeadYaw)
-	protocol.InputFlagList(io, &pk.InputData, inputFlagCount)
+	protocol.InputFlagList(io, &pk.InputData, InputFlagCount)
 	io.Varuint32(&pk.InputMode)
 	io.Varuint32(&pk.PlayMode)
 	io.Varint32(&pk.InteractionModel)
