@@ -21,10 +21,15 @@ type MoveActorDelta struct {
 	RotationY     protocol.Optional[float32]
 	RotationYHead protocol.Optional[float32]
 
-	OnGround             bool
-	ForceMove            bool
+	// OnGround specifies whether the entity is on the ground after applying the update.
+	OnGround bool
+	// ForceMove specifies whether the client should snap the entity to its new position without interpolation.
+	ForceMove bool
+	// ForceMoveLocalEntity specifies whether the client should also snap an entity it owns locally.
 	ForceMoveLocalEntity bool
-	ForceCompletion      bool
+	// ForceCompletion specifies whether the client should complete any in-progress local movement before applying the
+	// update.
+	ForceCompletion bool
 }
 
 // ID ...
