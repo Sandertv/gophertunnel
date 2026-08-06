@@ -7,8 +7,8 @@ import (
 )
 
 const (
-	PlayerListActionAdd = iota
-	PlayerListActionRemove
+	PlayerListActionRemove = iota
+	PlayerListActionAdd
 )
 
 const (
