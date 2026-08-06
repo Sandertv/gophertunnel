@@ -262,8 +262,9 @@ type PrimitiveShape struct {
 	NetworkID uint64
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
-	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
-	AttachedToEntityID Optional[uint64]
+	// AttachedToEntityID is the optional unique ID of the entity the shape is attached to. Mojang's documentation
+	// describes it as a runtime ID, but the field is an ActorUniqueID and the client resolves it as one.
+	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
 	Type Optional[uint8]
@@ -294,6 +295,6 @@ func (x *PrimitiveShape) Marshal(io IO) {
 	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.ActorRuntimeID)
+	OptionalFunc(io, &x.AttachedToEntityID, io.ActorUniqueID)
 	io.ShapeData(&x.ExtraShapeData)
 }
