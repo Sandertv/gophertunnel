@@ -32,9 +32,7 @@ func (*PlayerLocation) ID() uint32 {
 func (pk *PlayerLocation) Marshal(io protocol.IO) {
 	io.ActorUniqueID(&pk.EntityUniqueID)
 	protocol.IntegerFunc(&pk.Type, io.Varuint32)
-
-	var reserved int32
-	io.Varint32(&reserved)
+	io.Varint32(&pk.Type)
 
 	switch pk.Type {
 	case PlayerLocationTypeCoordinates:
