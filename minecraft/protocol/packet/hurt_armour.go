@@ -15,7 +15,7 @@ type HurtArmour struct {
 	// thorns that the armour may have.
 	Damage int32
 	// ArmourSlots is a bitset of all armour slots affected.
-	ArmourSlots int64
+	ArmourSlots uint64
 }
 
 // ID ...
@@ -26,5 +26,5 @@ func (*HurtArmour) ID() uint32 {
 func (pk *HurtArmour) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Cause)
 	io.Varint32(&pk.Damage)
-	io.Varint64(&pk.ArmourSlots)
+	io.Varuint64(&pk.ArmourSlots)
 }
