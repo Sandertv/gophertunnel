@@ -59,7 +59,7 @@ func (x *AbilityData) Marshal(r IO) {
 	r.ActorUniqueIDInt64(&x.EntityUniqueID)
 	r.Uint8(&x.PlayerPermissions)
 	r.Uint8(&x.CommandPermissions)
-	SliceUint8Length(r, &x.Layers)
+	Slice(r, &x.Layers)
 }
 
 // AbilityLayer represents the abilities of a specific layer, such as the base layer or the spectator layer.
