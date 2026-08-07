@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (
@@ -75,7 +74,7 @@ type Skin struct {
 	PieceTintColours []PersonaPieceTintColour
 	// Trusted specifies if the skin is 'trusted'. No code should rely on this field, as any proxy or client
 	// can easily change it.
-	Trusted protocol.Optional[bool]
+	Trusted Optional[bool]
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
 	OverrideAppearance bool
@@ -121,7 +120,7 @@ func (x *Skin) Marshal(r IO) {
 	}
 	r.String(&trusted)
 	if trusted != "unset" {
-		x.Trusted = protocol.Option(strings.EqualFold(trusted, "true"))
+		x.Trusted = Option(strings.EqualFold(trusted, "true"))
 	}
 	r.String(&x.ProfileHash)
 }
