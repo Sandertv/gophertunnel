@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
 const (
@@ -110,7 +111,7 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
-	var trusted string
+	trusted := "unset"
 	t, ok := x.Trusted.Value()
 	if ok {
 		trusted = "false"
@@ -119,7 +120,7 @@ func (x *Skin) Marshal(r IO) {
 		}
 	}
 	r.String(&trusted)
-	if trusted != "" {
+	if trusted != "unset" {
 		x.Trusted = protocol.Option(strings.EqualFold(trusted, "true"))
 	}
 	r.String(&x.ProfileHash)
