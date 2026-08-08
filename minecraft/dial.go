@@ -227,6 +227,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("login to xbox live: %w", err)}
 			}
+			defer d.XBLClient.Close()
 		}
 		if !d.EnableLegacyAuth {
 			e, err := authEnv(ctx)
