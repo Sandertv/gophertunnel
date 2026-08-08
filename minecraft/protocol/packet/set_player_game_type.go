@@ -8,8 +8,8 @@ const (
 	GameTypeSurvival = iota
 	GameTypeCreative
 	GameTypeAdventure
-	GameTypeSurvivalSpectator
-	GameTypeCreativeSpectator
+	_
+	_
 	GameTypeDefault
 	GameTypeSpectator
 )
