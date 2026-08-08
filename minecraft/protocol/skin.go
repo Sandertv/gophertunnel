@@ -74,7 +74,7 @@ type Skin struct {
 	PieceTintColours []PersonaPieceTintColour
 	// Trusted specifies if the skin is 'trusted'. No code should rely on this field, as any proxy or client
 	// can easily change it.
-	Trusted bool
+	Trusted Optional[bool]
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
 	OverrideAppearance bool
@@ -110,12 +110,18 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
-	trusted := "false"
-	if x.Trusted {
-		trusted = "true"
+	trusted := "unset"
+	t, ok := x.Trusted.Value()
+	if ok {
+		trusted = "false"
+		if t {
+			trusted = "true"
+		}
 	}
 	r.String(&trusted)
-	x.Trusted = strings.EqualFold(trusted, "true")
+	if trusted != "unset" {
+		x.Trusted = Option(strings.EqualFold(trusted, "true"))
+	}
 	r.String(&x.ProfileHash)
 }
 
