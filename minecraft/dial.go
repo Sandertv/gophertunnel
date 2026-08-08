@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/df-mc/go-playfab/v2"
+	"github.com/df-mc/go-xsapi/v2"
 	"github.com/go-jose/go-jose/v4"
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
@@ -30,6 +32,7 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/login"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
+	"github.com/sandertv/gophertunnel/minecraft/service"
 	"golang.org/x/oauth2"
 )
 
@@ -61,9 +64,20 @@ type Dialer struct {
 	// If TokenSource is nil, the connection will not use authentication.
 	TokenSource oauth2.TokenSource
 
-	// XBLToken should be used in place of TokenSource if the XBL token is already known, i.e through a different
-	// oauth source. This token is for with the https://multiplayer.minecraft.net relaying party.
-	XBLToken *auth.XBLToken
+	// XBLClient is the Xbox Live API Client used during authenticated login. When
+	// set, it is used to request Minecraft authentication chain data and, when
+	// [Dialer.EnableLegacyAuth] is false and [Dialer.PlayFabClient] is nil, to
+	// log in to PlayFab. If nil, [Dialer.TokenSource] is used directly.
+	XBLClient *xsapi.Client
+
+	// PlayFabClient is the PlayFab client used to log in to Minecraft network services and request multiplayer
+	// tokens when [Dialer.EnableLegacyAuth] is set to false. To log in to Minecraft network services correctly,
+	// it must be authenticated with a PlayFab account in the title ID '20CA2' that has Xbox Live account linked.
+	// If nil, one is created from [Dialer.XBLClient] or [Dialer.TokenSource] when required for authenticated login.
+	//
+	// Setting PlayFabClient alone does not enable authenticated login. The dialer still needs [Dialer.XBLClient]
+	// or [Dialer.TokenSource] to request the legacy Minecraft chain used to populate trusted identity data.
+	PlayFabClient *playfab.Client
 
 	// PacketFunc is called whenever a packet is read from or written to the connection returned when using
 	// Dialer.Dial(). It includes packets that are otherwise covered in the connection sequence, such as the
@@ -184,10 +198,8 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	if d.FlushRate == 0 {
 		d.FlushRate = time.Second / 20
 	}
-	if d.HTTPClient != nil {
-		if c, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); !ok || c == nil {
-			ctx = context.WithValue(ctx, oauth2.HTTPClient, d.HTTPClient)
-		}
+	if d.HTTPClient == nil {
+		d.HTTPClient = http.DefaultClient
 	}
 
 	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
@@ -198,18 +210,51 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		chainData, token string
 		verifier         *oidc.IDTokenVerifier
 	)
-	if d.TokenSource != nil || (d.XBLToken != nil && d.XBLToken.Valid()) {
-		if d.TokenSource != nil && !d.EnableLegacyAuth {
-			verifier, err = oidcVerifier(ctx)
+	if d.PlayFabClient != nil && d.TokenSource == nil && d.XBLClient == nil {
+		return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: errors.New("PlayFabClient requires XBLClient or TokenSource for authenticated login")}
+	}
+	if d.TokenSource != nil || d.XBLClient != nil {
+		ctx = auth.WithContextClient(ctx, d.HTTPClient)
+		if d.XBLClient == nil {
+			x, ok := d.TokenSource.(xsapi.TokenSource)
+			if !ok {
+				x = auth.ContextSession(ctx, d.TokenSource)
+			}
+			d.XBLClient, err = xsapi.ClientConfig{
+				HTTPClient: d.HTTPClient,
+				RTAMode:    xsapi.RTADisabled,
+			}.New(ctx, x)
+			if err != nil {
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("login to xbox live: %w", err)}
+			}
+		}
+		if !d.EnableLegacyAuth {
+			e, err := authEnv(ctx)
+			if err != nil {
+				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request authorization environment: %w", err)}
+			}
+			verifier, err = e.VerifierContext(ctx)
 			if err != nil {
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("create OIDC verifier: %w", err)}
 			}
 
 			m, ok := d.TokenSource.(MultiplayerTokenSource)
 			if !ok {
-				// If a MultiplayerTokenSource was not provided, pass the oauth2.TokenSource to
-				// be used by our default implementation.
-				m = &multiplayerTokenSource{TokenSource: d.TokenSource}
+				// If a MultiplayerTokenSource was not provided, log in to PlayFab
+				// account and use a default implementation instead.
+				if d.PlayFabClient == nil {
+					client, err := playfab.LoginWithXbox(ctx, e.PlayFabTitleID, d.XBLClient, playfab.ClientConfig{
+						HTTPClient:    d.HTTPClient,
+						CreateAccount: true,
+					})
+					if err != nil {
+						return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("login to playfab: %w", err)}
+					}
+					defer client.Close()
+
+					d.PlayFabClient = client
+				}
+				m = &multiplayerTokenSource{src: e.TokenSource(d.PlayFabClient, service.TokenConfig{}), env: e}
 			}
 			token, err = m.MultiplayerToken(ctx, &key.PublicKey)
 			if err != nil {
@@ -218,7 +263,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		}
 		chainData, err = auth.RequestMinecraftChain(ctx, d.XBLClient, key)
 		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
+			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: fmt.Errorf("request Minecraft auth chain: %w", err)}
 		}
 		identityData, err := readChainIdentityData([]byte(chainData))
 		if err != nil {
@@ -258,7 +303,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
 
 	var request []byte
-	if d.TokenSource == nil && (d.XBLToken == nil || !d.XBLToken.Valid()) {
+	if chainData == "" && token == "" {
 		// We haven't logged into the user's XBL account. We create a login request with only one token
 		// holding the identity data set in the Dialer after making sure we clear data from the identity data
 		// that is only present when logged in.
