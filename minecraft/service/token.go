@@ -154,7 +154,7 @@ func (e *AuthorizationEnvironment) Token(ctx context.Context, config TokenConfig
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
-	if result.Data == nil && !result.Data.Valid() {
+	if result.Data == nil || !result.Data.Valid() {
 		return nil, errors.New("minecraft/service: AuthorizationEnvironment: invalid token result")
 	}
 	if err := decodeClaims(result.Data); err != nil {
