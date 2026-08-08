@@ -1,3 +1,5 @@
+github.com/coder/websocket v1.8.14 h1:9L0p0iKiNOibykf283eHkKUHHrpG7f65OE3BhhO7v9g=
+github.com/coder/websocket v1.8.14/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNvehc=
 github.com/coreos/go-oidc/v3 v3.17.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
@@ -6,8 +8,12 @@ github.com/df-mc/go-nethernet v1.0.17 h1:3lbw/N+Zy4eU8dUREVMFhq9Xl8qXJsJomuHIwH2
 github.com/df-mc/go-nethernet v1.0.17/go.mod h1:4yrQZMotdkZJvdYnRQr5L8OnokZtSzqJ6EU3dntAaIU=
 github.com/df-mc/go-playfab v1.0.0 h1:6gVukk3aQbJ934GJFdcZJHVIw9lhauK+KHOevbwJA10=
 github.com/df-mc/go-playfab v1.0.0/go.mod h1:nGOlE+JFGOH5Z0iidEgJapHhndFi/oNk17RN9pKCF+k=
+github.com/df-mc/go-playfab/v2 v2.0.2 h1:JqOsrpe0nt6Ni4V2JrdmOAhbBgTm7LBw1ppGXlmknhs=
+github.com/df-mc/go-playfab/v2 v2.0.2/go.mod h1:CS3FV3tJlohvGQiX0IJiaYKOVNfy0p778B84oEVyxlw=
 github.com/df-mc/go-xsapi v1.0.1 h1:H1SbxYr4rXOqZSB8MwiODbDUsHRihxbHf+YOljUWgXw=
 github.com/df-mc/go-xsapi v1.0.1/go.mod h1:uKC/a/2/JOamgRDezvgVe7OmXdqERUfmCcIWAOp9hPA=
+github.com/df-mc/go-xsapi/v2 v2.0.3 h1:fQLw4k15OinFhagWjbSj0BwQXeDUmY8a1J8yquEod3w=
+github.com/df-mc/go-xsapi/v2 v2.0.3/go.mod h1:Gi/zQG2DFMJOMt4DIjuBuINTnU4YnZINe+RyFyza8oo=
 github.com/df-mc/jsonc v1.0.5 h1:O7oh07kbS5AYY+l2Fji6l4h0iHcdjKbxCtK5VlZlLMU=
 github.com/df-mc/jsonc v1.0.5/go.mod h1:+Q++JuCE9IKiP8v7sWImdf/RjQX0nfXyfX6PdfTTmc4=
 github.com/go-gl/mathgl v1.1.0 h1:0lzZ+rntPX3/oGrDzYGdowSLC2ky8Osirvf5uAwfIEA=
@@ -75,6 +81,8 @@ golang.org/x/net v0.50.0 h1:ucWh9eiCGyDR3vtzso0WMQinm2Dnt8cFMuQa9K33J60=
 golang.org/x/net v0.50.0/go.mod h1:UgoSli3F/pBgdJBHCTc+tp3gmrU4XswgGRgtnwWTfyM=
 golang.org/x/oauth2 v0.28.0 h1:CrgCKl8PPAVtLnU3c+EDw6x11699EWlsDeWNWKdIOkc=
 golang.org/x/oauth2 v0.28.0/go.mod h1:onh5ek6nERTohokkhCD/y2cV4Do3fxFHFuAejCkRWT8=
+golang.org/x/oauth2 v0.36.0 h1:peZ/1z27fi9hUOFCAZaHyrpWG5lwe0RJEEEeH0ThlIs=
+golang.org/x/oauth2 v0.36.0/go.mod h1:YDBUJMTkDnJS+A4BP4eZBjCqtokkg1hODuPjwiGPO7Q=
 golang.org/x/sys v0.41.0 h1:Ivj+2Cp/ylzLiEU89QhWblYnOE9zerudt9Ftecq2C6k=
 golang.org/x/sys v0.41.0/go.mod h1:OgkHotnGiDImocRcuBABYBEXf8A9a87e/uXjp9XT3ks=
 golang.org/x/term v0.40.0 h1:36e4zGLqU4yhjlmxEaagx2KuYbJq3EwY8K943ZsHcvg=

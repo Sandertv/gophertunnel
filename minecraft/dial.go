@@ -216,11 +216,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 				return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 			}
 		}
-		xblToken, err := getXBLToken(ctx, d)
-		if err != nil {
-			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
-		}
-		chainData, err = authChain(ctx, xblToken, key)
+		chainData, err = auth.RequestMinecraftChain(ctx, d.XBLClient, key)
 		if err != nil {
 			return nil, &net.OpError{Op: "dial", Net: "minecraft", Err: err}
 		}
@@ -400,38 +396,6 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 			}
 		}
 	}
-}
-
-// getXBLToken obtains an XBOX Live token using the credentials passed.
-// If the Dialer contains a valid XBLToken, it is returned directly.
-// Otherwise a new token is requested using a default Android device config.
-func getXBLToken(ctx context.Context, dialer Dialer) (*auth.XBLToken, error) {
-	if dialer.XBLToken != nil && dialer.XBLToken.Valid() {
-		return dialer.XBLToken, nil
-	}
-
-	liveToken, err := dialer.TokenSource.Token()
-	if err != nil {
-		return nil, fmt.Errorf("request Live Connect token: %w", err)
-	}
-
-	xblToken, err := auth.RequestXBLToken(ctx, liveToken, "https://multiplayer.minecraft.net/")
-	if err != nil {
-		return nil, fmt.Errorf("request XBOX Live token: %w", err)
-	}
-
-	return xblToken, nil
-}
-
-// authChain requests the Minecraft auth JWT chain using the credentials passed. If successful, an encoded
-// chain ready to be put in a login request is returned.
-func authChain(ctx context.Context, xblToken *auth.XBLToken, key *ecdsa.PrivateKey) (string, error) {
-	// Obtain the raw chain data using the XBL token.
-	chain, err := auth.RequestMinecraftChain(ctx, xblToken, key)
-	if err != nil {
-		return "", fmt.Errorf("request Minecraft auth chain: %w", err)
-	}
-	return chain, nil
 }
 
 //go:embed skin_resource_patch.json
