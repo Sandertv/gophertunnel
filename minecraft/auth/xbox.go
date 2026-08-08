@@ -130,6 +130,13 @@ func (conf Config) NewTokenCache() *XBLTokenCache {
 // ReuseTokenCache returns an [XBLTokenCache] that uses the provided [sisu.Session]
 // to request XBL tokens. Callers can embed the returned [XBLTokenCache] via [WithXBLTokenCache]
 // for usage in [RequestXBLToken].
+func ReuseTokenCache(session *sisu.Session) *XBLTokenCache {
+	return AndroidConfig.ReuseTokenCache(session)
+}
+
+// ReuseTokenCache returns an [XBLTokenCache] that uses the provided [sisu.Session]
+// to request XBL tokens. Callers can embed the returned [XBLTokenCache] via [WithXBLTokenCache]
+// for usage in [RequestXBLToken].
 func (conf Config) ReuseTokenCache(session *sisu.Session) *XBLTokenCache {
 	if session == nil {
 		panic("auth: ReuseTokenCache: session cannot be nil")
