@@ -76,8 +76,8 @@ const (
 
 const (
 	CommandArgTypeInt = iota + 1
+	_
 	CommandArgTypeFloat
-	CommandArgTypeValue
 	CommandArgTypeRValue
 	CommandArgTypeWildcardInt
 	CommandArgTypeOperator
