@@ -192,8 +192,8 @@ var (
 	}
 
 	// Win32Config is the configuration for Minecraft: Bedrock Edition on Windows
-	// devices. It is provided for reference only and does not support authentication,
-	// as retrieving the RPS ticket required for device token requests is not yet known.
+	// devices. It is provided for reference only and is not functional, as retrieving
+	// the RPS ticket required for device token requests is not yet known.
 	Win32Config = Config{
 		sisu.Config{
 			Config: xal.Config{
