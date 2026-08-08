@@ -68,7 +68,6 @@ func (e *ServiceEnvironment) UnmarshalJSON(b []byte) error {
 	data := struct {
 		*Alias
 		ServiceURI string `json:"serviceUri"`
-		Issuer     string `json:"issuer"`
 	}{
 		Alias: (*Alias)(e),
 	}
