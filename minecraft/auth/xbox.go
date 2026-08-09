@@ -88,22 +88,30 @@ func ContextSession(ctx context.Context, src oauth2.TokenSource) *sisu.Session {
 	return AndroidConfig.New(src, &sisu.SessionConfig{HTTPClient: ContextClient(ctx)})
 }
 
-// ContextClient returns the HTTP client configured on ctx for auth requests. A
-// nil return value lets the underlying auth session use its default client.
+// ContextClient returns the HTTP client configured on ctx for auth requests.
+// If no client is configured, [http.DefaultClient] is returned.
 func ContextClient(ctx context.Context) *http.Client {
-	if client, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && client != nil {
-		return client
-	}
-	if client, ok := ctx.Value(xal.HTTPClient).(*http.Client); ok && client != nil {
+	if client, ok := contextClient(ctx); ok {
 		return client
 	}
 	return http.DefaultClient
 }
 
+// contextClient returns the explicitly configured auth HTTP client, if any.
+func contextClient(ctx context.Context) (*http.Client, bool) {
+	if client, ok := ctx.Value(oauth2.HTTPClient).(*http.Client); ok && client != nil {
+		return client, true
+	}
+	if client, ok := ctx.Value(xal.HTTPClient).(*http.Client); ok && client != nil {
+		return client, true
+	}
+	return nil, false
+}
+
 // WithContextClient stores client on ctx for auth code paths that read HTTP
 // clients from the OAuth2 or XAL context keys.
 func WithContextClient(ctx context.Context, client *http.Client) context.Context {
-	if existing := ContextClient(ctx); existing != nil {
+	if existing, ok := contextClient(ctx); ok {
 		client = existing
 	}
 	if client == nil {
