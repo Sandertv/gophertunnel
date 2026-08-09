@@ -12,10 +12,13 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/coreos/go-oidc/v3/oidc"
+	"github.com/df-mc/go-playfab/v2/title"
+	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/google/uuid"
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/service/internal"
@@ -28,11 +31,11 @@ import (
 //
 // It is recommended to use [AuthorizationEnvironment.TokenSource].
 type TokenSource interface {
-	// Token returns a Token that is not expired and is determined
+	// ServiceToken returns a Token that is not expired and is determined
 	// to be valid from [Token.Valid]. An error may be returned by
 	// identity providers such as PlayFab or Xbox Live, rather than
 	// by the authorization service.
-	Token() (*Token, error)
+	ServiceToken(ctx context.Context) (*Token, error)
 }
 
 // AuthorizationEnvironment represents an authorization environment for Minecraft-related services.
@@ -46,11 +49,11 @@ type AuthorizationEnvironment struct {
 	// PlayFabTitleID is the title ID specific for PlayFab for retail versions of the
 	// game. It is typically '20CA2', and this is not something that could be easily
 	// changed. By using PlayFabTitleID, the API host for PlayFab will be '<titleID.playfabapi.com>'.
-	PlayFabTitleID string `json:"playFabTitleId"`
+	PlayFabTitleID title.Title `json:"playFabTitleId"`
 	// EduPlayFabTitleID is the title ID specific for PlayFab for Education Edition
 	// of the game. It is used in educational versions to authenticate with a Student
 	// account and to log in with some of the services for Education Edition.
-	EduPlayFabTitleID string `json:"eduPlayFabTitleId"`
+	EduPlayFabTitleID title.Title `json:"eduPlayFabTitleId"`
 
 	// HTTPClient is the HTTP client used for requests made by AuthorizationEnvironment.
 	// If nil, [http.DefaultClient] is used.
@@ -81,9 +84,8 @@ func (e *AuthorizationEnvironment) ServiceName() string {
 }
 
 // UnmarshalJSON implements [json.Unmarshaler.UnmarshalJSON].
-// Since UnmarshalText() is not implemented in [url.URL] and [json.Unmarshal]
-// attempts to decode the string URL as a struct, it will first decode the URL
-// fields as strings then parse them manually.
+// Since [url.URL] does not implement [json.Unmarshaler] or [encoding.TextUnmarshaler],
+// we decode URL fields as strings first, then manually parse them into URLs.
 // See: https://github.com/golang/go/issues/52638
 func (e *AuthorizationEnvironment) UnmarshalJSON(b []byte) error {
 	type Alias AuthorizationEnvironment
@@ -97,10 +99,18 @@ func (e *AuthorizationEnvironment) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &data); err != nil {
 		return err
 	}
+	// [url.Parse] accepts empty strings and returns a valid url.URL with no error,
+	// so we must explicitly validate that ServiceURI and Issuer are not empty.
+	if data.ServiceURI == "" {
+		return errors.New("service: AuthorizationEnvironment.ServiceURI cannot be empty string")
+	}
 	var err error
 	e.ServiceURI, err = url.Parse(data.ServiceURI)
 	if err != nil {
 		return fmt.Errorf("parse ServiceURI: %w", err)
+	}
+	if data.Issuer == "" {
+		return errors.New("service: AuthorizationEnvironment.Issuer cannot be empty string")
 	}
 	e.Issuer, err = url.Parse(data.Issuer)
 	if err != nil {
@@ -144,8 +154,15 @@ func (e *AuthorizationEnvironment) Token(ctx context.Context, config TokenConfig
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
-	if result.Data == nil || !result.Data.Valid() {
+	validationTime, hasServerTime := responseValidationTime(resp)
+	if result.Data != nil && hasServerTime {
+		result.Data.setServerTime(validationTime)
+	}
+	if result.Data == nil || result.Data.AuthorizationHeader == "" || !validationTime.Before(result.Data.ValidUntil.Add(-expirationDelta)) {
 		return nil, errors.New("minecraft/service: AuthorizationEnvironment: invalid token result")
+	}
+	if err := decodeClaims(result.Data, validationTime); err != nil {
+		return nil, fmt.Errorf("minecraft/service: decode JWT token claims: %w", err)
 	}
 	return result.Data, nil
 }
@@ -184,8 +201,15 @@ func (e *AuthorizationEnvironment) Renew(ctx context.Context, token *Token, user
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
-	if result.Data == nil || !result.Data.Valid() {
+	validationTime, hasServerTime := responseValidationTime(resp)
+	if result.Data != nil && hasServerTime {
+		result.Data.setServerTime(validationTime)
+	}
+	if result.Data == nil || result.Data.AuthorizationHeader == "" || !validationTime.Before(result.Data.ValidUntil.Add(-expirationDelta)) {
 		return nil, errors.New("minecraft/service: invalid renew token result")
+	}
+	if err := decodeClaims(result.Data, validationTime); err != nil {
+		return nil, fmt.Errorf("minecraft/service: decode JWT token claims: %w", err)
 	}
 	return result.Data, nil
 }
@@ -207,6 +231,31 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 		return e.verifier, nil
 	}
 
+	config, err := e.configuration(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("obtain OpenID configuration: %w", err)
+	}
+
+	refreshInterval := e.KeyRefreshInterval
+	if refreshInterval <= 0 {
+		refreshInterval = 30 * time.Minute
+	}
+	keySet := newRefreshingKeySet(ctx, e, config.JWKSURL, refreshInterval, config.Algorithms)
+
+	// We need to append '/' on the issuer if not present.
+	issuer := e.Issuer.JoinPath().String()
+	e.verifier = oidc.NewVerifier(issuer, keySet, &oidc.Config{
+		ClientID:             "api://auth-minecraft-services/multiplayer",
+		SupportedSigningAlgs: config.Algorithms,
+	})
+	return e.verifier, nil
+}
+
+// configuration returns the OpenID configuration published by the authorization
+// service, caching the result for subsequent calls. The returned [oidc.ProviderConfig]
+// may be used to resolve the signing keys and algorithms accepted when verifying
+// tokens issued by the authorization service.
+func (e *AuthorizationEnvironment) configuration(ctx context.Context) (*oidc.ProviderConfig, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, e.Issuer.JoinPath("/.well-known/openid-configuration").String(), nil)
 	if err != nil {
 		return nil, fmt.Errorf("make request: %w", err)
@@ -227,20 +276,7 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 	if err := json.NewDecoder(resp.Body).Decode(&config); err != nil {
 		return nil, fmt.Errorf("decode response body: %w", err)
 	}
-
-	refreshInterval := e.KeyRefreshInterval
-	if refreshInterval <= 0 {
-		refreshInterval = 30 * time.Minute
-	}
-	keySet := newRefreshingKeySet(ctx, e, config.JWKSURL, refreshInterval, config.Algorithms)
-
-	// We need to append '/' on the issuer if not present.
-	issuer := e.Issuer.JoinPath().String()
-	e.verifier = oidc.NewVerifier(issuer, keySet, &oidc.Config{
-		ClientID:             "api://auth-minecraft-services/multiplayer",
-		SupportedSigningAlgs: config.Algorithms,
-	})
-	return e.verifier, nil
+	return &config, nil
 }
 
 // MultiplayerToken issues a token signed by the authorization service that can be used
@@ -249,7 +285,7 @@ func (e *AuthorizationEnvironment) VerifierContext(ctx context.Context) (*oidc.I
 // Servers can verify this JWT using the remote OpenID configuration published by the
 // authorization service and validate the claims to authenticate the player.
 func (e *AuthorizationEnvironment) MultiplayerToken(ctx context.Context, src TokenSource, key *ecdsa.PublicKey) (string, error) {
-	token, err := src.Token()
+	token, err := src.ServiceToken(ctx)
 	if err != nil {
 		return "", fmt.Errorf("request service token: %w", err)
 	}
@@ -286,7 +322,8 @@ func (e *AuthorizationEnvironment) MultiplayerToken(ctx context.Context, src Tok
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
 		return "", fmt.Errorf("decode response body: %w", err)
 	}
-	if result.Data == nil || !result.Data.Valid() {
+	validationTime, _ := responseValidationTime(resp)
+	if result.Data == nil || result.Data.SignedToken == "" || !validationTime.Before(result.Data.ValidUntil) {
 		return "", errors.New("minecraft/service: invalid multiplayer token result")
 	}
 	return result.Data.SignedToken, nil
@@ -310,6 +347,17 @@ type multiplayerToken struct {
 // Valid returns whether multiplayerToken is valid.
 func (t *multiplayerToken) Valid() bool {
 	return t.SignedToken != "" && time.Now().Before(t.ValidUntil)
+}
+
+// responseValidationTime returns the service response time and whether it was
+// obtained from the Date header. It falls back to the local time otherwise.
+func responseValidationTime(resp *http.Response) (time.Time, bool) {
+	if resp != nil {
+		if t, err := http.ParseTime(resp.Header.Get("Date")); err == nil {
+			return t, true
+		}
+	}
+	return time.Now(), false
 }
 
 // defaultUserConfig sets default values for some of the fields that is
@@ -391,13 +439,81 @@ type Token struct {
 	// TreatmentContext is a combination of Treatments separated by ';'.
 	// It is unknown how it is used.
 	TreatmentContext string `json:"treatmentContext"`
+
+	// Claims are the service-defined metadata claimed by the JWT token embedded in [Token.AuthorizationHeader].
+	Claims Claims `json:"-"`
+
+	serverTime           time.Time
+	serverTimeReceivedAt time.Time
+}
+
+// decodeClaims parses the JWT embedded in [Token.AuthorizationHeader] and
+// populates [Token.Claims] from the decoded payload. The signature is not
+// cryptographically verified. Only the claim values are validated by
+// [Claims.Validate].
+func decodeClaims(token *Token, validationTime time.Time) error {
+	s := strings.TrimPrefix(token.AuthorizationHeader, "MCToken ")
+	parts := strings.Split(s, ".")
+	if len(parts) != 3 {
+		return fmt.Errorf("malformed JWT: %q", s)
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return fmt.Errorf("decode JWT payload: %w", err)
+	}
+	if err := json.Unmarshal(payload, &token.Claims); err != nil {
+		return fmt.Errorf("decode JWT claims: %w", err)
+	}
+	expected := jwt.Expected{}
+	if !validationTime.IsZero() {
+		expected.Time = validationTime
+	}
+	if err := token.Claims.Validate(expected); err != nil {
+		return fmt.Errorf("validate JWT claims: %w", err)
+	}
+	return nil
+}
+
+// Claims represents the service-defined metadata claimed by the Token.
+type Claims struct {
+	// An embedded [jwt.Claims] includes standard fields that are also
+	// claimed by the token.
+	jwt.Claims
+
+	// PlayerMessagingID is the unique ID assigned to the user for real-time
+	// communication with other players through the Player Messaging service,
+	// a JSON-RPC over WebSocket endpoint. PlayerMessagingID is also used as
+	// the network ID in WebRTC signaling when connecting to a peer-to-peer world.
+	PlayerMessagingID uuid.UUID `json:"pmid"`
+}
+
+// Validate validates the fields claimed by the JWT token.
+func (c Claims) Validate(e jwt.Expected) error {
+	if c.PlayerMessagingID == uuid.Nil {
+		return errors.New("service: Token.Claims.PlayerMessagingID is uuid.Nil")
+	}
+	return c.Claims.Validate(e)
 }
 
 const expirationDelta = time.Minute
 
 // Valid returns a bool indicating if the Token is valid.
 func (t *Token) Valid() bool {
-	return t.AuthorizationHeader != "" && time.Now().Before(t.ValidUntil.Add(-expirationDelta))
+	return t.AuthorizationHeader != "" && t.now().Before(t.ValidUntil.Add(-expirationDelta))
+}
+
+// setServerTime records the server time and when it was received.
+func (t *Token) setServerTime(serverTime time.Time) {
+	t.serverTime = serverTime
+	t.serverTimeReceivedAt = time.Now()
+}
+
+// now returns the current server time, falling back to local time.
+func (t *Token) now() time.Time {
+	if t.serverTime.IsZero() {
+		return time.Now()
+	}
+	return t.serverTime.Add(time.Since(t.serverTimeReceivedAt))
 }
 
 // SetAuthHeader sets an 'Authorization' header of the request to [Token.AuthorizationHeader].
@@ -503,7 +619,7 @@ type DeviceConfig struct {
 
 	// PlayFabTitleID is the title ID specific to PlayFab.
 	// It is typically '20CA2' for retail versions of the game.
-	PlayFabTitleID string `json:"playFabTitleId,omitempty"`
+	PlayFabTitleID title.Title `json:"playFabTitleId,omitempty"`
 
 	// StorePlatform represents the digital store platform where an in-app purchase is made.
 	// StorePlatform could be one of the constants defined below, including 'UWPStore'

@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"sync"
 
+	"github.com/sandertv/gophertunnel/minecraft/auth"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/service/internal"
 )
 
@@ -85,6 +87,14 @@ func (d *Discovery) Environment(env Environment) error {
 	return json.Unmarshal(m2, env)
 }
 
+// Default obtains a Discovery using [ApplicationTypeMinecraftPE] and
+// [protocol.CurrentVersion] as the application type and version. It is
+// a convenience wrapper around [Discover] for callers that do not need
+// to specify these parameters explicitly.
+func Default(ctx context.Context) (*Discovery, error) {
+	return Discover(ctx, ApplicationTypeMinecraftPE, protocol.CurrentVersion)
+}
+
 // Discover obtains a Discover for the specific version for the specific
 // application type. The returned Discovery contains environments for
 // various services in Minecraft: Bedrock Edition and will be used as
@@ -111,8 +121,8 @@ func Discover(ctx context.Context, appType, version string) (*Discovery, error) 
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", internal.UserAgent)
-
-	resp, err := http.DefaultClient.Do(req)
+	
+	resp, err := auth.ContextClient(ctx).Do(req)
 	if err != nil {
 		return nil, err
 	}
