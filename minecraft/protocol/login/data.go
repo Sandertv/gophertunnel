@@ -353,14 +353,22 @@ func (data ClientData) Validate() error {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
 	}
 	if strings.Contains(data.ServerAddress, "://") {
-		// The server address for NetherNet connections has the following format:
+		// The server address for NetherNet connections have the following formats:
+		// [https://<host>:<port>]:<port>
 		// https://<host>:<port>:<port>
 		ind := strings.LastIndex(data.ServerAddress, ":")
-		u, err := url.Parse(data.ServerAddress[:ind])
+		if ind == -1 {
+			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
+		}
+		hostPort, port := data.ServerAddress[:ind], data.ServerAddress[ind+1:]
+		if strings.HasPrefix(hostPort, "[") && strings.HasSuffix(hostPort, "]") {
+			hostPort = hostPort[1 : len(hostPort)-1]
+		}
+		u, err := url.Parse(hostPort)
 		if err != nil {
 			return fmt.Errorf("ServerAddress must be a URL, but got %v", data.ServerAddress)
 		}
-		if u.Host == "" || u.Port() == "" || u.Port() != data.ServerAddress[ind+1:] ||
+		if u.Host == "" || u.Port() == "" || u.Port() != port ||
 			(u.Scheme != "https" && u.Scheme != "http") {
 			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
 		}
