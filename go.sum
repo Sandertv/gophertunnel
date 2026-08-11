@@ -4,8 +4,8 @@ github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNv
 github.com/coreos/go-oidc/v3 v3.17.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/df-mc/go-nethernet v1.0.17 h1:3lbw/N+Zy4eU8dUREVMFhq9Xl8qXJsJomuHIwH2VO9Q=
-github.com/df-mc/go-nethernet v1.0.17/go.mod h1:4yrQZMotdkZJvdYnRQr5L8OnokZtSzqJ6EU3dntAaIU=
+github.com/df-mc/go-nethernet v1.0.20 h1:H0MO0GkVlAypu9IDQhzg5Pph3mCD7r40+ExiImsXT2M=
+github.com/df-mc/go-nethernet v1.0.20/go.mod h1:11MfQo5F7PDKfHg1H0zM5mMkrCv29jRE0lK5B4egW9w=
 github.com/df-mc/go-playfab/v2 v2.0.2 h1:JqOsrpe0nt6Ni4V2JrdmOAhbBgTm7LBw1ppGXlmknhs=
 github.com/df-mc/go-playfab/v2 v2.0.2/go.mod h1:CS3FV3tJlohvGQiX0IJiaYKOVNfy0p778B84oEVyxlw=
 github.com/df-mc/go-xsapi/v2 v2.0.3 h1:fQLw4k15OinFhagWjbSj0BwQXeDUmY8a1J8yquEod3w=
