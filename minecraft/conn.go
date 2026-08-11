@@ -41,6 +41,10 @@ type exemptedResourcePack struct {
 // in the ResourcePackStack packet.
 var exemptedPacks = []exemptedResourcePack{
 	{
+		uuid:    "d34cfa4b-2ad1-453d-a0db-668b429a3ea0",
+		version: "1.21.40",
+	},
+	{
 		uuid:    "b41c2785-c512-4a49-af56-3a87afd47c57",
 		version: "1.21.30",
 	},
