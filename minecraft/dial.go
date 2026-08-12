@@ -13,7 +13,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"math/rand"
 	"net"
 	"net/http"
@@ -109,6 +108,11 @@ type Dialer struct {
 	// to and read from the Conn are always any of those found in the protocol/packet package, as packets
 	// are converted from and to this Protocol.
 	Protocol Protocol
+
+	// MaxDecompressedLen is the maximum length of a decompressed packet batch to prevent potential exploits.
+	// If 0, the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the
+	// limit.
+	MaxDecompressedLen int
 
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
 	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
@@ -298,7 +302,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
-	conn.maxDecompressedLen = math.MaxInt
+	conn.maxDecompressedLen = d.MaxDecompressedLen
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
