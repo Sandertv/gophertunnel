@@ -21,12 +21,15 @@ func Varint64(src io.ByteReader, x *int64) error {
 // Varuint64 reads up to 10 bytes from the source buffer passed and sets the integer produced to a pointer.
 func Varuint64(src io.ByteReader, x *uint64) error {
 	var v uint64
-	for i := uint(0); i < 70; i += 7 {
+	for i := range 10 {
 		b, err := src.ReadByte()
 		if err != nil {
 			return err
 		}
-		v |= uint64(b&0x7f) << i
+		if i == 9 && b&0xfe != 0 {
+			return errors.New("varuint64 overflows 64 bits")
+		}
+		v |= uint64(b&0x7f) << (7 * i)
 		if b&0x80 == 0 {
 			*x = v
 			return nil
@@ -51,12 +54,15 @@ func Varint32(src io.ByteReader, x *int32) error {
 // Varuint32 reads up to 5 bytes from the source buffer passed and sets the integer produced to a pointer.
 func Varuint32(src io.ByteReader, x *uint32) error {
 	var v uint32
-	for i := uint(0); i < 35; i += 7 {
+	for i := range 5 {
 		b, err := src.ReadByte()
 		if err != nil {
 			return err
 		}
-		v |= uint32(b&0x7f) << i
+		if i == 4 && b&0xf0 != 0 {
+			return errors.New("varuint32 overflows 32 bits")
+		}
+		v |= uint32(b&0x7f) << (7 * i)
 		if b&0x80 == 0 {
 			*x = v
 			return nil
