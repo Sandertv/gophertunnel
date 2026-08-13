@@ -12,6 +12,9 @@ type packetData struct {
 	h       *packet.Header
 	full    []byte
 	payload *bytes.Buffer
+	// owned specifies if full and payload no longer alias the Decoder's pooled batch buffer, meaning the
+	// packetData may be retained after the read callback it was created in returns.
+	owned bool
 }
 
 // parseData parses the packet data slice passed into a packetData struct.
@@ -24,10 +27,32 @@ func parseData(data []byte, conn *Conn) (*packetData, error) {
 		return nil, fmt.Errorf("read packet header: %w", err)
 	}
 	if conn.packetFunc != nil {
-		// The packet func was set, so we call it.
-		conn.packetFunc(*header, buf.Bytes(), conn.RemoteAddr(), conn.LocalAddr())
+		// The packet func was set, so we call it. The payload is copied so that the function may retain it.
+		conn.packetFunc(*header, bytes.Clone(buf.Bytes()), conn.RemoteAddr(), conn.LocalAddr())
 	}
 	return &packetData{h: header, full: data, payload: buf}, nil
+}
+
+// ensureOwned returns a packetData that owns its underlying data, copying it if it still aliases the
+// Decoder's pooled batch buffer.
+func (p *packetData) ensureOwned() *packetData {
+	if p.owned {
+		return p
+	}
+	full := bytes.Clone(p.full)
+	payloadOffset := len(p.full) - p.payload.Len()
+	var payload []byte
+	if payloadOffset < 0 {
+		payload = bytes.Clone(p.payload.Bytes())
+	} else {
+		payload = full[payloadOffset:]
+	}
+	return &packetData{
+		h:       p.h,
+		full:    full,
+		payload: bytes.NewBuffer(payload),
+		owned:   true,
+	}
 }
 
 type unknownPacketError struct {

@@ -408,26 +408,12 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 	for {
 		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
 		// and push them to the Conn so that they may be processed.
-		packets, err := conn.dec.Decode()
-		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				if cancelContext {
-					cancel(err)
-				} else {
-					conn.log.Error(err.Error())
-				}
-			}
-			return
-		}
-		for _, data := range packets {
+		receiveErr := false
+		if err := conn.dec.DecodeFunc(func(data []byte) error {
 			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
 			if err := conn.receive(data); err != nil {
-				if cancelContext {
-					cancel(err)
-				} else {
-					conn.log.Error(err.Error())
-				}
-				return
+				receiveErr = true
+				return err
 			}
 			if !readyToLoginBefore && conn.readyToLogin {
 				// This is the signal that the connection is ready to login, so we put a value in the channel so that
@@ -440,6 +426,16 @@ func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel conte
 				cancelContext = false
 				connected <- struct{}{}
 			}
+			return nil
+		}); err != nil {
+			if receiveErr || !errors.Is(err, net.ErrClosed) {
+				if cancelContext {
+					cancel(err)
+				} else {
+					conn.log.Error(err.Error())
+				}
+			}
+			return
 		}
 	}
 }
