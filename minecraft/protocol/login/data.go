@@ -252,6 +252,12 @@ type ClientData struct {
 	PartyLeader bool `json:"IsPartyLeader"`
 	// ProfileHash is a client-generated hash of the equipped persona skin.
 	ProfileHash string `json:"ProfileHash"`
+	// Nonce is a randomly generated, hex-encoded string produced by the host. For peer-to-peer
+	// worlds, a client that wishes to connect must first join the host's Xbox Live multiplayer session
+	// and wait for the host to assign it a nonce, then include that same value here.
+	// This prevents unauthorized clients from connecting using only the host's connection details,
+	// such as its Player Messaging ID (PMID) or IP address.
+	Nonce string `json:",omitempty"`
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
