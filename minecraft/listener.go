@@ -372,14 +372,9 @@ func (listener *Listener) updatePongData() {
 	}); ok {
 		port = a.AddrPort().Port()
 	}
-	authOnline, authOffline := "0", "1"
-	if !listener.cfg.AuthenticationDisabled {
-		authOnline, authOffline = "1", "0"
-	}
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, "1", port, port, "0", authOnline,
-		authOffline,
+		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0, 0,
 	)))
 }
 
