@@ -79,12 +79,18 @@ func (pk *Text) Marshal(io protocol.IO) {
 	switch pk.TextType {
 	case TextTypeChat, TextTypeWhisper, TextTypeAnnouncement:
 		io.String(&pk.SourceName)
+		if len(pk.SourceName) > 256 {
+			io.InvalidValue(pk.SourceName, "source name", "string too long")
+		}
 		io.String(&pk.Message)
 	case TextTypeRaw, TextTypeTip, TextTypeSystem, TextTypeObject, TextTypeObjectWhisper, TextTypeObjectAnnouncement:
 		io.String(&pk.Message)
 	case TextTypeTranslation, TextTypePopup, TextTypeJukeboxPopup:
 		io.String(&pk.Message)
 		protocol.FuncSlice(io, &pk.Parameters, io.String)
+		if len(pk.Parameters) > 4 {
+			io.InvalidValue(pk.Parameters, "parameters", "too many parameters")
+		}
 	}
 
 	if len(pk.Message) == 0 {
@@ -94,6 +100,15 @@ func (pk *Text) Marshal(io protocol.IO) {
 		io.InvalidValue(pk.Message, "message", "string too long")
 	}
 	io.String(&pk.XUID)
+	if len(pk.XUID) > 64 {
+		io.InvalidValue(pk.XUID, "XUID", "string too long")
+	}
 	io.String(&pk.PlatformChatID)
+	if len(pk.PlatformChatID) > 256 {
+		io.InvalidValue(pk.PlatformChatID, "platform chat ID", "string too long")
+	}
 	protocol.OptionalFunc(io, &pk.FilteredMessage, io.String)
+	if filteredMessage, ok := pk.FilteredMessage.Value(); ok && len(filteredMessage) > 65536 {
+		io.InvalidValue(filteredMessage, "filtered message", "string too long")
+	}
 }
