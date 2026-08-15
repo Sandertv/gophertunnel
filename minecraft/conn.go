@@ -861,7 +861,7 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 
 		if conn.proto.Ver() == protocol.CurrentVersion {
 			_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedClient})
-			return fmt.Errorf("incompatible protocol game version: expected %v, got %v", protocol.CurrentVersion, conn.clientData.GameVersion)
+			return fmt.Errorf("incompatible protocol game version: expected %s, got %s", protocol.CurrentVersion, conn.clientData.GameVersion)
 		}
 	}
 
