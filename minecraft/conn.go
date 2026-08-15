@@ -838,6 +838,33 @@ func (conn *Conn) handleLogin(pk *packet.Login) error {
 		return fmt.Errorf("parse login request: %w", err)
 	}
 
+	// TODO: Mojang bumped the protocol without changing the protocol version number in 1.26.44,
+	// so we need to check the game version to determine whether we need to downgrade the protocol.
+	// This is a temporary workaround until the protocol version is properly bumped in a future release.
+	var majorVer, minorVer, patchVer int
+	_, _ = fmt.Sscanf(conn.clientData.GameVersion, "%d.%d.%d", &majorVer, &minorVer, &patchVer)
+	if majorVer == 1 && minorVer == 26 && patchVer < 44 {
+		// Check if one of the accepted protocols matches the client's protocol version, such as
+		// 1.26.43, 1.26.42, 1.26.41, or 1.26.40. If a matching protocol is found, use it instead
+		// of the current protocol.
+		for _, pro := range conn.acceptedProto {
+			if pro.ID() == protocol.CurrentProtocol {
+				var majorVer, minorVer, patchVer int
+				_, _ = fmt.Sscanf(pro.Ver(), "%d.%d.%d", &majorVer, &minorVer, &patchVer)
+				if majorVer == 1 && minorVer == 26 && patchVer < 44 {
+					conn.proto = pro
+					conn.pool = pro.Packets(true)
+					break
+				}
+			}
+		}
+
+		if conn.proto.Ver() == protocol.CurrentVersion {
+			_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedClient})
+			return fmt.Errorf("incompatible protocol game version: expected %s, got %s", protocol.CurrentVersion, conn.clientData.GameVersion)
+		}
+	}
+
 	// Make sure the player is logged in with XBOX Live when necessary.
 	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
