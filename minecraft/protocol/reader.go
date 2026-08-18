@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"bytes"
-	"encoding/hex"
 	"errors"
 	"fmt"
 	"image/color"
