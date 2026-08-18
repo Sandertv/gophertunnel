@@ -10,6 +10,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 )
 
+// DefaultResourcePackChunkSize is the size of a single chunk of data from a resource pack sent by a
+// Listener: 100 KiB, the size a vanilla host serves packs at. A client rejects a ResourcePackChunkData
+// larger than 10 MiB outright, so any larger framing would have to stay under that.
+const DefaultResourcePackChunkSize = 1024 * 100
+
 // resourcePackQueue is used to aid in the handling of resource pack queueing and downloading. Only one
 // resource pack is downloaded at a time.
 type resourcePackQueue struct {
@@ -21,7 +26,6 @@ type resourcePackQueue struct {
 	packAmount       int
 	downloadingPacks map[string]*downloadingPack
 	awaitingPacks    map[string]*downloadingPack
-	chunkSize        uint32
 }
 
 // downloadingPack is a resource pack that is being downloaded by a client connection.
@@ -72,7 +76,7 @@ func (queue *resourcePackQueue) Request(packs []string) error {
 func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok bool, err error) {
 	for index, pack := range queue.packsToDownload {
 		delete(queue.packsToDownload, index)
-		chunkCount, ok := resourcePackChunkCount(uint64(pack.Size()), queue.chunkSize)
+		chunkCount, ok := resourcePackChunkCount(uint64(pack.Size()), DefaultResourcePackChunkSize)
 		if !ok {
 			return nil, false, fmt.Errorf("resource pack %v has too many chunks", pack.UUID())
 		}
@@ -96,7 +100,7 @@ func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok 
 		}
 		return &packet.ResourcePackDataInfo{
 			UUID:          pack.UUID().String() + "_" + pack.Version(),
-			DataChunkSize: queue.chunkSize,
+			DataChunkSize: DefaultResourcePackChunkSize,
 			ChunkCount:    chunkCount,
 			Size:          uint64(pack.Size()),
 			Hash:          checksum[:],

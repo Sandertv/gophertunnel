@@ -170,8 +170,6 @@ type Conn struct {
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
-	// resourcePackDownload controls how many chunk requests a Dialer keeps in flight.
-	resourcePackDownload ResourcePackDownloadConfig
 	// fetchResourcePacks is an optional function passed from a Listener. If set, the returned resource packs from the function
 	// will determine which resource packs to send to the client based on its identity and client data.
 	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
@@ -180,8 +178,6 @@ type Conn struct {
 	ignoredResourcePacks []exemptedResourcePack
 	// resourcePackCache, if set, stores resource packs downloaded by a Dialer for reuse on later logins.
 	resourcePackCache ResourcePackCache
-	// resourcePackDelivery controls how a Listener connection sends resource pack data.
-	resourcePackDelivery ResourcePackDeliveryConfig
 
 	cacheEnabled bool
 
@@ -220,9 +216,6 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		hdr:          &packet.Header{},
 		proto:        proto,
 		readerLimits: limits,
-
-		resourcePackDownload: ResourcePackDownloadConfig{}.normalized(),
-		resourcePackDelivery: defaultResourcePackDeliveryConfig(),
 	}
 	if d, ok := netConn.(packet.EncryptionDisabler); ok {
 		conn.disableEncryption = d.DisableEncryption()
@@ -1130,8 +1123,7 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 	case packet.PackResponseSendPacks:
 		packs := pk.PacksToDownload
 		conn.packQueue = &resourcePackQueue{
-			packs:     conn.resourcePacks,
-			chunkSize: conn.resourcePackDelivery.ChunkSize,
+			packs: conn.resourcePacks,
 		}
 		if err := conn.packQueue.Request(packs); err != nil {
 			return fmt.Errorf("lookup resource packs by UUID: %w", err)
@@ -1279,7 +1271,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks for pack %v", id)
 	}
 	pack.chunkCount = chunkCount
-	window := uint64(conn.resourcePackDownload.MaxInFlightChunks)
+	window := uint64(DefaultResourcePackMaxInFlightChunks)
 	if window > uint64(chunkCount) {
 		window = max(uint64(chunkCount), 1)
 	}
@@ -1418,7 +1410,7 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 // pack to be downloaded.
 func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
 	current := conn.packQueue.currentPack
-	chunkSize := uint64(conn.packQueue.chunkSize)
+	chunkSize := uint64(DefaultResourcePackChunkSize)
 	uuid, _, _ := strings.Cut(pk.UUID, "_")
 	if current.UUID().String() != uuid {
 		return fmt.Errorf("expected pack UUID %v, but got %v", current.UUID(), pk.UUID)
