@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 	"github.com/sandertv/gophertunnel/minecraft/resource"
@@ -18,20 +19,30 @@ type resourcePackQueue struct {
 	currentOffset   uint64
 
 	packAmount       int
-	downloadingPacks map[string]downloadingPack
+	downloadingPacks map[string]*downloadingPack
 	awaitingPacks    map[string]*downloadingPack
 	chunkSize        uint32
 }
 
 // downloadingPack is a resource pack that is being downloaded by a client connection.
 type downloadingPack struct {
-	buf           *bytes.Buffer
-	chunkSize     uint32
-	size          uint64
-	expectedIndex uint32
-	newFrag       chan []byte
-	contentKey    string
-	cacheKey      ResourcePackCacheKey
+	buf        *bytes.Buffer
+	chunkSize  uint32
+	chunkCount uint32
+	size       uint64
+	newFrag    chan resourcePackChunk
+	contentKey string
+	cacheKey   ResourcePackCacheKey
+
+	// mu guards requested, which tracks the chunk indices requested but not yet received.
+	mu        sync.Mutex
+	requested map[uint32]struct{}
+}
+
+// resourcePackChunk is a single received chunk of a resource pack, tagged with its index.
+type resourcePackChunk struct {
+	index uint32
+	data  []byte
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients
@@ -58,9 +69,13 @@ func (queue *resourcePackQueue) Request(packs []string) error {
 
 // NextPack assigns the next resource pack to the current pack and returns true if successful. If there were
 // no more packs to assign, false is returned. If ok is true, a packet with data info is returned.
-func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok bool) {
+func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok bool, err error) {
 	for index, pack := range queue.packsToDownload {
 		delete(queue.packsToDownload, index)
+		chunkCount, ok := resourcePackChunkCount(uint64(pack.Len()), queue.chunkSize)
+		if !ok {
+			return nil, false, fmt.Errorf("resource pack %v has too many chunks", pack.UUID())
+		}
 
 		queue.currentPack = pack
 		queue.currentOffset = 0
@@ -82,13 +97,13 @@ func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok 
 		return &packet.ResourcePackDataInfo{
 			UUID:          pack.UUID().String() + "_" + pack.Version(),
 			DataChunkSize: queue.chunkSize,
-			ChunkCount:    uint32(pack.DataChunkCount(int(queue.chunkSize))),
+			ChunkCount:    chunkCount,
 			Size:          uint64(pack.Len()),
 			Hash:          checksum[:],
 			PackType:      packType,
-		}, true
+		}, true, nil
 	}
-	return nil, false
+	return nil, false, nil
 }
 
 // AllDownloaded checks if all resource packs in the queue are downloaded.

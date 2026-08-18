@@ -103,8 +103,8 @@ type ListenConfig struct {
 	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
 	// will be forwarded to the client in place of the Listener's current ones.
 	FetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
-	// ResourcePackDelivery controls how resource pack data is sent to clients. The zero value keeps the
-	// conservative default chunk size and pacing.
+	// ResourcePackDelivery controls how resource pack data is sent to clients. The zero value uses the
+	// default chunk size.
 	ResourcePackDelivery ResourcePackDeliveryConfig
 
 	// PacketFunc is called whenever a packet is read from or written to a connection returned when using
