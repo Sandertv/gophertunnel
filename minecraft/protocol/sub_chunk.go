@@ -46,11 +46,11 @@ func (x *SubChunkEntry) Marshal(r IO) {
 	OptionalFunc(r, &x.RawPayload, r.ByteSlice)
 	r.Uint8(&x.HeightMapType)
 	OptionalFunc(r, &x.HeightMapData, func(data *[]int8) {
-		FuncSliceOfLen(r, 256, data, r.Int8)
+		FuncSliceOfLen(r, 272, data, r.Int8)
 	})
 	r.Uint8(&x.RenderHeightMapType)
 	OptionalFunc(r, &x.RenderHeightMapData, func(data *[]int8) {
-		FuncSliceOfLen(r, 256, data, r.Int8)
+		FuncSliceOfLen(r, 272, data, r.Int8)
 	})
 	OptionalFunc(r, &x.BlobHash, r.Uint64)
 }
