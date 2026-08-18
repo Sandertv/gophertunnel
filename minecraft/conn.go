@@ -924,7 +924,7 @@ func (conn *Conn) handleClientToServerHandshake() error {
 		texturePack := protocol.TexturePackInfo{
 			UUID:        pack.UUID(),
 			Version:     pack.Version(),
-			Size:        uint64(pack.Len()),
+			Size:        uint64(pack.Size()),
 			DownloadURL: pack.DownloadURL(),
 		}
 		if pack.Encrypted() {
@@ -1035,7 +1035,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 			case err != nil:
 				conn.log.Warn("handle ResourcePacksInfo: failed to load resource pack from cache", "UUID", pack.UUID, "version", pack.Version, "err", err)
 			case cachedPack != nil && !cacheKey.Matches(cachedPack):
-				conn.log.Warn("handle ResourcePacksInfo: cached resource pack did not match advertised pack", "UUID", pack.UUID, "version", pack.Version, "cached_UUID", cachedPack.UUID(), "cached_version", cachedPack.Version(), "cached_size", cachedPack.Len())
+				conn.log.Warn("handle ResourcePacksInfo: cached resource pack did not match advertised pack", "UUID", pack.UUID, "version", pack.Version, "cached_UUID", cachedPack.UUID(), "cached_version", cachedPack.Version(), "cached_size", cachedPack.Size())
 			case cachedPack != nil:
 				conn.resourcePacks = append(conn.resourcePacks, cachedPack.WithContentKey(pack.ContentKey))
 				conn.packQueue.packAmount--
@@ -1449,7 +1449,7 @@ func (conn *Conn) handleResourcePackChunkRequest(pk *packet.ResourcePackChunkReq
 		return fmt.Errorf("flush ResourcePackChunkData: %w", err)
 	}
 
-	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Len())
+	lastChunk := response.DataOffset+uint64(len(response.Data)) >= uint64(current.Size())
 	if lastChunk {
 		if !conn.packQueue.AllDownloaded() {
 			if err := conn.nextResourcePackDownload(); err != nil {

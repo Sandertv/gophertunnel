@@ -72,7 +72,7 @@ func (queue *resourcePackQueue) Request(packs []string) error {
 func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok bool, err error) {
 	for index, pack := range queue.packsToDownload {
 		delete(queue.packsToDownload, index)
-		chunkCount, ok := resourcePackChunkCount(uint64(pack.Len()), queue.chunkSize)
+		chunkCount, ok := resourcePackChunkCount(uint64(pack.Size()), queue.chunkSize)
 		if !ok {
 			return nil, false, fmt.Errorf("resource pack %v has too many chunks", pack.UUID())
 		}
@@ -98,7 +98,7 @@ func (queue *resourcePackQueue) NextPack() (pk *packet.ResourcePackDataInfo, ok 
 			UUID:          pack.UUID().String() + "_" + pack.Version(),
 			DataChunkSize: queue.chunkSize,
 			ChunkCount:    chunkCount,
-			Size:          uint64(pack.Len()),
+			Size:          uint64(pack.Size()),
 			Hash:          checksum[:],
 			PackType:      packType,
 		}, true, nil
