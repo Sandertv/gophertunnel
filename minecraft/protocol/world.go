@@ -16,8 +16,11 @@ const (
 type DimensionDefinition struct {
 	// Name specifies the name of the dimension.
 	Name string
-	// Range is the height range of the dimension, where the first value is the exclusive maximum and the second is the inclusive minimum.
-	Range [2]int32
+	// MinimumY is the lowest Y coordinate that exists in the dimension.
+	MinimumY int32
+	// HeightRange is the number of blocks above MinimumY that exist in the dimension, so that the highest Y
+	// coordinate in the dimension is MinimumY + HeightRange.
+	HeightRange int32
 	// Generator is the variant of generator that exists in the provided dimension. These can be one of the constants
 	// defined above. If this is set to GeneratorLegacy, the legacy horizontal world limits will be enforced.
 	Generator int32
@@ -26,16 +29,19 @@ type DimensionDefinition struct {
 	DimensionType int32
 	// PackID is the UUID of the behaviour pack which has added the dimension.
 	PackID uuid.UUID
+	// DefaultBiome is the identifier of the biome that the dimension defaults to.
+	DefaultBiome string
 }
 
 // Marshal encodes/decodes a DimensionDefinition.
 func (x *DimensionDefinition) Marshal(r IO) {
 	r.String(&x.Name)
-	r.Varint32(&x.Range[0])
-	r.Varint32(&x.Range[1])
+	r.Varint32(&x.MinimumY)
+	r.Varint32(&x.HeightRange)
 	r.Varint32(&x.Generator)
 	r.Varint32(&x.DimensionType)
 	r.UUID(&x.PackID)
+	r.String(&x.DefaultBiome)
 }
 
 // GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.

@@ -183,9 +183,7 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	OptionalFunc(w, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
 		Slice(w, slots)
 	})
-	DoubleOptionalFunc(w, &x.Actions, func(actions *[]InventoryAction) {
-		Slice(w, actions)
-	})
+	Slice(w, &x.Actions)
 	IntegerFunc(&x.ActionType, w.Varint32)
 	IntegerFunc(&x.TriggerType, w.Uint8)
 	w.BlockPos(&x.BlockPosition)
@@ -494,6 +492,10 @@ func (w *Writer) PackSetting(x *PackSetting) {
 		id = PackSettingTypeString
 		w.Varuint32(&id)
 		w.String(&val)
+	case []string:
+		id = PackSettingTypeStringList
+		w.Varuint32(&id)
+		FuncSlice(w, &val, w.String)
 	default:
 		w.UnknownEnumOption(x.Value, "pack setting")
 	}

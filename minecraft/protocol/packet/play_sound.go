@@ -22,9 +22,15 @@ type PlaySound struct {
 	Pitch float32
 	// LoopCount is the number of times to loop the sound before stopping. -1 means no looping at all.
 	LoopCount int32
+	// BypassListenerRangeCheck specifies if the sound should be played regardless of how far away the player
+	// is from the position of the sound.
+	BypassListenerRangeCheck bool
 	// Handle is an optional sound handle ID. It is currently unknown what this is for, and is not required
 	// to be set by servers.
 	Handle protocol.Optional[uint64]
+	// PlaybackPositionSeconds is an optional offset, in seconds, into the sound at which playback should
+	// start. If not set, the sound is played from the start.
+	PlaybackPositionSeconds protocol.Optional[float32]
 }
 
 // ID ...
@@ -38,5 +44,7 @@ func (pk *PlaySound) Marshal(io protocol.IO) {
 	io.Float32(&pk.Volume)
 	io.Float32(&pk.Pitch)
 	io.Varint32(&pk.LoopCount)
+	io.Bool(&pk.BypassListenerRangeCheck)
 	protocol.OptionalFunc(io, &pk.Handle, io.Uint64)
+	protocol.OptionalFunc(io, &pk.PlaybackPositionSeconds, io.Float32)
 }

@@ -235,7 +235,7 @@ func (x *ItemStackResponse) Marshal(r IO) {
 	if len(x.ContainerInfo) != 0 {
 		containerInfo = Option(x.ContainerInfo)
 	}
-	DoubleOptionalFunc(r, &containerInfo, func(containerInfo *[]StackResponseContainerInfo) {
+	OptionalFunc(r, &containerInfo, func(containerInfo *[]StackResponseContainerInfo) {
 		Slice(r, containerInfo)
 	})
 	if value, ok := containerInfo.Value(); ok {
@@ -288,7 +288,7 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 	if x.StackNetworkID > 0 {
 		stackNetworkID = Option(x.StackNetworkID)
 	}
-	DoubleOptionalFunc(r, &stackNetworkID, r.Varint32)
+	OptionalFunc(r, &stackNetworkID, r.Varint32)
 	if value, ok := stackNetworkID.Value(); ok {
 		x.StackNetworkID = value
 	}

@@ -1,5 +1,9 @@
 package protocol
 
+import (
+	"github.com/go-gl/mathgl/mgl32"
+)
+
 const (
 	MemoryCategoryUnknown = iota
 	MemoryCategoryInvalidSizeUnknown
@@ -59,7 +63,6 @@ const (
 	MemoryCategoryOreUIClient
 	MemoryCategoryPersonaPieces
 	MemoryCategoryPersonaAnimations
-	MemoryCategoryPersonaTextures
 	MemoryCategoryPersonaCharacters
 	MemoryCategoryPersonaSkinPacks
 	MemoryCategoryPersonaRepo
@@ -139,6 +142,10 @@ type EntityDiagnosticTimingInfo struct {
 	DurationNanos uint64
 	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
 	PercentOfTotal byte
+	// Position is the position of the entity that is being timed.
+	Position mgl32.Vec3
+	// Dimension is the name of the dimension that the entity being timed is in.
+	Dimension string
 }
 
 // Marshal encodes/decodes a EntityDiagnosticTimingInfo.
@@ -147,6 +154,8 @@ func (x *EntityDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.Entity)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+	r.Vec3(&x.Position)
+	r.String(&x.Dimension)
 }
 
 // SystemDiagnosticTimingInfo represents diagnostics for a specific system index.

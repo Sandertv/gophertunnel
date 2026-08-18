@@ -251,4 +251,6 @@ const (
 	IDClientboundUpdateSoundData
 	IDSendPartyDestinationCookie
 	IDPartyDestinationCookieResponse
+	IDSetPlayerFurnaceOptions
+	IDRecordStarted
 )
