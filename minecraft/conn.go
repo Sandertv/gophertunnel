@@ -517,6 +517,9 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // Flush flushes the packets currently buffered by the connections to the underlying net.Conn, so that they
 // are directly sent.
 func (conn *Conn) Flush() error {
+	if conn.ctx == nil {
+		return net.ErrClosed
+	}
 	select {
 	case <-conn.ctx.Done():
 		return conn.closeErr("flush")
@@ -1636,8 +1639,12 @@ func (conn *Conn) close(cause error) error {
 	var err error
 	conn.once.Do(func() {
 		err = conn.Flush()
-		conn.cancelFunc(cause)
-		_ = conn.conn.Close()
+		if conn.cancelFunc != nil {
+			conn.cancelFunc(cause)
+		}
+		if conn.conn != nil {
+			_ = conn.conn.Close()
+		}
 	})
 	return err
 }
