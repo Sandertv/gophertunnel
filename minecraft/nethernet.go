@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net"
 
@@ -47,10 +48,15 @@ func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, e
 // If [nethernet.Dialer.Identity] is already set, that identity is used instead.
 func (n NetherNet) DialContextIdentity(ctx context.Context, address string, token string, privateKey *ecdsa.PrivateKey) (net.Conn, error) {
 	if n.Dialer.Identity == nil {
+		env, err := authEnv(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("request authorization environment: %w", err)
+		}
 		n.Dialer.Identity = &nethernet.Identity{
 			PrivateKey: privateKey,
 			Token:      token,
-			Domain:     "self",
+			// We need to append '/' on the URL if not present.
+			Domain: env.Issuer.JoinPath().String(),
 		}
 	}
 	return n.DialContext(ctx, address)
