@@ -133,6 +133,11 @@ type Dialer struct {
 	// (pre-1.21.90) when connecting to the server. This should only be used for outdated
 	// servers, as enabling it will cause compatibility issues with updated servers.
 	EnableLegacyAuth bool
+
+	// IgnoreHandlers is a bool indicating whether we should ignore packet handlers after the connection is
+	// established. This is useful for connections that wish to handle packets immediately after the login
+	// handshake has been completed.
+	IgnoreHandlers bool
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -299,6 +304,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 	conn.maxDecompressedLen = math.MaxInt
+	conn.ignoreHandlers = d.IgnoreHandlers
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
