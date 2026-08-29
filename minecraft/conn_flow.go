@@ -15,18 +15,22 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/resource"
 )
 
+// Logger returns the logger used by the connection.
 func (conn *Conn) Logger() *slog.Logger {
 	return conn.log
 }
 
+// SetGameData sets the game data of the connection.
 func (conn *Conn) SetGameData(data GameData) {
 	conn.gameData = data
 }
 
+// SetShieldID sets the shield ID of the connection.
 func (conn *Conn) SetShieldID(id int32) {
 	conn.shieldID.Store(id)
 }
 
+// ShieldID returns the shield ID of the connection.
 func (conn *Conn) ShieldID() int32 {
 	return conn.shieldID.Load()
 }
@@ -36,10 +40,14 @@ func (conn *Conn) ShieldID() int32 {
 func (conn *Conn) MarkLoggedIn() {
 	conn.loggedIn = true
 }
+
+// CloseWithCause closes the connection, using the cause passed as the reason for closing.
 func (conn *Conn) CloseWithCause(cause error) error {
 	return conn.close(cause)
 }
 
+// CloseErr returns an adequate connection closed error for the op passed. If the connection was closed
+// through a Disconnect packet, the message is contained.
 func (conn *Conn) CloseErr(op string) error {
 	return conn.closeErr(op)
 }
@@ -52,6 +60,8 @@ func (conn *Conn) GameDataReceived() {
 	conn.tryFinaliseClientConn()
 }
 
+// Spawned marks the connection as spawned if it has not been marked as spawned yet. It returns true if the
+// connection was not yet spawned, and false if it had already been marked as spawned before.
 func (conn *Conn) Spawned() bool {
 	if conn.waitingForSpawn.CompareAndSwap(true, false) {
 		close(conn.spawn)
@@ -60,6 +70,7 @@ func (conn *Conn) Spawned() bool {
 	return false
 }
 
+// ResetResourcePackQueue resets the resource pack queue, preparing it to download the number of packs passed.
 func (conn *Conn) ResetResourcePackQueue(totalPacks int) {
 	conn.packQueue = &resourcePackQueue{
 		packAmount:       totalPacks,
@@ -139,6 +150,7 @@ func (conn *Conn) PackAlreadyDownloading(id string) bool {
 	return ok
 }
 
+// DecrementPackAmount decrements the number of resource packs that still need to be downloaded.
 func (conn *Conn) DecrementPackAmount() {
 	if conn.packQueue == nil {
 		return
@@ -146,6 +158,7 @@ func (conn *Conn) DecrementPackAmount() {
 	conn.packQueue.packAmount--
 }
 
+// PendingPackDownloads returns the number of resource packs that still need to be downloaded.
 func (conn *Conn) PendingPackDownloads() int {
 	if conn.packQueue == nil {
 		return 0
@@ -199,26 +212,33 @@ func (conn *Conn) LoadResourcePackFromCache(key ResourcePackCacheKey) (*resource
 	return conn.resourcePackCache.Load(conn.ctx, key)
 }
 
+// CacheResourcePack caches the resource pack passed under the cache key passed.
 func (conn *Conn) CacheResourcePack(key ResourcePackCacheKey, pack *resource.Pack) {
 	conn.storeResourcePack(key, pack)
 }
 
+// AppendResourcePacks appends the resource packs passed to the connection's resource packs.
 func (conn *Conn) AppendResourcePacks(packs ...*resource.Pack) {
 	conn.resourcePacks = append(conn.resourcePacks, packs...)
 }
 
+// ResourcePackDelivery returns the resource pack delivery configuration of the connection.
 func (conn *Conn) ResourcePackDelivery() ResourcePackDeliveryConfig {
 	return conn.resourcePackDelivery
 }
 
+// HasResourcePack reports whether the connection holds a resource pack with the UUID and version passed.
 func (conn *Conn) HasResourcePack(uuidStr, version string, hasBehaviours bool) bool {
 	return conn.hasPack(uuidStr, version, hasBehaviours)
 }
 
+// SendNextResourcePack sends the next queued resource pack to the client.
 func (conn *Conn) SendNextResourcePack() error {
 	return conn.nextResourcePackDownload()
 }
 
+// HandleResourcePackClientResponse handles a ResourcePackClientResponse packet sent by a client, using the
+// connection's resource pack delivery configuration.
 func (conn *Conn) HandleResourcePackClientResponse(pk *packet.ResourcePackClientResponse) error {
 	switch pk.Response {
 	case packet.PackResponseRefused:
@@ -240,6 +260,7 @@ func (conn *Conn) HandleResourcePackClientResponse(pk *packet.ResourcePackClient
 	return nil
 }
 
+// serveRequestedResourcePacks prepares the resource packs requested by a client for chunk-by-chunk delivery.
 func (conn *Conn) serveRequestedResourcePacks(packs []string) error {
 	conn.packQueue = &resourcePackQueue{
 		packs:     conn.resourcePacks,
@@ -264,6 +285,8 @@ func (conn *Conn) TexturePackStack() *packet.ResourcePackStack {
 	return pk
 }
 
+// HandleResourcePackStack handles a ResourcePackStack packet sent by a server, verifying that all packs in
+// the stack were downloaded and responding with a completed status.
 func (conn *Conn) HandleResourcePackStack(pk *packet.ResourcePackStack) error {
 	// We currently don't apply resource packs in any way, so instead we just check if all resource packs in
 	// the stacks are also downloaded.
@@ -275,6 +298,8 @@ func (conn *Conn) HandleResourcePackStack(pk *packet.ResourcePackStack) error {
 	return conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseCompleted})
 }
 
+// BeginPackDataInfo starts downloading a resource pack announced in a ResourcePackDataInfo packet, sending
+// chunk requests for the pack and assembling the received fragments.
 func (conn *Conn) BeginPackDataInfo(pk *packet.ResourcePackDataInfo) error {
 	id, _, _ := strings.Cut(pk.UUID, "_")
 
@@ -348,6 +373,8 @@ func (conn *Conn) BeginPackDataInfo(pk *packet.ResourcePackDataInfo) error {
 	return nil
 }
 
+// HandlePackChunkData handles a ResourcePackChunkData packet received while downloading a resource pack,
+// forwarding its fragment to the download buffer.
 func (conn *Conn) HandlePackChunkData(pk *packet.ResourcePackChunkData) error {
 	pk.UUID = strings.Split(pk.UUID, "_")[0]
 	pack, ok := conn.packQueue.awaitingPacks[pk.UUID]
@@ -367,6 +394,8 @@ func (conn *Conn) HandlePackChunkData(pk *packet.ResourcePackChunkData) error {
 	return nil
 }
 
+// HandlePackChunkRequest handles a ResourcePackChunkRequest packet sent by a client, sending the requested
+// chunk of the resource pack currently being served.
 func (conn *Conn) HandlePackChunkRequest(pk *packet.ResourcePackChunkRequest) error {
 	current := conn.packQueue.currentPack
 	chunkSize := uint64(conn.packQueue.chunkSize)
