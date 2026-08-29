@@ -165,6 +165,7 @@ type Conn struct {
 
 	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
+	packQueue                  *resourcePackQueue
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
@@ -299,7 +300,7 @@ func (conn *Conn) Proto() Protocol {
 	return conn.proto
 }
 
-func (conn *Conn) SetProtocol(proto Protocol) {
+func (conn *Conn) SetProto(proto Protocol) {
 	conn.proto = proto
 }
 

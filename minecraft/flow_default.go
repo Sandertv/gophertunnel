@@ -37,7 +37,7 @@ func handleRequestNetworkSettings(conn *Conn, pk *packet.RequestNetworkSettings)
 	found := false
 	for _, pro := range conn.AcceptedProtocols() {
 		if pro.ID() == pk.ClientProtocol {
-			conn.SetProtocol(pro)
+			conn.SetProto(pro)
 			conn.SetPacketPool(pro.Packets(true))
 			found = true
 			break
