@@ -281,38 +281,49 @@ func (conn *Conn) GameData() GameData {
 	return conn.gameData
 }
 
+// Encoder returns the packet encoder used to write packets to the connection.
 func (conn *Conn) Encoder() *packet.Encoder {
 	return conn.enc
 }
 
+// Decoder returns the packet decoder used to read packets from the connection.
 func (conn *Conn) Decoder() *packet.Decoder {
 	return conn.dec
 }
 
+// PacketPool returns the packet pool used to decode incoming packets.
 func (conn *Conn) PacketPool() packet.Pool {
 	return conn.pool
 }
 
+// SetPacketPool sets the packet pool used to decode incoming packets.
 func (conn *Conn) SetPacketPool(pool packet.Pool) {
 	conn.pool = pool
 }
 
+// Proto returns the protocol version currently in use by the connection.
 func (conn *Conn) Proto() Protocol {
 	return conn.proto
 }
 
+// SetProto sets the protocol version used by the connection.
 func (conn *Conn) SetProto(proto Protocol) {
 	conn.proto = proto
 }
 
+// CompressionThreshold returns the compression threshold of the connection, below which packets are not
+// compressed.
 func (conn *Conn) CompressionThreshold() int {
 	return conn.compressionThreshold
 }
 
+// MaxDecompressedLen returns the maximum decompressed length of a single packet.
 func (conn *Conn) MaxDecompressedLen() int {
 	return conn.maxDecompressedLen
 }
 
+// Compression returns the compression to use for the protocol passed. If a compression selector is set, it is
+// used, otherwise the connection's default compression is returned.
 func (conn *Conn) Compression(proto Protocol) packet.Compression {
 	if conn.compressionSelector != nil {
 		return conn.compressionSelector(proto)
@@ -320,6 +331,8 @@ func (conn *Conn) Compression(proto Protocol) packet.Compression {
 	return conn.compression
 }
 
+// EnableCompression enables compression for the connection, using the compression passed with the compression
+// threshold and maximum decompressed length passed.
 func (conn *Conn) EnableCompression(comp packet.Compression, compressionThreshold, maxDecompressedLen int) {
 	conn.encMu.Lock()
 	conn.enc.EnableCompression(comp, compressionThreshold)
@@ -327,10 +340,6 @@ func (conn *Conn) EnableCompression(comp packet.Compression, compressionThreshol
 	conn.dec.EnableCompression(comp, maxDecompressedLen)
 	conn.maxDecompressedLen = maxDecompressedLen
 	conn.compressionThreshold = compressionThreshold
-}
-
-func (conn *Conn) LoginRequest() []byte {
-	return conn.loginRequest
 }
 
 // StartGame starts the game for a client that connected to the server. StartGame should be called for a Conn
