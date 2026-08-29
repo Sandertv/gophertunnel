@@ -442,11 +442,10 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.verifier = listener.verifier
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
-	loginFlow := DefaultLoginFlow
+	conn.loginFlow = DefaultLoginFlow
 	if listener.cfg.LoginFlow != nil {
-		loginFlow = *listener.cfg.LoginFlow
+		conn.loginFlow = *listener.cfg.LoginFlow
 	}
-	conn.loginFlow = loginFlow
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
