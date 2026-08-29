@@ -5,7 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
-	"errors"
 	"fmt"
 	"log/slog"
 	"math"
@@ -32,6 +31,11 @@ type ListenConfig struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of
 	// clients are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
+
+	// LoginFlow customises the login flow of the connections accepted by the Listener. If nil, the default
+	// login flow is used for every accepted connection. See [Dialer.LoginFlow] for details on customising
+	// the login flow.
+	LoginFlow *LoginFlowHandler
 
 	// HTTPClient is the HTTP client used for outbound HTTP requests needed by the listener,
 	// such as fetching OpenID configuration/JWKs when authentication is enabled.
@@ -372,10 +376,10 @@ func (listener *Listener) updatePongData() {
 	}); ok {
 		port = a.AddrPort().Port()
 	}
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
+	listener.listener.PongData(fmt.Appendf([]byte("MCPE;"), "%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
 		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0, 0,
-	)))
+	))
 }
 
 // listen starts listening for incoming connections and packets. When a player is fully connected, it submits
@@ -438,6 +442,11 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.verifier = listener.verifier
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
+	loginFlow := DefaultLoginFlow
+	if listener.cfg.LoginFlow != nil {
+		loginFlow = *listener.cfg.LoginFlow
+	}
+	conn.loginFlow = loginFlow
 
 	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
 		// The server was full. We kick the player immediately and close the connection.
@@ -468,34 +477,16 @@ func (listener *Listener) handleConn(conn *Conn) {
 		listener.playerCount.Add(-1)
 		listener.updatePongData()
 	}()
-	for {
-		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
-		// and push them to the Conn so that they may be processed.
-		packets, err := conn.dec.Decode()
-		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				conn.log.Error(err.Error())
-			}
-			return
+	conn.readLoop(func(err error) {
+		conn.log.Error(err.Error())
+	}, func() {
+		// The connection was previously not logged in, but was after receiving this packet, meaning the
+		// connection is fully completed now. We add it to the channel so that a call to Accept() can receive it.
+		select {
+		case <-listener.close:
+			// The listener was closed while this one was logged in, so the incoming channel will be closed.
+			// Just return so the connection is closed and cleaned up.
+		case listener.incoming <- conn:
 		}
-		for _, data := range packets {
-			loggedInBefore := conn.loggedIn
-			if err := conn.receive(data); err != nil {
-				conn.log.Error(err.Error())
-				return
-			}
-			if !loggedInBefore && conn.loggedIn {
-				select {
-				case <-listener.close:
-					// The listener was closed while this one was logged in, so the incoming channel will be
-					// closed. Just return so the connection is closed and cleaned up.
-					return
-				case listener.incoming <- conn:
-					// The connection was previously not logged in, but was after receiving this packet,
-					// meaning the connection is fully completely now. We add it to the channel so that
-					// a call to Accept() can receive it.
-				}
-			}
-		}
-	}
+	})
 }
