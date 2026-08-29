@@ -46,11 +46,9 @@ type LoginFlowHandler struct {
 // handles checks if the flow has a handler set for the packet with the ID passed.
 func (flow *LoginFlowHandler) handles(id uint32) bool {
 	switch id {
-	case packet.IDRequestNetworkSettings:
-		return true
-	case packet.IDLogin:
-		return true
-	case packet.IDClientToServerHandshake:
+	// Server packets.
+	case packet.IDRequestNetworkSettings, packet.IDLogin, packet.IDClientToServerHandshake:
+		// Always handled by the connection logic.
 		return true
 	case packet.IDClientCacheStatus:
 		return flow.HandleClientCacheStatus != nil
@@ -62,11 +60,10 @@ func (flow *LoginFlowHandler) handles(id uint32) bool {
 		return flow.HandleRequestChunkRadius != nil
 	case packet.IDSetLocalPlayerAsInitialised:
 		return flow.HandleSetLocalPlayerAsInitialised != nil
-	case packet.IDNetworkSettings:
-		return true
-	case packet.IDServerToClientHandshake:
-		return true
-	case packet.IDPlayStatus:
+
+	// Client packets.
+	case packet.IDNetworkSettings, packet.IDServerToClientHandshake, packet.IDPlayStatus:
+		// Always handled by the connection logic.
 		return true
 	case packet.IDResourcePacksInfo:
 		return flow.HandleResourcePacksInfo != nil

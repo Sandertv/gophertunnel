@@ -354,6 +354,7 @@ func (conn *Conn) HandlePackChunkData(pk *packet.ResourcePackChunkData) error {
 	if !ok {
 		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
 	}
+	// lastData describes whether or not we're at the last chunk. (currSize+chunkSize) >= packSize
 	lastData := pack.buf.Len()+int(pack.chunkSize) >= int(pack.size)
 	if !lastData && uint32(len(pk.Data)) != pack.chunkSize {
 		return fmt.Errorf("expected chunk size %v, got %v", pack.chunkSize, len(pk.Data))

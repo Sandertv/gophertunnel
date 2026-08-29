@@ -15,6 +15,10 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/text"
 )
 
+// DefaultLoginFlow is the default login flow used if the Dialer's LoginFlow is
+// nil. To customise individual steps while keeping the default behaviour for the
+// rest, copy it, override the handlers you wish to replace and pass a pointer to
+// the copy via the Dialer's (or Listener's) LoginFlow field.
 var DefaultLoginFlow = LoginFlowHandler{
 	HandleClientCacheStatus:           handleClientCacheStatus,
 	HandleResourcePackClientResponse:  handleResourcePackClientResponse,
