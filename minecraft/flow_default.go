@@ -31,6 +31,8 @@ var DefaultLoginFlow = LoginFlowHandler{
 	HandleChunkRadiusUpdated:          handleChunkRadiusUpdated,
 }
 
+// handleRequestNetworkSettings handles an incoming RequestNetworkSettings packet. It returns an error if the protocol
+// version is not supported, otherwise sending back a NetworkSettings packet.
 func handleRequestNetworkSettings(conn *Conn, pk *packet.RequestNetworkSettings) error {
 	found := false
 	for _, pro := range conn.AcceptedProtocols() {
@@ -44,13 +46,14 @@ func handleRequestNetworkSettings(conn *Conn, pk *packet.RequestNetworkSettings)
 	if !found {
 		status := packet.PlayStatusLoginFailedClient
 		if pk.ClientProtocol > protocol.CurrentProtocol {
+			// The server is outdated in this case, so we have to change the status we send.
 			status = packet.PlayStatusLoginFailedServer
 		}
 		_ = conn.WritePacket(&packet.PlayStatus{Status: status})
 		return fmt.Errorf("incompatible protocol version: expected %v, got %v", protocol.CurrentProtocol, pk.ClientProtocol)
 	}
 
-	comp := conn.Compression(conn.Protocol())
+	comp := conn.Compression(conn.Proto())
 
 	if err := conn.WritePacket(&packet.NetworkSettings{
 		CompressionThreshold: uint16(conn.CompressionThreshold()),
@@ -63,18 +66,21 @@ func handleRequestNetworkSettings(conn *Conn, pk *packet.RequestNetworkSettings)
 	return nil
 }
 
+// handleNetworkSettings handles an incoming NetworkSettings packet, enabling compression for future packets.
 func handleNetworkSettings(conn *Conn, pk *packet.NetworkSettings) error {
 	alg, ok := packet.CompressionByID(pk.CompressionAlgorithm)
 	if !ok {
 		return fmt.Errorf("unknown compression algorithm %v", pk.CompressionAlgorithm)
 	}
 	conn.EnableCompression(alg, int(pk.CompressionThreshold), conn.MaxDecompressedLen())
-	if err := conn.WritePacket(&packet.Login{ConnectionRequest: conn.loginRequest, ClientProtocol: conn.Protocol().ID()}); err != nil {
+	if err := conn.WritePacket(&packet.Login{ConnectionRequest: conn.loginRequest, ClientProtocol: conn.Proto().ID()}); err != nil {
 		return fmt.Errorf("send Login: %w", err)
 	}
 	return nil
 }
 
+// handleLogin handles an incoming login packet. It verifies and decodes the login request found in the packet
+// and returns an error if it couldn't be done successfully.
 func handleLogin(conn *Conn, pk *packet.Login) error {
 	var (
 		err        error
@@ -85,6 +91,7 @@ func handleLogin(conn *Conn, pk *packet.Login) error {
 		return fmt.Errorf("parse login request: %w", err)
 	}
 
+	// Make sure the player is logged in with XBOX Live when necessary.
 	if !authResult.XBOXLiveAuthenticated && conn.authEnabled {
 		_ = conn.WritePacket(&packet.Disconnect{Message: text.Colourf("<red>You must be logged in with XBOX Live to join.</red>")})
 		return fmt.Errorf("client was not authenticated to XBOX Live")
@@ -115,6 +122,7 @@ func handleLogin(conn *Conn, pk *packet.Login) error {
 	return nil
 }
 
+// handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func handleClientToServerHandshake(conn *Conn, _ *packet.ClientToServerHandshake) error {
 	if err := sendLoginSuccessAndPacks(conn); err != nil {
 		return err
@@ -156,6 +164,9 @@ type saltClaims struct {
 	Salt string `json:"salt"`
 }
 
+// handleServerToClientHandshake handles an incoming ServerToClientHandshake packet. It initialises encryption
+// on the client side of the connection, using the hash and the public key from the server exposed in the
+// packet.
 func handleServerToClientHandshake(conn *Conn, pk *packet.ServerToClientHandshake) error {
 	tok, err := jwt.ParseSigned(string(pk.JWT), []jose.SignatureAlgorithm{jose.ES384})
 	if err != nil {
@@ -195,31 +206,45 @@ func handleServerToClientHandshake(conn *Conn, pk *packet.ServerToClientHandshak
 	return nil
 }
 
+// handleClientCacheStatus handles a ClientCacheStatus packet sent by the client. It specifies if the client
+// has support for the client blob cache.
 func handleClientCacheStatus(conn *Conn, pk *packet.ClientCacheStatus) error {
 	conn.SetCacheEnabled(pk.Enabled)
 	return nil
 }
 
+// handleResourcePacksInfo handles a ResourcePacksInfo packet sent by the server. The client responds by
+// sending the packs it needs downloaded.
 func handleResourcePacksInfo(conn *Conn, pk *packet.ResourcePacksInfo) error {
 	return conn.HandleResourcePacksInfo(pk)
 }
 
+// handleResourcePackStack handles a ResourcePackStack packet sent by the server. The stack defines the order
+// that resource packs are applied in.
 func handleResourcePackStack(conn *Conn, pk *packet.ResourcePackStack) error {
 	return conn.HandleResourcePackStack(pk)
 }
 
+// handleResourcePackClientResponse handles an incoming resource pack client response packet. The packet is
+// handled differently depending on the response.
 func handleResourcePackClientResponse(conn *Conn, pk *packet.ResourcePackClientResponse) error {
 	return conn.HandleResourcePackClientResponse(pk)
 }
 
+// handleResourcePackDataInfo handles a resource pack data info packet, which initiates the downloading of the
+// pack by the client.
 func handleResourcePackDataInfo(conn *Conn, pk *packet.ResourcePackDataInfo) error {
 	return conn.BeginPackDataInfo(pk)
 }
 
+// handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
+// pack that is being downloaded.
 func handleResourcePackChunkData(conn *Conn, pk *packet.ResourcePackChunkData) error {
 	return conn.HandlePackChunkData(pk)
 }
 
+// handleResourcePackChunkRequest handles a resource pack chunk request, which requests a part of the resource
+// pack to be downloaded.
 func handleResourcePackChunkRequest(conn *Conn, pk *packet.ResourcePackChunkRequest) error {
 	return conn.HandlePackChunkRequest(pk)
 }
@@ -231,6 +256,8 @@ func handleDimensionData(conn *Conn, pk *packet.DimensionData) error {
 	return nil
 }
 
+// handleStartGame handles an incoming StartGame packet. It is the signal that the player has been added to a
+// world, and it obtains most of its dedicated properties.
 func handleStartGame(conn *Conn, pk *packet.StartGame) error {
 	conn.SetGameData(GameData{
 		Difficulty:                   pk.Difficulty,

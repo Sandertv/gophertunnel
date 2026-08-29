@@ -145,7 +145,9 @@ type Conn struct {
 
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
-	loggedIn        bool
+	loggedIn bool
+	// spawn is a bool channel indicating if the connection is currently waiting for its spawning in
+	// the world: It is completing a sequence that will result in the spawning.
 	spawn           chan struct{}
 	waitingForSpawn atomic.Bool
 
@@ -156,15 +158,26 @@ type Conn struct {
 	packMu sync.Mutex
 	// resourcePacks is a slice of resource packs that the listener may hold. Each client will be asked to
 	// download these resource packs upon joining.
-	resourcePacks              []*resource.Pack
-	texturePacksRequired       bool
+	resourcePacks []*resource.Pack
+	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
+	// be able to join the server. If they don't accept, they can only leave the server.
+	texturePacksRequired bool
+
+	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
-	packQueue                  *resourcePackQueue
-	downloadResourcePack       func(id uuid.UUID, version string, currentPack, totalPacks int) bool
-	fetchResourcePacks         func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
-	ignoredResourcePacks       []exemptedResourcePack
-	resourcePackCache          ResourcePackCache
-	resourcePackDelivery       ResourcePackDeliveryConfig
+	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
+	// from the server will call this function to see if it should be downloaded or not.
+	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
+	// fetchResourcePacks is an optional function passed from a Listener. If set, the returned resource packs from the function
+	// will determine which resource packs to send to the client based on its identity and client data.
+	fetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
+	// ignoredResourcePacks is a slice of resource packs that are not being downloaded due to the downloadResourcePack
+	// func returning false for the specific pack.
+	ignoredResourcePacks []exemptedResourcePack
+	// resourcePackCache, if set, stores resource packs downloaded by a Dialer for reuse on later logins.
+	resourcePackCache ResourcePackCache
+	// resourcePackDelivery controls how a Listener connection sends resource pack data.
+	resourcePackDelivery ResourcePackDeliveryConfig
 
 	cacheEnabled     atomic.Bool
 	cacheEnabledOnce sync.Once
@@ -241,18 +254,27 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 	return conn
 }
 
+// IdentityData returns the identity data of the connection. It holds the UUID, XUID and username of the
+// connected client.
 func (conn *Conn) IdentityData() login.IdentityData {
 	return conn.identityData
 }
 
+// ClientData returns the client data the client connected with. Note that this client data may be changed
+// during the session, so the data should only be used directly after connection, and should be updated after
+// that by the caller.
 func (conn *Conn) ClientData() login.ClientData {
 	return conn.clientData
 }
 
+// Authenticated returns true if the connection was authenticated through XBOX Live services.
 func (conn *Conn) Authenticated() bool {
 	return conn.IdentityData().XUID != ""
 }
 
+// GameData returns specific game data set to the connection for the player to be initialised with. If the
+// Conn is obtained using Listen, this game data may be set to the Listener. If obtained using Dial, the data
+// is obtained from the server.
 func (conn *Conn) GameData() GameData {
 	return conn.gameData
 }
@@ -273,7 +295,7 @@ func (conn *Conn) SetPacketPool(pool packet.Pool) {
 	conn.pool = pool
 }
 
-func (conn *Conn) Protocol() Protocol {
+func (conn *Conn) Proto() Protocol {
 	return conn.proto
 }
 
