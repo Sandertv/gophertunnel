@@ -114,7 +114,7 @@ type TextShape struct {
 	BackgroundColour Optional[color.RGBA]
 	// LineGapHeight is the gap to leave between each line of multiline text. If not set, the client uses its
 	// default gap.
-	LineGapHeight Optional[float32]
+	LineGapHeight float32
 	// DepthTest is whether the text should show through walls. Use true for default behaviour.
 	DepthTest bool
 	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
@@ -130,7 +130,7 @@ func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
 	io.Bool(&shape.UseRotation)
 	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
-	OptionalFunc(io, &shape.LineGapHeight, io.Float32)
+	io.Float32(&shape.LineGapHeight)
 	io.Bool(&shape.DepthTest)
 	io.Bool(&shape.ShowBackface)
 	io.Bool(&shape.ShowBackfaceText)
