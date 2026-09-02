@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -113,7 +112,7 @@ type ListenConfig struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
+	// MaxDecompressedLen is the maximum length of a decompressed packet batch to prevent potential exploits. If 0,
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
 
@@ -192,11 +191,6 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 		cfg.CompressionThreshold = 256
 	} else if cfg.CompressionThreshold < 0 {
 		cfg.CompressionThreshold = 0
-	}
-	if cfg.MaxDecompressedLen == 0 {
-		cfg.MaxDecompressedLen = 16 * 1024 * 1024 // 16MB
-	} else if cfg.MaxDecompressedLen < 0 {
-		cfg.MaxDecompressedLen = math.MaxInt
 	}
 
 	var verifier *oidc.IDTokenVerifier
