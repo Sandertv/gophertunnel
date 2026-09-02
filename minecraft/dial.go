@@ -324,7 +324,9 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		conn.identityData = identityData
 	}
 
-	readyForLogin, connected := make(chan struct{}), make(chan struct{})
+	// Buffered so listenConn's one-shot signal sends cannot block forever if
+	// Dial returns early (e.g. on context cancellation) and nobody receives.
+	readyForLogin, connected := make(chan struct{}, 1), make(chan struct{}, 1)
 	ctx, cancel := context.WithCancelCause(ctx)
 	go listenConn(conn, readyForLogin, connected, cancel)
 
