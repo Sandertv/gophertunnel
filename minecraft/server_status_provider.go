@@ -1,11 +1,13 @@
 package minecraft
 
 import (
-	"github.com/sandertv/go-raknet"
 	"net"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
+
+	"github.com/sandertv/go-raknet"
 )
 
 // ServerStatusProvider represents a type that is able to provide the visual status of a server, in specific
@@ -34,6 +36,9 @@ type ServerStatus struct {
 	// MaxPlayers is the maximum amount of players in the server. If set to 0, MaxPlayers is set to
 	// PlayerCount + 1.
 	MaxPlayers int
+	// GameType is the default game mode configured in the server, as shown in the friend list.
+	// It is 0 for Survival, 1 for Creative, and 2 for Adventure.
+	GameType int
 }
 
 // ListenerStatusProvider is the default ServerStatusProvider of a Listener. It displays a static server name/
@@ -122,7 +127,7 @@ func (f *ForeignStatusProvider) update() {
 // ParsePongData parses the unconnected pong data passed into the relevant fields of a ServerStatus struct.
 func ParsePongData(pong []byte) ServerStatus {
 	frag := splitPong(string(pong))
-	if len(frag) < 7 {
+	if len(frag) < 9 {
 		return ServerStatus{ServerName: "Invalid pong data"}
 	}
 	serverName := frag[1]
@@ -135,10 +140,29 @@ func ParsePongData(pong []byte) ServerStatus {
 	if err != nil {
 		return ServerStatus{ServerName: "Invalid max player count"}
 	}
+	gameType, ok := parseGameType(frag[8])
+	if !ok {
+		return ServerStatus{ServerName: "Invalid game type"}
+	}
 	return ServerStatus{
 		ServerName:    serverName,
 		ServerSubName: serverSubName,
 		PlayerCount:   online,
 		MaxPlayers:    max,
+		GameType:      gameType,
 	}
+}
+
+// parseGameType converts the game type string from the pong data to its int representation.
+// Returns 0 and false if the game type is not valid.
+func parseGameType(v string) (int, bool) {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "survival":
+		return 0, true
+	case "creative":
+		return 1, true
+	case "adventure":
+		return 2, true
+	}
+	return 0, false
 }
