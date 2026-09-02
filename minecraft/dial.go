@@ -43,6 +43,13 @@ type Dialer struct {
 	// servers are written to. By default, errors are not logged.
 	ErrorLog *slog.Logger
 
+	// LoginFlow customises the login flow of the connection with the server. If nil, the default login flow is
+	// used throughout. To customise individual steps while keeping the default behaviour for the rest, copy
+	// [DefaultLoginFlow], override the handlers you wish to replace and pass a pointer to the copy. To take
+	// full control of the login flow, pass a pointer to a [LoginFlowHandler] with only the handlers set that
+	// should be handled by the login flow: all other packets are deferred to [Conn.ReadPacket].
+	LoginFlow *LoginFlowHandler
+
 	// HTTPClient is the HTTP client used for outbound HTTP requests needed by the dialer,
 	// such as fetching OpenID configuration/JWKs when authentication is enabled.
 	// If nil, [http.DefaultClient] is used.
@@ -201,6 +208,10 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	if d.HTTPClient == nil {
 		d.HTTPClient = http.DefaultClient
 	}
+	loginFlow := DefaultLoginFlow
+	if d.LoginFlow != nil {
+		loginFlow = *d.LoginFlow
+	}
 
 	key, err := ecdsa.GenerateKey(elliptic.P384(), cryptorand.Reader)
 	if err != nil {
@@ -295,10 +306,11 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.packetFunc = d.PacketFunc
 	conn.downloadResourcePack = d.DownloadResourcePack
 	conn.resourcePackCache = d.ResourcePackCache
-	conn.cacheEnabled = d.EnableClientCache
+	conn.SetCacheEnabled(d.EnableClientCache)
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
 	conn.maxDecompressedLen = math.MaxInt
+	conn.loginFlow = loginFlow
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
@@ -324,9 +336,25 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		conn.identityData = identityData
 	}
 
-	readyForLogin, connected := make(chan struct{}), make(chan struct{})
+	conn.loginRequest = request
+
+	connected := make(chan struct{})
 	ctx, cancel := context.WithCancelCause(ctx)
-	go listenConn(conn, readyForLogin, connected, cancel)
+	go func() {
+		loggedIn := false
+		conn.readLoop(func(err error) {
+			if loggedIn {
+				// The connection was already fully set up, so we only log the error.
+				conn.log.Error(err.Error())
+			} else {
+				// The connection could not be fully established, so we cancel the dial.
+				cancel(err)
+			}
+		}, func() {
+			loggedIn = true
+			connected <- struct{}{}
+		})
+	}()
 
 	conn.expect(packet.IDNetworkSettings, packet.IDPlayStatus)
 	if err := conn.WritePacket(&packet.RequestNetworkSettings{ClientProtocol: d.Protocol.ID()}); err != nil {
@@ -339,23 +367,9 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		return nil, conn.wrap(context.Cause(ctx), "dial")
 	case <-conn.ctx.Done():
 		return nil, conn.closeErr("dial")
-	case <-readyForLogin:
-		// We've received our network settings, so we can now send our login request.
-		conn.expect(packet.IDServerToClientHandshake, packet.IDPlayStatus)
-		if err := conn.WritePacket(&packet.Login{ConnectionRequest: request, ClientProtocol: d.Protocol.ID()}); err != nil {
-			return nil, conn.wrap(fmt.Errorf("send login: %w", err), "dial")
-		}
-		_ = conn.Flush()
-
-		select {
-		case <-ctx.Done():
-			return nil, conn.wrap(context.Cause(ctx), "dial")
-		case <-conn.ctx.Done():
-			return nil, conn.closeErr("dial")
-		case <-connected:
-			// We've connected successfully. We return the connection and no error.
-			return conn, nil
-		}
+	case <-connected:
+		// We've connected successfully. We return the connection and no error.
+		return conn, nil
 	}
 }
 
@@ -396,52 +410,6 @@ func readChainIdentityData(chainData []byte) (login.IdentityData, error) {
 		return login.IdentityData{}, fmt.Errorf("read chain: no extra data found")
 	}
 	return claims.ExtraData, nil
-}
-
-// listenConn listens on the connection until it is closed on another goroutine. The channel passed will
-// receive a value once the connection is logged in.
-func listenConn(conn *Conn, readyForLogin, connected chan struct{}, cancel context.CancelCauseFunc) {
-	defer func() {
-		_ = conn.Close()
-	}()
-	cancelContext := true
-	for {
-		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
-		// and push them to the Conn so that they may be processed.
-		packets, err := conn.dec.Decode()
-		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				if cancelContext {
-					cancel(err)
-				} else {
-					conn.log.Error(err.Error())
-				}
-			}
-			return
-		}
-		for _, data := range packets {
-			loggedInBefore, readyToLoginBefore := conn.loggedIn, conn.readyToLogin
-			if err := conn.receive(data); err != nil {
-				if cancelContext {
-					cancel(err)
-				} else {
-					conn.log.Error(err.Error())
-				}
-				return
-			}
-			if !readyToLoginBefore && conn.readyToLogin {
-				// This is the signal that the connection is ready to login, so we put a value in the channel so that
-				// it may be detected.
-				readyForLogin <- struct{}{}
-			}
-			if !loggedInBefore && conn.loggedIn {
-				// This is the signal that the connection was considered logged in, so we put a value in the channel so
-				// that it may be detected.
-				cancelContext = false
-				connected <- struct{}{}
-			}
-		}
-	}
 }
 
 //go:embed skin_resource_patch.json
