@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/sandertv/gophertunnel/minecraft/auth"
-	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"golang.org/x/oauth2"
 )
 
@@ -19,6 +19,13 @@ type Client struct {
 	tokenSrc   oauth2.TokenSource
 	xblToken   *auth.XBLToken
 	httpClient *http.Client
+
+	negotiateMu sync.Mutex // Serialises Client-Version negotiation so one rejection triggers one search.
+
+	versionMu        sync.Mutex
+	preferredVersion string    // Version to send, empty for protocol.CurrentVersion.
+	acceptedVersion  string    // Version Realms accepted, empty until a rejection forces a search.
+	searchFailedAt   time.Time // When the last search found no accepted version.
 }
 
 const (
@@ -203,8 +210,25 @@ func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
 	return r.xblToken, err
 }
 
-// request sends an http get request to path with the right headers for the api set.
+// request sends an http get request to path with the right headers for the api
+// set. A Client-Version the api does not accept is replaced once and the
+// request is sent again.
 func (r *Client) request(ctx context.Context, path string) (body []byte, status int, err error) {
+	sent := r.clientVersion()
+	body, status, err = r.send(ctx, path, sent)
+	if !unknownClientVersion(status, body) {
+		return body, status, err
+	}
+	version, retry := r.negotiateClientVersion(ctx, sent)
+	if !retry {
+		return body, status, err
+	}
+	return r.send(ctx, path, version)
+}
+
+// send sends a single http get request to path with an explicit Client-Version,
+// without negotiating a replacement for a rejected one.
+func (r *Client) send(ctx context.Context, path, clientVersion string) (body []byte, status int, err error) {
 	if path == "" {
 		return nil, 0, fmt.Errorf("path is empty")
 	}
@@ -216,7 +240,7 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 		return nil, 0, err
 	}
 	req.Header.Set("User-Agent", "MCPE/UWP")
-	req.Header.Set("Client-Version", protocol.CurrentVersion)
+	req.Header.Set("Client-Version", clientVersion)
 	xbl, err := r.xboxToken(ctx)
 	if err != nil {
 		return nil, 0, err
