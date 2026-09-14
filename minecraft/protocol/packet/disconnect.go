@@ -171,7 +171,14 @@ func (*Disconnect) ID() uint32 {
 
 func (pk *Disconnect) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Reason)
-	io.Bool(&pk.HideDisconnectionScreen)
+	// The message variant selector is a varuint32 on the wire. Keep the
+	// existing bool API while converting it to the canonical selector.
+	messageSkipped := uint32(0)
+	if pk.HideDisconnectionScreen {
+		messageSkipped = 1
+	}
+	io.Varuint32(&messageSkipped)
+	pk.HideDisconnectionScreen = messageSkipped != 0
 	if !pk.HideDisconnectionScreen {
 		io.String(&pk.Message)
 		io.String(&pk.FilteredMessage)
