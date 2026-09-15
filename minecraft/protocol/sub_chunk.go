@@ -45,14 +45,35 @@ func (x *SubChunkEntry) Marshal(r IO) {
 	r.Uint8(&x.Result)
 	OptionalFunc(r, &x.RawPayload, r.ByteSlice)
 	r.Uint8(&x.HeightMapType)
-	OptionalFunc(r, &x.HeightMapData, func(data *[]int8) {
-		FuncSliceOfLen(r, 272, data, r.Int8)
-	})
+	OptionalFunc(r, &x.HeightMapData, func(data *[]int8) { heightMap(r, data) })
 	r.Uint8(&x.RenderHeightMapType)
-	OptionalFunc(r, &x.RenderHeightMapData, func(data *[]int8) {
-		FuncSliceOfLen(r, 272, data, r.Int8)
-	})
+	OptionalFunc(r, &x.RenderHeightMapData, func(data *[]int8) { heightMap(r, data) })
 	OptionalFunc(r, &x.BlobHash, r.Uint64)
+}
+
+// heightMap reads/writes a sub-chunk heightmap. It holds one height per
+// column, but is not flat on the wire: each of the 16 rows carries its own
+// length, so a map is 16 lengths and 256 heights. Callers supply the heights
+// alone; the rows are framed here.
+func heightMap(r IO, data *[]int8) {
+	const rows, cols = 16, 16
+	if _, reading := r.(sliceReader); reading {
+		*data = make([]int8, rows*cols)
+	} else if len(*data) != rows*cols {
+		r.InvalidValue(len(*data), "heightmap", "must hold 256 heights")
+		return
+	}
+	for row := 0; row < rows; row++ {
+		n := uint32(cols)
+		r.Varuint32(&n)
+		if n != cols {
+			r.InvalidValue(n, "heightmap row", "must hold 16 heights")
+			return
+		}
+		for col := 0; col < cols; col++ {
+			r.Int8(&(*data)[row*cols+col])
+		}
+	}
 }
 
 // SubChunkOffset represents an offset from the base position of another sub chunk.
