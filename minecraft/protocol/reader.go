@@ -251,6 +251,7 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	r.BlockPos(&x.BlockPosition)
 	IntegerFunc(&x.BlockFace, r.Uint8)
 	r.Varint32(&x.HotBarSlot)
+	r.Uint8(&x.Hand)
 	r.ItemInstance(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
