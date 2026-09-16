@@ -17,6 +17,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -450,9 +451,23 @@ var skinResourcePatch []byte
 //go:embed skin_geometry.json
 var skinGeometry []byte
 
+// serverAddress returns the address in the form clients report it in their login request. For
+// networks addressed by a URL, such as NetherNet, clients repeat the port of the address after
+// it: 'https://<host>:<port>:<port>'.
+func serverAddress(address string) string {
+	if !strings.Contains(address, "://") {
+		return address
+	}
+	u, err := url.Parse(address)
+	if err != nil || u.Port() == "" {
+		return address
+	}
+	return address + ":" + u.Port()
+}
+
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
-	d.ServerAddress = address
+	d.ServerAddress = serverAddress(address)
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid

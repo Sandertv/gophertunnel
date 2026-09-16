@@ -245,14 +245,13 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
 		Slice(r, slots)
 	})
-	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
-		Slice(r, actions)
-	})
+	Slice(r, &x.Actions)
 	IntegerFunc(&x.ActionType, r.Varint32)
 	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)
 	IntegerFunc(&x.BlockFace, r.Uint8)
 	r.Varint32(&x.HotBarSlot)
+	r.Uint8(&x.Hand)
 	r.ItemInstance(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
@@ -587,6 +586,10 @@ func (r *Reader) PackSetting(x *PackSetting) {
 	case PackSettingTypeString:
 		var v string
 		r.String(&v)
+		x.Value = v
+	case PackSettingTypeStringList:
+		var v []string
+		FuncSlice(r, &v, r.String)
 		x.Value = v
 	default:
 		r.UnknownEnumOption(t, "pack setting")
