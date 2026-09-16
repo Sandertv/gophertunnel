@@ -27,6 +27,10 @@ import (
 	"golang.org/x/oauth2"
 )
 
+// errListenerClosed stops a connection's read loop when the listener closes before the connection could be
+// delivered to Accept.
+var errListenerClosed = errors.New("listener closed before connection delivery")
+
 // ListenConfig holds settings that may be edited to change behaviour of a Listener.
 type ListenConfig struct {
 	// ErrorLog is a log.Logger that errors that occur during packet handling of
@@ -471,31 +475,31 @@ func (listener *Listener) handleConn(conn *Conn) {
 	for {
 		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
 		// and push them to the Conn so that they may be processed.
-		packets, err := conn.dec.Decode()
-		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
-				conn.log.Error(err.Error())
-			}
-			return
-		}
-		for _, data := range packets {
+		receiveErr := false
+		if err := conn.dec.DecodeFunc(func(data []byte) error {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				conn.log.Error(err.Error())
-				return
+				receiveErr = true
+				return err
 			}
 			if !loggedInBefore && conn.loggedIn {
 				select {
 				case <-listener.close:
 					// The listener was closed while this one was logged in, so the incoming channel will be
 					// closed. Just return so the connection is closed and cleaned up.
-					return
+					return errListenerClosed
 				case listener.incoming <- conn:
 					// The connection was previously not logged in, but was after receiving this packet,
 					// meaning the connection is fully completely now. We add it to the channel so that
 					// a call to Accept() can receive it.
 				}
 			}
+			return nil
+		}); err != nil {
+			if receiveErr || (!errors.Is(err, net.ErrClosed) && !errors.Is(err, errListenerClosed)) {
+				conn.log.Error(err.Error())
+			}
+			return
 		}
 	}
 }
