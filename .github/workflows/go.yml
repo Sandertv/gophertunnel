@@ -31,3 +31,11 @@ jobs:
 
       - name: Build
         run: go build -o gophertunnel_exe -v .
+
+      - name: Set up Go for gohawk
+        uses: actions/setup-go@v6
+        with:
+          go-version: "1.26.x"
+
+      - name: Run gohawk
+        run: go run github.com/kojah/gohawk@v0.3.2 -enable-all ./...
