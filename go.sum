@@ -12,6 +12,10 @@ github.com/df-mc/go-nethernet v1.0.20-0.20260818142457-6fc1eb6f907c h1:xQD4Be1l6
 github.com/df-mc/go-nethernet v1.0.20-0.20260818142457-6fc1eb6f907c/go.mod h1:11MfQo5F7PDKfHg1H0zM5mMkrCv29jRE0lK5B4egW9w=
 github.com/df-mc/go-nethernet v1.0.20 h1:H0MO0GkVlAypu9IDQhzg5Pph3mCD7r40+ExiImsXT2M=
 github.com/df-mc/go-nethernet v1.0.20/go.mod h1:11MfQo5F7PDKfHg1H0zM5mMkrCv29jRE0lK5B4egW9w=
+github.com/df-mc/go-nethernet v1.0.22 h1:3IkdhX504f4THbkl0avhxnvhR1t1CZjwF1jp+n+yWcw=
+github.com/df-mc/go-nethernet v1.0.22/go.mod h1:11MfQo5F7PDKfHg1H0zM5mMkrCv29jRE0lK5B4egW9w=
+github.com/df-mc/go-nethernet v1.0.23 h1:aFgwkwuhmfC12j0cKIfVV9wEy5ccezPVDAL+2GzMsrc=
+github.com/df-mc/go-nethernet v1.0.23/go.mod h1:11MfQo5F7PDKfHg1H0zM5mMkrCv29jRE0lK5B4egW9w=
 github.com/df-mc/go-playfab/v2 v2.0.2 h1:JqOsrpe0nt6Ni4V2JrdmOAhbBgTm7LBw1ppGXlmknhs=
 github.com/df-mc/go-playfab/v2 v2.0.2/go.mod h1:CS3FV3tJlohvGQiX0IJiaYKOVNfy0p778B84oEVyxlw=
 github.com/df-mc/go-xsapi/v2 v2.0.3 h1:fQLw4k15OinFhagWjbSj0BwQXeDUmY8a1J8yquEod3w=
