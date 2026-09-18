@@ -582,11 +582,12 @@ func (conn *Conn) SetDeadline(t time.Time) error {
 // Passing an empty time.Time to the method (time.Time{}) results in the read deadline being cleared.
 func (conn *Conn) SetReadDeadline(t time.Time) error {
 	empty := time.Time{}
-	if t == empty {
+	switch {
+	case t == empty: //nolint:staticcheck // Match only the empty value, including its location, to preserve deadline behaviour.
 		conn.readDeadline = make(chan time.Time)
-	} else if t.Before(time.Now()) {
+	case t.Before(time.Now()):
 		panic(fmt.Errorf("error setting read deadline: time passed is before time.Now()"))
-	} else {
+	default:
 		conn.readDeadline = time.After(time.Until(t))
 	}
 	return nil
@@ -923,8 +924,7 @@ func (conn *Conn) handleServerToClientHandshake(pk *packet.ServerToClientHandsha
 	if err != nil {
 		return fmt.Errorf("parse server token: %w", err)
 	}
-	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
-	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	raw := tok.Headers[0].ExtraHeaders["x5u"]
 	kStr, _ := raw.(string)
 
 	pub := new(ecdsa.PublicKey)
