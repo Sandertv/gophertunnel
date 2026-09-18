@@ -9,13 +9,13 @@ type ClientboundUpdateSoundData struct {
 	// ServerSoundHandle is the server-side handle of the sound to update.
 	ServerSoundHandle uint64
 
-	Stop              protocol.SoundDataUpdate
-	SetVolume         protocol.SoundDataUpdate
-	SetPitch          protocol.SoundDataUpdate
-	Fade              protocol.SoundDataUpdate
-	SeekTo            protocol.SoundDataUpdate
-	Pause             protocol.SoundDataUpdate
-	Resume            protocol.SoundDataUpdate
+	Stop      protocol.SoundDataUpdate
+	SetVolume protocol.SoundDataUpdate
+	SetPitch  protocol.SoundDataUpdate
+	Fade      protocol.SoundDataUpdate
+	SeekTo    protocol.SoundDataUpdate
+	Pause     protocol.SoundDataUpdate
+	Resume    protocol.SoundDataUpdate
 }
 
 // ID ...

@@ -39,10 +39,7 @@ func Colourf(format string, a ...any) string {
 
 	e := &enc{w: &strings.Builder{}, first: true}
 	t := html.NewTokenizer(strings.NewReader(str))
-	for {
-		if t.Next() == html.ErrorToken {
-			break
-		}
+	for t.Next() != html.ErrorToken {
 		e.process(t.Token())
 	}
 	return e.w.String()
