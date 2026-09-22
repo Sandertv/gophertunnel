@@ -214,6 +214,9 @@ type UseItemOnEntityTransactionData struct {
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the entity. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
+	// Hand is the hand that the player used to interact with the entity. It is one of the HandSlot constants
+	// above.
+	Hand byte
 	// HeldItem is the item that was held to interact with the entity. The server should check if this item
 	// is actually present in the HotBarSlot.
 	HeldItem ItemInstance
@@ -246,6 +249,8 @@ type ReleaseItemTransactionData struct {
 	// HeadPosition is the position of the player's head at the time of releasing the item. This is used
 	// mainly for purposes such as spawning eating particles at that position.
 	HeadPosition mgl32.Vec3
+	// Hand is the hand that holds the item being released. It is one of the HandSlot constants above.
+	Hand byte
 }
 
 // Marshal ...
@@ -269,6 +274,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.ActorRuntimeID(&data.TargetEntityRuntimeID)
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
+	r.Uint8(&data.Hand)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
@@ -280,6 +286,7 @@ func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
+	r.Uint8(&data.Hand)
 }
 
 // Marshal ...

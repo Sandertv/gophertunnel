@@ -39,6 +39,9 @@ type Animate struct {
 	// SwingSource is the source for swing actions. It is one of the action type constants that
 	// may be found above.
 	SwingSource uint8
+	// Hand is the hand that is animating, used for swing actions. If set, it is one of the protocol.HandSlot
+	// constants. If not set, the client assumes protocol.HandSlotMainHand.
+	Hand protocol.Optional[uint8]
 }
 
 // ID ...
@@ -58,6 +61,7 @@ func (pk *Animate) Marshal(io protocol.IO) {
 	if val, ok := swingSource.Value(); ok {
 		swingSourceFromString(io, &pk.SwingSource, val)
 	}
+	protocol.OptionalFunc(io, &pk.Hand, io.Uint8)
 }
 
 func swingSourceFromString(io protocol.IO, x *uint8, s string) {

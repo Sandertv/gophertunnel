@@ -253,4 +253,9 @@ const (
 	IDPartyDestinationCookieResponse
 	IDSetPlayerFurnaceOptions
 	IDRecordStarted
+	IDClientboundMatchmakingState
+	IDServerboundStonecutterSetRecipe
+	IDClientboundStonecutterSetRecipe
+	IDServerboundMatchmakingCancel
+	IDSetPassengerOfBlock
 )

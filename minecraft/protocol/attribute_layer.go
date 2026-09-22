@@ -102,44 +102,105 @@ func (x *NoiseAlignment) Marshal(r IO) {
 	r.Varuint32(&x.Value)
 }
 
-// EnvironmentAttributeData represents an environment attribute with optional transition data.
-type EnvironmentAttributeData struct {
-	// AttributeName is the name of the attribute.
-	AttributeName string
-	// FromAttribute is the optional starting attribute for transitions.
-	FromAttribute Optional[AttributeData]
-	// Attribute is the current attribute value.
-	Attribute AttributeData
-	// ToAttribute is the optional target attribute for transitions.
-	ToAttribute Optional[AttributeData]
-	// CurrentTransitionTicks is the number of ticks elapsed in the current transition.
-	CurrentTransitionTicks uint32
+const (
+	EnvironmentAttributePayloadTypeConstant = iota
+	EnvironmentAttributePayloadTypeTransition
+	EnvironmentAttributePayloadTypeNoiseTransition
+)
+
+// AttributeTransitionSettings holds the settings of a transition between two environment attribute values.
+type AttributeTransitionSettings struct {
 	// TotalTransitionTicks is the total number of ticks for the transition.
 	TotalTransitionTicks uint32
+	// CurrentTransitionTicks is the number of ticks elapsed in the current transition.
+	CurrentTransitionTicks uint32
 	// EaseType is the easing function used for the transition. It is one of the EasingType constants.
 	EaseType int32
+	// ClockName is the name of the world clock that drives the transition.
+	ClockName string
+}
+
+// Marshal encodes/decodes an AttributeTransitionSettings.
+func (x *AttributeTransitionSettings) Marshal(r IO) {
+	r.Varuint32(&x.TotalTransitionTicks)
+	r.Varuint32(&x.CurrentTransitionTicks)
+	r.Varint32(&x.EaseType)
+	r.String(&x.ClockName)
+}
+
+// AttributeNoiseTransitionSettings holds the settings of a noise based transition between two environment
+// attribute values.
+type AttributeNoiseTransitionSettings struct {
+	// TotalTransitionTicks is the total number of ticks for the transition.
+	TotalTransitionTicks uint32
+	// CurrentTransitionTicks is the number of ticks elapsed in the current transition.
+	CurrentTransitionTicks uint32
+	// EaseType is the easing function used for the transition. It is one of the EasingType constants.
+	EaseType int32
+	// ClockName is the name of the world clock that drives the transition.
+	ClockName string
 	// LocalTransitionTicks is the number of ticks elapsed in the local transition.
 	LocalTransitionTicks uint32
-	// NoiseTransition indicates whether the transition uses noise.
-	NoiseTransition bool
+	// NoiseName is the name of the noise used by the transition.
+	NoiseName string
 	// NoiseAlignment is the alignment of the noise used by the transition.
 	NoiseAlignment NoiseAlignment
 }
 
+// Marshal encodes/decodes an AttributeNoiseTransitionSettings.
+func (x *AttributeNoiseTransitionSettings) Marshal(r IO) {
+	r.Varuint32(&x.TotalTransitionTicks)
+	r.Varuint32(&x.CurrentTransitionTicks)
+	r.Varint32(&x.EaseType)
+	r.String(&x.ClockName)
+	r.Varuint32(&x.LocalTransitionTicks)
+	r.String(&x.NoiseName)
+	Single(r, &x.NoiseAlignment)
+}
+
+// EnvironmentAttributeData represents an environment attribute that either holds a constant value or
+// transitions between two values.
+type EnvironmentAttributeData struct {
+	// AttributeName is the name of the attribute.
+	AttributeName string
+	// PayloadType is the type of the payload of the attribute. It is one of the EnvironmentAttributePayloadType
+	// constants above.
+	PayloadType uint32
+	// Attribute is the constant attribute value. It is used if PayloadType is
+	// EnvironmentAttributePayloadTypeConstant.
+	Attribute AttributeData
+	// FromAttribute is the starting attribute of the transition. It is used if PayloadType is
+	// EnvironmentAttributePayloadTypeTransition or EnvironmentAttributePayloadTypeNoiseTransition.
+	FromAttribute AttributeData
+	// ToAttribute is the target attribute of the transition. It is used if PayloadType is
+	// EnvironmentAttributePayloadTypeTransition or EnvironmentAttributePayloadTypeNoiseTransition.
+	ToAttribute AttributeData
+	// TransitionSettings holds the settings of the transition. It is used if PayloadType is
+	// EnvironmentAttributePayloadTypeTransition.
+	TransitionSettings AttributeTransitionSettings
+	// NoiseTransitionSettings holds the settings of the noise transition. It is used if PayloadType is
+	// EnvironmentAttributePayloadTypeNoiseTransition.
+	NoiseTransitionSettings AttributeNoiseTransitionSettings
+}
+
 // Marshal encodes/decodes an EnvironmentAttributeData.
 func (x *EnvironmentAttributeData) Marshal(r IO) {
-	easingType := easingTypeToString(x.EaseType)
 	r.String(&x.AttributeName)
-	OptionalMarshaler(r, &x.FromAttribute)
-	Single(r, &x.Attribute)
-	OptionalMarshaler(r, &x.ToAttribute)
-	r.Uint32(&x.CurrentTransitionTicks)
-	r.Uint32(&x.TotalTransitionTicks)
-	r.String(&easingType)
-	easingTypeFromString(r, &x.EaseType, easingType)
-	r.Uint32(&x.LocalTransitionTicks)
-	r.Bool(&x.NoiseTransition)
-	Single(r, &x.NoiseAlignment)
+	r.Varuint32(&x.PayloadType)
+	switch x.PayloadType {
+	case EnvironmentAttributePayloadTypeConstant:
+		Single(r, &x.Attribute)
+	case EnvironmentAttributePayloadTypeTransition:
+		Single(r, &x.FromAttribute)
+		Single(r, &x.ToAttribute)
+		Single(r, &x.TransitionSettings)
+	case EnvironmentAttributePayloadTypeNoiseTransition:
+		Single(r, &x.FromAttribute)
+		Single(r, &x.ToAttribute)
+		Single(r, &x.NoiseTransitionSettings)
+	default:
+		r.UnknownEnumOption(x.PayloadType, "environment attribute payload type")
+	}
 }
 
 // AttributeLayerSettings represents settings for an attribute layer.
@@ -166,8 +227,6 @@ func (x *AttributeLayerSettings) Marshal(r IO) {
 type AttributeLayerData struct {
 	// Name is the name of the attribute layer.
 	Name string
-	// NoiseName is the optional name of the noise used by the layer.
-	NoiseName Optional[string]
 	// DimensionID is the dimension the layer applies to.
 	DimensionID int32
 	// Settings is the layer's settings.
@@ -179,7 +238,6 @@ type AttributeLayerData struct {
 // Marshal encodes/decodes an AttributeLayerData.
 func (x *AttributeLayerData) Marshal(r IO) {
 	r.String(&x.Name)
-	OptionalFunc(r, &x.NoiseName, r.String)
 	r.Varint32(&x.DimensionID)
 	Single(r, &x.Settings)
 	Slice(r, &x.EnvironmentAttributes)

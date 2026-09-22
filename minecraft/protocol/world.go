@@ -31,6 +31,10 @@ type DimensionDefinition struct {
 	PackID uuid.UUID
 	// DefaultBiome is the identifier of the biome that the dimension defaults to.
 	DefaultBiome string
+	// CloudHeight is the Y coordinate at which clouds render in the dimension.
+	CloudHeight int32
+	// RenderClouds specifies if clouds should render in the dimension.
+	RenderClouds bool
 }
 
 // Marshal encodes/decodes a DimensionDefinition.
@@ -42,6 +46,8 @@ func (x *DimensionDefinition) Marshal(r IO) {
 	r.Varint32(&x.DimensionType)
 	r.UUID(&x.PackID)
 	r.String(&x.DefaultBiome)
+	r.Varint32(&x.CloudHeight)
+	r.Bool(&x.RenderClouds)
 }
 
 // GenerationFeature represents a world generation feature, used when encoding the FeatureRegistry to the client.
