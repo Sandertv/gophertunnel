@@ -1104,6 +1104,9 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 		return conn.close(conn.closeErr("resource pack refused"))
 	case packet.PackResponseSendPacks:
 		packs := pk.PacksToDownload
+		if len(packs) == 0 {
+			break
+		}
 		conn.packQueue = &resourcePackQueue{
 			packs:     conn.resourcePacks,
 			chunkSize: conn.resourcePackDelivery.ChunkSize,
