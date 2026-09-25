@@ -1610,9 +1610,33 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
-// expect sets the packet IDs that are next expected to arrive.
+// expect sets the packet IDs that are next expected to arrive and re-checks
+// any deferred packets against the new expected set. This prevents a deadlock
+// when a packet arrives before its ID is added to the expected set.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
+	conn.handleDeferredPackets()
+}
+
+// handleDeferredPackets passes all currently deferred packets back through
+// handle(). Packets that now match expectedIDs are processed; the rest are
+// re-deferred by handle() automatically.
+func (conn *Conn) handleDeferredPackets() {
+	conn.deferredPacketMu.Lock()
+	if len(conn.deferredPackets) == 0 {
+		conn.deferredPacketMu.Unlock()
+		return
+	}
+	deferred := conn.deferredPackets
+	conn.deferredPackets = conn.deferredPackets[len(deferred):]
+	conn.deferredPacketMu.Unlock()
+
+	for _, pkData := range deferred {
+		if err := conn.handle(pkData); err != nil {
+			_ = conn.close(err)
+			return
+		}
+	}
 }
 
 // closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
