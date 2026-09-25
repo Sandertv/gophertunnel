@@ -376,8 +376,6 @@ func (listener *Listener) updatePongData() {
 	case 2:
 		gameType = "Adventure"
 	default:
-		// We return "Survival" because simply returning invalid strings
-		// like "Unknown" might not be suitable for third-party clients.
 		gameType = "Survival"
 	}
 	if a, ok := listener.Addr().(interface {
