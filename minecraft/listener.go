@@ -56,7 +56,7 @@ type ListenConfig struct {
 	// its login sequence. Connections still logging in when it expires are closed. Zero disables the limit.
 	LoginTimeout time.Duration
 	// MaximumPendingLogins caps the connections that have not finished their login sequence. Connections
-	// beyond it are refused as if the server were full. Zero disables the cap.
+	// beyond it are closed on arrival. Zero disables the cap.
 	MaximumPendingLogins int
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
@@ -454,8 +454,9 @@ func (listener *Listener) createConn(netConn net.Conn) {
 		return
 	}
 	if limit := listener.cfg.MaximumPendingLogins; limit > 0 && listener.pendingLogins.Load() >= int32(limit) {
-		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
-		_ = conn.close(conn.closeErr("too many pending logins"))
+		// Close without writing: this runs on the accept loop, which a peer that never reads must not stall.
+		_ = conn.conn.Close()
+		_ = conn.close(errors.New("too many pending logins"))
 		return
 	}
 	listener.playerCount.Add(1)
@@ -472,6 +473,7 @@ type pendingLogin struct {
 	listener *Listener
 	timer    *time.Timer
 	ended    atomic.Bool
+	timedOut atomic.Bool
 }
 
 // newPendingLogin counts conn as pending and closes it if it is still pending after LoginTimeout.
@@ -481,7 +483,10 @@ func (listener *Listener) newPendingLogin(conn *Conn) *pendingLogin {
 	if timeout := listener.cfg.LoginTimeout; timeout > 0 {
 		p.timer = time.AfterFunc(timeout, func() {
 			if p.claim() {
+				p.timedOut.Store(true)
 				conn.log.Error(errLoginTimeout.Error(), "timeout", timeout)
+				// Close the transport first so a flush blocked on a peer that stopped reading returns.
+				_ = conn.conn.Close()
 				_ = conn.close(errLoginTimeout)
 			}
 		})
@@ -534,7 +539,7 @@ func (listener *Listener) handleConn(conn *Conn, pending *pendingLogin) {
 		packets, err := conn.dec.Decode()
 		if err != nil {
 			// A login timeout was already logged when it fired.
-			if !errors.Is(err, net.ErrClosed) && !errors.Is(context.Cause(conn.ctx), errLoginTimeout) {
+			if !errors.Is(err, net.ErrClosed) && !pending.timedOut.Load() {
 				conn.log.Error(err.Error())
 			}
 			return
