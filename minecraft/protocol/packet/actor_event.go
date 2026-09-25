@@ -98,7 +98,7 @@ func (*ActorEvent) ID() uint32 {
 }
 
 func (pk *ActorEvent) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint8(&pk.EventType)
 	io.Varint32(&pk.EventData)
 	protocol.OptionalFunc(io, &pk.FireAtPosition, io.Vec3)

@@ -24,6 +24,6 @@ func (*EmoteList) ID() uint32 {
 }
 
 func (pk *EmoteList) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.PlayerRuntimeID)
+	io.ActorRuntimeID(&pk.PlayerRuntimeID)
 	protocol.FuncSlice(io, &pk.EmotePieces, io.UUID)
 }

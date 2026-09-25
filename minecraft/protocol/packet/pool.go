@@ -46,25 +46,25 @@ func NewServerPool() Pool {
 func init() {
 	// TODO: Remove packets from this list that are not sent by the server.
 	serverOriginating := map[uint32]func() Packet{
-		IDLogin:                      func() Packet { return &Login{} },
-		IDPlayStatus:                 func() Packet { return &PlayStatus{} },
-		IDServerToClientHandshake:    func() Packet { return &ServerToClientHandshake{} },
-		IDClientToServerHandshake:    func() Packet { return &ClientToServerHandshake{} },
-		IDDisconnect:                 func() Packet { return &Disconnect{} },
-		IDResourcePacksInfo:          func() Packet { return &ResourcePacksInfo{} },
-		IDResourcePackStack:          func() Packet { return &ResourcePackStack{} },
-		IDResourcePackClientResponse: func() Packet { return &ResourcePackClientResponse{} },
-		IDText:                       func() Packet { return &Text{} },
-		IDSetTime:                    func() Packet { return &SetTime{} },
-		IDStartGame:                  func() Packet { return &StartGame{} },
-		IDAddPlayer:                  func() Packet { return &AddPlayer{} },
-		IDAddActor:                   func() Packet { return &AddActor{} },
-		IDRemoveActor:                func() Packet { return &RemoveActor{} },
-		IDAddItemActor:               func() Packet { return &AddItemActor{} },
-		// ---
-		IDTakeItemActor:     func() Packet { return &TakeItemActor{} },
-		IDMoveActorAbsolute: func() Packet { return &MoveActorAbsolute{} },
-		IDMovePlayer:        func() Packet { return &MovePlayer{} },
+		IDLogin:                        func() Packet { return &Login{} },
+		IDPlayStatus:                   func() Packet { return &PlayStatus{} },
+		IDServerToClientHandshake:      func() Packet { return &ServerToClientHandshake{} },
+		IDClientToServerHandshake:      func() Packet { return &ClientToServerHandshake{} },
+		IDDisconnect:                   func() Packet { return &Disconnect{} },
+		IDResourcePacksInfo:            func() Packet { return &ResourcePacksInfo{} },
+		IDResourcePackStack:            func() Packet { return &ResourcePackStack{} },
+		IDResourcePackClientResponse:   func() Packet { return &ResourcePackClientResponse{} },
+		IDText:                         func() Packet { return &Text{} },
+		IDSetTime:                      func() Packet { return &SetTime{} },
+		IDStartGame:                    func() Packet { return &StartGame{} },
+		IDAddPlayer:                    func() Packet { return &AddPlayer{} },
+		IDAddActor:                     func() Packet { return &AddActor{} },
+		IDRemoveActor:                  func() Packet { return &RemoveActor{} },
+		IDAddItemActor:                 func() Packet { return &AddItemActor{} },
+		IDServerPlayerPostMovePosition: func() Packet { return &ServerPlayerPostMovePosition{} },
+		IDTakeItemActor:                func() Packet { return &TakeItemActor{} },
+		IDMoveActorAbsolute:            func() Packet { return &MoveActorAbsolute{} },
+		IDMovePlayer:                   func() Packet { return &MovePlayer{} },
 		// ---
 		IDUpdateBlock: func() Packet { return &UpdateBlock{} },
 		IDAddPainting: func() Packet { return &AddPainting{} },
@@ -285,6 +285,8 @@ func init() {
 		IDServerPresenceInfo:                 func() Packet { return &ServerPresenceInfo{} },
 		IDClientboundUpdateSoundData:         func() Packet { return &ClientboundUpdateSoundData{} },
 		IDSendPartyDestinationCookie:         func() Packet { return &SendPartyDestinationCookie{} },
+		IDSetPlayerFurnaceOptions:            func() Packet { return &SetPlayerFurnaceOptions{} },
+		IDRecordStarted:                      func() Packet { return &RecordStarted{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -299,6 +301,7 @@ func init() {
 		IDResourcePackClientResponse:        func() Packet { return &ResourcePackClientResponse{} },
 		IDText:                              func() Packet { return &Text{} },
 		IDMovePlayer:                        func() Packet { return &MovePlayer{} },
+		IDUpdateBlock:                       func() Packet { return &UpdateBlock{} },
 		IDActorEvent:                        func() Packet { return &ActorEvent{} },
 		IDInventoryTransaction:              func() Packet { return &InventoryTransaction{} },
 		IDMobEquipment:                      func() Packet { return &MobEquipment{} },
@@ -379,6 +382,7 @@ func init() {
 		IDPartyChanged:                      func() Packet { return &PartyChanged{} },
 		IDServerBoundDataDrivenScreenClosed: func() Packet { return &ServerBoundDataDrivenScreenClosed{} },
 		IDPartyDestinationCookieResponse:    func() Packet { return &PartyDestinationCookieResponse{} },
+		IDSetPlayerFurnaceOptions:           func() Packet { return &SetPlayerFurnaceOptions{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

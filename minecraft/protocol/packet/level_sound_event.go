@@ -409,7 +409,7 @@ const (
 	SoundEventFrogspawnBreak                     = "block.frog_spawn.break"
 	SoundEventSonicBoom                          = "sonic_boom"
 	SoundEventSonicCharge                        = "sonic_charge"
-	SoundeventItemThrown                         = "item_thrown"
+	SoundEventItemThrown                         = "item_thrown"
 	SoundEventRecord5                            = "record.5"
 	SoundEventConvertToFrog                      = "convert_to_frog"
 	SoundEventRecordPlaying                      = "record.playing"
@@ -580,6 +580,9 @@ const (
 	SoundEventBucketEmptyLandAnimal              = "bucket.empty.land_animal"
 	SoundEventGeyserContinuousEruptionStart      = "geyser_continuous_eruption_start"
 	SoundEventGeyserContinuousEruptionActive     = "geyser_continuous_eruption_active"
+	SoundEventMount                              = "mount"
+	SoundEventDismount                           = "dismount"
+	SoundEventStrawBedBreakLeave                 = "straw_bed.break_leave"
 	SoundEventUndefined                          = "undefined"
 )
 
@@ -628,6 +631,6 @@ func (pk *LevelSoundEvent) Marshal(io protocol.IO) {
 	io.String(&pk.EntityType)
 	io.Bool(&pk.BabyMob)
 	io.Bool(&pk.DisableRelativeVolume)
-	io.Int64(&pk.EntityUniqueID)
+	io.ActorUniqueIDInt64(&pk.EntityUniqueID)
 	protocol.OptionalFunc(io, &pk.FireAtPosition, io.Vec3)
 }

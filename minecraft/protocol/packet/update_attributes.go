@@ -24,7 +24,7 @@ func (*UpdateAttributes) ID() uint32 {
 }
 
 func (pk *UpdateAttributes) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	protocol.Slice(io, &pk.Attributes)
 	io.Varuint64(&pk.Tick)
 }

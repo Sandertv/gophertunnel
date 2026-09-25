@@ -39,6 +39,6 @@ func (pk *CameraInstruction) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.RemoveTarget, io.Bool)
 	protocol.OptionalMarshaler(io, &pk.FieldOfView)
 	protocol.OptionalMarshaler(io, &pk.Spline)
-	protocol.OptionalFunc(io, &pk.AttachToEntity, io.Int64)
+	protocol.OptionalFunc(io, &pk.AttachToEntity, io.ActorUniqueIDInt64)
 	protocol.OptionalFunc(io, &pk.DetachFromEntity, io.Bool)
 }

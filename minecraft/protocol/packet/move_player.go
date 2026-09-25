@@ -46,11 +46,7 @@ type MovePlayer struct {
 	// RiddenEntityRuntimeID is the runtime ID of the entity that the player might currently be riding. If not
 	// riding, this should be left 0.
 	RiddenEntityRuntimeID uint64
-	// TeleportCause is written only if Mode is MoveModeTeleport. It specifies the cause of the teleportation,
-	// which is one of the constants above.
-	TeleportCause int32
-	// TeleportSourceEntityType is the entity type that caused the teleportation, for example an ender pearl.
-	TeleportSourceEntityType int32
+	TeleportData          protocol.Optional[protocol.TeleportData]
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
 }
@@ -61,17 +57,14 @@ func (*MovePlayer) ID() uint32 {
 }
 
 func (pk *MovePlayer) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Position)
 	io.Float32(&pk.Pitch)
 	io.Float32(&pk.Yaw)
 	io.Float32(&pk.HeadYaw)
 	io.Uint8(&pk.Mode)
 	io.Bool(&pk.OnGround)
-	io.Varuint64(&pk.RiddenEntityRuntimeID)
-	if pk.Mode == MoveModeTeleport {
-		io.Int32(&pk.TeleportCause)
-		io.Int32(&pk.TeleportSourceEntityType)
-	}
+	io.ActorRuntimeID(&pk.RiddenEntityRuntimeID)
+	protocol.OptionalMarshaler(io, &pk.TeleportData)
 	io.Varuint64(&pk.Tick)
 }

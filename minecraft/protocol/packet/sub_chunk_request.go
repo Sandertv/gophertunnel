@@ -23,7 +23,5 @@ func (*SubChunkRequest) ID() uint32 {
 func (pk *SubChunkRequest) Marshal(io protocol.IO) {
 	io.Varint32(&pk.Dimension)
 	protocol.Slice(io, &pk.Offsets)
-	io.Int32(&pk.Position[0])
-	io.Int32(&pk.Position[1])
-	io.Int32(&pk.Position[2])
+	io.SubChunkPos(&pk.Position)
 }

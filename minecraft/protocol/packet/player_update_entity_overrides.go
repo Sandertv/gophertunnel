@@ -20,7 +20,7 @@ type PlayerUpdateEntityOverrides struct {
 	// PropertyIndex is the index of the property to modify. The index is unique for each property of an entity.
 	PropertyIndex uint32
 	// Type is the type of action to perform with the property. It is one of the constants above.
-	Type byte
+	Type uint32
 	// IntValue is the new integer value of the property. It is only used when Type is set to
 	// PlayerUpdateEntityOverridesTypeInt.
 	IntValue int32
@@ -35,12 +35,21 @@ func (*PlayerUpdateEntityOverrides) ID() uint32 {
 }
 
 func (pk *PlayerUpdateEntityOverrides) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.Varuint32(&pk.PropertyIndex)
-	io.Uint8(&pk.Type)
-	if pk.Type == PlayerUpdateEntityOverridesTypeInt {
+	io.Varuint32(&pk.Type)
+	names := [...]string{"clearoverrides", "removeoverride", "setintoverride", "setfloatoverride"}
+	if pk.Type >= uint32(len(names)) {
+		io.UnknownEnumOption(pk.Type, "entity override type")
+		return
+	}
+	name := names[pk.Type]
+	io.String(&name)
+	switch pk.Type {
+	case PlayerUpdateEntityOverridesTypeClearAll, PlayerUpdateEntityOverridesTypeRemove:
+	case PlayerUpdateEntityOverridesTypeInt:
 		io.Int32(&pk.IntValue)
-	} else if pk.Type == PlayerUpdateEntityOverridesTypeFloat {
+	case PlayerUpdateEntityOverridesTypeFloat:
 		io.Float32(&pk.FloatValue)
 	}
 }

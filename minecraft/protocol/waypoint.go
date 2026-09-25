@@ -88,5 +88,5 @@ func (x *Waypoint) Marshal(r IO) {
 	OptionalFunc(r, &x.IconSize, r.Vec2)
 	OptionalFunc(r, &x.Colour, r.Int32)
 	OptionalFunc(r, &x.ClientPositionAuthority, r.Bool)
-	OptionalFunc(r, &x.ActorUniqueID, r.Varint64)
+	OptionalFunc(r, &x.ActorUniqueID, r.ActorUniqueID)
 }

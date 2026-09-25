@@ -4,6 +4,10 @@ package protocol
 // in packets such as the Login packet.
 type DeviceOS int
 
+// DeviceUnknown is the fallback device/build platform, used when the platform is not any of the known
+// values below.
+const DeviceUnknown DeviceOS = -1
+
 const (
 	DeviceAndroid DeviceOS = iota + 1
 	DeviceIOS

@@ -16,7 +16,7 @@ const (
 	IDAddActor
 	IDRemoveActor
 	IDAddItemActor
-	_
+	IDServerPlayerPostMovePosition
 	IDTakeItemActor
 	IDMoveActorAbsolute
 	IDMovePlayer
@@ -251,4 +251,6 @@ const (
 	IDClientboundUpdateSoundData
 	IDSendPartyDestinationCookie
 	IDPartyDestinationCookieResponse
+	IDSetPlayerFurnaceOptions
+	IDRecordStarted
 )

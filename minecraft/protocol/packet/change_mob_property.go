@@ -26,7 +26,7 @@ func (*ChangeMobProperty) ID() uint32 {
 }
 
 func (pk *ChangeMobProperty) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
 	io.String(&pk.Property)
 	io.Bool(&pk.BoolValue)
 	io.String(&pk.StringValue)

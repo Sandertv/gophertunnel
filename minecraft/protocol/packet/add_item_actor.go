@@ -39,8 +39,8 @@ func (*AddItemActor) ID() uint32 {
 }
 
 func (pk *AddItemActor) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.ItemInstance(&pk.Item)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Velocity)

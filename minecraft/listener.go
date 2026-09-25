@@ -43,6 +43,10 @@ type ListenConfig struct {
 	// account.
 	AuthenticationDisabled bool
 
+	// DisablePacketEncryption disables packet encryption for accepted connections.
+	// Authentication is unaffected. Only use this on trusted networks.
+	DisablePacketEncryption bool
+
 	// MaximumPlayers is the maximum amount of players accepted in the server. If non-zero, players that
 	// attempt to join while the server is full will be kicked during login. If zero, the maximum player count
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
@@ -52,6 +56,11 @@ type ListenConfig struct {
 	// that the MaximumPlayers admission limit and advertised player count apply across all of them. If nil,
 	// the listener uses a private group. All listeners in a group should use the same MaximumPlayers value.
 	ListenerGroup *ListenerGroup
+	// LoginTimeout bounds how long a connection may take from being accepted until its Login is verified and,
+	// with encryption, its encrypted handshake completes. Connections that have not authenticated by then are
+	// closed. The rest of the login sequence, such as resource pack downloads, is not bounded. Zero or negative
+	// disables it; around ten seconds suits most servers.
+	LoginTimeout time.Duration
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
 	// in the packet pool. If false (by default), such packets lead to the connection being closed immediately.
@@ -103,6 +112,9 @@ type ListenConfig struct {
 	// If set, it will be called before sending the ResourcePacksInfo packet. The returned resource packs
 	// will be forwarded to the client in place of the Listener's current ones.
 	FetchResourcePacks func(identityData login.IdentityData, clientData login.ClientData, current []*resource.Pack) []*resource.Pack
+	// ResourcePackDelivery controls how resource pack data is sent to clients. The zero value keeps the
+	// conservative default chunk size and pacing.
+	ResourcePackDelivery ResourcePackDeliveryConfig
 
 	// PacketFunc is called whenever a packet is read from or written to a connection returned when using
 	// Listener.Accept. It includes packets that are otherwise covered in the connection sequence, such as the
@@ -391,17 +403,28 @@ func (listener *Listener) PlayerCount() int {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	var (
-		s    = listener.status()
-		port uint16
+		s        = listener.status()
+		port     uint16
+		gameType string
 	)
+	switch s.GameType {
+	case 0:
+		gameType = "Survival"
+	case 1:
+		gameType = "Creative"
+	case 2:
+		gameType = "Adventure"
+	default:
+		gameType = "Survival"
+	}
 	if a, ok := listener.Addr().(interface {
 		AddrPort() netip.AddrPort
 	}); ok {
 		port = a.AddrPort().Port()
 	}
-	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
+	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0,
+		listener.listener.ID(), s.ServerSubName, gameType, s.GameType, port, port, 0, 0,
 	)))
 }
 
@@ -445,6 +468,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	listener.packsMu.RUnlock()
 
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
+	conn.disableEncryption = conn.disableEncryption || listener.cfg.DisablePacketEncryption
 	conn.acceptedProto = append(listener.cfg.AcceptedProtocols, proto{})
 	conn.compression = listener.cfg.Compression
 	conn.compressionSelector = listener.cfg.CompressionSelector
@@ -458,6 +482,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.forceDisableVibrantVisuals = listener.cfg.ForceDisableVibrantVisuals
 	conn.resourcePacks = packs
 	conn.fetchResourcePacks = listener.cfg.FetchResourcePacks
+	conn.resourcePackDelivery = listener.cfg.ResourcePackDelivery.normalized()
 	conn.gameData.WorldName = listener.status().ServerName
 	conn.authEnabled = !listener.cfg.AuthenticationDisabled
 	conn.verifier = listener.verifier
@@ -472,8 +497,25 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	}
 	listener.updatePongData()
 
-	go listener.handleConn(conn)
+	var timer *time.Timer
+	if timeout := listener.cfg.LoginTimeout; timeout > 0 {
+		timer = time.AfterFunc(timeout, func() {
+			if !conn.authenticated.Load() {
+				conn.log.Debug(errLoginTimeout.Error(), "timeout", timeout)
+				conn.closeTransport(errLoginTimeout)
+			}
+		})
+	}
+	go func() {
+		listener.handleConn(conn)
+		if timer != nil {
+			timer.Stop()
+		}
+	}()
 }
+
+// errLoginTimeout is the cause of closing a connection that exceeded ListenConfig.LoginTimeout.
+var errLoginTimeout = errors.New("login timed out")
 
 // status returns the current ServerStatus of the Listener.
 func (listener *Listener) status() ServerStatus {
@@ -497,7 +539,8 @@ func (listener *Listener) handleConn(conn *Conn) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
+			// A login timeout was logged when it fired.
+			if !errors.Is(err, net.ErrClosed) && !errors.Is(context.Cause(conn.ctx), errLoginTimeout) {
 				conn.log.Error(err.Error())
 			}
 			return

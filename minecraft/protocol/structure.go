@@ -76,7 +76,7 @@ func (x *StructureSettings) Marshal(r IO) {
 	r.Bool(&x.AllowNonTickingChunks)
 	r.BlockPos(&x.Size)
 	r.BlockPos(&x.Offset)
-	r.Varint64(&x.LastEditingPlayerUniqueID)
+	r.ActorUniqueID(&x.LastEditingPlayerUniqueID)
 	r.Uint8(&x.Rotation)
 	r.Uint8(&x.Mirror)
 	r.Uint8(&x.AnimationMode)

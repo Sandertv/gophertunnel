@@ -52,7 +52,7 @@ func (pk *Animate) Marshal(io protocol.IO) {
 		swingSource = protocol.Option(swingSourceToString(pk.SwingSource))
 	}
 	io.Uint8(&pk.ActionType)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Float32(&pk.Data)
 	protocol.OptionalFunc(io, &swingSource, io.String)
 	if val, ok := swingSource.Value(); ok {

@@ -21,6 +21,6 @@ func (*TakeItemActor) ID() uint32 {
 }
 
 func (pk *TakeItemActor) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.ItemEntityRuntimeID)
-	io.Varuint64(&pk.TakerEntityRuntimeID)
+	io.ActorRuntimeID(&pk.ItemEntityRuntimeID)
+	io.ActorRuntimeID(&pk.TakerEntityRuntimeID)
 }

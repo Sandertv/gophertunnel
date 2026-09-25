@@ -30,7 +30,7 @@ func (*PlayerAction) ID() uint32 {
 }
 
 func (pk *PlayerAction) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Varint32(&pk.ActionType)
 	io.BlockPos(&pk.BlockPosition)
 	io.BlockPos(&pk.ResultPosition)

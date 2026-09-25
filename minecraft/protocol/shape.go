@@ -112,6 +112,9 @@ type TextShape struct {
 	UseRotation bool
 	// BackgroundColour is the RGBA colour to use for the text background. This is a translucent black colour by default.
 	BackgroundColour Optional[color.RGBA]
+	// LineGapHeight is the gap to leave between each line of multiline text. If not set, the client uses its
+	// default gap.
+	LineGapHeight float32
 	// DepthTest is whether the text should show through walls. Use true for default behaviour.
 	DepthTest bool
 	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
@@ -127,6 +130,7 @@ func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
 	io.Bool(&shape.UseRotation)
 	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
+	io.Float32(&shape.LineGapHeight)
 	io.Bool(&shape.DepthTest)
 	io.Bool(&shape.ShowBackface)
 	io.Bool(&shape.ShowBackfaceText)
@@ -262,7 +266,8 @@ type PrimitiveShape struct {
 	NetworkID uint64
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
-	// AttachedToEntityID is the optional unique ID of the entity the shape is attached to.
+	// AttachedToEntityID is the optional unique ID of the entity the shape is attached to. Mojang's documentation
+	// describes it as a runtime ID, but the field is an ActorUniqueID and the client resolves it as one.
 	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
@@ -294,6 +299,6 @@ func (x *PrimitiveShape) Marshal(io IO) {
 	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.Varint64)
+	OptionalFunc(io, &x.AttachedToEntityID, io.ActorUniqueID)
 	io.ShapeData(&x.ExtraShapeData)
 }

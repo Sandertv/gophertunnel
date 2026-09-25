@@ -57,3 +57,27 @@ func (b *offsetReader) Read(p []byte) (n int, err error) {
 	b.off += int64(n)
 	return
 }
+
+// readArrayBytes validates a fixed-width array and only allocates for bytes actually received.
+func (b *offsetReader) readArrayBytes(count int32, width int, op string) ([]byte, error) {
+	if count < 0 || int64(count) > int64(int(^uint(0)>>1)/width) {
+		return nil, BufferOverrunError{Op: op}
+	}
+	length := int64(count) * int64(width)
+	if remaining, ok := b.Reader.(interface{ Len() int }); ok {
+		if length > int64(remaining.Len()) {
+			return nil, BufferOverrunError{Op: op}
+		}
+		data := make([]byte, int(length))
+		if _, err := b.Read(data); err != nil {
+			return nil, BufferOverrunError{Op: op}
+		}
+		return data, nil
+	}
+	data, err := io.ReadAll(io.LimitReader(b.Reader, length))
+	b.off += int64(len(data))
+	if err != nil || int64(len(data)) != length {
+		return nil, BufferOverrunError{Op: op}
+	}
+	return data, nil
+}

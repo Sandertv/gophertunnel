@@ -80,6 +80,9 @@ type GameData struct {
 	GameRules []protocol.GameRule
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
+	// DayCycleLockTime is the time at which the day cycle was locked when the doDaylightCycle game rule is
+	// disabled.
+	DayCycleLockTime int32
 	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
 	// This can simply be left empty, and the client will avoid trying to verify it.
 	ServerBlockStateChecksum uint64
@@ -100,7 +103,7 @@ type GameData struct {
 	Experiments []protocol.ExperimentData
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions byte
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32

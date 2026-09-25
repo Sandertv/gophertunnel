@@ -31,8 +31,8 @@ func (*AddPainting) ID() uint32 {
 }
 
 func (pk *AddPainting) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Vec3(&pk.Position)
 	io.Varint32(&pk.Direction)
 	io.String(&pk.Title)

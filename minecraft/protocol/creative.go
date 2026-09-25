@@ -14,7 +14,7 @@ const (
 // icon that represents the group.
 type CreativeGroup struct {
 	// Category is the category the group falls under. It is one of the constants above.
-	Category int32
+	Category byte
 	// Name is the locale name of the group, i.e. "itemGroup.name.planks".
 	Name string
 	// Icon is the item that represents the group in the creative inventory.
@@ -23,7 +23,7 @@ type CreativeGroup struct {
 
 // Marshal encodes/decodes a CreativeGroup.
 func (x *CreativeGroup) Marshal(r IO) {
-	r.Int32(&x.Category)
+	r.Uint8(&x.Category)
 	r.String(&x.Name)
 	r.Item(&x.Icon)
 }

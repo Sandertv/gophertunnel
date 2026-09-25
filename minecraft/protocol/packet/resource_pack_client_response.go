@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	PackResponseRefused = iota + 1
+	PackResponseRefused = iota
 	PackResponseSendPacks
 	PackResponseAllPacksDownloaded
 	PackResponseCompleted
@@ -16,7 +16,7 @@ const (
 // and set.
 type ResourcePackClientResponse struct {
 	// Response is the response type of the response. It is one of the constants found above.
-	Response byte
+	Response uint32
 	// PacksToDownload is a list of resource pack UUIDs combined with their version that need to be downloaded
 	// (for example SomePack_1.0.0), if the Response field is PackResponseSendPacks.
 	PacksToDownload []string
@@ -28,6 +28,23 @@ func (*ResourcePackClientResponse) ID() uint32 {
 }
 
 func (pk *ResourcePackClientResponse) Marshal(io protocol.IO) {
-	io.Uint8(&pk.Response)
-	protocol.FuncSliceUint16Length(io, &pk.PacksToDownload, io.String)
+	io.Varuint32(&pk.Response)
+	name, ok := resourcePackResponseToString(pk.Response)
+	if !ok {
+		io.UnknownEnumOption(pk.Response, "resource pack response")
+		return
+	}
+	io.String(&name)
+
+	if pk.Response == PackResponseSendPacks {
+		protocol.FuncSlice(io, &pk.PacksToDownload, io.String)
+	}
+}
+
+func resourcePackResponseToString(x uint32) (string, bool) {
+	names := [...]string{"cancel", "downloading", "downloadingfinished", "resourcepackstackfinished"}
+	if x >= uint32(len(names)) {
+		return "", false
+	}
+	return names[x], true
 }

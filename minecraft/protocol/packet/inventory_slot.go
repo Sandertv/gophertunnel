@@ -34,6 +34,6 @@ func (pk *InventorySlot) Marshal(io protocol.IO) {
 	io.Varuint32(&pk.WindowID)
 	io.Varuint32(&pk.Slot)
 	protocol.OptionalMarshaler(io, &pk.Container)
-	protocol.OptionalFunc(io, &pk.StorageItem, io.ItemInstanceNew)
-	io.ItemInstanceNew(&pk.NewItem)
+	protocol.OptionalFunc(io, &pk.StorageItem, io.ItemInstance)
+	io.ItemInstance(&pk.NewItem)
 }

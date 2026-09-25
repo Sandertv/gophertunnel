@@ -17,7 +17,7 @@ const (
 	EntityDataKeyRowTimeLeft
 	EntityDataKeyRowTimeRight
 	EntityDataKeyValue
-	EntityDataKeyDisplayTileRuntimeID
+	EntityDataKeyDisplayBlockState
 	EntityDataKeyDisplayOffset
 	EntityDataKeyCustomDisplay
 	EntityDataKeySwell
@@ -145,6 +145,15 @@ const (
 	EntityDataKeyFireworkShooterID
 	EntityDataKeyReserved139
 	EntityDataKeyNameplateRenderDistanceMax
+)
+
+// Some entity data keys have actor-specific meanings.
+const (
+	EntityDataKeyDisplayFirework      = EntityDataKeyDisplayBlockState
+	EntityDataKeyHorseFlags           = EntityDataKeyDisplayBlockState
+	EntityDataKeyWitherSkullDangerous = EntityDataKeyDisplayBlockState
+
+	EntityDataKeyUnknownHorseInteger25 = EntityDataKeyUsingItem
 )
 
 const (
@@ -278,6 +287,7 @@ const (
 	EntityDataFlagUsesLegacyFriction
 	EntityDataFlagUsesUniformAirDrag
 	EntityDataFlagNameplateDepthTested
+	EntityDataFlagNotPickableFromInside
 	EntityDataFlagCount
 )
 

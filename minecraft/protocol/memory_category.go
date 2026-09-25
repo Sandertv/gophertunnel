@@ -1,13 +1,19 @@
 package protocol
 
+import (
+	"github.com/go-gl/mathgl/mgl32"
+)
+
 const (
 	MemoryCategoryUnknown = iota
 	MemoryCategoryInvalidSizeUnknown
 	MemoryCategoryActor
 	MemoryCategoryActorAnimation
 	MemoryCategoryActorRendering
+	MemoryCategoryBalancer
 	MemoryCategoryBlockTickingQueues
 	MemoryCategoryBiomeStorage
+	MemoryCategoryBlobs
 	MemoryCategoryCereal
 	MemoryCategoryCircuitSystem
 	MemoryCategoryClient
@@ -43,7 +49,6 @@ const (
 	MemoryCategoryLevelChunk
 	MemoryCategoryLevelChunkGen
 	MemoryCategoryLevelChunkGenThreadLocal
-	MemoryCategoryLightVolumeManager
 	MemoryCategoryNetwork
 	MemoryCategoryMarketplace
 	MemoryCategoryMaterialDragonCompiledDefinition
@@ -55,13 +60,28 @@ const (
 	MemoryCategoryMaterialVariationManager
 	MemoryCategoryMolang
 	MemoryCategoryOreUI
-	MemoryCategoryPersona
+	MemoryCategoryOreUIClient
+	MemoryCategoryPersonaPieces
+	MemoryCategoryPersonaAnimations
+	MemoryCategoryPersonaCharacters
+	MemoryCategoryPersonaSkinPacks
+	MemoryCategoryPersonaRepo
 	MemoryCategoryPlayer
 	MemoryCategoryRenderChunk
 	MemoryCategoryRenderChunkIndexBuffer
 	MemoryCategoryRenderChunkVertexBuffer
 	MemoryCategoryRendering
+	MemoryCategoryRenderingBGFXInit
+	MemoryCategoryRenderingBGFXStartFrame
+	MemoryCategoryRenderingBlockTessellator
+	MemoryCategoryRenderingEndFrame
+	MemoryCategoryRenderingGraphicsTasksInit
 	MemoryCategoryRenderingLibrary
+	MemoryCategoryRenderingPolygonOperatorPool
+	MemoryCategoryRenderingPBRTextureData
+	MemoryCategoryRenderingRenderRegistry
+	MemoryCategoryRenderingSetup
+	MemoryCategoryRenderingVertices
 	MemoryCategoryRequestLog
 	MemoryCategoryResourcePacks
 	MemoryCategorySound
@@ -69,11 +89,11 @@ const (
 	MemoryCategorySubChunkBlockData
 	MemoryCategorySubChunkLightData
 	MemoryCategoryTextures
-	MemoryCategoryVR
 	MemoryCategoryWeatherRenderer
 	MemoryCategoryWorldGenerator
 	MemoryCategoryTasks
 	MemoryCategoryTest
+	MemoryCategoryTestLoadTestTags
 	MemoryCategoryScripting
 	MemoryCategoryScriptingRuntime
 	MemoryCategoryScriptingContext
@@ -93,6 +113,9 @@ const (
 	MemoryCategoryGamefaceMedia
 	MemoryCategoryGamefaceJSON
 	MemoryCategoryGamefaceScriptEngine
+	MemoryCategoryGamefaceScript
+	MemoryCategoryGamefaceLayout
+	MemoryCategoryVR
 )
 
 // MemoryCategoryCounter represents a memory usage counter for a specific category.
@@ -119,6 +142,10 @@ type EntityDiagnosticTimingInfo struct {
 	DurationNanos uint64
 	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
 	PercentOfTotal byte
+	// Position is the position of the entity that is being timed.
+	Position mgl32.Vec3
+	// Dimension is the name of the dimension that the entity being timed is in.
+	Dimension string
 }
 
 // Marshal encodes/decodes a EntityDiagnosticTimingInfo.
@@ -127,6 +154,8 @@ func (x *EntityDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.Entity)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+	r.Vec3(&x.Position)
+	r.String(&x.Dimension)
 }
 
 // SystemDiagnosticTimingInfo represents diagnostics for a specific system index.
@@ -147,6 +176,18 @@ func (x *SystemDiagnosticTimingInfo) Marshal(r IO) {
 	r.Uint64(&x.SystemIndex)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+}
+
+// SystemCategory maps a diagnostics category name to a system index.
+type SystemCategory struct {
+	CategoryName string
+	SystemIndex  uint64
+}
+
+// Marshal encodes/decodes a SystemCategory.
+func (x *SystemCategory) Marshal(r IO) {
+	r.String(&x.CategoryName)
+	r.Uint64(&x.SystemIndex)
 }
 
 // WhiskerScopeDataSummary represents a whisker profiler scope diagnostic summary.

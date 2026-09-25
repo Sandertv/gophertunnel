@@ -29,6 +29,14 @@ type IO interface {
 	Varuint64(x *uint64)
 	Varint32(x *int32)
 	Varuint32(x *uint32)
+	// ActorRuntimeID and ActorUniqueID mark entity identifiers in packet marshaling.
+	ActorRuntimeID(x *uint64)
+	ActorRuntimeIDVarint64(x *int64)
+	ActorRuntimeIDVaruint32(x *uint32)
+	ActorUniqueID(x *int64)
+	ActorUniqueIDInt64(x *int64)
+	ActorUniqueIDUint64(x *uint64)
+	ActorUniqueIDVaruint64(x *uint64)
 	String(x *string)
 	StringUTF(x *string)
 	ByteSlice(x *[]byte)
@@ -45,23 +53,19 @@ type IO interface {
 	UUID(x *uuid.UUID)
 	RGB(x *color.RGBA)
 	RGBA(x *color.RGBA)
-	ARGB(x *color.RGBA)
 	BEARGB(x *color.RGBA)
-	VarRGBA(x *color.RGBA)
 	EntityMetadata(x *EntityMetadata)
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
-	ItemInstanceNew(i *ItemInstance)
+	StackRequestItem(x *StackRequestItem)
 	ItemDescriptorCount(i *ItemDescriptorCount)
 	StackRequestAction(x *StackRequestAction)
 	MaterialReducer(x *MaterialReducer)
-	Recipe(x *Recipe)
 	EventType(x *Event)
 	EventOrdinal(x *Event)
 	TransactionDataType(x *InventoryTransactionData)
 	PlayerInventoryAction(x *UseItemTransactionData)
 	GameRule(x *GameRule)
-	GameRuleLegacy(x *GameRule)
 	AbilityValue(x *any)
 	Bitset(x *Bitset, size int)
 	PackSetting(x *PackSetting)
@@ -91,32 +95,11 @@ func SliceUint8Length[T any, S *[]T, A PtrMarshaler[T]](r IO, x S) {
 	SliceOfLen[T, S, A](r, uint32(count), x)
 }
 
-// SliceUint16Length reads/writes a slice of T with a uint16 prefix.
-func SliceUint16Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
-	count := uint16(len(*x))
-	r.Uint16(&count)
-	SliceOfLen[T, S, A](r, uint32(count), x)
-}
-
 // SliceUint32Length reads/writes a slice of T with a uint32 prefix.
 func SliceUint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
 	count := uint32(len(*x))
 	r.Uint32(&count)
 	SliceOfLen[T, S, A](r, count, x)
-}
-
-// SliceVarint32Length reads/writes a slice of T with a varint32 prefix.
-func SliceVarint32Length[T any, S ~*[]T, A PtrMarshaler[T]](r IO, x S) {
-	count := int32(len(*x))
-	r.Varint32(&count)
-	SliceOfLen[T, S, A](r, uint32(count), x)
-}
-
-// FuncSliceUint16Length reads/writes a slice of T using function f with a uint16 length prefix.
-func FuncSliceUint16Length[T any, S ~*[]T](r IO, x S, f func(*T)) {
-	count := uint16(len(*x))
-	r.Uint16(&count)
-	FuncSliceOfLen(r, uint32(count), x, f)
 }
 
 // FuncSliceUint32Length reads/writes a slice of T using function f with a uint32 length prefix.
@@ -140,20 +123,13 @@ func FuncIOSlice[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
 	})
 }
 
-// FuncIOSliceUint32Length reads/writes a slice of T using a function with a uint32 length prefix.
-func FuncIOSliceUint32Length[T any, S ~*[]T](r IO, x S, f func(IO, *T)) {
-	count := uint32(len(*x))
-	r.Uint32(&count)
-	FuncIOSliceOfLen(r, count, x, f)
-}
-
 const maxSliceLength = 1024
 
 // SliceOfLen reads/writes the elements of a slice of type T with length l.
 func SliceOfLen[T any, S ~*[]T, A PtrMarshaler[T]](r IO, l uint32, x S) {
 	limit, ok := r.(sliceReader)
 	if ok {
-		limit.SliceLimit(l, maxSliceLength)
+		limit.SliceLength(l, maxSliceLength)
 		*x = make([]T, l)
 	}
 
@@ -166,7 +142,7 @@ func SliceOfLen[T any, S ~*[]T, A PtrMarshaler[T]](r IO, l uint32, x S) {
 func FuncSliceOfLen[T any, S ~*[]T](r IO, l uint32, x S, f func(*T)) {
 	limit, ok := r.(sliceReader)
 	if ok {
-		limit.SliceLimit(l, maxSliceLength)
+		limit.SliceLength(l, maxSliceLength)
 		*x = make([]T, l)
 	}
 
@@ -176,7 +152,7 @@ func FuncSliceOfLen[T any, S ~*[]T](r IO, l uint32, x S, f func(*T)) {
 }
 
 type sliceReader interface {
-	SliceLimit(value uint32, max uint32)
+	SliceLength(value uint32, max uint32)
 }
 
 // FuncIOSliceOfLen reads/writes the elements of a slice of type T with length l using func f.
@@ -226,15 +202,6 @@ func OptionalFunc[T any](r IO, x *Optional[T], f func(*T)) any {
 	r.Bool(&x.set)
 	if x.set {
 		f(&x.val)
-	}
-	return x
-}
-
-// OptionalFuncIO reads/writes an Optional[T].
-func OptionalFuncIO[T any](r IO, x *Optional[T], f func(IO, *T)) any {
-	r.Bool(&x.set)
-	if x.set {
-		f(r, &x.val)
 	}
 	return x
 }
