@@ -227,6 +227,8 @@ func lookupEventOrdinal(x Event, eventOrdinal *uint32) bool {
 		*eventOrdinal = 19
 	case *ItemUsedEvent:
 		*eventOrdinal = 20
+	case *StriderRiddenInLavaInOverworldEvent, *SneakCloseToSculkSensorEvent, *CarefulRestorationEvent:
+		*eventOrdinal = 21
 	default:
 		return false
 	}
@@ -267,7 +269,7 @@ type EntityInteractEvent struct {
 
 // Marshal ...
 func (e *EntityInteractEvent) Marshal(r IO) {
-	r.Varint64(&e.InteractedEntityID)
+	r.ActorUniqueID(&e.InteractedEntityID)
 	r.Uint8(&e.InteractionType)
 	r.Varint32(&e.InteractionEntityType)
 	r.Varint32(&e.EntityVariant)
@@ -317,8 +319,8 @@ type MobKilledEvent struct {
 
 // Marshal ...
 func (m *MobKilledEvent) Marshal(r IO) {
-	r.Varint64(&m.KillerEntityUniqueID)
-	r.Varint64(&m.VictimEntityUniqueID)
+	r.ActorUniqueID(&m.KillerEntityUniqueID)
+	r.ActorUniqueID(&m.VictimEntityUniqueID)
 	r.Varint32(&m.KillerEntityType)
 	r.Varint32(&m.EntityDamageCause)
 	r.Varint32(&m.VillagerTradeTier)
@@ -374,7 +376,7 @@ type BossKilledEvent struct {
 
 // Marshal ...
 func (b *BossKilledEvent) Marshal(r IO) {
-	r.Varint64(&b.BossEntityUniqueID)
+	r.ActorUniqueID(&b.BossEntityUniqueID)
 	r.Varint32(&b.PlayerPartySize)
 	r.Varint32(&b.InteractionEntityType)
 }

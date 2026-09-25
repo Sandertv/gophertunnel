@@ -16,6 +16,8 @@ const (
 type UpdateClientOptions struct {
 	// GraphicsMode is the graphics mode that the client is using. It is one of the constants above.
 	GraphicsMode protocol.Optional[byte]
+	// FilterProfanity is if the client only uses filtered messages or not.
+	FilterProfanity protocol.Optional[bool]
 }
 
 // ID ...
@@ -25,4 +27,5 @@ func (*UpdateClientOptions) ID() uint32 {
 
 func (pk *UpdateClientOptions) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.GraphicsMode, io.Uint8)
+	protocol.OptionalFunc(io, &pk.FilterProfanity, io.Bool)
 }

@@ -7,6 +7,7 @@ import "io"
 type offsetWriter struct {
 	io.Writer
 	off int64
+	buf [8]byte
 
 	// WriteByte is a function implemented by offsetWriter if the io.Writer does not implement it itself.
 	WriteByte func(byte) error

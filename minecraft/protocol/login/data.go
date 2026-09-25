@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"net/url"
 	"regexp"
 	"strconv"
 	"strings"
@@ -139,8 +140,12 @@ type ClientData struct {
 	// GUIScale is the GUI scale of the player. It is by default 0, and is otherwise -1 or -2 for a smaller
 	// GUI scale than usual.
 	GUIScale int `json:"GuiScale"`
-	// IsEditorMode is a value to dictate if the player is in editor mode.
-	IsEditorMode bool
+	// FilterProfanity indicates if the client has profanity filtering enabled.
+	FilterProfanity bool
+	// ClientEditorConnectionIntent indicates how the client intends to connect to an editor world.
+	ClientEditorConnectionIntent int
+	// ClientIsEditorCapable specifies if the client supports editor features.
+	ClientIsEditorCapable bool
 	// LanguageCode is the language code of the player. It looks like 'en_UK'. It follows the ISO language
 	// codes, but hyphens ('-') are replaced with underscores. ('_')
 	LanguageCode string
@@ -228,20 +233,31 @@ type ClientData struct {
 	CompatibleWithClientSideChunkGen bool
 	// MaxViewDistance is the highest render distance that the client's hardware can handle.
 	MaxViewDistance int
-	// MemoryTier is the tier of memory that the client's hardware has. This is a number between 0 and 5. The
+	// MemoryTier is the tier of memory that the client's hardware has. This is a number between 0 and 4. The
 	// full calculation of this tier is currently unknown but the following is a rough estimate from a
 	// developer at Mojang:
-	// 0 - Undetermined
-	// 1 - Super Low, less than ~1.5GB of memory
-	// 2 - Low, less than ~2GB of memory
-	// 3 - Mid, less than ~4GB of memory
-	// 4 - High, less than ~8GB of memory
-	// 5 - Super High, more than ~8GB of memory
+	// 0 - Super Low, less than ~1.5GB of memory
+	// 1 - Low, less than ~2GB of memory
+	// 2 - Mid, less than ~4GB of memory
+	// 3 - High, less than ~8GB of memory
+	// 4 - Super High, more than ~8GB of memory
 	MemoryTier int
 	// PlatformType is the type of platform the client is running.
 	PlatformType int
 	// GraphicsMode is the graphics mode the client is running.
 	GraphicsMode int
+	// PartyID is the identifier of the client's party, or empty if they are not in a party.
+	PartyID string `json:"PartyId"`
+	// PartyLeader is if the client is the leader of the party they are in.
+	PartyLeader bool `json:"IsPartyLeader"`
+	// ProfileHash is a client-generated hash of the equipped persona skin.
+	ProfileHash string `json:"ProfileHash"`
+	// Nonce is a randomly generated, hex-encoded string produced by the host. For peer-to-peer
+	// worlds, a client that wishes to connect must first join the host's Xbox Live multiplayer session
+	// and wait for the host to assign it a nonce, then include that same value here.
+	// This prevents unauthorized clients from connecting using only the host's connection details,
+	// such as its Player Messaging ID (PMID) or IP address.
+	Nonce string `json:",omitempty"`
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
@@ -339,10 +355,22 @@ func (data ClientData) Validate() error {
 	if _, err := strconv.ParseUint(data.PlatformOnlineID, 10, 64); err != nil && len(data.PlatformOnlineID) != 0 {
 		return fmt.Errorf("PlatformOnlineID must be parseable as an int64 or empty, but got %v", data.PlatformOnlineID)
 	}
-	if _, err := uuid.Parse(data.SelfSignedID); err != nil {
+	if _, err := uuid.Parse(data.SelfSignedID); data.SelfSignedID != "" && err != nil {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
 	}
-	if _, err := net.ResolveUDPAddr("udp", data.ServerAddress); err != nil {
+	if strings.Contains(data.ServerAddress, "://") {
+		// The server address for NetherNet connections has the following format:
+		// https://<host>:<port>:<port>
+		ind := strings.LastIndex(data.ServerAddress, ":")
+		u, err := url.Parse(data.ServerAddress[:ind])
+		if err != nil {
+			return fmt.Errorf("ServerAddress must be a URL, but got %v", data.ServerAddress)
+		}
+		if u.Host == "" || u.Port() == "" || u.Port() != data.ServerAddress[ind+1:] ||
+			(u.Scheme != "https" && u.Scheme != "http") {
+			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
+		}
+	} else if _, err := net.ResolveUDPAddr("udp", data.ServerAddress); err != nil {
 		return fmt.Errorf("ServerAddress must be resolveable as a UDP address, but got %v", data.ServerAddress)
 	}
 	if err := base64DecLength(data.SkinData, data.SkinImageHeight*data.SkinImageWidth*4); err != nil {

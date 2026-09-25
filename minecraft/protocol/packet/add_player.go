@@ -46,7 +46,7 @@ type AddPlayer struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the player looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]any
+	EntityMetadata protocol.EntityMetadata
 	// EntityProperties is a list of properties that the entity inhibits. These properties define and alter specific
 	// attributes of the entity.
 	EntityProperties protocol.EntityProperties
@@ -72,7 +72,7 @@ func (*AddPlayer) ID() uint32 {
 func (pk *AddPlayer) Marshal(io protocol.IO) {
 	io.UUID(&pk.UUID)
 	io.String(&pk.Username)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.String(&pk.PlatformChatID)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Velocity)

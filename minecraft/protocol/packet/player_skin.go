@@ -31,5 +31,4 @@ func (pk *PlayerSkin) Marshal(io protocol.IO) {
 	protocol.Single(io, &pk.Skin)
 	io.String(&pk.NewSkinName)
 	io.String(&pk.OldSkinName)
-	io.Bool(&pk.Skin.Trusted)
 }

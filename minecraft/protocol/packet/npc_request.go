@@ -38,7 +38,7 @@ func (*NPCRequest) ID() uint32 {
 }
 
 func (pk *NPCRequest) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint8(&pk.RequestType)
 	io.String(&pk.CommandString)
 	io.Uint8(&pk.ActionType)

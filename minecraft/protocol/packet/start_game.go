@@ -13,6 +13,14 @@ const (
 )
 
 const (
+	XBLBroadcastModeNoMultiPlay = iota
+	XBLBroadcastModeInviteOnly
+	XBLBroadcastModeFriendsOnly
+	XBLBroadcastModeFriendsOfFriends
+	XBLBroadcastModePublic
+)
+
+const (
 	ChatRestrictionLevelNone     = 0
 	ChatRestrictionLevelDropped  = 1
 	ChatRestrictionLevelDisabled = 2
@@ -90,13 +98,18 @@ type StartGame struct {
 	// ExportedFromEditor is a value to dictate if the world was exported from editor mode. The functionality of this
 	// field is currently unknown.
 	ExportedFromEditor bool
+	// ServerEditorConnectionPolicy controls the editor connection policy.
+	ServerEditorConnectionPolicy int32
+	// AllowAnonymousBlockDropsInEditorWorlds specifies if anonymous block
+	// drops are allowed in hybrid editor worlds.
+	AllowAnonymousBlockDropsInEditorWorlds bool
 	// DayCycleLockTime is the time at which the day cycle was locked if the day cycle is disabled using the
 	// respective game rule. The client will maintain this time as long as the day cycle is disabled.
 	DayCycleLockTime int32
 	// EducationEditionOffer is some Minecraft: Education Edition field that specifies what 'region' the world
 	// was from, with 0 being None, 1 being RestOfWorld, and 2 being China.
 	// The actual use of this field is unknown.
-	EducationEditionOffer int32
+	EducationEditionOffer uint32
 	// EducationFeaturesEnabled specifies if the world has education edition features enabled, such as the
 	// blocks or entities specific to education edition.
 	EducationFeaturesEnabled bool
@@ -116,7 +129,10 @@ type StartGame struct {
 	MultiPlayerGame bool
 	// LANBroadcastEnabled specifies if LAN broadcast was intended to be enabled for the world.
 	LANBroadcastEnabled bool
-	// XBLBroadcastMode is the mode used to broadcast the joined game across XBOX Live.
+	// XBLBroadcastMode is the mode used to broadcast the joined game across Xbox Live.
+	// When set to 0, the 'Invite' button in the pause screen is grayed out and players
+	// cannot invite their friends to the Xbox Live multiplayer session they're currently in.
+	// It only applies to worlds and has no effect on external servers.
 	XBLBroadcastMode int32
 	// PlatformBroadcastMode is the mode used to broadcast the joined game across the platform.
 	PlatformBroadcastMode int32
@@ -146,7 +162,7 @@ type StartGame struct {
 	StartWithMapEnabled bool
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions byte
 	// ServerChunkTickRadius is the radius around the player in which chunks are ticked. Most servers set this
 	// value to a fixed number, as it does not necessarily affect anything client-side.
 	ServerChunkTickRadius int32
@@ -189,9 +205,9 @@ type StartGame struct {
 	NewNether bool
 	// EducationSharedResourceURI is an education edition feature that transmits education resource settings to clients.
 	EducationSharedResourceURI protocol.EducationSharedResourceURI
-	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled. For servers this
-	// should always be set to false.
-	ForceExperimentalGameplay bool
+	// ForceExperimentalGameplay specifies if experimental gameplay should be force enabled/disabled. For servers this
+	// should always be empty.
+	ForceExperimentalGameplay protocol.Optional[bool]
 	// LevelID is a base64 encoded world ID that is used to identify the world.
 	LevelID string
 	// WorldName is the name of the world that the player is joining. Note that this field shows up above the
@@ -263,8 +279,8 @@ func (*StartGame) ID() uint32 {
 }
 
 func (pk *StartGame) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Varint32(&pk.PlayerGameMode)
 	io.Vec3(&pk.PlayerPosition)
 	io.Float32(&pk.Pitch)
@@ -277,13 +293,13 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.WorldGameMode)
 	io.Bool(&pk.Hardcore)
 	io.Varint32(&pk.Difficulty)
-	io.UBlockPos(&pk.WorldSpawn)
+	io.BlockPos(&pk.WorldSpawn)
 	io.Bool(&pk.AchievementsDisabled)
 	io.Varint32(&pk.EditorWorldType)
 	io.Bool(&pk.CreatedInEditor)
 	io.Bool(&pk.ExportedFromEditor)
 	io.Varint32(&pk.DayCycleLockTime)
-	io.Varint32(&pk.EducationEditionOffer)
+	io.Varuint32(&pk.EducationEditionOffer)
 	io.Bool(&pk.EducationFeaturesEnabled)
 	io.String(&pk.EducationProductID)
 	io.Float32(&pk.RainLevel)
@@ -295,12 +311,12 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.PlatformBroadcastMode)
 	io.Bool(&pk.CommandsEnabled)
 	io.Bool(&pk.TexturePackRequired)
-	protocol.FuncSlice(io, &pk.GameRules, io.GameRuleLegacy)
+	protocol.FuncSlice(io, &pk.GameRules, io.GameRule)
 	protocol.SliceUint32Length(io, &pk.Experiments)
 	io.Bool(&pk.ExperimentsPreviouslyToggled)
 	io.Bool(&pk.BonusChestEnabled)
 	io.Bool(&pk.StartWithMapEnabled)
-	io.Varint32(&pk.PlayerPermissions)
+	io.Uint8(&pk.PlayerPermissions)
 	io.Int32(&pk.ServerChunkTickRadius)
 	io.Bool(&pk.HasLockedBehaviourPack)
 	io.Bool(&pk.HasLockedTexturePack)
@@ -317,9 +333,11 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Int32(&pk.LimitedWorldDepth)
 	io.Bool(&pk.NewNether)
 	protocol.Single(io, &pk.EducationSharedResourceURI)
-	io.Bool(&pk.ForceExperimentalGameplay)
+	protocol.OptionalFunc(io, &pk.ForceExperimentalGameplay, io.Bool)
 	io.Uint8(&pk.ChatRestrictionLevel)
 	io.Bool(&pk.DisablePlayerInteractions)
+	io.Varint32(&pk.ServerEditorConnectionPolicy)
+	io.Bool(&pk.AllowAnonymousBlockDropsInEditorWorlds)
 	io.String(&pk.LevelID)
 	io.String(&pk.WorldName)
 	io.String(&pk.TemplateContentIdentity)

@@ -26,6 +26,6 @@ func (*ShowCredits) ID() uint32 {
 }
 
 func (pk *ShowCredits) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.PlayerRuntimeID)
+	io.ActorRuntimeID(&pk.PlayerRuntimeID)
 	io.Varint32(&pk.StatusType)
 }

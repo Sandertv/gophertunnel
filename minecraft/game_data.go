@@ -69,12 +69,20 @@ type GameData struct {
 	WorldGameMode int32
 	// Hardcore is if the world is in hardcore mode. In hardcore mode, the player cannot respawn after dying.
 	Hardcore bool
+	// XBLBroadcastMode is the mode used to broadcast the joined game across Xbox Live.
+	// When set to 0, the 'Invite' button in the pause screen is grayed out and players
+	// cannot invite their friends to the Xbox Live multiplayer session they're currently in.
+	// It only applies to worlds and has no effect on external servers.
+	XBLBroadcastMode int32
 	// GameRules defines game rules currently active with their respective values. The value of these game
 	// rules may be either 'bool', 'int32' or 'float32'. Some game rules are server side only, and don't
 	// necessarily need to be sent to the client.
 	GameRules []protocol.GameRule
 	// Time is the total time that has elapsed since the start of the world.
 	Time int64
+	// DayCycleLockTime is the time at which the day cycle was locked when the doDaylightCycle game rule is
+	// disabled.
+	DayCycleLockTime int32
 	// ServerBlockStateChecksum is a checksum to ensure block states between the server and client match.
 	// This can simply be left empty, and the client will avoid trying to verify it.
 	ServerBlockStateChecksum uint64
@@ -95,7 +103,7 @@ type GameData struct {
 	Experiments []protocol.ExperimentData
 	// PlayerPermissions is the permission level of the player. It is a value from 0-3, with 0 being visitor,
 	// 1 being member, 2 being operator and 3 being custom.
-	PlayerPermissions int32
+	PlayerPermissions byte
 	// ChunkRadius is the initial chunk radius that the connection gets. This can be changed later on using a
 	// packet.ChunkRadiusUpdated.
 	ChunkRadius int32
@@ -115,4 +123,8 @@ type GameData struct {
 	// such as gophertunnel:example or gophertunnel:custom_property, which can be used by resource packs
 	// to change skins, models, or other player behaviors at runtime.
 	PropertyData map[string]any
+
+	// Dimensions is a list of dimension definitions sent by the DimensionData packet. This can include overriding
+	// the height of vanilla dimensions or registering new dimensions.
+	Dimensions []protocol.DimensionDefinition
 }

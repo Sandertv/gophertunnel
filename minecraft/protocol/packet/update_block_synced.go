@@ -41,10 +41,10 @@ func (*UpdateBlockSynced) ID() uint32 {
 }
 
 func (pk *UpdateBlockSynced) Marshal(io protocol.IO) {
-	io.UBlockPos(&pk.Position)
+	io.BlockPos(&pk.Position)
 	io.Varuint32(&pk.NewBlockRuntimeID)
 	io.Varuint32(&pk.Flags)
 	io.Varuint32(&pk.Layer)
-	io.Varuint64(&pk.EntityUniqueID)
+	io.ActorUniqueIDVaruint64(&pk.EntityUniqueID)
 	io.Varuint64(&pk.TransitionType)
 }

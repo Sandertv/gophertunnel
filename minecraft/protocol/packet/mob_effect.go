@@ -59,8 +59,8 @@ type MobEffect struct {
 	// Particles specifies if viewers of the entity that gets the effect shows particles around it. If set to
 	// false, no particles are emitted around the entity.
 	Particles bool
-	// Duration is the duration of the effect in seconds. After the duration has elapsed, the effect will be
-	// removed automatically client-side.
+	// Duration is the duration of the effect in ticks (20 per second). After the duration has elapsed, the
+	// effect will be removed automatically client-side. A negative duration means the effect never expires.
 	Duration int32
 	// Tick is the server tick at which the packet was sent. It is used in relation to CorrectPlayerMovePrediction.
 	Tick uint64
@@ -74,7 +74,7 @@ func (*MobEffect) ID() uint32 {
 }
 
 func (pk *MobEffect) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint8(&pk.Operation)
 	io.Varint32(&pk.EffectType)
 	io.Varint32(&pk.Amplifier)

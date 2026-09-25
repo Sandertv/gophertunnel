@@ -13,7 +13,7 @@ type SetActorData struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]any
+	EntityMetadata protocol.EntityMetadata
 	// EntityProperties is a list of properties that the entity inhibits. These properties define and alter specific
 	// attributes of the entity.
 	EntityProperties protocol.EntityProperties
@@ -27,7 +27,7 @@ func (*SetActorData) ID() uint32 {
 }
 
 func (pk *SetActorData) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.EntityMetadata(&pk.EntityMetadata)
 	protocol.Single(io, &pk.EntityProperties)
 	io.Varuint64(&pk.Tick)

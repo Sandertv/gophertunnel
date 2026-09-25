@@ -26,9 +26,9 @@ type InventoryAction struct {
 	SourceType uint32
 	// WindowID is the ID of the window that the client has opened. The window ID is not set if the SourceType
 	// is InventoryActionSourceWorld.
-	WindowID int32
+	WindowID Optional[int8]
 	// SourceFlags is a combination of flags that is only set if the SourceType is InventoryActionSourceWorld.
-	SourceFlags uint32
+	SourceFlags Optional[uint32]
 	// InventorySlot is the slot in which the action took place. Each action only describes the change of item
 	// in a single slot.
 	InventorySlot uint32
@@ -43,12 +43,8 @@ type InventoryAction struct {
 // Marshal encodes/decodes an InventoryAction.
 func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
-	switch x.SourceType {
-	case InventoryActionSourceContainer, InventoryActionSourceTODO:
-		r.Varint32(&x.WindowID)
-	case InventoryActionSourceWorld:
-		r.Varuint32(&x.SourceFlags)
-	}
+	OptionalFunc(r, &x.WindowID, r.Int8)
+	OptionalFunc(r, &x.SourceFlags, r.Varuint32)
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)
 	r.ItemInstance(&x.NewItem)
@@ -132,6 +128,16 @@ const (
 	ClientPredictionSuccess
 )
 
+const (
+	ClientCooldownStateOff = iota
+	ClientCooldownStateOn
+)
+
+const (
+	HandSlotMainHand = iota
+	HandSlotOffHand
+)
+
 // UseItemTransactionData represents an inventory transaction data object sent when the client uses an item on
 // a block.
 type UseItemTransactionData struct {
@@ -145,7 +151,7 @@ type UseItemTransactionData struct {
 	// LegacySetItemSlots are only present if the LegacyRequestID is non-zero. These item slots inform the
 	// server of the slots that were changed during the inventory transaction, and the server should send
 	// back an ItemStackResponse packet with these slots present in it. (Or false with no slots, if rejected.)
-	LegacySetItemSlots []LegacySetItemSlot
+	LegacySetItemSlots Optional[[]LegacySetItemSlot]
 	// Actions is a list of actions that took place, that form the inventory transaction together. Each of
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
@@ -168,6 +174,9 @@ type UseItemTransactionData struct {
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the block. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
+	// Hand is the hand that the player used to interact with the block. It is one of the HandSlot constants
+	// above.
+	Hand byte
 	// HeldItem is the item that was held to interact with the block. The server should check if this item
 	// is actually present in the HotBarSlot.
 	HeldItem ItemInstance
@@ -182,7 +191,10 @@ type UseItemTransactionData struct {
 	BlockRuntimeID uint32
 	// ClientPrediction is the client's prediction on the output of the transaction. It is one of the client
 	// prediction found in the constants above.
-	ClientPrediction uint32
+	ClientPrediction uint8
+	// ClientCooldownState is the client's cooldown state for the item used. It is one of the
+	// ClientCooldownState constants above.
+	ClientCooldownState byte
 }
 
 const (
@@ -198,7 +210,7 @@ type UseItemOnEntityTransactionData struct {
 	TargetEntityRuntimeID uint64
 	// ActionType is the type of the UseItemOnEntity inventory transaction. It is one of the action types
 	// found in the constants above, and specifies the way the player interacted with the entity.
-	ActionType uint32
+	ActionType int32
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the entity. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
@@ -224,7 +236,7 @@ type ReleaseItemTransactionData struct {
 	// in the constants above, and specifies the way the item was released.
 	// As of 1.13, the ActionType is always 0. This field can be ignored, because releasing food (by consuming
 	// it) or releasing a bow (to shoot an arrow) is essentially the same.
-	ActionType uint32
+	ActionType int32
 	// HotBarSlot is the hot bar slot that the player was holding while releasing the item. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
@@ -238,22 +250,24 @@ type ReleaseItemTransactionData struct {
 
 // Marshal ...
 func (data *UseItemTransactionData) Marshal(r IO) {
-	r.Varuint32(&data.ActionType)
-	r.Varuint32(&data.TriggerType)
-	r.UBlockPos(&data.BlockPosition)
-	r.Varint32(&data.BlockFace)
+	IntegerFunc(&data.ActionType, r.Varint32)
+	IntegerFunc(&data.TriggerType, r.Uint8)
+	r.BlockPos(&data.BlockPosition)
+	IntegerFunc(&data.BlockFace, r.Uint8)
 	r.Varint32(&data.HotBarSlot)
+	r.Uint8(&data.Hand)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
 	r.Varuint32(&data.BlockRuntimeID)
-	r.Varuint32(&data.ClientPrediction)
+	r.Uint8(&data.ClientPrediction)
+	r.Uint8(&data.ClientCooldownState)
 }
 
 // Marshal ...
 func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
-	r.Varuint64(&data.TargetEntityRuntimeID)
-	r.Varuint32(&data.ActionType)
+	r.ActorRuntimeID(&data.TargetEntityRuntimeID)
+	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
@@ -262,7 +276,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 
 // Marshal ...
 func (data *ReleaseItemTransactionData) Marshal(r IO) {
-	r.Varuint32(&data.ActionType)
+	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)

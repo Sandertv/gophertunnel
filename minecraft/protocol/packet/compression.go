@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"sync"
 
 	"github.com/klauspost/compress/flate"
-	"github.com/klauspost/compress/snappy"
+	"github.com/klauspost/compress/s2"
 	"github.com/sandertv/gophertunnel/minecraft/internal"
 )
 
@@ -20,6 +21,11 @@ type Compression interface {
 	Compress(decompressed []byte) ([]byte, error)
 	// Decompress decompresses the given data and returns the decompressed data.
 	Decompress(compressed []byte, limit int) ([]byte, error)
+}
+
+type appendCompression interface {
+	CompressAppend(dst, decompressed []byte) ([]byte, error)
+	MaxCompressedLen(decompressedLen int) int
 }
 
 var (
@@ -157,11 +163,27 @@ func (snappyCompression) EncodeCompression() uint16 {
 
 // Compress ...
 func (snappyCompression) Compress(decompressed []byte) ([]byte, error) {
-	// Because Snappy allocates a slice only once, it is less important to have
-	// a dst slice pre-allocated. With flateCompression this is more important,
-	// because flate does a lot of smaller allocations which causes a
-	// considerable slowdown.
-	return snappy.Encode(nil, decompressed), nil
+	// Use the fast Snappy-compatible S2 encoder. The snappy.Encode wrapper uses
+	// EncodeSnappyBetter, which trades more CPU and retained scratch memory for a
+	// smaller output size.
+	return s2.EncodeSnappy(nil, decompressed), nil
+}
+
+func (snappyCompression) CompressAppend(dst, decompressed []byte) ([]byte, error) {
+	// Append into the caller-provided output buffer so Encoder can keep the
+	// batch header and compression ID in the same allocation as the payload.
+	n := s2.MaxEncodedLen(len(decompressed))
+	if n < 0 {
+		panic(s2.ErrTooLarge)
+	}
+	offset := len(dst)
+	dst = slices.Grow(dst, n)
+	encoded := s2.EncodeSnappy(dst[offset:offset:cap(dst)], decompressed)
+	return dst[:offset+len(encoded)], nil
+}
+
+func (snappyCompression) MaxCompressedLen(decompressedLen int) int {
+	return s2.MaxEncodedLen(decompressedLen)
 }
 
 // Decompress ...
@@ -169,14 +191,14 @@ func (snappyCompression) Decompress(compressed []byte, limit int) ([]byte, error
 	// Snappy writes a decoded data length prefix, so it can allocate the
 	// perfect size right away and only needs to allocate once. No need to pool
 	// byte slices here either.
-	decodedLen, err := snappy.DecodedLen(compressed)
+	decodedLen, err := s2.DecodedLen(compressed)
 	if err != nil {
 		return nil, fmt.Errorf("snappy decoded length: %w", err)
 	}
 	if decodedLen > limit {
 		return nil, fmt.Errorf("snappy decoded size %d exceeds limit %d", decodedLen, limit)
 	}
-	decompressed, err := snappy.Decode(nil, compressed)
+	decompressed, err := s2.Decode(nil, compressed)
 	if err != nil {
 		return nil, fmt.Errorf("decompress snappy: %w", err)
 	}

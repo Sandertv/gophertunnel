@@ -215,6 +215,10 @@ type BiomeChunkGeneration struct {
 	ReplacementsData Optional[[]BiomeReplacementData]
 	// VillageType is the optional village type for the biome's chunk generation.
 	VillageType Optional[uint8]
+	// SurfaceBuilder is optional information for the biome's surface builder.
+	SurfaceBuilder Optional[BiomeSurfaceBuilder]
+	// SubsurfaceBuilder is optional information for the biome's subsurface builder.
+	SubsurfaceBuilder Optional[BiomeSurfaceBuilder]
 }
 
 func (x *BiomeChunkGeneration) Marshal(r IO) {
@@ -226,13 +230,6 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 	OptionalFunc(r, &x.SurfaceMaterialAdjustments, func(s *[]BiomeElementData) {
 		Slice(r, s)
 	})
-	OptionalMarshaler(r, &x.SurfaceMaterials)
-	r.Bool(&x.HasDefaultOverworldSurface)
-	r.Bool(&x.HasSwampSurface)
-	r.Bool(&x.HasFrozenOceanSurface)
-	r.Bool(&x.HasEndSurface)
-	OptionalMarshaler(r, &x.MesaSurface)
-	OptionalMarshaler(r, &x.CappedSurface)
 	OptionalMarshaler(r, &x.OverworldRules)
 	OptionalMarshaler(r, &x.MultiNoiseRules)
 	OptionalFunc(r, &x.LegacyRules, func(s *[]BiomeConditionalTransformation) {
@@ -242,6 +239,8 @@ func (x *BiomeChunkGeneration) Marshal(r IO) {
 		Slice(r, s)
 	})
 	OptionalFunc(r, &x.VillageType, r.Uint8)
+	OptionalMarshaler(r, &x.SurfaceBuilder)
+	OptionalMarshaler(r, &x.SubsurfaceBuilder)
 }
 
 // BiomeClimate represents the climate of a biome, mainly for ambience but also defines certain behaviours.
@@ -431,6 +430,105 @@ func (x *BiomeSurfaceMaterial) Marshal(r IO) {
 	r.Int32(&x.FoundationBlock)
 	r.Int32(&x.SeaBlock)
 	r.Int32(&x.SeaFloorDepth)
+}
+
+// BiomeSurfaceBuilder specifies the materials and special surface rules to use for a biome surface.
+type BiomeSurfaceBuilder struct {
+	// SurfaceMaterials is a set of materials to use for the surface layers of the biome.
+	SurfaceMaterials Optional[BiomeSurfaceMaterial]
+	// HasDefaultOverworldSurface is true if the biome has a default overworld surface.
+	HasDefaultOverworldSurface bool
+	// HasSwampSurface is true if the biome has a swamp surface.
+	HasSwampSurface bool
+	// HasFrozenOceanSurface is true if the biome has a frozen ocean surface.
+	HasFrozenOceanSurface bool
+	// HasEndSurface is true if the biome has an end surface.
+	HasEndSurface bool
+	// MesaSurface is optional information to specify the biome's mesa surface.
+	MesaSurface Optional[BiomeMesaSurface]
+	// CappedSurface is optional information to specify the biome's capped surface, i.e. in the Nether.
+	CappedSurface Optional[BiomeCappedSurface]
+	// NoiseGradientSurface is optional information to specify noise-gradient surface data.
+	NoiseGradientSurface Optional[BiomeNoiseGradientSurface]
+}
+
+func (x *BiomeSurfaceBuilder) Marshal(r IO) {
+	OptionalMarshaler(r, &x.SurfaceMaterials)
+	r.Bool(&x.HasDefaultOverworldSurface)
+	r.Bool(&x.HasSwampSurface)
+	r.Bool(&x.HasFrozenOceanSurface)
+	r.Bool(&x.HasEndSurface)
+	OptionalMarshaler(r, &x.MesaSurface)
+	OptionalMarshaler(r, &x.CappedSurface)
+	OptionalMarshaler(r, &x.NoiseGradientSurface)
+}
+
+// BiomeNoiseGradientSurface specifies noise-gradient surface block data for a biome.
+type BiomeNoiseGradientSurface struct {
+	// NonReplaceableBlocks is a list of block runtime IDs that may not be replaced.
+	NonReplaceableBlocks []uint32
+	// GradientBlocks is a list of noise block specifiers used by the gradient.
+	GradientBlocks []NoiseBlockSpecifier
+	// Noise is the noise descriptor used by the gradient.
+	Noise NoiseDescriptor
+}
+
+func (x *BiomeNoiseGradientSurface) Marshal(r IO) {
+	FuncSlice(r, &x.NonReplaceableBlocks, r.Uint32)
+	Slice(r, &x.GradientBlocks)
+	Single(r, &x.Noise)
+}
+
+// FloatRange is an inclusive minimum/maximum pair of float32 values.
+type FloatRange struct {
+	// Min is the minimum value of the range.
+	Min float32
+	// Max is the maximum value of the range.
+	Max float32
+}
+
+// Marshal encodes/decodes a FloatRange.
+func (x *FloatRange) Marshal(r IO) {
+	r.Float32(&x.Min)
+	r.Float32(&x.Max)
+}
+
+// NoiseBlockSpecifier specifies a block placed by the gradient noise based on a threshold and
+// range.
+type NoiseBlockSpecifier struct {
+	// Noise is the noise name.
+	Noise string
+	// Threshold is the noise threshold above which the block is placed.
+	Threshold float32
+	// Range is the noise range within which the block is placed.
+	Range FloatRange
+	// Block is the block runtime ID placed by this specifier.
+	Block uint32
+}
+
+// Marshal encodes/decodes a NoiseBlockSpecifier.
+func (x *NoiseBlockSpecifier) Marshal(r IO) {
+	r.String(&x.Noise)
+	r.Float32(&x.Threshold)
+	Single(r, &x.Range)
+	r.Uint32(&x.Block)
+}
+
+// NoiseDescriptor describes the gradient noise used by a BiomeNoiseGradientSurface.
+type NoiseDescriptor struct {
+	// Name is the string used to initialise the noise.
+	Name string
+	// FirstOctave is the first octave used by the noise.
+	FirstOctave int32
+	// Amplitudes is a list of amplitude values used by the noise. It must contain between 1 and 100 entries.
+	Amplitudes []float32
+}
+
+// Marshal encodes/decodes a NoiseDescriptor.
+func (x *NoiseDescriptor) Marshal(r IO) {
+	r.String(&x.Name)
+	r.Int32(&x.FirstOctave)
+	FuncSlice(r, &x.Amplitudes, r.Float32)
 }
 
 // BiomeMesaSurface specifies the materials to use for the mesa biome.

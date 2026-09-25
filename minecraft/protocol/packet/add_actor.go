@@ -42,7 +42,7 @@ type AddActor struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]any
+	EntityMetadata protocol.EntityMetadata
 	// EntityProperties is a list of properties that the entity inhibits. These properties define and alter specific
 	// attributes of the entity.
 	EntityProperties protocol.EntityProperties
@@ -58,8 +58,8 @@ func (*AddActor) ID() uint32 {
 }
 
 func (pk *AddActor) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.String(&pk.EntityType)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Velocity)

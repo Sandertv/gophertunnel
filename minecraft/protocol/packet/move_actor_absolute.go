@@ -8,6 +8,8 @@ import (
 const (
 	MoveFlagOnGround = 1 << iota
 	MoveFlagTeleport
+	MoveFlagForceMove
+	MoveFlagForceCompletion
 )
 
 // MoveActorAbsolute is sent by the server to move an entity to an absolute position. It is typically used
@@ -33,7 +35,7 @@ func (*MoveActorAbsolute) ID() uint32 {
 }
 
 func (pk *MoveActorAbsolute) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.Uint8(&pk.Flags)
 	io.Vec3(&pk.Position)
 	io.ByteFloat(&pk.Rotation[0])

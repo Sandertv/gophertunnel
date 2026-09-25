@@ -27,7 +27,7 @@ type AddItemActor struct {
 	// EntityMetadata is a map of entity metadata, which includes flags and data properties that alter in
 	// particular the way the entity looks. Flags include ones such as 'on fire' and 'sprinting'.
 	// The metadata values are indexed by their property key.
-	EntityMetadata map[uint32]any
+	EntityMetadata protocol.EntityMetadata
 	// FromFishing specifies if the item was obtained by fishing it up using a fishing rod. It is not clear
 	// why the client needs to know this.
 	FromFishing bool
@@ -39,8 +39,8 @@ func (*AddItemActor) ID() uint32 {
 }
 
 func (pk *AddItemActor) Marshal(io protocol.IO) {
-	io.Varint64(&pk.EntityUniqueID)
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorUniqueID(&pk.EntityUniqueID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 	io.ItemInstance(&pk.Item)
 	io.Vec3(&pk.Position)
 	io.Vec3(&pk.Velocity)

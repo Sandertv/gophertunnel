@@ -13,6 +13,10 @@ const (
 	ShapeDataBox
 	ShapeDataLine
 	ShapeDataSphere
+	ShapeDataCylinder
+	ShapeDataPyramid
+	ShapeDataEllipsoid
+	ShapeDataCone
 )
 
 // lookupShapeData looks up an ShapeData matching the shape data type passed.
@@ -31,6 +35,14 @@ func lookupShapeData(shapeDataType uint32, x *ShapeData) bool {
 		*x = &LineShape{}
 	case ShapeDataSphere:
 		*x = &SphereShape{}
+	case ShapeDataCylinder:
+		*x = &CylinderShape{}
+	case ShapeDataPyramid:
+		*x = &PyramidShape{}
+	case ShapeDataEllipsoid:
+		*x = &EllipsoidShape{}
+	case ShapeDataCone:
+		*x = &ConeShape{}
 	default:
 		return false
 	}
@@ -52,6 +64,14 @@ func lookupShapeDataType(x ShapeData, shapeDataType *uint32) bool {
 		*shapeDataType = ShapeDataLine
 	case *SphereShape:
 		*shapeDataType = ShapeDataSphere
+	case *CylinderShape:
+		*shapeDataType = ShapeDataCylinder
+	case *PyramidShape:
+		*shapeDataType = ShapeDataPyramid
+	case *EllipsoidShape:
+		*shapeDataType = ShapeDataEllipsoid
+	case *ConeShape:
+		*shapeDataType = ShapeDataCone
 	default:
 		return false
 	}
@@ -87,11 +107,33 @@ func (shape *LineShape) Marshal(io IO) {
 type TextShape struct {
 	// Text is the text of the debug text shape.
 	Text string
+	// UseRotation is if the text should use the provided rotation, meaning it will be static and does not follow the
+	// camera. Use false for default behaviour.
+	UseRotation bool
+	// BackgroundColour is the RGBA colour to use for the text background. This is a translucent black colour by default.
+	BackgroundColour Optional[color.RGBA]
+	// LineGapHeight is the gap to leave between each line of multiline text. If not set, the client uses its
+	// default gap.
+	LineGapHeight float32
+	// DepthTest is whether the text should show through walls. Use true for default behaviour.
+	DepthTest bool
+	// ShowBackface is if the background should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackface bool
+	// ShowBackfaceText is if the text should render on the back side of the shape. This only has a visible effect when
+	// UseRotation is true since you cannot see the back side of the text otherwise. Use true for default behaviour.
+	ShowBackfaceText bool
 }
 
 // Marshal ...
 func (shape *TextShape) Marshal(io IO) {
 	io.String(&shape.Text)
+	io.Bool(&shape.UseRotation)
+	OptionalFunc(io, &shape.BackgroundColour, io.BEARGB)
+	io.Float32(&shape.LineGapHeight)
+	io.Bool(&shape.DepthTest)
+	io.Bool(&shape.ShowBackface)
+	io.Bool(&shape.ShowBackfaceText)
 }
 
 // BoxShape represents a box debug shape.
@@ -136,24 +178,97 @@ func (shape *ArrowShape) Marshal(io IO) {
 	OptionalFunc(io, &shape.Segments, io.Uint8)
 }
 
+// CylinderShape represents a cylinder debug shape.
+type CylinderShape struct {
+	// RadiusX is the radius of the cylinder along the X axis.
+	RadiusX mgl32.Vec2
+	// RadiusZ is the radius of the cylinder along the Z axis.
+	RadiusZ mgl32.Vec2
+	// Height is the height of the cylinder.
+	Height float32
+	// NumSegments is the number of segments used for the cylinder.
+	NumSegments byte
+}
+
+// Marshal ...
+func (shape *CylinderShape) Marshal(io IO) {
+	io.Vec2(&shape.RadiusX)
+	io.Vec2(&shape.RadiusZ)
+	io.Float32(&shape.Height)
+	io.Uint8(&shape.NumSegments)
+}
+
+// PyramidShape represents a pyramid debug shape.
+type PyramidShape struct {
+	// Width is the width along the X axis of the pyramid base.
+	Width float32
+	// Depth is the optional depth along the Z axis of the pyramid base. It defaults to Width if unset.
+	Depth Optional[float32]
+	// Height is the height of the pyramid.
+	Height float32
+}
+
+// Marshal ...
+func (shape *PyramidShape) Marshal(io IO) {
+	io.Float32(&shape.Width)
+	OptionalFunc(io, &shape.Depth, io.Float32)
+	io.Float32(&shape.Height)
+}
+
+// EllipsoidShape represents an ellipsoid debug shape.
+type EllipsoidShape struct {
+	// Radii are the radii of the ellipsoid along the X, Y and Z axes.
+	Radii mgl32.Vec3
+	// SegmentsPerAxis is the number of segments used per axis for the ellipsoid.
+	SegmentsPerAxis byte
+}
+
+// Marshal ...
+func (shape *EllipsoidShape) Marshal(io IO) {
+	io.Vec3(&shape.Radii)
+	io.Uint8(&shape.SegmentsPerAxis)
+}
+
+// ConeShape represents a cone debug shape.
+type ConeShape struct {
+	// Radii are the radii along the X/Z axes of the cone base.
+	Radii mgl32.Vec2
+	// Height is the height of the cone.
+	Height float32
+	// NumSegments is the number of segments used for the cone.
+	NumSegments byte
+}
+
+// Marshal ...
+func (shape *ConeShape) Marshal(io IO) {
+	io.Vec2(&shape.Radii)
+	io.Float32(&shape.Height)
+	io.Uint8(&shape.NumSegments)
+}
+
 const (
-	DebugDrawerShapeLine = iota
-	DebugDrawerShapeBox
-	DebugDrawerShapeSphere
-	DebugDrawerShapeCircle
-	DebugDrawerShapeText
-	DebugDrawerShapeArrow
+	PrimitiveShapeLine uint8 = iota
+	PrimitiveShapeBox
+	PrimitiveShapeSphere
+	PrimitiveShapeCircle
+	PrimitiveShapeText
+	PrimitiveShapeArrow
+	PrimitiveShapeCylinder
+	PrimitiveShapePyramid
+	PrimitiveShapeEllipsoid
+	PrimitiveShapeCone
 )
 
-// DebugDrawerShape defines a single debug shape to be rendered on the client.
-// Each shape has a unique NetworkID and a set of optional parameters depending on its type.
-type DebugDrawerShape struct {
+// PrimitiveShape defines a single shape to be rendered on the client. Each shape has a unique NetworkID and a set of
+// optional parameters depending on its type.
+type PrimitiveShape struct {
 	// NetworkID is the network ID of the shape.
 	NetworkID uint64
 	// DimensionID is the optional dimension ID where the shape is rendered.
 	DimensionID Optional[int32]
-	// AttachedToEntityID is the optional runtime ID of the entity the shape is attached to.
-	AttachedToEntityID Optional[uint64]
+	// AttachedToEntityID is the optional unique ID of the entity the shape is attached to. Mojang's documentation
+	// describes it as a runtime ID, but the field is an ActorUniqueID and the client resolves it as one.
+	AttachedToEntityID Optional[int64]
 	// Type is the type of the shape.
 	// If not set, the set shape will be cleared.
 	Type Optional[uint8]
@@ -165,6 +280,8 @@ type DebugDrawerShape struct {
 	Rotation Optional[mgl32.Vec3]
 	// TotalTimeLeft is the total time left of the shape.
 	TotalTimeLeft Optional[float32]
+	// MaxRenderDistance is the maximum distance the shape should render from the camera.
+	MaxRenderDistance Optional[float32]
 	// Colour is the ARGB colour of the shape.
 	Colour Optional[color.RGBA]
 	// ExtraShapeData holding data specific to the type of shape (such as text string for the text shape).
@@ -172,15 +289,16 @@ type DebugDrawerShape struct {
 }
 
 // Marshal ...
-func (x *DebugDrawerShape) Marshal(io IO) {
+func (x *PrimitiveShape) Marshal(io IO) {
 	io.Varuint64(&x.NetworkID)
 	OptionalFunc(io, &x.Type, io.Uint8)
 	OptionalFunc(io, &x.Location, io.Vec3)
 	OptionalFunc(io, &x.Scale, io.Float32)
 	OptionalFunc(io, &x.Rotation, io.Vec3)
 	OptionalFunc(io, &x.TotalTimeLeft, io.Float32)
+	OptionalFunc(io, &x.MaxRenderDistance, io.Float32)
 	OptionalFunc(io, &x.Colour, io.BEARGB)
 	OptionalFunc(io, &x.DimensionID, io.Varint32)
-	OptionalFunc(io, &x.AttachedToEntityID, io.Varuint64)
+	OptionalFunc(io, &x.AttachedToEntityID, io.ActorUniqueID)
 	io.ShapeData(&x.ExtraShapeData)
 }

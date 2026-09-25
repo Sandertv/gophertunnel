@@ -19,5 +19,5 @@ func (*SetLocalPlayerAsInitialised) ID() uint32 {
 }
 
 func (pk *SetLocalPlayerAsInitialised) Marshal(io protocol.IO) {
-	io.Varuint64(&pk.EntityRuntimeID)
+	io.ActorRuntimeID(&pk.EntityRuntimeID)
 }
