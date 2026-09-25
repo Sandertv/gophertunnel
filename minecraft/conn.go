@@ -539,8 +539,8 @@ func (conn *Conn) Flush() error {
 	conn.bufferedSendSpare = nil
 	conn.sendMu.Unlock()
 
-	if err := conn.enc.Encode(toSend); err != nil && !errors.Is(err, net.ErrClosed) {
-		// Should never happen.
+	if err := conn.enc.Encode(toSend); err != nil && !errors.Is(err, net.ErrClosed) && conn.ctx.Err() == nil {
+		// Should never happen while the connection is open.
 		panic(fmt.Errorf("error encoding packet batch: %w", err))
 	}
 
@@ -1603,6 +1603,15 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 // expect sets the packet IDs that are next expected to arrive.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
+}
+
+// closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
+// before the transport is closed, so a flush blocked on a peer that stopped reading returns without
+// treating the closed transport as an encoding failure.
+func (conn *Conn) closeTransport(cause error) {
+	conn.cancelFunc(cause)
+	_ = conn.conn.Close()
+	_ = conn.close(cause)
 }
 
 func (conn *Conn) close(cause error) error {

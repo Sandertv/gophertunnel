@@ -453,10 +453,9 @@ func (listener *Listener) createConn(netConn net.Conn) {
 		_ = conn.close(conn.closeErr("server full"))
 		return
 	}
-	if limit := listener.cfg.MaximumPendingLogins; limit > 0 && listener.pendingLogins.Load() >= int32(limit) {
+	if limit := listener.cfg.MaximumPendingLogins; limit > 0 && int(listener.pendingLogins.Load()) >= limit {
 		// Close without writing: this runs on the accept loop, which a peer that never reads must not stall.
-		_ = conn.conn.Close()
-		_ = conn.close(errors.New("too many pending logins"))
+		conn.closeTransport(errors.New("too many pending logins"))
 		return
 	}
 	listener.playerCount.Add(1)
@@ -485,9 +484,7 @@ func (listener *Listener) newPendingLogin(conn *Conn) *pendingLogin {
 			if p.claim() {
 				p.timedOut.Store(true)
 				conn.log.Error(errLoginTimeout.Error(), "timeout", timeout)
-				// Close the transport first so a flush blocked on a peer that stopped reading returns.
-				_ = conn.conn.Close()
-				_ = conn.close(errLoginTimeout)
+				conn.closeTransport(errLoginTimeout)
 			}
 		})
 	}
