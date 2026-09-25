@@ -1,7 +1,6 @@
 package minecraft
 
 import (
-	"container/list"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -58,10 +57,6 @@ type ListenConfig struct {
 	// closed. The rest of the login sequence, such as resource pack downloads, is not bounded. Zero or negative
 	// disables it; around ten seconds suits most servers.
 	LoginTimeout time.Duration
-	// MaximumPendingLogins caps the connections that have not authenticated yet. When a connection arrives at
-	// the cap, the oldest unauthenticated connection is closed to make room, so peers that never log in cannot
-	// lock players out. Pending connections count toward MaximumPlayers. Zero or negative disables the cap.
-	MaximumPendingLogins int
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
 	// in the packet pool. If false (by default), such packets lead to the connection being closed immediately.
@@ -149,13 +144,6 @@ type Listener struct {
 	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
 	// to the playerCount, no more players will be accepted.
 	playerCount atomic.Int32
-	// pendingMu guards pending, the connections that have not authenticated yet, oldest first.
-	pendingMu sync.Mutex
-	pending   list.List
-	// evictions counts connections closed to make room under MaximumPendingLogins; evictionWarned is the
-	// UnixNano time of the last warning about them.
-	evictions      atomic.Int64
-	evictionWarned atomic.Int64
 
 	incoming chan *Conn
 	close    chan struct{}
@@ -430,7 +418,6 @@ func (listener *Listener) listen() {
 // createConn creates a connection for the net.Conn passed and adds it to the listener, so that it may be
 // accepted once its login sequence is complete.
 func (listener *Listener) createConn(netConn net.Conn) {
-	listener.evictPendingLogins()
 	listener.packsMu.RLock()
 	packs := slices.Clone(listener.packs)
 	listener.packsMu.RUnlock()
@@ -466,123 +453,25 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	listener.playerCount.Add(1)
 	listener.updatePongData()
 
-	go listener.handleConn(conn, listener.newPendingLogin(conn))
-}
-
-var (
-	// errLoginTimeout is the cause of closing a connection that exceeded ListenConfig.LoginTimeout.
-	errLoginTimeout = errors.New("login timed out")
-	// errLoginEvicted is the cause of closing a connection to make room under ListenConfig.MaximumPendingLogins.
-	errLoginEvicted = errors.New("evicted to make room for a new connection")
-	// errLoginEnded stops a connection that authenticated after it was timed out or evicted.
-	errLoginEnded = errors.New("pending login already ended")
-)
-
-// pendingLogin tracks a connection until it authenticates or is given up on.
-type pendingLogin struct {
-	listener *Listener
-	conn     *Conn
-	timer    *time.Timer
-	elem     *list.Element // guarded by listener.pendingMu
-	ended    atomic.Bool
-	// closed is set when the listener closed the connection for a timeout or eviction it already logged.
-	closed atomic.Bool
-	// playerReleased is set once the connection's slot in the player count was given back.
-	playerReleased atomic.Bool
-}
-
-// newPendingLogin counts conn as pending and closes it if it is still pending after LoginTimeout.
-func (listener *Listener) newPendingLogin(conn *Conn) *pendingLogin {
-	p := &pendingLogin{listener: listener, conn: conn}
-	conn.authenticated = p.end
-	listener.pendingMu.Lock()
-	p.elem = listener.pending.PushBack(p)
-	listener.pendingMu.Unlock()
+	var timer *time.Timer
 	if timeout := listener.cfg.LoginTimeout; timeout > 0 {
-		p.timer = time.AfterFunc(timeout, func() {
-			if p.claim() {
+		timer = time.AfterFunc(timeout, func() {
+			if !conn.authenticated.Load() {
 				conn.log.Debug(errLoginTimeout.Error(), "timeout", timeout)
-				// The login may be stuck in a callback such as Allow, so the slot cannot wait for handleConn.
-				p.releasePlayer()
-				p.close(errLoginTimeout)
+				conn.closeTransport(errLoginTimeout)
 			}
 		})
 	}
-	return p
-}
-
-// close closes the connection without flushing, so a peer that stopped reading cannot hold it open.
-func (p *pendingLogin) close(cause error) {
-	p.closed.Store(true)
-	p.conn.closeTransport(cause)
-}
-
-// end stops tracking the login and reports whether this call ended it. Only the first call ends it, so a
-// login that authenticates as it is timed out or evicted is either kept or closed, never both.
-func (p *pendingLogin) end() bool {
-	if !p.claim() {
-		return false
-	}
-	if p.timer != nil {
-		p.timer.Stop()
-	}
-	return true
-}
-
-// releasePlayer gives the connection's slot in the player count back, once, whether the connection closed or
-// was evicted to make room for a new one.
-func (p *pendingLogin) releasePlayer() {
-	if p.playerReleased.CompareAndSwap(false, true) {
-		p.listener.playerCount.Add(-1)
-		p.listener.updatePongData()
-	}
-}
-
-// claim marks the login ended and releases its pending slot, reporting whether it was still pending.
-func (p *pendingLogin) claim() bool {
-	if !p.ended.CompareAndSwap(false, true) {
-		return false
-	}
-	p.listener.pendingMu.Lock()
-	p.listener.pending.Remove(p.elem)
-	p.listener.pendingMu.Unlock()
-	return true
-}
-
-// evictPendingLogins closes the oldest unauthenticated connections until one more fits under
-// MaximumPendingLogins. It runs on the accept loop, so the evicted connections are closed elsewhere.
-func (listener *Listener) evictPendingLogins() {
-	limit := listener.cfg.MaximumPendingLogins
-	if limit <= 0 {
-		return
-	}
-	for {
-		listener.pendingMu.Lock()
-		if listener.pending.Len() < limit {
-			listener.pendingMu.Unlock()
-			return
+	go func() {
+		listener.handleConn(conn)
+		if timer != nil {
+			timer.Stop()
 		}
-		oldest := listener.pending.Front().Value.(*pendingLogin)
-		listener.pendingMu.Unlock()
-		// A login that authenticated meanwhile has already left the list, so the loop checks again.
-		if oldest.end() {
-			oldest.conn.log.Debug(errLoginEvicted.Error())
-			// Free its player slot now so the full-server check for the new connection counts the room made.
-			oldest.releasePlayer()
-			go oldest.close(errLoginEvicted)
-			listener.warnEviction(limit)
-		}
-	}
+	}()
 }
 
-// warnEviction logs at most one warning a minute about connections evicted under MaximumPendingLogins.
-func (listener *Listener) warnEviction(limit int) {
-	total := listener.evictions.Add(1)
-	now, last := time.Now().UnixNano(), listener.evictionWarned.Load()
-	if now-last >= int64(time.Minute) && listener.evictionWarned.CompareAndSwap(last, now) {
-		listener.cfg.ErrorLog.Warn("closing connections that have not logged in to make room for new ones", "maximum_pending_logins", limit, "evicted_total", total)
-	}
-}
+// errLoginTimeout is the cause of closing a connection that exceeded ListenConfig.LoginTimeout.
+var errLoginTimeout = errors.New("login timed out")
 
 // status returns the current ServerStatus of the Listener.
 func (listener *Listener) status() ServerStatus {
@@ -595,19 +484,19 @@ func (listener *Listener) status() ServerStatus {
 
 // handleConn handles an incoming connection of the Listener. It will first attempt to get the connection to
 // log in, after which it will expose packets received to the user.
-func (listener *Listener) handleConn(conn *Conn, pending *pendingLogin) {
+func (listener *Listener) handleConn(conn *Conn) {
 	defer func() {
-		pending.end()
 		_ = conn.Close()
-		pending.releasePlayer()
+		listener.playerCount.Add(-1)
+		listener.updatePongData()
 	}()
 	for {
 		// We finally arrived at the packet decoding loop. We constantly decode packets that arrive
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			// Timeouts and evictions were logged when they happened.
-			if !errors.Is(err, net.ErrClosed) && !pending.closed.Load() {
+			// A login timeout was logged when it fired.
+			if !errors.Is(err, net.ErrClosed) && !errors.Is(context.Cause(conn.ctx), errLoginTimeout) {
 				conn.log.Error(err.Error())
 			}
 			return
@@ -615,9 +504,7 @@ func (listener *Listener) handleConn(conn *Conn, pending *pendingLogin) {
 		for _, data := range packets {
 			loggedInBefore := conn.loggedIn
 			if err := conn.receive(data); err != nil {
-				if !errors.Is(err, errLoginEnded) {
-					conn.log.Error(err.Error())
-				}
+				conn.log.Error(err.Error())
 				return
 			}
 			if !loggedInBefore && conn.loggedIn {

@@ -145,8 +145,8 @@ type Conn struct {
 	// readyToLogin is a bool indicating if the connection is ready to login. This is used to ensure that the client
 	// has received the relevant network settings before the login sequence starts.
 	readyToLogin bool
-	// authenticated, set by a Listener, is called as the client authenticates; false abandons the login.
-	authenticated func() bool
+	// authenticated is set once the Login was verified and, with encryption, the encrypted handshake completed.
+	authenticated atomic.Bool
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
@@ -882,10 +882,8 @@ type publicKeyConn interface {
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func (conn *Conn) handleClientToServerHandshake() error {
-	// Report authentication before the work that follows it, which may outlast the listener's login deadline.
-	if conn.authenticated != nil && !conn.authenticated() {
-		return errLoginEnded
-	}
+	// Mark authentication before the work that follows it, which may outlast the listener's login deadline.
+	conn.authenticated.Store(true)
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
