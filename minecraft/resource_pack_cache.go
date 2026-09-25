@@ -24,7 +24,7 @@ type ResourcePackCacheKey struct {
 
 // Matches reports whether pack has the UUID, version and size the key holds.
 func (key ResourcePackCacheKey) Matches(pack *resource.Pack) bool {
-	return pack.UUID() == key.UUID && pack.Version() == key.Version && uint64(pack.Len()) == key.Size
+	return pack.UUID() == key.UUID && pack.Version() == key.Version && uint64(pack.Size()) == key.Size
 }
 
 // ResourcePackCache allows a Dialer to reuse resource packs downloaded earlier. Cache failures are
@@ -63,7 +63,7 @@ func (cache DirResourcePackCache) Store(_ context.Context, key ResourcePackCache
 		return err
 	}
 	defer func() { _ = os.Remove(temp.Name()) }()
-	if _, err := io.Copy(temp, io.NewSectionReader(pack, 0, int64(pack.Len()))); err != nil {
+	if _, err := io.Copy(temp, io.NewSectionReader(pack, 0, int64(pack.Size()))); err != nil {
 		_ = temp.Close()
 		return err
 	}
