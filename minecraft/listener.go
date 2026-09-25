@@ -369,9 +369,20 @@ func (listener *Listener) PlayerCount() int {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	var (
-		s    = listener.status()
-		port uint16
+		s        = listener.status()
+		port     uint16
+		gameType string
 	)
+	switch s.GameType {
+	case 0:
+		gameType = "Survival"
+	case 1:
+		gameType = "Creative"
+	case 2:
+		gameType = "Adventure"
+	default:
+		gameType = "Survival"
+	}
 	if a, ok := listener.Addr().(interface {
 		AddrPort() netip.AddrPort
 	}); ok {
@@ -379,7 +390,7 @@ func (listener *Listener) updatePongData() {
 	}
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0, 0,
+		listener.listener.ID(), s.ServerSubName, gameType, s.GameType, port, port, 0, 0,
 	)))
 }
 
