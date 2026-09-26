@@ -45,9 +45,6 @@ type BossEvent struct {
 	// BossEntityUniqueID is the same as the client's entity unique ID, its
 	// HealthPercentage and BossBarTitle can be freely altered.
 	BossEntityUniqueID int64
-	// PlayerUniqueID is the unique ID of the player that is registered to or
-	// unregistered from the boss fight.
-	PlayerUniqueID int64
 	// EventType is the type of the event. It is one of the BossEvent constants above.
 	EventType uint8
 	// BossBarTitle is the title shown above the boss bar. It may be set to set
@@ -78,7 +75,6 @@ func (*BossEvent) ID() uint32 {
 
 func (pk *BossEvent) Marshal(io protocol.IO) {
 	io.ActorUniqueID(&pk.BossEntityUniqueID)
-	io.ActorUniqueID(&pk.PlayerUniqueID)
 	io.Uint8(&pk.EventType)
 	io.String(&pk.BossBarTitle)
 	io.String(&pk.FilteredBossBarTitle)

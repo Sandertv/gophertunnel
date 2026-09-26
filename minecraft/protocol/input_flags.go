@@ -5,8 +5,8 @@ import "slices"
 // InputFlags is the set of input flags in a PlayerAuthInput packet. It is sent as a list of the IDs of the
 // flags that are set, and is stored the same way, with the IDs kept unique.
 //
-// An absent InputFlags is not the same as an empty one: it is not sent at all. The zero value is absent and
-// has no size, so use NewInputFlags before setting a flag on it. Decoded values are always sized.
+// The zero value has no size, so use NewInputFlags before setting a flag on it. Decoded values are always
+// sized.
 type InputFlags struct {
 	set  bool
 	size int
@@ -27,7 +27,8 @@ func NewInputFlagsFromIDs(size int, ids []int32) InputFlags {
 	return flags
 }
 
-// Present returns whether the InputFlags was sent. An absent one reports every flag as unset.
+// Present returns whether the InputFlags holds any flags. A value that is not present reports every flag as
+// unset.
 func (f InputFlags) Present() bool {
 	return f.set
 }
@@ -76,13 +77,6 @@ func (f InputFlags) check(i int) {
 // InputFlagList reads/writes an InputFlags holding flags in the range [0, size) as a list of the IDs of the
 // flags that are set. Flag IDs must be unique and within range.
 func InputFlagList(r IO, x *InputFlags, size int) {
-	present := x.set
-	r.Bool(&present)
-	if !present {
-		*x = InputFlags{size: size}
-		return
-	}
-
 	// Check the count before reading, so a peer cannot claim far more flags than can legally be sent.
 	count := uint32(len(x.ids))
 	r.Varuint32(&count)

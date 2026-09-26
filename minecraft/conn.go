@@ -145,6 +145,8 @@ type Conn struct {
 	// readyToLogin is a bool indicating if the connection is ready to login. This is used to ensure that the client
 	// has received the relevant network settings before the login sequence starts.
 	readyToLogin bool
+	// authenticated is set once the Login was verified and, with encryption, the encrypted handshake completed.
+	authenticated atomic.Bool
 	// loggedIn is a bool indicating if the connection was logged in. It is set to true after the entire login
 	// sequence is completed.
 	loggedIn bool
@@ -517,6 +519,9 @@ func (conn *Conn) Read(b []byte) (n int, err error) {
 // Flush flushes the packets currently buffered by the connections to the underlying net.Conn, so that they
 // are directly sent.
 func (conn *Conn) Flush() error {
+	if conn.ctx == nil {
+		return net.ErrClosed
+	}
 	select {
 	case <-conn.ctx.Done():
 		return conn.closeErr("flush")
@@ -539,8 +544,8 @@ func (conn *Conn) Flush() error {
 	conn.bufferedSendSpare = nil
 	conn.sendMu.Unlock()
 
-	if err := conn.enc.Encode(toSend); err != nil && !errors.Is(err, net.ErrClosed) {
-		// Should never happen.
+	if err := conn.enc.Encode(toSend); err != nil && !errors.Is(err, net.ErrClosed) && conn.ctx.Err() == nil {
+		// Should never happen while the connection is open.
 		panic(fmt.Errorf("error encoding packet batch: %w", err))
 	}
 
@@ -881,6 +886,8 @@ type publicKeyConn interface {
 
 // handleClientToServerHandshake handles an incoming ClientToServerHandshake packet.
 func (conn *Conn) handleClientToServerHandshake() error {
+	// Mark authentication before the work that follows it, which may outlast the listener's login deadline.
+	conn.authenticated.Store(true)
 	// The next expected packet is a resource pack client response.
 	conn.expect(packet.IDResourcePackClientResponse, packet.IDClientCacheStatus)
 	if err := conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginSuccess}); err != nil {
@@ -1101,6 +1108,9 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 		return conn.close(conn.closeErr("resource pack refused"))
 	case packet.PackResponseSendPacks:
 		packs := pk.PacksToDownload
+		if len(packs) == 0 {
+			break
+		}
 		conn.packQueue = &resourcePackQueue{
 			packs:     conn.resourcePacks,
 			chunkSize: conn.resourcePackDelivery.ChunkSize,
@@ -1601,17 +1611,54 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
-// expect sets the packet IDs that are next expected to arrive.
+// expect sets the packet IDs that are next expected to arrive and re-checks
+// any deferred packets against the new expected set. This prevents a deadlock
+// when a packet arrives before its ID is added to the expected set.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
+	conn.handleDeferredPackets()
+}
+
+// handleDeferredPackets passes all currently deferred packets back through
+// handle(). Packets that now match expectedIDs are processed; the rest are
+// re-deferred by handle() automatically.
+func (conn *Conn) handleDeferredPackets() {
+	conn.deferredPacketMu.Lock()
+	if len(conn.deferredPackets) == 0 {
+		conn.deferredPacketMu.Unlock()
+		return
+	}
+	deferred := conn.deferredPackets
+	conn.deferredPackets = conn.deferredPackets[len(deferred):]
+	conn.deferredPacketMu.Unlock()
+
+	for _, pkData := range deferred {
+		if err := conn.handle(pkData); err != nil {
+			_ = conn.close(err)
+			return
+		}
+	}
+}
+
+// closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
+// before the transport is closed, so a flush blocked on a peer that stopped reading returns without
+// treating the closed transport as an encoding failure.
+func (conn *Conn) closeTransport(cause error) {
+	conn.cancelFunc(cause)
+	_ = conn.conn.Close()
+	_ = conn.close(cause)
 }
 
 func (conn *Conn) close(cause error) error {
 	var err error
 	conn.once.Do(func() {
 		err = conn.Flush()
-		conn.cancelFunc(cause)
-		_ = conn.conn.Close()
+		if conn.cancelFunc != nil {
+			conn.cancelFunc(cause)
+		}
+		if conn.conn != nil {
+			_ = conn.conn.Close()
+		}
 	})
 	return err
 }

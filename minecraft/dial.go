@@ -13,10 +13,10 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"math/rand"
 	"net"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -110,6 +110,11 @@ type Dialer struct {
 	// are converted from and to this Protocol.
 	Protocol Protocol
 
+	// MaxDecompressedLen is the maximum length of a decompressed packet batch to prevent potential exploits.
+	// If 0, the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the
+	// limit.
+	MaxDecompressedLen int
+
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
 	// FlushRate and are compressed/encrypted together to improve compression ratios. The lower this
 	// time.Duration, the lower the latency but the less efficient both network and cpu wise.
@@ -133,6 +138,9 @@ type Dialer struct {
 	// (pre-1.21.90) when connecting to the server. This should only be used for outdated
 	// servers, as enabling it will cause compatibility issues with updated servers.
 	EnableLegacyAuth bool
+
+	// DisablePortFollowing, if set to true, dials respect provided port instead of following the pong port.
+	DisablePortFollowing bool
 }
 
 // Dial dials a Minecraft connection to the address passed over the network passed. The network is typically
@@ -273,9 +281,10 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		d.IdentityData = identityData
 	}
 
-	var pong []byte
-	if pong, err = network.PingContext(ctx, address); err == nil {
-		address = addressWithPongPort(pong, address)
+	if !d.DisablePortFollowing {
+		if pong, err := network.PingContext(ctx, address); err == nil {
+			address = addressWithPongPort(pong, address)
+		}
 	}
 
 	var netConn net.Conn
@@ -298,7 +307,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
-	conn.maxDecompressedLen = math.MaxInt
+	conn.maxDecompressedLen = d.MaxDecompressedLen
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
@@ -446,9 +455,23 @@ var skinResourcePatch []byte
 //go:embed skin_geometry.json
 var skinGeometry []byte
 
+// serverAddress returns the address in the form clients report it in their login request. For
+// networks addressed by a URL, such as NetherNet, clients repeat the port of the address after
+// it: 'https://<host>:<port>:<port>'.
+func serverAddress(address string) string {
+	if !strings.Contains(address, "://") {
+		return address
+	}
+	u, err := url.Parse(address)
+	if err != nil || u.Port() == "" {
+		return address
+	}
+	return address + ":" + u.Port()
+}
+
 // defaultClientData edits the ClientData passed to have defaults set to all fields that were left unchanged.
 func defaultClientData(address, username string, d *login.ClientData) {
-	d.ServerAddress = address
+	d.ServerAddress = serverAddress(address)
 	d.ThirdPartyName = username
 	if d.DeviceOS == 0 {
 		d.DeviceOS = protocol.DeviceAndroid

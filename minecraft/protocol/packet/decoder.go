@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"fmt"
 	"io"
+	"math"
 	"sync"
 )
 
@@ -50,18 +51,20 @@ func NewDecoder(reader io.Reader) *Decoder {
 	}
 	if pr, ok := reader.(PacketReader); ok {
 		return &Decoder{
-			checkPacketLimit:  true,
-			pr:                pr,
-			header:            batch,
-			disableEncryption: disableEncryption,
+			checkPacketLimit:   true,
+			pr:                 pr,
+			header:             batch,
+			maxDecompressedLen: DefaultMaxDecompressedLen,
+			disableEncryption:  disableEncryption,
 		}
 	}
 	return &Decoder{
-		r:                 reader,
-		buf:               make([]byte, 1024*1024*3),
-		header:            batch,
-		checkPacketLimit:  true,
-		disableEncryption: disableEncryption,
+		r:                  reader,
+		buf:                make([]byte, 1024*1024*3),
+		header:             batch,
+		maxDecompressedLen: DefaultMaxDecompressedLen,
+		checkPacketLimit:   true,
+		disableEncryption:  disableEncryption,
 	}
 }
 
@@ -77,10 +80,16 @@ func (decoder *Decoder) EnableEncryption(keyBytes [32]byte) {
 	decoder.encrypt = newEncrypt(keyBytes[:], stream)
 }
 
-// EnableCompression enables compression for the Decoder.
+// EnableCompression enables compression for the Decoder. A maxDecompressedLen of 0 uses
+// DefaultMaxDecompressedLen; a negative value disables the limit.
 func (decoder *Decoder) EnableCompression(compression Compression, maxDecompressedLen int) {
 	decoder.decompress = true
 	decoder.compression = compression
+	if maxDecompressedLen == 0 {
+		maxDecompressedLen = DefaultMaxDecompressedLen
+	} else if maxDecompressedLen < 0 {
+		maxDecompressedLen = math.MaxInt
+	}
 	decoder.maxDecompressedLen = maxDecompressedLen
 }
 
@@ -99,6 +108,8 @@ const (
 	// maxPooledDecompressBufferCap is the maximum capacity of a decompression buffer that is returned to
 	// decompressBufferPool. Larger buffers are dropped so a single big batch does not pin memory forever.
 	maxPooledDecompressBufferCap = 1 << 20
+	// DefaultMaxDecompressedLen is the default maximum decompressed batch size.
+	DefaultMaxDecompressedLen = 16 * 1024 * 1024
 )
 
 // decompressBufferPool holds byte slices that decompressed batches are read into, so that a new buffer does
@@ -201,6 +212,10 @@ func (decoder *Decoder) readBatch() (data []byte, pooled *[]byte, err error) {
 				return nil, pooled, fmt.Errorf("decompress batch: %w", err)
 			}
 		}
+	}
+	// Uncompressed batches skip Decompress, so the limit is enforced on the final payload too.
+	if len(data) > decoder.maxDecompressedLen {
+		return nil, pooled, fmt.Errorf("decode batch: size %v exceeds limit %v", len(data), decoder.maxDecompressedLen)
 	}
 	return data, pooled, nil
 }

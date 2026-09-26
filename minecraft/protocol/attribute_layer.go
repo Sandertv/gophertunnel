@@ -84,6 +84,24 @@ func (x *AttributeData) Marshal(r IO) {
 	}
 }
 
+const (
+	NoiseAlignmentTypeMinLocalTransitionEnd = iota
+)
+
+// NoiseAlignment represents the way the noise of an environment attribute transition is aligned.
+type NoiseAlignment struct {
+	// Type is the type of the alignment. It is one of the NoiseAlignmentType constants above.
+	Type byte
+	// Value is the value that the noise is aligned against, the meaning of which depends on Type.
+	Value uint32
+}
+
+// Marshal encodes/decodes a NoiseAlignment.
+func (x *NoiseAlignment) Marshal(r IO) {
+	r.Uint8(&x.Type)
+	r.Varuint32(&x.Value)
+}
+
 // EnvironmentAttributeData represents an environment attribute with optional transition data.
 type EnvironmentAttributeData struct {
 	// AttributeName is the name of the attribute.
@@ -104,6 +122,8 @@ type EnvironmentAttributeData struct {
 	LocalTransitionTicks uint32
 	// NoiseTransition indicates whether the transition uses noise.
 	NoiseTransition bool
+	// NoiseAlignment is the alignment of the noise used by the transition.
+	NoiseAlignment NoiseAlignment
 }
 
 // Marshal encodes/decodes an EnvironmentAttributeData.
@@ -119,6 +139,7 @@ func (x *EnvironmentAttributeData) Marshal(r IO) {
 	easingTypeFromString(r, &x.EaseType, easingType)
 	r.Uint32(&x.LocalTransitionTicks)
 	r.Bool(&x.NoiseTransition)
+	Single(r, &x.NoiseAlignment)
 }
 
 // AttributeLayerSettings represents settings for an attribute layer.
