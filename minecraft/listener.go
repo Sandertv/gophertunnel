@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"math"
 	"net"
 	"net/http"
 	"net/netip"
@@ -52,6 +51,15 @@ type ListenConfig struct {
 	// will be dynamically updated each time a player joins, so that an unlimited amount of players is
 	// accepted into the server.
 	MaximumPlayers int
+	// ListenerGroup shares the active player count between multiple listeners serving one logical server, so
+	// that the MaximumPlayers admission limit and advertised player count apply across all of them. If nil,
+	// the listener uses a private group. All listeners in a group should use the same MaximumPlayers value.
+	ListenerGroup *ListenerGroup
+	// LoginTimeout bounds how long a connection may take from being accepted until its Login is verified and,
+	// with encryption, its encrypted handshake completes. Connections that have not authenticated by then are
+	// closed. The rest of the login sequence, such as resource pack downloads, is not bounded. Zero or negative
+	// disables it; around ten seconds suits most servers.
+	LoginTimeout time.Duration
 
 	// AllowUnknownPackets specifies if connections of this Listener are allowed to send packets not present
 	// in the packet pool. If false (by default), such packets lead to the connection being closed immediately.
@@ -113,7 +121,7 @@ type ListenConfig struct {
 	// from which the packet originated, and the destination address.
 	PacketFunc func(header packet.Header, payload []byte, src, dst net.Addr)
 
-	// MaxDecompressedLen is the maximum length of a decompressed packet to prevent potential exploits. If 0,
+	// MaxDecompressedLen is the maximum length of a decompressed packet batch to prevent potential exploits. If 0,
 	// the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the limit.
 	MaxDecompressedLen int
 
@@ -136,9 +144,7 @@ type Listener struct {
 	packs   []*resource.Pack
 	packsMu sync.RWMutex
 
-	// playerCount is the amount of players connected to the server. If MaximumPlayers is non-zero and equal
-	// to the playerCount, no more players will be accepted.
-	playerCount atomic.Int32
+	group *ListenerGroup
 
 	incoming chan *Conn
 	close    chan struct{}
@@ -148,6 +154,34 @@ type Listener struct {
 	// for authenticating incoming connections. It will be nil if authentication is
 	// disabled on ListenConfig.
 	verifier *oidc.IDTokenVerifier
+}
+
+// ListenerGroup shares the active player count between listeners serving one logical server.
+type ListenerGroup struct {
+	playerCount atomic.Int32
+}
+
+// PlayerCount returns the number of active connections across the group.
+func (g *ListenerGroup) PlayerCount() int {
+	return int(g.playerCount.Load())
+}
+
+// add increments the player count if it is below max, returning false if the group is full. A max of zero
+// means no limit.
+func (g *ListenerGroup) add(max int) bool {
+	for {
+		current := g.playerCount.Load()
+		if max > 0 && int(current) >= max {
+			return false
+		}
+		if g.playerCount.CompareAndSwap(current, current+1) {
+			return true
+		}
+	}
+}
+
+func (g *ListenerGroup) remove() {
+	g.playerCount.Add(-1)
 }
 
 // Listen announces on the local network address. The network is typically "raknet".
@@ -177,6 +211,9 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 	if cfg.StatusProvider == nil {
 		cfg.StatusProvider = NewStatusProvider("Minecraft Server", "Gophertunnel")
 	}
+	if cfg.ListenerGroup == nil {
+		cfg.ListenerGroup = new(ListenerGroup)
+	}
 	if cfg.Compression == nil {
 		cfg.Compression = packet.DefaultCompression
 	}
@@ -192,11 +229,6 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 		cfg.CompressionThreshold = 256
 	} else if cfg.CompressionThreshold < 0 {
 		cfg.CompressionThreshold = 0
-	}
-	if cfg.MaxDecompressedLen == 0 {
-		cfg.MaxDecompressedLen = 16 * 1024 * 1024 // 16MB
-	} else if cfg.MaxDecompressedLen < 0 {
-		cfg.MaxDecompressedLen = math.MaxInt
 	}
 
 	var verifier *oidc.IDTokenVerifier
@@ -223,6 +255,7 @@ func (cfg ListenConfig) ListenNetwork(network Network, address string) (*Listene
 	listener := &Listener{
 		cfg:      cfg,
 		listener: netListener,
+		group:    cfg.ListenerGroup,
 		packs:    slices.Clone(cfg.ResourcePacks),
 		incoming: make(chan *Conn),
 		close:    make(chan struct{}),
@@ -357,16 +390,27 @@ func (listener *Listener) Close() error {
 
 // PlayerCount returns the number of active connections.
 func (listener *Listener) PlayerCount() int {
-	return int(listener.playerCount.Load())
+	return listener.group.PlayerCount()
 }
 
 // updatePongData updates the pong data of the listener using the current only players, maximum players and
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	var (
-		s    = listener.status()
-		port uint16
+		s        = listener.status()
+		port     uint16
+		gameType string
 	)
+	switch s.GameType {
+	case 0:
+		gameType = "Survival"
+	case 1:
+		gameType = "Creative"
+	case 2:
+		gameType = "Adventure"
+	default:
+		gameType = "Survival"
+	}
 	if a, ok := listener.Addr().(interface {
 		AddrPort() netip.AddrPort
 	}); ok {
@@ -374,7 +418,7 @@ func (listener *Listener) updatePongData() {
 	}
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, "Creative", 1, port, port, 0, 0,
+		listener.listener.ID(), s.ServerSubName, gameType, s.GameType, port, port, 0, 0,
 	)))
 }
 
@@ -440,21 +484,37 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	conn.disconnectOnUnknownPacket = !listener.cfg.AllowUnknownPackets
 	conn.disconnectOnInvalidPacket = !listener.cfg.AllowInvalidPackets
 
-	if listener.playerCount.Load() == int32(listener.cfg.MaximumPlayers) && listener.cfg.MaximumPlayers != 0 {
+	if !listener.group.add(listener.cfg.MaximumPlayers) {
 		// The server was full. We kick the player immediately and close the connection.
 		_ = conn.WritePacket(&packet.PlayStatus{Status: packet.PlayStatusLoginFailedServerFull})
 		_ = conn.close(conn.closeErr("server full"))
 		return
 	}
-	listener.playerCount.Add(1)
 	listener.updatePongData()
 
-	go listener.handleConn(conn)
+	var timer *time.Timer
+	if timeout := listener.cfg.LoginTimeout; timeout > 0 {
+		timer = time.AfterFunc(timeout, func() {
+			if !conn.authenticated.Load() {
+				conn.log.Debug(errLoginTimeout.Error(), "timeout", timeout)
+				conn.closeTransport(errLoginTimeout)
+			}
+		})
+	}
+	go func() {
+		listener.handleConn(conn)
+		if timer != nil {
+			timer.Stop()
+		}
+	}()
 }
+
+// errLoginTimeout is the cause of closing a connection that exceeded ListenConfig.LoginTimeout.
+var errLoginTimeout = errors.New("login timed out")
 
 // status returns the current ServerStatus of the Listener.
 func (listener *Listener) status() ServerStatus {
-	status := listener.cfg.StatusProvider.ServerStatus(int(listener.playerCount.Load()), listener.cfg.MaximumPlayers)
+	status := listener.cfg.StatusProvider.ServerStatus(listener.group.PlayerCount(), listener.cfg.MaximumPlayers)
 	if status.MaxPlayers == 0 {
 		status.MaxPlayers = status.PlayerCount + 1
 	}
@@ -466,7 +526,7 @@ func (listener *Listener) status() ServerStatus {
 func (listener *Listener) handleConn(conn *Conn) {
 	defer func() {
 		_ = conn.Close()
-		listener.playerCount.Add(-1)
+		listener.group.remove()
 		listener.updatePongData()
 	}()
 	for {
@@ -474,7 +534,8 @@ func (listener *Listener) handleConn(conn *Conn) {
 		// and push them to the Conn so that they may be processed.
 		packets, err := conn.dec.Decode()
 		if err != nil {
-			if !errors.Is(err, net.ErrClosed) {
+			// A login timeout was logged when it fired.
+			if !errors.Is(err, net.ErrClosed) && !errors.Is(context.Cause(conn.ctx), errLoginTimeout) {
 				conn.log.Error(err.Error())
 			}
 			return

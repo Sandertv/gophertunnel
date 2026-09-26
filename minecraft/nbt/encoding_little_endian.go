@@ -143,12 +143,9 @@ func (e littleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
-	if n < 0 {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
-	}
-	b := make([]byte, n*4)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
+	b, err := r.readArrayBytes(n, 4, "Int32Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int32{}, nil
@@ -162,12 +159,9 @@ func (e littleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
-	if n < 0 {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
-	}
-	b := make([]byte, n*8)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
+	b, err := r.readArrayBytes(n, 8, "Int64Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int64{}, nil
@@ -307,15 +301,15 @@ func (e bigEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
-	b := make([]byte, n*4)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
+	b, err := r.readArrayBytes(n, 4, "Int32Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int32{}, nil
 	}
 	// Manually rotate the bytes, so we can just re-interpret this as a slice.
-	for i := int32(0); i < n; i++ {
+	for i := 0; i < int(n); i++ {
 		off := i * 4
 		b[off], b[off+3] = b[off+3], b[off]
 		b[off+1], b[off+2] = b[off+2], b[off+1]
@@ -329,15 +323,15 @@ func (e bigEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
-	b := make([]byte, n*8)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
+	b, err := r.readArrayBytes(n, 8, "Int64Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int64{}, nil
 	}
 	// Manually rotate the bytes, so we can just re-interpret this as a slice.
-	for i := int32(0); i < n; i++ {
+	for i := 0; i < int(n); i++ {
 		off := i * 8
 		b[off], b[off+7] = b[off+7], b[off]
 		b[off+1], b[off+6] = b[off+6], b[off+1]
