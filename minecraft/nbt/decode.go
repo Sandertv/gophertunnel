@@ -383,11 +383,15 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			if err != nil {
 				return err
 			}
-			v := reflect.MakeSlice(sliceType, 0, c)
-			elem := reflect.New(sliceType.Elem()).Elem()
+			// Addressable so the slice can grow in place when the capacity was bounded below length.
+			v := reflect.New(sliceType).Elem()
+			v.Set(reflect.MakeSlice(sliceType, 0, c))
 			for i := 0; i < int(length); i++ {
-				elem.SetZero()
-				if err := d.unmarshalTag(elem, listType, ""); err != nil {
+				if i == v.Cap() {
+					v.Grow(min(int(length)-i, v.Cap()))
+				}
+				v.SetLen(i + 1)
+				if err := d.unmarshalTag(v.Index(i), listType, ""); err != nil {
 					// An error occurred during the decoding of one of the elements of the TAG_List, meaning it
 					// either had an invalid type or the NBT was invalid.
 					if e, ok := err.(InvalidTypeError); ok {
@@ -395,7 +399,6 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 					}
 					return err
 				}
-				v = reflect.Append(v, elem)
 			}
 			val.Set(v)
 			d.depth--
