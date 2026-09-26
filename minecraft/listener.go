@@ -397,28 +397,19 @@ func (listener *Listener) PlayerCount() int {
 // server name of the listener, provided the listener isn't currently hijacking the pong of another server.
 func (listener *Listener) updatePongData() {
 	var (
-		s        = listener.status()
-		port     uint16
-		gameType string
+		s    = listener.status()
+		port uint16
 	)
-	switch s.GameType {
-	case 0:
-		gameType = "Survival"
-	case 1:
-		gameType = "Creative"
-	case 2:
-		gameType = "Adventure"
-	default:
-		gameType = "Survival"
-	}
 	if a, ok := listener.Addr().(interface {
 		AddrPort() netip.AddrPort
 	}); ok {
 		port = a.AddrPort().Port()
 	}
+	// The field after the game mode is a separate flag: clients drop pongs of ten or more fields unless it
+	// is exactly 1.
 	listener.listener.PongData([]byte(fmt.Sprintf("MCPE;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;%v;",
 		s.ServerName, protocol.CurrentProtocol, protocol.CurrentVersion, s.PlayerCount, s.MaxPlayers,
-		listener.listener.ID(), s.ServerSubName, gameType, s.GameType, port, port, 0, 0,
+		listener.listener.ID(), s.ServerSubName, gameTypeName(s.GameType), 1, port, port, 0, 0,
 	)))
 }
 
