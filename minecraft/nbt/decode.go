@@ -540,13 +540,6 @@ func (d *Decoder) tag() (t tagType, tagName string, err error) {
 	return t, tagName, err
 }
 
-func (d *Decoder) checkRemaining(length int, op string) error {
-	if remaining, ok := d.r.Reader.(interface{ Len() int }); ok && length > remaining.Len() {
-		return BufferOverrunError{Op: op}
-	}
-	return nil
-}
-
 // isAny checks if a reflect.Value has the type `any` or `interface{}`.
 func isAny(v reflect.Value) bool {
 	return v.Kind() == reflect.Interface && v.NumMethod() == 0
