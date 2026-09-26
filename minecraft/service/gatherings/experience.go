@@ -87,6 +87,9 @@ type experience struct {
 	// displayed as 'Featured experiences' in the servers tab. Otherwise,
 	// the experience will be displayed as 'Creator experiences'.
 	Rank int `json:"rank"`
+	// RequiredExperiments are the treatment tags required to display/join
+	// this experience.
+	RequiredExperiments []string `json:"requiredExperiments"`
 }
 
 // UnmarshalJSON implements [json.Unmarshaler] for [Experience].
@@ -148,7 +151,7 @@ const (
 // These identifiers are returned alongside an [Address] and can be used for
 // telemetry, diagnostics or publishing a presence to the social friends of the caller.
 type DestinationInfo struct {
-	// CreatorID identifies the creator which is offering the experience. It is usually the
+	// CreatorID identifies the creator offering the experience. It is usually the
 	// same value as [Experience.OriginalCreatorID].
 	CreatorID string `json:"creatorId"`
 	// ExperienceID identifies the experience that was joined.
