@@ -314,6 +314,49 @@ func (c *Client) JoinFriend(ctx context.Context, experienceID, worldID uuid.UUID
 	}
 }
 
+// PlayerCounts returns a map whose keys are experience IDs and whose values are the
+// number of players currently connected to each experience. It is particularly useful
+// when an experience is operated using multiple Bedrock Dedicated Servers and the total
+// number of players cannot be determined by simply sending network pings.
+func (c *Client) PlayerCounts(ctx context.Context) (map[uuid.UUID]int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.env.ServiceURI.JoinPath("/api/v2.0/dataquery/playercounts").String(), nil)
+	if err != nil {
+		return nil, fmt.Errorf("make request: %w", err)
+	}
+
+	resp, err := c.do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	switch resp.StatusCode {
+	case http.StatusOK:
+		var result internal.Result[[]playerCountRecord]
+		if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+			return nil, fmt.Errorf("decode response body: %w", err)
+		}
+		m := make(map[uuid.UUID]int, len(result.Data))
+		for _, entry := range result.Data {
+			if entry.ExperienceID == uuid.Nil {
+				return nil, errors.New("gatherings: invalid player counts response")
+			}
+			m[entry.ExperienceID] = entry.PlayerCount
+		}
+		return m, nil
+	default:
+		return nil, internal.Err(resp)
+	}
+}
+
+// playerCountRecord represents a record containing the total number of players currently
+// connected to an experience identified by ID.
+type playerCountRecord struct {
+	// ExperienceID identifies the experience this record belongs to.
+	ExperienceID uuid.UUID `json:"experienceId"`
+	// PlayerCount is the total amount of players currently connected to the experience.
+	PlayerCount int `json:"playerCount"`
+}
+
 // joinFriendRequest represents the JSON structure for the request body used in [Client.JoinFriend].
 // It includes identifiers of the experience/world to connect. The PlayFab ID of the friend is instead
 // included as the 'friendId' query parameter in the URL.
