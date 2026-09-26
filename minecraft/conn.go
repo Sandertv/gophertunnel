@@ -129,12 +129,6 @@ type Conn struct {
 	// were not used by the connection yet. These packets are read the first when calling to Read or
 	// ReadPacket after being connected.
 	deferredPackets []*packetData
-	// handleMu serialises the login handlers: the receive loop holds it while handling a packet and any other
-	// goroutine that changes the expected set takes it to re-check deferred packets.
-	handleMu sync.Mutex
-	// recheckDeferred is set by expect so that the holder of handleMu re-checks deferred packets against the
-	// new expected set.
-	recheckDeferred atomic.Bool
 	readDeadline    <-chan time.Time
 
 	// sendMu protects bufferedSend/bufferedSendSpare.
@@ -695,12 +689,7 @@ func (conn *Conn) receive(data []byte) error {
 		}
 		return nil
 	}
-	conn.handleMu.Lock()
-	defer conn.handleMu.Unlock()
-	if err := conn.handle(pkData); err != nil {
-		return err
-	}
-	return conn.handleDeferredPackets()
+	return conn.handle(pkData)
 }
 
 // handle tries to handle the incoming packetData.
@@ -1490,7 +1479,9 @@ func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error 
 	if pk.ChunkRadius < 1 {
 		return fmt.Errorf("expected chunk radius of at least 1, got %v", pk.ChunkRadius)
 	}
-	conn.expect(packet.IDPlayStatus)
+	// Some servers send ResourcePacksInfo before PlayStatus(LoginSuccess); the vanilla client accepts either
+	// order, so both are expected from here on.
+	conn.expect(packet.IDPlayStatus, packet.IDResourcePacksInfo)
 
 	conn.gameData.ChunkRadius = pk.ChunkRadius
 	conn.gameDataReceived.Store(true)
@@ -1520,8 +1511,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
 			return fmt.Errorf("send ClientCacheStatus: %w", err)
 		}
-		// The next packet we expect is the ResourcePacksInfo packet.
-		conn.expect(packet.IDResourcePacksInfo)
+		// ResourcePacksInfo is already expected, and may even have been handled if the server sent it first.
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.close(conn.closeErr("client outdated"))
@@ -1622,55 +1612,11 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
-// expect sets the packet IDs that are next expected to arrive. Packets deferred before this call are
-// re-checked against the new set, so that a packet which arrived early does not stall the login sequence.
+// expect sets the packet IDs that are next expected to arrive. A packet that was deferred before its ID was
+// expected is not handled later: expect everything a peer may send at a stage before writing the packet it
+// answers to.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
-	conn.recheckDeferred.Store(true)
-	// Called from a handler, the receive loop holds handleMu and re-checks once the handler has returned, so
-	// that the handler's state change is complete first. Called from anywhere else, nobody would.
-	if conn.handleMu.TryLock() {
-		defer conn.handleMu.Unlock()
-		if err := conn.handleDeferredPackets(); err != nil {
-			_ = conn.close(err)
-		}
-	}
-}
-
-// handleDeferredPackets handles deferred packets that the expected set now covers, one at a time so that each
-// handler sees the set as left by the previous one. The caller must hold handleMu.
-func (conn *Conn) handleDeferredPackets() error {
-	if !conn.recheckDeferred.Swap(false) {
-		return nil
-	}
-	for {
-		pkData, ok := conn.takeExpectedDeferred()
-		if !ok {
-			return nil
-		}
-		pks, err := pkData.decode(conn)
-		if err != nil {
-			return err
-		}
-		if err := conn.handleMultiple(pks); err != nil {
-			return err
-		}
-	}
-}
-
-// takeExpectedDeferred removes and returns the first deferred packet in the expected set. The other packets
-// stay queued in order, so a concurrent ReadPacket never sees them disappear.
-func (conn *Conn) takeExpectedDeferred() (*packetData, bool) {
-	expected := conn.expectedIDs.Load().([]uint32)
-	conn.deferredPacketMu.Lock()
-	defer conn.deferredPacketMu.Unlock()
-	for i, pkData := range conn.deferredPackets {
-		if slices.Contains(expected, pkData.h.PacketID) {
-			conn.deferredPackets = slices.Delete(conn.deferredPackets, i, i+1)
-			return pkData, true
-		}
-	}
-	return nil, false
 }
 
 // closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
