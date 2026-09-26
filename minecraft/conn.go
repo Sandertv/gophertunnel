@@ -1033,14 +1033,14 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 	}
 
 	if len(packsToDownload) != 0 {
-		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData)
+		conn.expect(packet.IDResourcePackDataInfo, packet.IDResourcePackChunkData, packet.IDPlayStatus)
 		_ = conn.WritePacket(&packet.ResourcePackClientResponse{
 			Response:        packet.PackResponseSendPacks,
 			PacksToDownload: packsToDownload,
 		})
 		return nil
 	}
-	conn.expect(packet.IDResourcePackStack)
+	conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus)
 
 	_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 	return nil
@@ -1148,6 +1148,8 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 
 // startGame sends a StartGame packet using the game data of the connection.
 func (conn *Conn) startGame() {
+	// The client may answer before the packets below are all written, so expect its replies first.
+	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 	data := conn.gameData
 	if len(data.Dimensions) > 0 {
 		_ = conn.WritePacket(&packet.DimensionData{Definitions: data.Dimensions})
@@ -1207,7 +1209,6 @@ func (conn *Conn) startGame() {
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
-	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
 
 // nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info
@@ -1292,7 +1293,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		conn.packMu.Unlock()
 
 		if packAmount == 0 {
-			conn.expect(packet.IDResourcePackStack)
+			conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus)
 			_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		}
 		conn.storeResourcePack(pack.cacheKey, newPack)
@@ -1479,7 +1480,9 @@ func (conn *Conn) handleChunkRadiusUpdated(pk *packet.ChunkRadiusUpdated) error 
 	if pk.ChunkRadius < 1 {
 		return fmt.Errorf("expected chunk radius of at least 1, got %v", pk.ChunkRadius)
 	}
-	conn.expect(packet.IDPlayStatus)
+	// Some servers send ResourcePacksInfo before PlayStatus(LoginSuccess); the vanilla client accepts either
+	// order, so both are expected from here on.
+	conn.expect(packet.IDPlayStatus, packet.IDResourcePacksInfo)
 
 	conn.gameData.ChunkRadius = pk.ChunkRadius
 	conn.gameDataReceived.Store(true)
@@ -1509,8 +1512,7 @@ func (conn *Conn) handlePlayStatus(pk *packet.PlayStatus) error {
 		if err := conn.WritePacket(&packet.ClientCacheStatus{Enabled: conn.cacheEnabled}); err != nil {
 			return fmt.Errorf("send ClientCacheStatus: %w", err)
 		}
-		// The next packet we expect is the ResourcePacksInfo packet.
-		conn.expect(packet.IDResourcePacksInfo)
+		// ResourcePacksInfo is already expected, and may even have been handled if the server sent it first.
 		return conn.Flush()
 	case packet.PlayStatusLoginFailedClient:
 		_ = conn.close(conn.closeErr("client outdated"))
@@ -1611,33 +1613,11 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
-// expect sets the packet IDs that are next expected to arrive and re-checks
-// any deferred packets against the new expected set. This prevents a deadlock
-// when a packet arrives before its ID is added to the expected set.
+// expect sets the packet IDs that are next expected to arrive. A packet that was deferred before its ID was
+// expected is not handled later: expect everything a peer may send at a stage before writing the packet it
+// answers to.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
-	conn.handleDeferredPackets()
-}
-
-// handleDeferredPackets passes all currently deferred packets back through
-// handle(). Packets that now match expectedIDs are processed; the rest are
-// re-deferred by handle() automatically.
-func (conn *Conn) handleDeferredPackets() {
-	conn.deferredPacketMu.Lock()
-	if len(conn.deferredPackets) == 0 {
-		conn.deferredPacketMu.Unlock()
-		return
-	}
-	deferred := conn.deferredPackets
-	conn.deferredPackets = conn.deferredPackets[len(deferred):]
-	conn.deferredPacketMu.Unlock()
-
-	for _, pkData := range deferred {
-		if err := conn.handle(pkData); err != nil {
-			_ = conn.close(err)
-			return
-		}
-	}
 }
 
 // closeTransport closes conn without waiting for pending packets to be written. The context is cancelled

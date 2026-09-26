@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sandertv/go-raknet"
+	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
 // ServerStatusProvider represents a type that is able to provide the visual status of a server, in specific
@@ -36,8 +37,9 @@ type ServerStatus struct {
 	// MaxPlayers is the maximum amount of players in the server. If set to 0, MaxPlayers is set to
 	// PlayerCount + 1.
 	MaxPlayers int
-	// GameType is the default game mode configured in the server, as shown in the friend list.
-	// It is 0 for Survival, 1 for Creative, and 2 for Adventure.
+	// GameType is the default game mode of the server, as shown in the friend list. It is one of
+	// packet.GameTypeSurvival, packet.GameTypeCreative, packet.GameTypeAdventure or packet.GameTypeSpectator;
+	// any other value is advertised as Survival.
 	GameType int
 }
 
@@ -127,7 +129,7 @@ func (f *ForeignStatusProvider) update() {
 // ParsePongData parses the unconnected pong data passed into the relevant fields of a ServerStatus struct.
 func ParsePongData(pong []byte) ServerStatus {
 	frag := splitPong(string(pong))
-	if len(frag) < 9 {
+	if len(frag) < 8 {
 		return ServerStatus{ServerName: "Invalid pong data"}
 	}
 	serverName := frag[1]
@@ -140,29 +142,43 @@ func ParsePongData(pong []byte) ServerStatus {
 	if err != nil {
 		return ServerStatus{ServerName: "Invalid max player count"}
 	}
-	gameType, ok := parseGameType(frag[8])
-	if !ok {
-		return ServerStatus{ServerName: "Invalid game type"}
-	}
-	return ServerStatus{
+	status := ServerStatus{
 		ServerName:    serverName,
 		ServerSubName: serverSubName,
 		PlayerCount:   online,
 		MaxPlayers:    max,
-		GameType:      gameType,
 	}
+	// The game mode field is optional and, like the client, an unknown mode does not invalidate the pong.
+	if len(frag) > 8 {
+		status.GameType = parseGameType(frag[8])
+	}
+	return status
 }
 
-// parseGameType converts the game type string from the pong data to its int representation.
-// Returns 0 and false if the game type is not valid.
-func parseGameType(v string) (int, bool) {
-	switch strings.ToLower(strings.TrimSpace(v)) {
-	case "survival":
-		return 0, true
-	case "creative":
-		return 1, true
-	case "adventure":
-		return 2, true
+// gameTypeName returns the pong string for a ServerStatus.GameType. Types without a pong string are
+// advertised as Survival.
+func gameTypeName(gameType int) string {
+	switch gameType {
+	case packet.GameTypeCreative:
+		return "Creative"
+	case packet.GameTypeAdventure:
+		return "Adventure"
+	case packet.GameTypeSpectator:
+		return "Spectator"
 	}
-	return 0, false
+	return "Survival"
+}
+
+// parseGameType converts the game mode string of a pong to a ServerStatus.GameType. Unknown modes are
+// treated as Survival.
+func parseGameType(v string) int {
+	switch strings.ToLower(strings.TrimSpace(v)) {
+	case "creative":
+		return packet.GameTypeCreative
+	case "adventure":
+		return packet.GameTypeAdventure
+	case "spectator":
+		return packet.GameTypeSpectator
+	}
+	return packet.GameTypeSurvival
 }
