@@ -653,6 +653,7 @@ func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
 
 // deferPacket defers a packet so that it is obtained in the next ReadPacket call
 func (conn *Conn) deferPacket(pk *packetData) {
+	pk = pk.ensureOwned()
 	conn.deferredPacketMu.Lock()
 	conn.deferredPackets = append(conn.deferredPackets, pk)
 	conn.deferredPacketMu.Unlock()
@@ -685,7 +686,7 @@ func (conn *Conn) receive(data []byte) error {
 		}
 		select {
 		case <-conn.ctx.Done():
-		case conn.packets <- pkData:
+		case conn.packets <- pkData.ensureOwned():
 		}
 		return nil
 	}
