@@ -383,6 +383,11 @@ type CameraPreset struct {
 	//  - ControlSchemePlayerRelativeStrafe makes movement the same as the default behaviour, but can be
 	//    used in a custom camera.
 	ControlScheme Optional[byte]
+	// ApplyInheritedStartingRotation specifies if the camera should start at the rotation of the preset it
+	// inherits from, rather than at StartingRotation.
+	ApplyInheritedStartingRotation bool
+	// StartingRotation is the rotation that the camera starts at when the preset is applied.
+	StartingRotation Optional[mgl32.Vec2]
 }
 
 // Marshal encodes/decodes a CameraPreset.
@@ -409,6 +414,8 @@ func (x *CameraPreset) Marshal(r IO) {
 	OptionalFunc(r, &x.PlayerEffects, r.Bool)
 	OptionalMarshaler(r, &x.AimAssist)
 	OptionalFunc(r, &x.ControlScheme, r.Uint8)
+	r.Bool(&x.ApplyInheritedStartingRotation)
+	OptionalFunc(r, &x.StartingRotation, r.Vec2)
 }
 
 // CameraPresetAimAssist represents a preset for aim assist settings.
