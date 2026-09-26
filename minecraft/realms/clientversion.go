@@ -13,27 +13,15 @@ import (
 )
 
 const (
-	// compatiblePath answers COMPATIBLE or OUTDATED for the Client-Version sent
-	// with the request. The vanilla client checks it before offering Realms play.
-	compatiblePath = "/mco/client/compatible"
-	// compatibleResponse is the body returned for a version Realms still accepts.
-	compatibleResponse = "COMPATIBLE"
-	// unknownClientVersionReason is the reason Realms returns when Client-Version
-	// is not one of the builds it accepts.
+	compatiblePath             = "/mco/client/compatible"
+	compatibleResponse         = "COMPATIBLE"
 	unknownClientVersionReason = "unknown_client_version"
-	// maxVersionFallback bounds how far below the preferred version the search for
-	// an accepted build may walk.
-	maxVersionFallback = 24
-	// versionSearchCooldown holds off repeating a search that found nothing, so a
-	// version Realms has retired cannot make every request pay for the full walk.
-	versionSearchCooldown = 5 * time.Minute
+	maxVersionFallback         = 24
+	versionSearchCooldown      = 5 * time.Minute
 )
 
-// SetClientVersion sets the game version sent as Client-Version. Realms accepts
-// only versions on its own allowlist of shipped builds, which the compiled-in
-// version leads whenever a protocol update lands before Realms adopts it, so
-// prefer the version of a real client connecting through the caller. An empty
-// version restores protocol.CurrentVersion.
+// SetClientVersion sets the game version sent to Realms. An empty version uses
+// protocol.CurrentVersion. Invalid versions are ignored.
 func (c *Client) SetClientVersion(version string) {
 	version = strings.TrimSpace(version)
 	c.versionMu.Lock()
@@ -63,11 +51,7 @@ func (c *Client) clientVersion() string {
 	return protocol.CurrentVersion
 }
 
-// negotiateClientVersion searches for a version Realms accepts after failed was
-// rejected, and reports the version to retry with and whether it is worth doing.
-// It walks the patch component of the preferred version down and asks the
-// compatibility endpoint about each candidate, caching the first that is
-// accepted for later requests.
+// negotiateClientVersion finds and caches an accepted version after a rejection.
 func (c *Client) negotiateClientVersion(ctx context.Context, failed string) (string, bool) {
 	c.negotiateMu.Lock()
 	defer c.negotiateMu.Unlock()
@@ -92,8 +76,7 @@ func (c *Client) negotiateClientVersion(ctx context.Context, failed string) (str
 		}
 		accepted, err := c.versionCompatible(ctx, candidate)
 		if err != nil {
-			// The endpoint is unreachable or rejecting us for an unrelated reason;
-			// walking further would only repeat the same failure.
+			// Stop searching if the compatibility endpoint fails.
 			c.recordSearchFailure()
 			return failed, false
 		}
@@ -118,7 +101,7 @@ func (c *Client) recordSearchFailure() {
 
 // versionCompatible reports whether Realms still accepts a game version.
 func (c *Client) versionCompatible(ctx context.Context, version string) (bool, error) {
-	body, status, err := c.send(ctx, compatiblePath, version)
+	body, status, err := c.sendWithMethod(ctx, http.MethodGet, realmsBaseURL, compatiblePath, nil, version)
 	if err != nil {
 		return false, err
 	}

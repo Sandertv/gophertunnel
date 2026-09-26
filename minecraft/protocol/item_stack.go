@@ -235,7 +235,7 @@ func (x *ItemStackResponse) Marshal(r IO) {
 	if len(x.ContainerInfo) != 0 {
 		containerInfo = Option(x.ContainerInfo)
 	}
-	DoubleOptionalFunc(r, &containerInfo, func(containerInfo *[]StackResponseContainerInfo) {
+	OptionalFunc(r, &containerInfo, func(containerInfo *[]StackResponseContainerInfo) {
 		Slice(r, containerInfo)
 	})
 	if value, ok := containerInfo.Value(); ok {
@@ -272,8 +272,8 @@ type StackResponseSlotInfo struct {
 	// CustomName is the custom name of the item stack. It is used in relation to text filtering.
 	CustomName string
 	// FilteredCustomName is a filtered version of CustomName with all the profanity removed. The client will
-	// use this over CustomName if this field is not empty and they have the "Filter Profanity" setting enabled.
-	FilteredCustomName string
+	// use this over CustomName if present and they have the "Filter Profanity" setting enabled.
+	FilteredCustomName Optional[string]
 	// DurabilityCorrection is the current durability of the item stack. This durability will be shown
 	// client-side after the response is sent to the client.
 	DurabilityCorrection int32
@@ -288,12 +288,12 @@ func (x *StackResponseSlotInfo) Marshal(r IO) {
 	if x.StackNetworkID > 0 {
 		stackNetworkID = Option(x.StackNetworkID)
 	}
-	DoubleOptionalFunc(r, &stackNetworkID, r.Varint32)
+	OptionalFunc(r, &stackNetworkID, r.Varint32)
 	if value, ok := stackNetworkID.Value(); ok {
 		x.StackNetworkID = value
 	}
 	r.String(&x.CustomName)
-	r.String(&x.FilteredCustomName)
+	OptionalFunc(r, &x.FilteredCustomName, r.String)
 	r.Varint32(&x.DurabilityCorrection)
 	if x.DurabilityCorrection < -32768 || x.DurabilityCorrection > 32767 {
 		r.InvalidValue(x.DurabilityCorrection, "durability correction", "must fit in an int16")

@@ -75,7 +75,7 @@ func (r *Reader) StringUTF(x *string) {
 	}
 	r.checkRemaining(l, "string")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = *(*string)(unsafe.Pointer(&data))
@@ -91,7 +91,7 @@ func (r *Reader) String(x *string) {
 	}
 	r.checkRemaining(l, "string")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = *(*string)(unsafe.Pointer(&data))
@@ -107,7 +107,7 @@ func (r *Reader) ByteSlice(x *[]byte) {
 	}
 	r.checkRemaining(l, "byte slice")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = data
@@ -245,14 +245,13 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
 		Slice(r, slots)
 	})
-	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
-		Slice(r, actions)
-	})
+	Slice(r, &x.Actions)
 	IntegerFunc(&x.ActionType, r.Varint32)
 	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)
 	IntegerFunc(&x.BlockFace, r.Uint8)
 	r.Varint32(&x.HotBarSlot)
+	r.Uint8(&x.Hand)
 	r.ItemInstance(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
@@ -587,6 +586,10 @@ func (r *Reader) PackSetting(x *PackSetting) {
 	case PackSettingTypeString:
 		var v string
 		r.String(&v)
+		x.Value = v
+	case PackSettingTypeStringList:
+		var v []string
+		FuncSlice(r, &v, r.String)
 		x.Value = v
 	default:
 		r.UnknownEnumOption(t, "pack setting")

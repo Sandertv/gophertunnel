@@ -37,7 +37,7 @@ const (
 	PlayerActionStopSwimming
 	PlayerActionStartSpinAttack
 	PlayerActionStopSpinAttack
-	PlayerActionStartBuildingBlock
+	PlayerActionInteractWithBlock
 	PlayerActionPredictDestroyBlock
 	PlayerActionContinueDestroyBlock
 	PlayerActionStartItemUseOn

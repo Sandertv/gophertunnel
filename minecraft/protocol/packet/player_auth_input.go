@@ -183,15 +183,15 @@ func (pk *PlayerAuthInput) Marshal(io protocol.IO) {
 	io.Float32(&pk.InteractYaw)
 	io.Varuint64(&pk.Tick)
 	io.Vec3(&pk.Delta)
-	protocol.DoubleOptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
-	protocol.DoubleOptionalFunc(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
+	protocol.OptionalFunc(io, &pk.ItemInteractionData, io.PlayerInventoryAction)
+	protocol.OptionalFunc(io, &pk.ItemStackRequest, func(x *protocol.ItemStackRequest) {
 		x.Marshal(io)
 	})
-	protocol.DoubleOptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
+	protocol.OptionalFunc(io, &pk.BlockActions, func(x *[]protocol.PlayerBlockAction) {
 		protocol.Slice(io, x)
 	})
-	protocol.DoubleOptionalFunc(io, &pk.VehicleRotation, io.Vec2)
-	protocol.DoubleOptionalFunc(io, &pk.ClientPredictedVehicle, io.ActorUniqueID)
+	protocol.OptionalFunc(io, &pk.VehicleRotation, io.Vec2)
+	protocol.OptionalFunc(io, &pk.ClientPredictedVehicle, io.ActorUniqueID)
 	io.Vec2(&pk.AnalogueMoveVector)
 	io.Vec3(&pk.CameraOrientation)
 	io.Vec2(&pk.RawMoveVector)

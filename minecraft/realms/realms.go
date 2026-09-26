@@ -1,6 +1,7 @@
 package realms
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -20,12 +21,12 @@ type Client struct {
 	xblToken   *auth.XBLToken
 	httpClient *http.Client
 
-	negotiateMu sync.Mutex // Serialises Client-Version negotiation so one rejection triggers one search.
+	negotiateMu sync.Mutex
 
 	versionMu        sync.Mutex
-	preferredVersion string    // Version to send, empty for protocol.CurrentVersion.
-	acceptedVersion  string    // Version Realms accepted, empty until a rejection forces a search.
-	searchFailedAt   time.Time // When the last search found no accepted version.
+	preferredVersion string
+	acceptedVersion  string
+	searchFailedAt   time.Time
 }
 
 const (
@@ -117,6 +118,25 @@ type Realm struct {
 	client *Client
 }
 
+// StoryOptIn is an opt-in state used by Realms Stories settings.
+type StoryOptIn string
+
+const (
+	StoryOptInNone   StoryOptIn = "NONE"
+	StoryOptInOptIn  StoryOptIn = "OPT_IN"
+	StoryOptInOptOut StoryOptIn = "OPT_OUT"
+)
+
+// StorySettings contains the settings controlling Realms Stories for a realm.
+type StorySettings struct {
+	AutoStories   bool       `json:"autostories"`
+	Coordinates   bool       `json:"coordinates"`
+	Notifications bool       `json:"notifications"`
+	PlayerOptIn   StoryOptIn `json:"playerOptIn"`
+	RealmOptIn    StoryOptIn `json:"realmOptIn"`
+	Timeline      bool       `json:"timeline"`
+}
+
 // RealmAddress contains the address returned by the Realms join endpoint along
 // with the signalling protocol used for connecting to it.
 type RealmAddress struct {
@@ -192,6 +212,75 @@ func (r *Realm) OnlinePlayers(ctx context.Context) (players []Player, err error)
 	return response.Players, nil
 }
 
+// UpdateStorySettings updates the Realms Stories settings for this realm.
+func (r *Realm) UpdateStorySettings(ctx context.Context, settings StorySettings) error {
+	if r.client == nil {
+		return fmt.Errorf("realm client is nil")
+	}
+	return r.client.UpdateStorySettings(ctx, r.ID, settings)
+}
+
+// StorySettings gets the Realms Stories settings for this realm.
+func (r *Realm) StorySettings(ctx context.Context) (StorySettings, error) {
+	if r.client == nil {
+		return StorySettings{}, fmt.Errorf("realm client is nil")
+	}
+	return r.client.StorySettings(ctx, r.ID)
+}
+
+// OptInToStoryTimeline opts the authenticated player into this realm's Stories timeline
+// without changing any other Stories settings.
+func (r *Realm) OptInToStoryTimeline(ctx context.Context) error {
+	if r.client == nil {
+		return fmt.Errorf("realm client is nil")
+	}
+	return r.client.OptInToStoryTimeline(ctx, r.ID)
+}
+
+// StorySettings gets the Realms Stories settings for a realm.
+func (r *Client) StorySettings(ctx context.Context, realmID int) (StorySettings, error) {
+	body, _, err := r.request(ctx, fmt.Sprintf("/worlds/%d/stories/settings", realmID))
+	if err != nil {
+		return StorySettings{}, err
+	}
+	var settings StorySettings
+	if err := json.Unmarshal(body, &settings); err != nil {
+		return StorySettings{}, err
+	}
+	return settings, nil
+}
+
+// UpdateStorySettings updates the Realms Stories settings for a realm.
+func (r *Client) UpdateStorySettings(ctx context.Context, realmID int, settings StorySettings) error {
+	body, err := json.Marshal(settings)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = r.requestWithMethod(
+		ctx,
+		http.MethodPost,
+		realmsBaseURL,
+		fmt.Sprintf("/worlds/%d/stories/settings", realmID),
+		body,
+	)
+	return err
+}
+
+// OptInToStoryTimeline opts the authenticated player into a realm's Stories timeline
+// without changing any other Stories settings.
+func (r *Client) OptInToStoryTimeline(ctx context.Context, realmID int) error {
+	settings, err := r.StorySettings(ctx, realmID)
+	if err != nil {
+		return err
+	}
+	if settings.PlayerOptIn == StoryOptInOptIn {
+		return nil
+	}
+	settings.PlayerOptIn = StoryOptInOptIn
+	return r.UpdateStorySettings(ctx, realmID, settings)
+}
+
 // xboxToken returns the xbox token used for the api.
 func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
 	if r.xblToken != nil && r.xblToken.Valid() {
@@ -210,12 +299,15 @@ func (r *Client) xboxToken(ctx context.Context) (*auth.XBLToken, error) {
 	return r.xblToken, err
 }
 
-// request sends an http get request to path with the right headers for the api
-// set. A Client-Version the api does not accept is replaced once and the
-// request is sent again.
+// request sends a GET request to the Realms API.
 func (r *Client) request(ctx context.Context, path string) (body []byte, status int, err error) {
+	return r.requestWithMethod(ctx, http.MethodGet, realmsBaseURL, path, nil)
+}
+
+// requestWithMethod retries a rejected Client-Version with an accepted version.
+func (r *Client) requestWithMethod(ctx context.Context, method, baseURL, path string, requestBody []byte) (body []byte, status int, err error) {
 	sent := r.clientVersion()
-	body, status, err = r.send(ctx, path, sent)
+	body, status, err = r.sendWithMethod(ctx, method, baseURL, path, requestBody, sent)
 	if !unknownClientVersion(status, body) {
 		return body, status, err
 	}
@@ -223,24 +315,26 @@ func (r *Client) request(ctx context.Context, path string) (body []byte, status 
 	if !retry {
 		return body, status, err
 	}
-	return r.send(ctx, path, version)
+	return r.sendWithMethod(ctx, method, baseURL, path, requestBody, version)
 }
 
-// send sends a single http get request to path with an explicit Client-Version,
-// without negotiating a replacement for a rejected one.
-func (r *Client) send(ctx context.Context, path, clientVersion string) (body []byte, status int, err error) {
+// sendWithMethod sends one request without negotiating its Client-Version.
+func (r *Client) sendWithMethod(ctx context.Context, method, baseURL, path string, requestBody []byte, clientVersion string) (body []byte, status int, err error) {
 	if path == "" {
 		return nil, 0, fmt.Errorf("path is empty")
 	}
 	if path[0] != '/' {
 		path = "/" + path
 	}
-	req, err := http.NewRequestWithContext(ctx, "GET", realmsBaseURL+path, nil)
+	req, err := http.NewRequestWithContext(ctx, method, baseURL+path, bytes.NewReader(requestBody))
 	if err != nil {
 		return nil, 0, err
 	}
 	req.Header.Set("User-Agent", "MCPE/UWP")
 	req.Header.Set("Client-Version", clientVersion)
+	if requestBody != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
 	xbl, err := r.xboxToken(ctx)
 	if err != nil {
 		return nil, 0, err
