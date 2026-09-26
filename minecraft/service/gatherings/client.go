@@ -267,9 +267,8 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 // presence to the Xbox Live Multiplayer Session Directory (MPSD) containing
 // identifiers tied to the experience and world they are currently playing in.
 // The user's friends can use the identifiers published in the MPSD session's
-// custom properties to join the same world. The world ID may be nil if the
-// server has no world ID associated, e.g. The Hive. The friend ID also appears
-// to be optional.
+// custom properties to join the same world. The world ID or friend ID may be
+// [uuid.Nil] or an empty string if they're not available.
 func (c *Client) JoinFriend(ctx context.Context, experienceID, worldID uuid.UUID, friendID string) (*Address, error) {
 	if experienceID == uuid.Nil {
 		return nil, fmt.Errorf("service/gatherings: experience ID must not be nil")
@@ -322,6 +321,6 @@ type joinFriendRequest struct {
 	// ExperienceID identifies the experience to join.
 	ExperienceID uuid.UUID `json:"experienceId"`
 	// WorldID identifies the world within the experience to join.
-	// It may be nil if the server has no world ID associated with it, e.g. The Hive.
+	// It may be absent if the server has no world ID associated with it.
 	WorldID uuid.UUID `json:"worldId,omitzero"`
 }

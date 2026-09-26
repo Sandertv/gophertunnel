@@ -187,7 +187,7 @@ type AvailableGame struct {
 //
 // A FeaturedServer is decoded from the [catalog.Item.DisplayProperties] field.
 // It populates the same display fields as [Experience], and also contains a public
-// host and port. Use [FeaturedServer.Address] directly when dialing.
+// host and port. Use [FeaturedServer.Address] when dialing.
 type FeaturedServer struct {
 	experience
 
