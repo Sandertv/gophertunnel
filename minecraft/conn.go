@@ -129,8 +129,11 @@ type Conn struct {
 	// were not used by the connection yet. These packets are read the first when calling to Read or
 	// ReadPacket after being connected.
 	deferredPackets []*packetData
-	// recheckDeferred is set by expect so that the receiving goroutine re-checks deferred packets against
-	// the new expected set.
+	// handleMu serialises the login handlers: the receive loop holds it while handling a packet and any other
+	// goroutine that changes the expected set takes it to re-check deferred packets.
+	handleMu sync.Mutex
+	// recheckDeferred is set by expect so that the holder of handleMu re-checks deferred packets against the
+	// new expected set.
 	recheckDeferred atomic.Bool
 	readDeadline    <-chan time.Time
 
@@ -692,6 +695,8 @@ func (conn *Conn) receive(data []byte) error {
 		}
 		return nil
 	}
+	conn.handleMu.Lock()
+	defer conn.handleMu.Unlock()
 	if err := conn.handle(pkData); err != nil {
 		return err
 	}
@@ -1618,31 +1623,54 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 }
 
 // expect sets the packet IDs that are next expected to arrive. Packets deferred before this call are
-// re-checked against the new set by the receiving goroutine, so that a packet which arrived early does not
-// stall the login sequence.
+// re-checked against the new set, so that a packet which arrived early does not stall the login sequence.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
 	conn.recheckDeferred.Store(true)
-}
-
-// handleDeferredPackets passes the deferred packets back through handle() while the expected set keeps
-// changing. It must only run on the receiving goroutine: handlers mutate connection and decoder state that
-// is not safe to touch from the goroutines that also call expect().
-func (conn *Conn) handleDeferredPackets() error {
-	for conn.recheckDeferred.Swap(false) {
-		conn.deferredPacketMu.Lock()
-		deferred := conn.deferredPackets
-		conn.deferredPackets = nil
-		conn.deferredPacketMu.Unlock()
-
-		// Packets that still do not match are deferred again by handle(), in their original order.
-		for _, pkData := range deferred {
-			if err := conn.handle(pkData); err != nil {
-				return err
-			}
+	// Called from a handler, the receive loop holds handleMu and re-checks once the handler has returned, so
+	// that the handler's state change is complete first. Called from anywhere else, nobody would.
+	if conn.handleMu.TryLock() {
+		defer conn.handleMu.Unlock()
+		if err := conn.handleDeferredPackets(); err != nil {
+			_ = conn.close(err)
 		}
 	}
-	return nil
+}
+
+// handleDeferredPackets handles deferred packets that the expected set now covers, one at a time so that each
+// handler sees the set as left by the previous one. The caller must hold handleMu.
+func (conn *Conn) handleDeferredPackets() error {
+	if !conn.recheckDeferred.Swap(false) {
+		return nil
+	}
+	for {
+		pkData, ok := conn.takeExpectedDeferred()
+		if !ok {
+			return nil
+		}
+		pks, err := pkData.decode(conn)
+		if err != nil {
+			return err
+		}
+		if err := conn.handleMultiple(pks); err != nil {
+			return err
+		}
+	}
+}
+
+// takeExpectedDeferred removes and returns the first deferred packet in the expected set. The other packets
+// stay queued in order, so a concurrent ReadPacket never sees them disappear.
+func (conn *Conn) takeExpectedDeferred() (*packetData, bool) {
+	expected := conn.expectedIDs.Load().([]uint32)
+	conn.deferredPacketMu.Lock()
+	defer conn.deferredPacketMu.Unlock()
+	for i, pkData := range conn.deferredPackets {
+		if slices.Contains(expected, pkData.h.PacketID) {
+			conn.deferredPackets = slices.Delete(conn.deferredPackets, i, i+1)
+			return pkData, true
+		}
+	}
+	return nil, false
 }
 
 // closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
