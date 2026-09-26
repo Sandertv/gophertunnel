@@ -185,7 +185,7 @@ func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
 func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, uint32(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -195,7 +195,7 @@ func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, uint64(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
@@ -205,7 +205,7 @@ func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, math.Float32bits(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
 	}
 	return nil
@@ -215,7 +215,7 @@ func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, math.Float64bits(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
 	}
 	return nil

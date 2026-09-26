@@ -121,7 +121,7 @@ func (s *dumpState) encodeTagValue(val any) string {
 			actualVal := v.Interface()
 
 			s.currentIndent++
-			b.WriteString(fmt.Sprintf("%v'%v': %v(%v),\n", s.indent(), k.String(), s.encodeTagType(actualVal), s.encodeTagValue(actualVal)))
+			fmt.Fprintf(&b, "%v'%v': %v(%v),\n", s.indent(), k.String(), s.encodeTagType(actualVal), s.encodeTagValue(actualVal))
 			s.currentIndent--
 		}
 		b.WriteString(s.indent() + "}")
@@ -134,7 +134,7 @@ func (s *dumpState) encodeTagValue(val any) string {
 			actualVal := v.Interface()
 
 			s.currentIndent++
-			b.WriteString(fmt.Sprintf("%v%v,\n", s.indent(), s.encodeTagValue(actualVal)))
+			fmt.Fprintf(&b, "%v%v,\n", s.indent(), s.encodeTagValue(actualVal))
 			s.currentIndent--
 		}
 		b.WriteString(s.indent() + "}")

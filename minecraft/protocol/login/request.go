@@ -104,7 +104,8 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		authenticated bool
 		t             = time.Now()
 	)
-	if verifier != nil && req.Token != "" {
+	switch {
+	case verifier != nil && req.Token != "":
 		// The context here is used for making requests via remote key set, which does not normally
 		// occur in this case since we use a custom-made OIDC verifier that has already static key set included.
 		idt, err := verifier.Verify(context.Background(), req.Token)
@@ -136,7 +137,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
-	} else if req.Token != "" {
+	case req.Token != "":
 		// Parse the token without verification to extract identity and the public key for encryption.
 		tok, err := jwt.ParseSigned(req.Token, []jose.SignatureAlgorithm{jose.ES384, jose.RS256})
 		if err != nil {
@@ -153,7 +154,7 @@ func Parse(request []byte, verifier *oidc.IDTokenVerifier) (IdentityData, Client
 		if err := iData.Validate(); err != nil {
 			return iData, cData, res, fmt.Errorf("validate identity data: %w", err)
 		}
-	} else {
+	default:
 		legacyID, legacyKey, legacyAuthed, err := parseLegacyChain(req.Certificate.Chain, t)
 		if err != nil {
 			return iData, cData, res, err
@@ -191,8 +192,7 @@ func parseLegacyChain(chain []string, now time.Time) (IdentityData, *ecdsa.Publi
 	}
 
 	// The first token holds the client's public key in the x5u (it's self signed).
-	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
-	raw, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	raw := tok.Headers[0].ExtraHeaders["x5u"]
 	if err := parseAsKey(raw, key); err != nil {
 		return IdentityData{}, nil, false, fmt.Errorf("parse x5u: %w", err)
 	}
@@ -282,7 +282,7 @@ func parseLoginRequest(requestData []byte) (*request, error) {
 	if err := binary.Read(buf, binary.LittleEndian, &rawLength); err != nil {
 		return nil, fmt.Errorf("read raw token length: %w", err)
 	}
-	r.request.RawToken = string(buf.Next(int(rawLength)))
+	r.RawToken = string(buf.Next(int(rawLength)))
 	if n := buf.Len(); n != 0 {
 		return nil, fmt.Errorf("%d unread bytes", n)
 	}
@@ -332,8 +332,7 @@ func Encode(loginChain string, data ClientData, key *ecdsa.PrivateKey, token str
 	keyData := MarshalPublicKey(&key.PublicKey)
 	tok, _ := jwt.ParseSigned(cert.Chain[0], []jose.SignatureAlgorithm{jose.ES384})
 
-	//lint:ignore S1005 Double assignment is done explicitly to prevent panics.
-	x5uData, _ := tok.Headers[0].ExtraHeaders["x5u"]
+	x5uData := tok.Headers[0].ExtraHeaders["x5u"]
 	x5u, _ := x5uData.(string)
 	claims := jwt.Claims{
 		Expiry:    jwt.NewNumericDate(time.Now().Add(time.Hour * 6)),

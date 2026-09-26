@@ -1,33 +1,55 @@
 name: Go
-on: [push, pull_request]
-jobs:
 
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
-
-      - name: Check out code into the Go module directory
+      - name: Check out code
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
 
-      - name: Get dependencies
-        run: |
-          mkdir -p $GOPATH/bin
-          export PATH=$PATH:$GOPATH/bin
-
-      - name: Vet
-        run: go vet ./...
-
-      - name: Staticcheck
-        run: |
-          go get honnef.co/go/tools/cmd/staticcheck@v0.6.1
-          GOBIN=$PWD/bin go install honnef.co/go/tools/cmd/staticcheck@v0.6.1
-          ./bin/staticcheck ./...
+      - name: Test
+        run: go test -race ./...
 
       - name: Build
-        run: go build -o gophertunnel_exe -v .
+        run: go build ./...
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: stable
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
