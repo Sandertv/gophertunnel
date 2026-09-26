@@ -129,6 +129,9 @@ type Conn struct {
 	// were not used by the connection yet. These packets are read the first when calling to Read or
 	// ReadPacket after being connected.
 	deferredPackets []*packetData
+	// recheckDeferred is set by expect so that the receiving goroutine re-checks deferred packets against
+	// the new expected set.
+	recheckDeferred atomic.Bool
 	readDeadline    <-chan time.Time
 
 	// sendMu protects bufferedSend/bufferedSendSpare.
@@ -689,7 +692,10 @@ func (conn *Conn) receive(data []byte) error {
 		}
 		return nil
 	}
-	return conn.handle(pkData)
+	if err := conn.handle(pkData); err != nil {
+		return err
+	}
+	return conn.handleDeferredPackets()
 }
 
 // handle tries to handle the incoming packetData.
@@ -1147,6 +1153,8 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 
 // startGame sends a StartGame packet using the game data of the connection.
 func (conn *Conn) startGame() {
+	// The client may answer before the packets below are all written, so expect its replies first.
+	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 	data := conn.gameData
 	if len(data.Dimensions) > 0 {
 		_ = conn.WritePacket(&packet.DimensionData{Definitions: data.Dimensions})
@@ -1206,7 +1214,6 @@ func (conn *Conn) startGame() {
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
-	conn.expect(packet.IDRequestChunkRadius, packet.IDSetLocalPlayerAsInitialised)
 }
 
 // nextResourcePackDownload moves to the next resource pack to download and sends a resource pack data info
@@ -1610,33 +1617,32 @@ func (conn *Conn) encryptionKey(salt []byte, pub *ecdsa.PublicKey) ([32]byte, er
 	return sha256.Sum256(append(salt, sharedSecret...)), nil
 }
 
-// expect sets the packet IDs that are next expected to arrive and re-checks
-// any deferred packets against the new expected set. This prevents a deadlock
-// when a packet arrives before its ID is added to the expected set.
+// expect sets the packet IDs that are next expected to arrive. Packets deferred before this call are
+// re-checked against the new set by the receiving goroutine, so that a packet which arrived early does not
+// stall the login sequence.
 func (conn *Conn) expect(packetIDs ...uint32) {
 	conn.expectedIDs.Store(packetIDs)
-	conn.handleDeferredPackets()
+	conn.recheckDeferred.Store(true)
 }
 
-// handleDeferredPackets passes all currently deferred packets back through
-// handle(). Packets that now match expectedIDs are processed; the rest are
-// re-deferred by handle() automatically.
-func (conn *Conn) handleDeferredPackets() {
-	conn.deferredPacketMu.Lock()
-	if len(conn.deferredPackets) == 0 {
+// handleDeferredPackets passes the deferred packets back through handle() while the expected set keeps
+// changing. It must only run on the receiving goroutine: handlers mutate connection and decoder state that
+// is not safe to touch from the goroutines that also call expect().
+func (conn *Conn) handleDeferredPackets() error {
+	for conn.recheckDeferred.Swap(false) {
+		conn.deferredPacketMu.Lock()
+		deferred := conn.deferredPackets
+		conn.deferredPackets = nil
 		conn.deferredPacketMu.Unlock()
-		return
-	}
-	deferred := conn.deferredPackets
-	conn.deferredPackets = conn.deferredPackets[len(deferred):]
-	conn.deferredPacketMu.Unlock()
 
-	for _, pkData := range deferred {
-		if err := conn.handle(pkData); err != nil {
-			_ = conn.close(err)
-			return
+		// Packets that still do not match are deferred again by handle(), in their original order.
+		for _, pkData := range deferred {
+			if err := conn.handle(pkData); err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 // closeTransport closes conn without waiting for pending packets to be written. The context is cancelled
