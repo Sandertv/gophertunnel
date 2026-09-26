@@ -463,8 +463,7 @@ func (listener *Listener) createConn(netConn net.Conn) {
 
 	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
 	conn.disableEncryption = conn.disableEncryption || listener.cfg.DisablePacketEncryption
-	conn.acceptedProto = listener.cfg.AcceptedProtocols
-	conn.acceptedProto = append(conn.acceptedProto, proto{})
+	conn.acceptedProto = append(slices.Clone(listener.cfg.AcceptedProtocols), proto{})
 	conn.compression = listener.cfg.Compression
 	conn.compressionSelector = listener.cfg.CompressionSelector
 	conn.compressionThreshold = listener.cfg.CompressionThreshold

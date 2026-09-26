@@ -69,3 +69,6 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
+
+# Downloaded development tools.
+.bin/

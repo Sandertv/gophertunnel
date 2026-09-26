@@ -170,8 +170,7 @@ func (w *Writer) BEARGB(x *color.RGBA) {
 
 // UUID writes a UUID to the underlying buffer.
 func (w *Writer) UUID(x *uuid.UUID) {
-	b := (*x)[8:]
-	b = append(b, (*x)[:8]...)
+	b := append((*x)[8:], (*x)[:8]...)
 	for i, j := 0, 15; i < j; i, j = i+1, j-1 {
 		b[i], b[j] = b[j], b[i]
 	}

@@ -586,13 +586,11 @@ func (conn *Conn) SetDeadline(t time.Time) error {
 // SetReadDeadline sets the read deadline of the Conn to the time passed. The time must be after time.Now().
 // Passing an empty time.Time to the method (time.Time{}) results in the read deadline being cleared.
 func (conn *Conn) SetReadDeadline(t time.Time) error {
-	empty := time.Time{}
-	switch {
-	case t == empty: //nolint:staticcheck // Match only the empty value, including its location, to preserve deadline behaviour.
+	if t.IsZero() {
 		conn.readDeadline = make(chan time.Time)
-	case t.Before(time.Now()):
+	} else if t.Before(time.Now()) {
 		panic(fmt.Errorf("error setting read deadline: time passed is before time.Now()"))
-	default:
+	} else {
 		conn.readDeadline = time.After(time.Until(t))
 	}
 	return nil

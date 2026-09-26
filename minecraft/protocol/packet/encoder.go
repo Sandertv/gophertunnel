@@ -120,8 +120,7 @@ func (encoder *Encoder) Encode(packets [][]byte) error {
 				dst := compressedBuf.Bytes()
 				var compressed []byte
 				compressed, err = compression.Compress(batch)
-				data = dst
-				data = append(data, compressed...)
+				data = append(dst, compressed...)
 			}
 			if err != nil {
 				return fmt.Errorf("compress batch: %w", err)

@@ -21,7 +21,8 @@ minor version is tagged when gophertunnel supports a new Minecraft version that 
 
 ## Development
 
-Run `make lint` to check formatting and code quality with the pinned golangci-lint version.
+Run `make lint` to check formatting and code quality. It downloads the pinned golangci-lint
+release binary once into `.bin/`. CI uses the same version and configuration.
 Run `go test -race ./...` and `go build ./...` to run the same test and build checks as CI.
 
 ## Contact
