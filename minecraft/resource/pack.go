@@ -339,7 +339,7 @@ func createTempArchive(path string) (*os.File, error) {
 			return fmt.Errorf("find relative path: %w", err)
 		}
 		// Make sure to replace backslashes with forward slashes as Go zip only allows that.
-		relPath = strings.Replace(relPath, `\`, "/", -1)
+		relPath = strings.ReplaceAll(relPath, `\`, "/")
 		// Always ignore '.' as it is not a real file/folder.
 		if relPath == "." {
 			return nil

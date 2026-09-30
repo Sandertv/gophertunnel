@@ -37,7 +37,8 @@ func (encrypt *encrypt) encrypt(data []byte) []byte {
 	hash.Write(encrypt.keyBytes)
 
 	// We add the first 8 bytes of the checksum to the data and encrypt it.
-	data = append(data, hash.Sum(nil)[:8]...)
+	var digest [sha256.Size]byte
+	data = append(data, hash.Sum(digest[:0])[:8]...)
 
 	encrypt.stream.XORKeyStream(data[1:], data[1:])
 	return data
@@ -66,11 +67,13 @@ func (encrypt *encrypt) verify(data []byte) error {
 	hash.Write(encrypt.buf[:])
 	hash.Write(data[:len(data)-8])
 	hash.Write(encrypt.keyBytes)
-	ourSum := hash.Sum(nil)[:8]
+	var digest [sha256.Size]byte
+	ourSum := hash.Sum(digest[:0])[:8]
 
 	// Finally we check if the original sum was equal to the sum we just produced.
 	if !bytes.Equal(sum, ourSum) {
-		return fmt.Errorf("invalid checksum of packet %v: expected %x, got %x", encrypt.sendCounter-1, ourSum, sum)
+		// Pass the checksum by value so error formatting does not move digest to the heap.
+		return fmt.Errorf("invalid checksum of packet %v: expected %x, got %x", encrypt.sendCounter-1, [8]byte(ourSum), sum)
 	}
 	return nil
 }
