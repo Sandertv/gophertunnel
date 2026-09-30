@@ -258,4 +258,7 @@ const (
 	IDClientboundStonecutterSetRecipe
 	IDServerboundMatchmakingCancel
 	IDSetPassengerOfBlock
+	IDServerboundCursorItemDrag
+	IDClientboundPlayAudioContent
+	IDServerboundRegisterAudioContent
 )

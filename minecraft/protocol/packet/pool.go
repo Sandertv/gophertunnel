@@ -290,6 +290,7 @@ func init() {
 		IDClientboundMatchmakingState:        func() Packet { return &ClientboundMatchmakingState{} },
 		IDClientboundStonecutterSetRecipe:    func() Packet { return &ClientboundStonecutterSetRecipe{} },
 		IDSetPassengerOfBlock:                func() Packet { return &SetPassengerOfBlock{} },
+		IDClientboundPlayAudioContent:        func() Packet { return &ClientboundPlayAudioContent{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -388,6 +389,8 @@ func init() {
 		IDSetPlayerFurnaceOptions:           func() Packet { return &SetPlayerFurnaceOptions{} },
 		IDServerboundStonecutterSetRecipe:   func() Packet { return &ServerboundStonecutterSetRecipe{} },
 		IDServerboundMatchmakingCancel:      func() Packet { return &ServerboundMatchmakingCancel{} },
+		IDServerboundCursorItemDrag:         func() Packet { return &ServerboundCursorItemDrag{} },
+		IDServerboundRegisterAudioContent:   func() Packet { return &ServerboundRegisterAudioContent{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

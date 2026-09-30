@@ -50,6 +50,8 @@ type AddActor struct {
 	// way the entity shows up when first spawned in terms of it shown as riding an entity. Setting these
 	// links is important for new viewers to see the entity is riding another entity.
 	EntityLinks []protocol.EntityLink
+	// PassengerOfBlock holds the data of the block that the entity is riding, if any.
+	PassengerOfBlock protocol.Optional[protocol.PassengerOfBlockData]
 }
 
 // ID ...
@@ -71,4 +73,5 @@ func (pk *AddActor) Marshal(io protocol.IO) {
 	io.EntityMetadata(&pk.EntityMetadata)
 	protocol.Single(io, &pk.EntityProperties)
 	protocol.Slice(io, &pk.EntityLinks)
+	protocol.OptionalMarshaler(io, &pk.PassengerOfBlock)
 }
