@@ -156,6 +156,14 @@ const (
 	DisconnectReasonMissingStructureData
 	DisconnectReasonUnsupportedTransport
 	DisconnectReasonSubClientLoginNotBound
+	DisconnectReasonSessionRuntimeError
+	DisconnectReasonSessionInvalidResponse
+	DisconnectReasonSessionNetworkError
+	DisconnectReasonSessionServiceError
+	DisconnectReasonSessionServiceUnavailable
+	DisconnectReasonSessionThrottled
+	DisconnectReasonSessionRequestRejected
+	DisconnectReasonSessionUnknownError
 )
 
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the

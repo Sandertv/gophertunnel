@@ -57,6 +57,8 @@ type CommandBlockUpdate struct {
 	// ExecuteOnFirstTick specifies if the command block should execute on the first tick, AKA as soon as the
 	// command block is enabled.
 	ExecuteOnFirstTick bool
+	// LastOutputIsRawMessage specifies if LastOutput is a rawtext JSON payload.
+	LastOutputIsRawMessage bool
 }
 
 // ID ...
@@ -81,4 +83,5 @@ func (pk *CommandBlockUpdate) Marshal(io protocol.IO) {
 	io.Bool(&pk.ShouldTrackOutput)
 	io.Uint32(&pk.TickDelay)
 	io.Bool(&pk.ExecuteOnFirstTick)
+	io.Bool(&pk.LastOutputIsRawMessage)
 }

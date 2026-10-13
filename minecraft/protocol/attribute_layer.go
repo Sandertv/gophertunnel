@@ -11,6 +11,7 @@ const (
 	AttributeDataTypeBool = iota
 	AttributeDataTypeFloat
 	AttributeDataTypeColour
+	AttributeDataTypeString
 )
 
 const (
@@ -42,6 +43,10 @@ const (
 	AttributeColourOperationMultiply
 )
 
+const (
+	AttributeStringOperationOverride = iota
+)
+
 // AttributeData represents a polymorphic attribute value.
 type AttributeData struct {
 	// Type is the attribute data type. It is one of the AttributeDataType constants.
@@ -62,6 +67,10 @@ type AttributeData struct {
 	ColourValue int32
 	// ColourOperation is the optional operation for colour attributes.
 	ColourOperation Optional[int32]
+	// StringValue is the string value if Type is AttributeDataTypeString.
+	StringValue string
+	// StringOperation is the optional operation for string attributes.
+	StringOperation Optional[int32]
 }
 
 // Marshal encodes/decodes an AttributeData.
@@ -79,6 +88,9 @@ func (x *AttributeData) Marshal(r IO) {
 	case AttributeDataTypeColour:
 		r.Int32(&x.ColourValue)
 		OptionalFunc(r, &x.ColourOperation, r.Int32)
+	case AttributeDataTypeString:
+		r.String(&x.StringValue)
+		OptionalFunc(r, &x.StringOperation, r.Int32)
 	default:
 		r.UnknownEnumOption(x.Type, "attribute data type")
 	}

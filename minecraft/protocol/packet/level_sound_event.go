@@ -583,6 +583,9 @@ const (
 	SoundEventMount                              = "mount"
 	SoundEventDismount                           = "dismount"
 	SoundEventStrawBedBreakLeave                 = "straw_bed.break_leave"
+	SoundEventConvertToFrostbite                 = "convert_to_frostbite"
+	SoundEventConvertToZombie                    = "convert_to_zombie"
+	SoundEventCrack                              = "crack"
 	SoundEventUndefined                          = "undefined"
 )
 

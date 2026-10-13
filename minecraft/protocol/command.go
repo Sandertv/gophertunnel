@@ -372,6 +372,9 @@ type CommandOutputMessage struct {
 	// such as the position that a player was teleported to or the effect that was applied to an entity.
 	// These parameters only apply for the Minecraft built-in command output.
 	Parameters []string
+	// RawMessage is an optional rawtext JSON payload, resolved by the client instead of Message and
+	// Parameters.
+	RawMessage Optional[string]
 }
 
 // Marshal encodes/decodes a CommandOutputMessage.
@@ -379,6 +382,7 @@ func (x *CommandOutputMessage) Marshal(r IO) {
 	r.String(&x.Message)
 	r.Bool(&x.Success)
 	FuncSlice(r, &x.Parameters, r.String)
+	OptionalFunc(r, &x.RawMessage, r.String)
 }
 
 func commandOriginToString(x uint32) string {

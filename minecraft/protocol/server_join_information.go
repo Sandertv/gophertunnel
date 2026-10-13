@@ -60,6 +60,17 @@ func (x *PresenceInfo) Marshal(r IO) {
 	OptionalFunc(r, &x.RichPresenceID, r.String)
 }
 
+// ManagedChatJoinInfo contains information about Mojang Managed Chat on the server.
+type ManagedChatJoinInfo struct {
+	// Enabled specifies if the server routes chat through Mojang Managed Chat.
+	Enabled bool
+}
+
+// Marshal encodes/decodes a ManagedChatJoinInfo.
+func (x *ManagedChatJoinInfo) Marshal(r IO) {
+	r.Bool(&x.Enabled)
+}
+
 // ServerJoinInformation contains optional information about the server the player is joining.
 type ServerJoinInformation struct {
 	// GatheringJoinInfo is optional information about the gathering being joined.
@@ -68,6 +79,8 @@ type ServerJoinInformation struct {
 	StoreEntryPointInfo Optional[StoreEntryPointInfo]
 	// PresenceInfo is optional presence information.
 	PresenceInfo Optional[PresenceInfo]
+	// ManagedChatJoinInfo is optional information about Mojang Managed Chat.
+	ManagedChatJoinInfo Optional[ManagedChatJoinInfo]
 }
 
 // Marshal encodes/decodes a ServerJoinInformation.
@@ -75,4 +88,5 @@ func (x *ServerJoinInformation) Marshal(r IO) {
 	OptionalMarshaler(r, &x.GatheringJoinInfo)
 	OptionalMarshaler(r, &x.StoreEntryPointInfo)
 	OptionalMarshaler(r, &x.PresenceInfo)
+	OptionalMarshaler(r, &x.ManagedChatJoinInfo)
 }

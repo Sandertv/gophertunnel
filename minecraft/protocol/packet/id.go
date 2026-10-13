@@ -166,8 +166,8 @@ const (
 	IDFilterText
 	IDClientBoundDebugRenderer
 	IDSyncActorProperty
-	IDAddVolumeEntity
-	IDRemoveVolumeEntity
+	_
+	_
 	IDSimulationType
 	IDNPCDialogue
 	IDEducationResourceURI
@@ -261,4 +261,5 @@ const (
 	IDServerboundCursorItemDrag
 	IDClientboundPlayAudioContent
 	IDServerboundRegisterAudioContent
+	IDChat
 )

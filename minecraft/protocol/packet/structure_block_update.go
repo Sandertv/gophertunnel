@@ -56,6 +56,8 @@ type StructureBlockUpdate struct {
 	ShouldTrigger bool
 	// Waterlogged specifies if non-air blocks replace water or combine with water.
 	Waterlogged bool
+	// KeepStructureVoid specifies if structure void blocks should be kept in the structure.
+	KeepStructureVoid bool
 }
 
 // ID ...
@@ -75,4 +77,5 @@ func (pk *StructureBlockUpdate) Marshal(io protocol.IO) {
 	io.Uint8(&pk.RedstoneSaveMode)
 	io.Bool(&pk.ShouldTrigger)
 	io.Bool(&pk.Waterlogged)
+	io.Bool(&pk.KeepStructureVoid)
 }

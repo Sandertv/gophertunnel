@@ -205,8 +205,6 @@ func init() {
 		IDFilterText:                        func() Packet { return &FilterText{} },
 		IDClientBoundDebugRenderer:          func() Packet { return &ClientBoundDebugRenderer{} },
 		IDSyncActorProperty:                 func() Packet { return &SyncActorProperty{} },
-		IDAddVolumeEntity:                   func() Packet { return &AddVolumeEntity{} },
-		IDRemoveVolumeEntity:                func() Packet { return &RemoveVolumeEntity{} },
 		IDSimulationType:                    func() Packet { return &SimulationType{} },
 		IDNPCDialogue:                       func() Packet { return &NPCDialogue{} },
 		IDEducationResourceURI:              func() Packet { return &EducationResourceURI{} },
@@ -291,6 +289,7 @@ func init() {
 		IDClientboundStonecutterSetRecipe:    func() Packet { return &ClientboundStonecutterSetRecipe{} },
 		IDSetPassengerOfBlock:                func() Packet { return &SetPassengerOfBlock{} },
 		IDClientboundPlayAudioContent:        func() Packet { return &ClientboundPlayAudioContent{} },
+		IDChat:                               func() Packet { return &Chat{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -391,6 +390,7 @@ func init() {
 		IDServerboundMatchmakingCancel:      func() Packet { return &ServerboundMatchmakingCancel{} },
 		IDServerboundCursorItemDrag:         func() Packet { return &ServerboundCursorItemDrag{} },
 		IDServerboundRegisterAudioContent:   func() Packet { return &ServerboundRegisterAudioContent{} },
+		IDChat:                              func() Packet { return &Chat{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
