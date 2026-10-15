@@ -1218,6 +1218,11 @@ func (conn *Conn) startGame() {
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 		PropertyData:                 data.PropertyData,
+		ServerJoinInformation: protocol.Option(protocol.ServerJoinInformation{
+			ManagedChatJoinInfo: protocol.Option(protocol.ManagedChatJoinInfo{
+				Enabled: data.ManagedChatEnabled,
+			}),
+		}),
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
@@ -1448,6 +1453,11 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
 		PropertyData:                 pk.PropertyData,
 		Dimensions:                   conn.gameData.Dimensions,
+	}
+	if joinInfo, ok := pk.ServerJoinInformation.Value(); ok {
+		if managedChatInfo, ok := joinInfo.ManagedChatJoinInfo.Value(); ok {
+			conn.gameData.ManagedChatEnabled = managedChatInfo.Enabled
+		}
 	}
 	conn.expect(packet.IDItemRegistry)
 	return nil

@@ -123,6 +123,10 @@ type GameData struct {
 	// such as gophertunnel:example or gophertunnel:custom_property, which can be used by resource packs
 	// to change skins, models, or other player behaviors at runtime.
 	PropertyData map[string]any
+	// ManagedChatEnabled indicates whether Managed Chat is enabled on this server.
+	// When enabled, clients should sign outgoing chat messages using the Chat
+	// service and verify incoming message signatures using the service's public key.
+	ManagedChatEnabled bool
 
 	// Dimensions is a list of dimension definitions sent by the DimensionData packet. This can include overriding
 	// the height of vanilla dimensions or registering new dimensions.
