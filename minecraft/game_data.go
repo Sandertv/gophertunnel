@@ -41,6 +41,8 @@ type GameData struct {
 	// BaseGameVersion is the version of the game from which Vanilla features will be used. The exact function
 	// of this field isn't clear.
 	BaseGameVersion string
+	// LevelID is a base64 encoded world ID that is used to identify the world.
+	LevelID string
 	// PlayerPosition is the spawn position of the player in the world. In servers this is often the same as
 	// the world's spawn position found below.
 	PlayerPosition mgl32.Vec3
