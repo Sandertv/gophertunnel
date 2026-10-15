@@ -297,8 +297,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 		return nil, err
 	}
 
-	conn = newConn(netConn, key, d.ErrorLog, d.Protocol, d.FlushRate, false)
-	conn.pool = conn.proto.Packets(false)
+	conn = NewConn(netConn, ConnConfig{PrivateKey: key, Log: d.ErrorLog, Protocol: d.Protocol, FlushRate: d.FlushRate})
 	conn.identityData = d.IdentityData
 	conn.clientData = d.ClientData
 	conn.packetFunc = d.PacketFunc

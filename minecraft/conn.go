@@ -74,6 +74,22 @@ var exemptedPacks = []exemptedResourcePack{
 	},
 }
 
+// ConnConfig configures a Conn created with NewConn.
+type ConnConfig struct {
+	// PrivateKey is used to identify and encrypt the connection. It must be set if packet encryption is used.
+	PrivateKey *ecdsa.PrivateKey
+	// Log is used to log errors encountered by the connection. If nil, errors are discarded.
+	Log *slog.Logger
+	// Protocol is the Minecraft protocol used by the connection. If nil, DefaultProtocol is used.
+	Protocol Protocol
+	// FlushRate controls how frequently buffered packets are sent. Automatic flushing is disabled if zero.
+	FlushRate time.Duration
+	// Listener specifies that the remote endpoint is a Minecraft client.
+	Listener bool
+	// EnableLimits enables protocol reader limits for packets received by the connection.
+	EnableLimits bool
+}
+
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
 // methods (Read, Write etc.) are safe to be called from multiple goroutines simultaneously, but ReadPacket
 // must not be called on multiple goroutines simultaneously.
@@ -202,11 +218,16 @@ type Conn struct {
 	additional chan packet.Packet
 }
 
-// newConn creates a new Minecraft connection for the net.Conn passed, reading and writing compressed
-// Minecraft packets to that net.Conn.
-// newConn accepts a private key which will be used to identify the connection. If a nil key is passed, the
-// key is generated.
-func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Protocol, flushRate time.Duration, limits bool) *Conn {
+// NewConn creates a Minecraft connection using netConn as its transport. The caller is responsible for
+// completing the appropriate client or server login sequence and closing the connection.
+func NewConn(netConn net.Conn, config ConnConfig) *Conn {
+	if config.Log == nil {
+		config.Log = slog.New(internal.DiscardHandler{})
+	}
+	if config.Protocol == nil {
+		config.Protocol = DefaultProtocol
+	}
+
 	conn := &Conn{
 		enc:          packet.NewEncoder(netConn),
 		dec:          packet.NewDecoder(netConn),
@@ -215,11 +236,12 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		additional:   make(chan packet.Packet, 16),
 		spawn:        make(chan struct{}),
 		conn:         netConn,
-		privateKey:   key,
-		log:          log.With("raddr", netConn.RemoteAddr().String()),
+		privateKey:   config.PrivateKey,
+		log:          config.Log.With("raddr", netConn.RemoteAddr().String()),
 		hdr:          &packet.Header{},
-		proto:        proto,
-		readerLimits: limits,
+		proto:        config.Protocol,
+		pool:         config.Protocol.Packets(config.Listener),
+		readerLimits: config.EnableLimits,
 
 		resourcePackDelivery: defaultResourcePackDeliveryConfig(),
 	}
@@ -233,7 +255,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		conn.ctx, conn.cancelFunc = context.WithCancelCause(context.Background())
 	}
 
-	if !limits {
+	if !config.EnableLimits {
 		// Disable the batch packet limit so that the server can send packets as often as it wants to.
 		conn.dec.DisableBatchPacketLimit()
 	}
@@ -241,11 +263,11 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 
 	conn.expectedIDs.Store([]uint32{packet.IDRequestNetworkSettings})
 
-	if flushRate <= 0 {
+	if config.FlushRate <= 0 {
 		return conn
 	}
 	go func() {
-		ticker := time.NewTicker(flushRate)
+		ticker := time.NewTicker(config.FlushRate)
 		defer ticker.Stop()
 		for range ticker.C {
 			if err := conn.Flush(); err != nil {
