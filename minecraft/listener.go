@@ -456,14 +456,13 @@ func (listener *Listener) createConn(netConn net.Conn) {
 	packs := slices.Clone(listener.packs)
 	listener.packsMu.RUnlock()
 
-	conn := newConn(netConn, listener.key, listener.cfg.ErrorLog, proto{}, listener.cfg.FlushRate, true)
+	conn := NewConn(netConn, ConnConfig{PrivateKey: listener.key, Log: listener.cfg.ErrorLog, Protocol: proto{}, FlushRate: listener.cfg.FlushRate, Listener: true, EnableLimits: true})
 	conn.disableEncryption = conn.disableEncryption || listener.cfg.DisablePacketEncryption
 	conn.acceptedProto = append(slices.Clone(listener.cfg.AcceptedProtocols), proto{})
 	conn.compression = listener.cfg.Compression
 	conn.compressionSelector = listener.cfg.CompressionSelector
 	conn.compressionThreshold = listener.cfg.CompressionThreshold
 	conn.maxDecompressedLen = listener.cfg.MaxDecompressedLen
-	conn.pool = conn.proto.Packets(true)
 	conn.allow = listener.cfg.Allow
 
 	conn.packetFunc = listener.cfg.PacketFunc
