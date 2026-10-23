@@ -1038,7 +1038,7 @@ func (conn *Conn) handleResourcePacksInfo(pk *packet.ResourcePacksInfo) error {
 		conn.packQueue.downloadingPacks[id] = downloadingPack{
 			size:       pack.Size,
 			buf:        bytes.NewBuffer(make([]byte, 0, pack.Size)),
-			newFrag:    make(chan []byte),
+			newFrag:    make(chan packChunk),
 			contentKey: pack.ContentKey,
 			cacheKey:   cacheKey,
 		}
@@ -1264,24 +1264,35 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 
 	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
 	// though there's data, and the client will still download normally.
-	chunkCount := int32(pk.Size / uint64(pk.DataChunkSize))
+	chunkCount := uint32(pk.Size / uint64(pk.DataChunkSize))
 	if pk.Size%uint64(pk.DataChunkSize) != 0 {
 		chunkCount++
 	}
+	pack.chunkCount = chunkCount
+	pack.received = make([]bool, chunkCount)
 
 	idCopy := pk.UUID
 	go func() {
-		for i := int32(0); i < chunkCount; i++ {
+		// Request all chunks up front like the vanilla client: some servers only answer once later chunks were requested.
+		for i := uint32(0); i < chunkCount; i++ {
 			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
 				UUID:       idCopy,
-				ChunkIndex: i,
+				ChunkIndex: int32(i),
 			})
+			// One batch per request keeps batches below the decoder's packet limit.
+			_ = conn.Flush()
+		}
+		chunks := make([][]byte, chunkCount)
+		for next := uint32(0); next < chunkCount; {
 			select {
 			case <-conn.ctx.Done():
 				return
 			case frag := <-pack.newFrag:
-				// Write the fragment to the full buffer of the downloading resource pack.
-				_, _ = pack.buf.Write(frag)
+				chunks[frag.index] = frag.data
+				for ; next < chunkCount && chunks[next] != nil; next++ {
+					_, _ = pack.buf.Write(chunks[next])
+					chunks[next] = nil
+				}
 			}
 		}
 		conn.packMu.Lock()
@@ -1323,17 +1334,22 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		// download a resource pack.
 		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
 	}
-	lastData := pack.buf.Len()+int(pack.chunkSize) >= int(pack.size)
-	if !lastData && uint32(len(pk.Data)) != pack.chunkSize {
+	if pk.ChunkIndex >= pack.chunkCount {
+		return fmt.Errorf("chunk index %v out of range: the pack has %v chunks", pk.ChunkIndex, pack.chunkCount)
+	}
+	if lastData := pk.ChunkIndex == pack.chunkCount-1; !lastData && uint32(len(pk.Data)) != pack.chunkSize {
 		// The chunk data didn't have the full size and wasn't the last data to be sent for the resource pack,
 		// meaning we got too little data.
 		return fmt.Errorf("expected chunk size %v, got %v", pack.chunkSize, len(pk.Data))
 	}
-	if pk.ChunkIndex != pack.expectedIndex {
-		return fmt.Errorf("expected chunk index %v, got %v", pack.expectedIndex, pk.ChunkIndex)
+	if pack.received[pk.ChunkIndex] {
+		return nil
 	}
-	pack.expectedIndex++
-	pack.newFrag <- pk.Data
+	pack.received[pk.ChunkIndex] = true
+	select {
+	case pack.newFrag <- packChunk{index: pk.ChunkIndex, data: pk.Data}:
+	case <-conn.ctx.Done():
+	}
 	return nil
 }
 

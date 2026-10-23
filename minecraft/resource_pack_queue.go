@@ -25,13 +25,19 @@ type resourcePackQueue struct {
 
 // downloadingPack is a resource pack that is being downloaded by a client connection.
 type downloadingPack struct {
-	buf           *bytes.Buffer
-	chunkSize     uint32
-	size          uint64
-	expectedIndex uint32
-	newFrag       chan []byte
-	contentKey    string
-	cacheKey      ResourcePackCacheKey
+	buf        *bytes.Buffer
+	chunkSize  uint32
+	size       uint64
+	chunkCount uint32
+	received   []bool
+	newFrag    chan packChunk
+	contentKey string
+	cacheKey   ResourcePackCacheKey
+}
+
+type packChunk struct {
+	index uint32
+	data  []byte
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients
