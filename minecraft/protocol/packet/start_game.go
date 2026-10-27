@@ -33,6 +33,11 @@ const (
 	EditorWorldTypeRealmsUpload
 )
 
+const (
+	EditorLevelMigrationVersionLegacy = iota
+	EditorLevelMigrationVersionEditorAchievements
+)
+
 // StartGame is sent by the server to send information about the world the player will be spawned in. It
 // contains information about the position the player spawns in, and information about the world in general
 // such as its game rules.
@@ -98,6 +103,9 @@ type StartGame struct {
 	// ExportedFromEditor is a value to dictate if the world was exported from editor mode. The functionality of this
 	// field is currently unknown.
 	ExportedFromEditor bool
+	// EditorLevelMigrationVersion is the version of editor level migrations that have been applied to the world.
+	// It is one of the EditorLevelMigrationVersion constants above.
+	EditorLevelMigrationVersion int8
 	// ServerEditorConnectionPolicy controls the editor connection policy.
 	ServerEditorConnectionPolicy int32
 	// AllowAnonymousBlockDropsInEditorWorlds specifies if anonymous block
@@ -298,6 +306,7 @@ func (pk *StartGame) Marshal(io protocol.IO) {
 	io.Varint32(&pk.EditorWorldType)
 	io.Bool(&pk.CreatedInEditor)
 	io.Bool(&pk.ExportedFromEditor)
+	io.Int8(&pk.EditorLevelMigrationVersion)
 	io.Varint32(&pk.DayCycleLockTime)
 	io.Varuint32(&pk.EducationEditionOffer)
 	io.Bool(&pk.EducationFeaturesEnabled)

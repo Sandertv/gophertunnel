@@ -21,8 +21,8 @@ type EducationSettings struct {
 	PostProcessFilter string
 	// ScreenshotBorderPath ...
 	ScreenshotBorderPath string
-	// CanModifyBlocks ...
-	CanModifyBlocks protocol.Optional[bool]
+	// AgentCapabilities holds the capabilities of the agent in the world.
+	AgentCapabilities protocol.Optional[protocol.EducationAgentCapabilities]
 	// OverrideURI ...
 	OverrideURI protocol.Optional[string]
 	// HasQuiz specifies if the world has a quiz connected to it.
@@ -43,7 +43,7 @@ func (pk *EducationSettings) Marshal(io protocol.IO) {
 	io.Bool(&pk.DisableLegacyTitleBar)
 	io.String(&pk.PostProcessFilter)
 	io.String(&pk.ScreenshotBorderPath)
-	protocol.OptionalFunc(io, &pk.CanModifyBlocks, io.Bool)
+	protocol.OptionalMarshaler(io, &pk.AgentCapabilities)
 	protocol.OptionalFunc(io, &pk.OverrideURI, io.String)
 	io.Bool(&pk.HasQuiz)
 	protocol.OptionalMarshaler(io, &pk.ExternalLinkSettings)

@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/coreos/go-oidc/v3 v3.17.0
-	github.com/df-mc/go-nethernet v1.0.24
+	github.com/df-mc/go-nethernet v1.0.25
 	github.com/df-mc/go-playfab/v2 v2.0.2
 	github.com/df-mc/go-xsapi/v2 v2.0.3
 	github.com/df-mc/jsonc v1.0.5

@@ -71,6 +71,8 @@ type PlayerListEntry struct {
 	// XUID is the XBOX Live user ID of the player, which will remain consistent as long as the player is
 	// logged in with the XBOX Live account.
 	XUID string
+	// PlayFabID is the server-verified PlayFab ID of the player, if available.
+	PlayFabID string
 	// PlatformChatID is an identifier only set for particular platforms when chatting (presumably only for
 	// Nintendo Switch). It is otherwise an empty string, and is used to decide which players are able to
 	// chat with each other.
@@ -103,6 +105,7 @@ func (x *PlayerListEntry) Marshal(r IO) {
 	r.ActorUniqueID(&x.EntityUniqueID)
 	r.String(&x.Username)
 	r.String(&x.XUID)
+	r.String(&x.PlayFabID)
 	r.String(&x.PlatformChatID)
 	r.Int32(&x.BuildPlatform)
 	Single(r, &x.Skin)

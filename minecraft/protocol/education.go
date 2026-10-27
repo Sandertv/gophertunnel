@@ -15,6 +15,17 @@ func (x *EducationSharedResourceURI) Marshal(r IO) {
 	r.String(&x.LinkURI)
 }
 
+// EducationAgentCapabilities holds the capabilities of the agent in an education edition world.
+type EducationAgentCapabilities struct {
+	// CanModifyBlocks specifies if the agent is able to modify blocks.
+	CanModifyBlocks Optional[bool]
+}
+
+// Marshal reads/writes an EducationAgentCapabilities to an IO.
+func (x *EducationAgentCapabilities) Marshal(r IO) {
+	OptionalFunc(r, &x.CanModifyBlocks, r.Bool)
+}
+
 // EducationExternalLinkSettings ...
 type EducationExternalLinkSettings struct {
 	// URL is the external link URL.

@@ -33,6 +33,9 @@ type LevelChunk struct {
 	// which indicates the way they are serialised, followed by biomes, border blocks and tile entities. If
 	// CacheEnabled is true, the payload consists out of the border blocks and tile entities only.
 	RawPayload []byte
+	// ClientBiomeUpdate specifies if the biome data sent by the server in the chunk should override the biome
+	// data that the client has for the chunk.
+	ClientBiomeUpdate bool
 }
 
 // ID ...
@@ -51,4 +54,5 @@ func (pk *LevelChunk) Marshal(io protocol.IO) {
 	io.Bool(&pk.CacheEnabled)
 	protocol.FuncSlice(io, &pk.BlobHashes, io.Uint64)
 	io.ByteSlice(&pk.RawPayload)
+	io.Bool(&pk.ClientBiomeUpdate)
 }

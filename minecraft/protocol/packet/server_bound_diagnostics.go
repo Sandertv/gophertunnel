@@ -39,7 +39,7 @@ type ServerBoundDiagnostics struct {
 	// SystemDiagnostics is a list of system timing entries sent by the client.
 	SystemDiagnostics []protocol.SystemDiagnosticTimingInfo
 	// SystemCategories maps diagnostics category names to system indices.
-	SystemCategories []protocol.SystemCategory
+	SystemCategories protocol.Optional[[]protocol.SystemCategory]
 	// WhiskerScopes is a list of whisker profiler scope diagnostic summaries sent by the client.
 	WhiskerScopes []protocol.WhiskerScopeDataSummary
 }
@@ -62,6 +62,8 @@ func (pk *ServerBoundDiagnostics) Marshal(io protocol.IO) {
 	protocol.Slice(io, &pk.MemoryCategoryValues)
 	protocol.Slice(io, &pk.EntityDiagnostics)
 	protocol.Slice(io, &pk.SystemDiagnostics)
-	protocol.Slice(io, &pk.SystemCategories)
+	protocol.OptionalFunc(io, &pk.SystemCategories, func(s *[]protocol.SystemCategory) {
+		protocol.Slice(io, s)
+	})
 	protocol.Slice(io, &pk.WhiskerScopes)
 }
