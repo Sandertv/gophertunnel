@@ -288,7 +288,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	}
 
 	var netConn net.Conn
-	if i, ok := network.(identityDialer); ok && token != "" {
+	if i, ok := network.(identityDialer); ok {
 		netConn, err = i.DialContextIdentity(ctx, address, token, key)
 	} else {
 		netConn, err = network.DialContext(ctx, address)

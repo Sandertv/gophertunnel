@@ -2,8 +2,8 @@ github.com/coder/websocket v1.8.14 h1:9L0p0iKiNOibykf283eHkKUHHrpG7f65OE3BhhO7v9
 github.com/coder/websocket v1.8.14/go.mod h1:NX3SzP+inril6yawo5CQXx8+fk145lPDC6pumgx0mVg=
 github.com/coreos/go-oidc/v3 v3.17.0 h1:hWBGaQfbi0iVviX4ibC7bk8OKT5qNr4klBaCHVNvehc=
 github.com/coreos/go-oidc/v3 v3.17.0/go.mod h1:wqPbKFrVnE90vty060SB40FCJ8fTHTxSwyXJqZH+sI8=
-github.com/df-mc/go-nethernet v1.0.25 h1:FEgn/SRWAZ19B62Npak5dGuK19g5HOBFZPjTkSAeykw=
-github.com/df-mc/go-nethernet v1.0.25/go.mod h1:SFH4cfiLRWUUNGMvQeaOjFfFX4eexTkIfBtp55vJNqY=
+github.com/df-mc/go-nethernet v1.0.26 h1:wO0PVPlBTEJI75YdA0eQ8DdDgeSYO6blZdnyYZrGg54=
+github.com/df-mc/go-nethernet v1.0.26/go.mod h1:SFH4cfiLRWUUNGMvQeaOjFfFX4eexTkIfBtp55vJNqY=
 github.com/df-mc/go-playfab/v2 v2.0.2 h1:JqOsrpe0nt6Ni4V2JrdmOAhbBgTm7LBw1ppGXlmknhs=
 github.com/df-mc/go-playfab/v2 v2.0.2/go.mod h1:CS3FV3tJlohvGQiX0IJiaYKOVNfy0p778B84oEVyxlw=
 github.com/df-mc/go-xsapi/v2 v2.0.3 h1:fQLw4k15OinFhagWjbSj0BwQXeDUmY8a1J8yquEod3w=
