@@ -26,24 +26,43 @@ type resourcePackQueue struct {
 type downloadingPack struct {
 	// uuid is the identifier of the pack as sent in ResourcePackDataInfo, used to request its chunks.
 	uuid string
-	// data holds the content of the pack, which every chunk is copied into at its offset.
-	data       []byte
+	// data holds chunks [0, next), each run of them placed at its first chunk's DataOffset.
+	data []byte
+	// early holds chunks that arrived before an earlier one, by index.
+	early map[uint32][]byte
+	// receivedBytes is the total length of every new chunk received.
+	receivedBytes uint64
+	// heldBytes is the memory counted for data and early: their lengths plus packChunkOverhead per early chunk.
+	heldBytes  uint64
 	size       uint64
 	chunkCount uint32
+	// next is the index of the first chunk not yet placed into data.
+	next uint32
 	// requested is the index of the next chunk to request.
 	requested uint32
-	// received holds for every chunk if it was received.
-	received       []bool
-	receivedChunks uint32
-	receivedBytes  uint64
-	contentKey     string
-	cacheKey       ResourcePackCacheKey
+	// complete is set once every chunk was placed and the pack was handed off for reading.
+	complete   bool
+	contentKey string
+	cacheKey   ResourcePackCacheKey
 }
 
-// maxPackChunksInFlight is the maximum number of chunks of a resource pack requested but not yet received,
-// the same as the vanilla client. Some proxies hold back a chunk until the 99 after it were requested, so it
-// must not be lower or shared between packs.
-const maxPackChunksInFlight = 100
+const (
+	// initialPackChunkRequests is how many chunks of a resource pack are requested up front, the same as the
+	// vanilla client. After that, one more is requested for every chunk packet received.
+	initialPackChunkRequests = 100
+	// packChunkOverhead is the memory counted for an early chunk on top of its data.
+	packChunkOverhead = 128
+	// packHeldSlack is the memory a download may hold beyond twice the data received, see packHeldLimit.
+	packHeldSlack = 1 << 20
+)
+
+// packHeldLimit returns how much counted memory a download may hold: twice the data received so far plus
+// packHeldSlack. The vanilla client has no such limit, as it writes to a file while this keeps the pack in
+// memory. Only chunks that hold far less data than the memory they take reach it: many empty chunks waiting
+// for earlier ones, or offsets far past the data received.
+func packHeldLimit(pack *downloadingPack) uint64 {
+	return 2*pack.receivedBytes + packHeldSlack
+}
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients
 // generally request packs as "uuid_version", and ResourcePackDataInfo must use that same identifier shape so
