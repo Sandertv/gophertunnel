@@ -201,7 +201,8 @@ func (pack *Pack) Checksum() [32]byte {
 
 // Len returns the total length in bytes of the content of the archive that contained the resource pack.
 func (pack *Pack) Len() int {
-	return pack.content.Len()
+	// bytes.Reader.Len reports only the unread bytes, which would shrink if the reader's position ever moved.
+	return int(pack.content.Size())
 }
 
 // DataChunkCount returns the amount of chunks the data of the resource pack is split into if each chunk has
