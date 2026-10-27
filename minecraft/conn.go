@@ -2,7 +2,6 @@ package minecraft
 
 import (
 	"bytes"
-	"cmp"
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
@@ -1283,7 +1282,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks: %v (UUID=%v)", chunkCount, id)
 	}
 	pack.uuid, pack.chunkCount = pk.UUID, uint32(chunkCount)
-	pack.chunks = make(map[uint32]packChunk)
+	pack.chunks = make(map[uint32][]byte)
 
 	// Like the vanilla client, keep up to maxPackChunksInFlight chunks requested and request the next one
 	// every time a chunk arrives, placing every chunk by its offset: Some servers only send a chunk once
@@ -1317,25 +1316,30 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 	// Every chunk that arrives makes room for the next request, keeping the window full like the vanilla
 	// client does, even when a server resends or pushes chunks.
 	conn.requestNextPackChunk(pack)
-	if pk.ChunkIndex >= pack.chunkCount || pk.DataOffset >= pack.size {
+	if pk.ChunkIndex >= pack.chunkCount {
 		// Odd but well-formed data outside the pack: skip it rather than ending the login.
 		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk outside the pack", "UUID", pk.UUID,
-			"index", pk.ChunkIndex, "offset", pk.DataOffset)
+			"index", pk.ChunkIndex)
 		return nil
 	}
 	if _, ok := pack.chunks[pk.ChunkIndex]; ok {
 		// We already have this chunk.
 		return nil
 	}
-	pack.chunks[pk.ChunkIndex] = packChunk{offset: pk.DataOffset, data: bytes.Clone(pk.Data)}
+	pack.chunks[pk.ChunkIndex] = bytes.Clone(pk.Data)
 	if uint32(len(pack.chunks)) < pack.chunkCount {
 		return nil
 	}
-	data, err := assemblePack(pack.chunks, pack.size)
-	pack.chunks = nil
-	if err != nil {
-		return fmt.Errorf("resource pack %v: %w", pk.UUID, err)
+	// Join the chunks in order. The buffer only grows with data that arrived.
+	var buf bytes.Buffer
+	for i := range pack.chunkCount {
+		buf.Write(pack.chunks[i])
 	}
+	pack.chunks = nil
+	if uint64(buf.Len()) != pack.size {
+		return fmt.Errorf("got %v bytes of resource pack %v, expected %v", buf.Len(), pk.UUID, pack.size)
+	}
+	data := buf.Bytes()
 	go func() {
 		// Parsing the pack may take a while, so it is done off the goroutine reading packets.
 		newPack, err := resource.Read(bytes.NewReader(data))
@@ -1348,31 +1352,6 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		conn.storeResourcePack(pack.cacheKey, newPack)
 	}()
 	return nil
-}
-
-// assemblePack places received chunks at their offsets. The chunks must cover every byte of the pack, so the
-// allocation never exceeds the data that actually arrived.
-func assemblePack(chunks map[uint32]packChunk, size uint64) ([]byte, error) {
-	ordered := make([]packChunk, 0, len(chunks))
-	for _, chunk := range chunks {
-		ordered = append(ordered, chunk)
-	}
-	slices.SortFunc(ordered, func(a, b packChunk) int { return cmp.Compare(a.offset, b.offset) })
-	var covered uint64
-	for _, chunk := range ordered {
-		if chunk.offset > covered {
-			return nil, fmt.Errorf("missing bytes %v to %v", covered, chunk.offset)
-		}
-		covered = max(covered, chunk.offset+uint64(len(chunk.data)))
-	}
-	if covered < size {
-		return nil, fmt.Errorf("got %v of %v bytes", covered, size)
-	}
-	data := make([]byte, size)
-	for _, chunk := range ordered {
-		copy(data[chunk.offset:], chunk.data)
-	}
-	return data, nil
 }
 
 // packDownloaded adds a downloaded resource pack, if not nil, and tells the server once all packs are
