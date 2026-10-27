@@ -26,29 +26,49 @@ type resourcePackQueue struct {
 type downloadingPack struct {
 	// uuid is the identifier of the pack as sent in ResourcePackDataInfo, used to request its chunks.
 	uuid string
-	// data holds the chunks joined in index order so far, chunks [0, next). It grows only with the data that
-	// actually arrives, as the sizes in ResourcePacksInfo and ResourcePackDataInfo are only claims.
+	// data holds chunks [0, next), each run of them placed at its first chunk's DataOffset.
 	data []byte
-	// early holds chunks that arrived before an earlier one, at most maxPackChunksInFlight-1 of them.
-	early map[uint32][]byte
-	// receivedBytes is the total length of data and early, which may not exceed size.
+	// early holds chunks that arrived before an earlier one, by index.
+	early map[uint32]packChunk
+	// receivedBytes is the total length of every new chunk received.
 	receivedBytes uint64
-	size          uint64
-	chunkCount    uint32
-	// next is the index of the first chunk not yet joined into data.
+	// heldBytes is the memory data and early hold, counting packChunkOverhead per early chunk.
+	heldBytes  uint64
+	size       uint64
+	chunkCount uint32
+	// next is the index of the first chunk not yet placed into data.
 	next uint32
 	// requested is the index of the next chunk to request.
 	requested uint32
-	// complete is set once every chunk was joined and the pack was handed off for reading.
+	// complete is set once every chunk was placed and the pack was handed off for reading.
 	complete   bool
 	contentKey string
 	cacheKey   ResourcePackCacheKey
 }
 
-// maxPackChunksInFlight is how many chunks of a resource pack, starting at the first one missing, are
-// requested at once: the same number the vanilla client requests up front. Some proxies hold back a chunk
-// until the 99 after it were requested, so it must not be lower or shared between packs.
-const maxPackChunksInFlight = 100
+// packChunk is a resource pack chunk waiting for the chunks before it.
+type packChunk struct {
+	offset uint64
+	data   []byte
+}
+
+const (
+	// initialPackChunkRequests is how many chunks of a resource pack are requested up front, the same as the
+	// vanilla client. After that, one more is requested for every chunk packet received.
+	initialPackChunkRequests = 100
+	// packChunkOverhead is the memory an early chunk is counted as on top of its data.
+	packChunkOverhead = 128
+	// packHeldSlack is the memory a download may hold beyond twice its data, see packHeldLimit.
+	packHeldSlack = 1 << 20
+)
+
+// packHeldLimit returns how much memory a download may hold: twice the data received so far, and never more
+// than twice the size the server announced, plus packHeldSlack. The vanilla client has no such limit. It
+// writes to a file, while this keeps the pack in memory, so only a server sending many empty or misplaced
+// chunks reaches it.
+func packHeldLimit(pack *downloadingPack) uint64 {
+	return 2*min(pack.receivedBytes, pack.size) + packHeldSlack
+}
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients
 // generally request packs as "uuid_version", and ResourcePackDataInfo must use that same identifier shape so

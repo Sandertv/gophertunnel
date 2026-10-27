@@ -705,6 +705,11 @@ func (conn *Conn) handle(pkData *packetData) error {
 			return conn.handleMultiple(pks)
 		}
 	}
+	if pkData.h.PacketID == packet.IDResourcePackChunkData && conn.packQueue != nil {
+		// A chunk a server repeated after its pack finished downloading: it belongs to the login, so it is
+		// dropped instead of being passed on to the user.
+		return nil
+	}
 	// This is not the packet we expected next in the login sequence. We push it back so that it may
 	// be handled by the user.
 	conn.deferPacket(pkData)
@@ -1260,8 +1265,8 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	conn.packQueue.awaitingPacks[id] = &pack
 
 	if pk.Size == 0 || pk.DataChunkSize == 0 {
-		// Like the vanilla client, a pack without a size or chunk size has no chunks to download and no
-		// content to read, so it is treated like a pack that was not downloaded.
+		// A pack without a size or chunk size has no chunks to download, as on the vanilla client, and no
+		// content to read, so it is skipped like a pack that was not downloaded.
 		conn.log.Debug("handle ResourcePackDataInfo: skipping empty resource pack", "UUID", id)
 		conn.packMu.Lock()
 		conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
@@ -1282,18 +1287,39 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks: %v (UUID=%v)", chunkCount, id)
 	}
 	pack.uuid, pack.chunkCount = pk.UUID, uint32(chunkCount)
-	pack.early = make(map[uint32][]byte)
-	conn.requestPackChunks(&pack)
+	pack.early = make(map[uint32]packChunk)
+	for range min(pack.chunkCount, initialPackChunkRequests) {
+		conn.requestNextPackChunk(&pack)
+	}
 	return nil
 }
 
-// requestPackChunks requests chunks of a downloading resource pack strictly in order, up to
-// maxPackChunksInFlight chunks past the first one missing. Chunks a server already sent unasked are requested
-// too, like the vanilla client does.
-func (conn *Conn) requestPackChunks(pack *downloadingPack) {
-	for limit := min(pack.chunkCount, pack.next+maxPackChunksInFlight); pack.requested < limit; pack.requested++ {
-		_ = conn.WritePacket(&packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)})
+// requestNextPackChunk requests the next chunk of a downloading resource pack, if any are left. Like the
+// vanilla client, chunks are requested strictly in order, including ones a server already sent unasked.
+func (conn *Conn) requestNextPackChunk(pack *downloadingPack) {
+	if pack.requested >= pack.chunkCount {
+		return
 	}
+	_ = conn.WritePacket(&packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)})
+	pack.requested++
+}
+
+// placePackData writes data into a downloading pack at offset, growing the pack as needed within
+// packHeldLimit.
+func placePackData(pack *downloadingPack, offset uint64, data []byte) error {
+	end := offset + uint64(len(data))
+	if end < offset || end > math.MaxInt {
+		return fmt.Errorf("chunk at offset %v does not fit in memory", offset)
+	}
+	if have := uint64(len(pack.data)); end > have {
+		if pack.heldBytes+end-have > packHeldLimit(pack) {
+			return fmt.Errorf("chunk at offset %v would hold more than %v bytes", offset, packHeldLimit(pack))
+		}
+		pack.heldBytes += end - have
+		pack.data = slices.Grow(pack.data, int(end-have))[:end]
+	}
+	copy(pack.data[offset:end], data)
+	return nil
 }
 
 // handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
@@ -1302,52 +1328,23 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 	pk.UUID = strings.Split(pk.UUID, "_")[0]
 	pack, ok := conn.packQueue.awaitingPacks[pk.UUID]
 	if !ok {
-		// We haven't received a ResourcePackDataInfo packet from the server, so we can't use this data to
-		// download a resource pack.
-		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
+		// Like the vanilla client, ignore chunks of a pack that is not being downloaded.
+		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk of unknown pack", "UUID", pk.UUID)
+		return nil
 	}
 	if pack.complete {
 		// The pack already finished downloading, so this is a repeated chunk.
 		return nil
 	}
-	index := pk.ChunkIndex
-	if index >= pack.chunkCount {
-		// Odd but well-formed data outside the pack: skip it rather than ending the login.
-		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk outside the pack", "UUID", pk.UUID,
-			"index", index)
-		return nil
-	}
-	if _, ok := pack.early[index]; ok || index < pack.next || index-pack.next >= maxPackChunksInFlight {
-		// A repeated chunk, or one sent unasked too far ahead to hold: it is requested once the download
-		// reaches it.
-		return nil
-	}
-	pack.receivedBytes += uint64(len(pk.Data))
-	if pack.receivedBytes > pack.size {
-		return fmt.Errorf("resource pack %v sent more than its size of %v bytes", pk.UUID, pack.size)
-	}
-	if index != pack.next {
-		pack.early[index] = pk.Data
-		return nil
-	}
-	// Like the vanilla client, join chunks in index order as soon as every earlier one arrived. Their
-	// DataOffset is not used.
-	pack.data = append(pack.data, pk.Data...)
-	for pack.next++; ; pack.next++ {
-		chunk, ok := pack.early[pack.next]
-		if !ok {
-			break
-		}
-		delete(pack.early, pack.next)
-		pack.data = append(pack.data, chunk...)
+	if err := conn.receivePackChunk(pack, pk); err != nil {
+		return fmt.Errorf("resource pack %v: %w", pk.UUID, err)
 	}
 	if pack.next < pack.chunkCount {
-		conn.requestPackChunks(pack)
+		// Like the vanilla client, every chunk packet leads to one more request, whatever it held.
+		conn.requestNextPackChunk(pack)
 		return nil
 	}
-	if pack.receivedBytes != pack.size {
-		return fmt.Errorf("got %v bytes of resource pack %v, expected %v", pack.receivedBytes, pk.UUID, pack.size)
-	}
+	// Like the vanilla client, the pack is complete once every chunk was placed, whatever its total size.
 	data := pack.data
 	pack.data, pack.early, pack.complete = nil, nil, true
 	uuid := pack.uuid
@@ -1365,6 +1362,45 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 	return nil
 }
 
+// receivePackChunk places a chunk of a downloading pack like the vanilla client: chunks wait until every
+// earlier one arrived, and each run of chunks that can then be placed is written at its first chunk's
+// DataOffset. Repeated chunks and chunks outside the pack are skipped.
+func (conn *Conn) receivePackChunk(pack *downloadingPack, pk *packet.ResourcePackChunkData) error {
+	index := pk.ChunkIndex
+	if index >= pack.chunkCount {
+		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk outside the pack", "UUID", pk.UUID,
+			"index", index)
+		return nil
+	}
+	if _, ok := pack.early[index]; ok || index < pack.next {
+		return nil
+	}
+	pack.receivedBytes += uint64(len(pk.Data))
+	if index != pack.next {
+		pack.heldBytes += uint64(len(pk.Data)) + packChunkOverhead
+		if pack.heldBytes > packHeldLimit(pack) {
+			return fmt.Errorf("chunks waiting for earlier ones hold more than %v bytes", packHeldLimit(pack))
+		}
+		pack.early[index] = packChunk{offset: pk.DataOffset, data: pk.Data}
+		return nil
+	}
+	offset, data := pk.DataOffset, pk.Data
+	for {
+		if err := placePackData(pack, offset, data); err != nil {
+			return err
+		}
+		offset += uint64(len(data))
+		pack.next++
+		chunk, ok := pack.early[pack.next]
+		if !ok {
+			return nil
+		}
+		delete(pack.early, pack.next)
+		pack.heldBytes -= uint64(len(chunk.data)) + packChunkOverhead
+		data = chunk.data
+	}
+}
+
 // packDownloaded adds a downloaded resource pack, if not nil, and tells the server once all packs are
 // downloaded.
 func (conn *Conn) packDownloaded(pack *resource.Pack) {
@@ -1377,9 +1413,7 @@ func (conn *Conn) packDownloaded(pack *resource.Pack) {
 	conn.packMu.Unlock()
 
 	if packAmount == 0 {
-		// Chunks a server repeats after the last pack finished are still handled, and dropped, instead of
-		// being passed on to the user.
-		conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus, packet.IDResourcePackChunkData)
+		conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus)
 		_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		_ = conn.Flush()
 	}
