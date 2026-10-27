@@ -29,10 +29,10 @@ type downloadingPack struct {
 	// data holds chunks [0, next), each run of them placed at its first chunk's DataOffset.
 	data []byte
 	// early holds chunks that arrived before an earlier one, by index.
-	early map[uint32]packChunk
+	early map[uint32][]byte
 	// receivedBytes is the total length of every new chunk received.
 	receivedBytes uint64
-	// heldBytes is the memory data and early hold, counting packChunkOverhead per early chunk.
+	// heldBytes is the memory counted for data and early: their lengths plus packChunkOverhead per early chunk.
 	heldBytes  uint64
 	size       uint64
 	chunkCount uint32
@@ -46,23 +46,17 @@ type downloadingPack struct {
 	cacheKey   ResourcePackCacheKey
 }
 
-// packChunk is a resource pack chunk waiting for the chunks before it.
-type packChunk struct {
-	offset uint64
-	data   []byte
-}
-
 const (
 	// initialPackChunkRequests is how many chunks of a resource pack are requested up front, the same as the
 	// vanilla client. After that, one more is requested for every chunk packet received.
 	initialPackChunkRequests = 100
-	// packChunkOverhead is the memory an early chunk is counted as on top of its data.
+	// packChunkOverhead is the memory counted for an early chunk on top of its data.
 	packChunkOverhead = 128
 	// packHeldSlack is the memory a download may hold beyond twice the data received, see packHeldLimit.
 	packHeldSlack = 1 << 20
 )
 
-// packHeldLimit returns how much memory a download may hold: twice the data received so far plus
+// packHeldLimit returns how much counted memory a download may hold: twice the data received so far plus
 // packHeldSlack. The vanilla client has no such limit, as it writes to a file while this keeps the pack in
 // memory. Only chunks that hold far less data than the memory they take reach it: many empty chunks waiting
 // for earlier ones, or offsets far past the data received.

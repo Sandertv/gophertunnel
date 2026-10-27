@@ -1288,7 +1288,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks: %v (UUID=%v)", chunkCount, id)
 	}
 	pack.uuid, pack.chunkCount = pk.UUID, uint32(chunkCount)
-	pack.early = make(map[uint32]packChunk)
+	pack.early = make(map[uint32][]byte)
 	for range min(pack.chunkCount, initialPackChunkRequests) {
 		conn.requestNextPackChunk(&pack)
 	}
@@ -1314,7 +1314,7 @@ func placePackData(pack *downloadingPack, offset uint64, data []byte) error {
 	}
 	if have := uint64(len(pack.data)); end > have {
 		if pack.heldBytes+end-have > packHeldLimit(pack) {
-			return fmt.Errorf("chunk at offset %v would hold more than %v bytes", offset, packHeldLimit(pack))
+			return fmt.Errorf("chunk at offset %v would hold more than %v counted bytes", offset, packHeldLimit(pack))
 		}
 		pack.heldBytes += end - have
 		pack.data = slices.Grow(pack.data, int(end-have))[:end]
@@ -1380,9 +1380,9 @@ func (conn *Conn) receivePackChunk(pack *downloadingPack, pk *packet.ResourcePac
 	if index != pack.next {
 		pack.heldBytes += uint64(len(pk.Data)) + packChunkOverhead
 		if pack.heldBytes > packHeldLimit(pack) {
-			return fmt.Errorf("chunks waiting for earlier ones hold more than %v bytes", packHeldLimit(pack))
+			return fmt.Errorf("chunks waiting for earlier ones hold more than %v counted bytes", packHeldLimit(pack))
 		}
-		pack.early[index] = packChunk{offset: pk.DataOffset, data: pk.Data}
+		pack.early[index] = pk.Data
 		return nil
 	}
 	offset, data := pk.DataOffset, pk.Data
@@ -1397,8 +1397,8 @@ func (conn *Conn) receivePackChunk(pack *downloadingPack, pk *packet.ResourcePac
 			return nil
 		}
 		delete(pack.early, pack.next)
-		pack.heldBytes -= uint64(len(chunk.data)) + packChunkOverhead
-		data = chunk.data
+		pack.heldBytes -= uint64(len(chunk)) + packChunkOverhead
+		data = chunk
 	}
 }
 
