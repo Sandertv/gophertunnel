@@ -26,22 +26,28 @@ type resourcePackQueue struct {
 type downloadingPack struct {
 	// uuid is the identifier of the pack as sent in ResourcePackDataInfo, used to request its chunks.
 	uuid string
-	// chunks holds every chunk received so far by its index. Memory grows only with the data that actually
-	// arrives, as the sizes in ResourcePacksInfo and ResourcePackDataInfo are only claims by the server.
-	chunks map[uint32][]byte
-	// receivedBytes is the total length of the chunks received, which may not exceed size.
+	// data holds the chunks joined in index order so far, chunks [0, next). It grows only with the data that
+	// actually arrives, as the sizes in ResourcePacksInfo and ResourcePackDataInfo are only claims.
+	data []byte
+	// early holds chunks that arrived before an earlier one, at most maxPackChunksInFlight-1 of them.
+	early map[uint32][]byte
+	// receivedBytes is the total length of data and early, which may not exceed size.
 	receivedBytes uint64
 	size          uint64
 	chunkCount    uint32
+	// next is the index of the first chunk not yet joined into data.
+	next uint32
 	// requested is the index of the next chunk to request.
-	requested  uint32
+	requested uint32
+	// complete is set once every chunk was joined and the pack was handed off for reading.
+	complete   bool
 	contentKey string
 	cacheKey   ResourcePackCacheKey
 }
 
-// maxPackChunksInFlight is the maximum number of chunks of a resource pack requested but not yet received,
-// the same as the vanilla client. Some proxies hold back a chunk until the 99 after it were requested, so it
-// must not be lower or shared between packs.
+// maxPackChunksInFlight is how many chunks of a resource pack, starting at the first one missing, are
+// requested at once: the same number the vanilla client requests up front. Some proxies hold back a chunk
+// until the 99 after it were requested, so it must not be lower or shared between packs.
 const maxPackChunksInFlight = 100
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients

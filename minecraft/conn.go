@@ -1282,25 +1282,18 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks: %v (UUID=%v)", chunkCount, id)
 	}
 	pack.uuid, pack.chunkCount = pk.UUID, uint32(chunkCount)
-	pack.chunks = make(map[uint32][]byte)
-
-	// Like the vanilla client, keep up to maxPackChunksInFlight chunks requested and request the next one
-	// every time a chunk arrives, placing every chunk by its index: Some servers only send a chunk once
-	// later ones were requested.
-	for range min(pack.chunkCount, maxPackChunksInFlight) {
-		conn.requestNextPackChunk(&pack)
-	}
+	pack.early = make(map[uint32][]byte)
+	conn.requestPackChunks(&pack)
 	return nil
 }
 
-// requestNextPackChunk requests the next chunk of a downloading resource pack, if any are left. Like the
-// vanilla client, chunks are requested strictly in order, including ones a server already sent unasked.
-func (conn *Conn) requestNextPackChunk(pack *downloadingPack) {
-	if pack.requested >= pack.chunkCount {
-		return
+// requestPackChunks requests chunks of a downloading resource pack strictly in order, up to
+// maxPackChunksInFlight chunks past the first one missing. Chunks a server already sent unasked are requested
+// too, like the vanilla client does.
+func (conn *Conn) requestPackChunks(pack *downloadingPack) {
+	for limit := min(pack.chunkCount, pack.next+maxPackChunksInFlight); pack.requested < limit; pack.requested++ {
+		_ = conn.WritePacket(&packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)})
 	}
-	_ = conn.WritePacket(&packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)})
-	pack.requested++
 }
 
 // handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
@@ -1313,40 +1306,50 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		// download a resource pack.
 		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
 	}
-	if pack.chunks == nil {
+	if pack.complete {
 		// The pack already finished downloading, so this is a repeated chunk.
 		return nil
 	}
-	// Every chunk that arrives makes room for the next request, keeping the window full like the vanilla
-	// client does, even when a server resends or pushes chunks.
-	conn.requestNextPackChunk(pack)
-	if pk.ChunkIndex >= pack.chunkCount {
+	index := pk.ChunkIndex
+	if index >= pack.chunkCount {
 		// Odd but well-formed data outside the pack: skip it rather than ending the login.
 		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk outside the pack", "UUID", pk.UUID,
-			"index", pk.ChunkIndex)
+			"index", index)
 		return nil
 	}
-	if _, ok := pack.chunks[pk.ChunkIndex]; ok {
-		// We already have this chunk.
+	if _, ok := pack.early[index]; ok || index < pack.next || index-pack.next >= maxPackChunksInFlight {
+		// A repeated chunk, or one sent unasked too far ahead to hold: it is requested once the download
+		// reaches it.
 		return nil
 	}
 	pack.receivedBytes += uint64(len(pk.Data))
 	if pack.receivedBytes > pack.size {
 		return fmt.Errorf("resource pack %v sent more than its size of %v bytes", pk.UUID, pack.size)
 	}
-	pack.chunks[pk.ChunkIndex] = pk.Data
-	if uint32(len(pack.chunks)) < pack.chunkCount {
+	if index != pack.next {
+		pack.early[index] = pk.Data
+		return nil
+	}
+	// Like the vanilla client, join chunks in index order as soon as every earlier one arrived. Their
+	// DataOffset is not used.
+	pack.data = append(pack.data, pk.Data...)
+	for pack.next++; ; pack.next++ {
+		chunk, ok := pack.early[pack.next]
+		if !ok {
+			break
+		}
+		delete(pack.early, pack.next)
+		pack.data = append(pack.data, chunk...)
+	}
+	if pack.next < pack.chunkCount {
+		conn.requestPackChunks(pack)
 		return nil
 	}
 	if pack.receivedBytes != pack.size {
 		return fmt.Errorf("got %v bytes of resource pack %v, expected %v", pack.receivedBytes, pk.UUID, pack.size)
 	}
-	// Every chunk arrived and their total is exactly the pack's size, so join them in one allocation.
-	data := make([]byte, 0, pack.size)
-	for i := range pack.chunkCount {
-		data = append(data, pack.chunks[i]...)
-	}
-	pack.chunks = nil
+	data := pack.data
+	pack.data, pack.early, pack.complete = nil, nil, true
 	uuid := pack.uuid
 	go func() {
 		// Parsing the pack may take a while, so it is done off the goroutine reading packets.
@@ -1374,7 +1377,9 @@ func (conn *Conn) packDownloaded(pack *resource.Pack) {
 	conn.packMu.Unlock()
 
 	if packAmount == 0 {
-		conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus)
+		// Chunks a server repeats after the last pack finished are still handled, and dropped, instead of
+		// being passed on to the user.
+		conn.expect(packet.IDResourcePackStack, packet.IDPlayStatus, packet.IDResourcePackChunkData)
 		_ = conn.WritePacket(&packet.ResourcePackClientResponse{Response: packet.PackResponseAllPacksDownloaded})
 		_ = conn.Flush()
 	}
