@@ -44,8 +44,8 @@ func newOffsetReader(r io.Reader) *offsetReader {
 	} else {
 		reader.Next = func(n int) []byte {
 			data := make([]byte, n)
-			_, _ = io.ReadAtLeast(reader, data, n)
-			return data
+			read, _ := io.ReadFull(reader, data)
+			return data[:read]
 		}
 	}
 	return reader
