@@ -58,16 +58,16 @@ const (
 	initialPackChunkRequests = 100
 	// packChunkOverhead is the memory an early chunk is counted as on top of its data.
 	packChunkOverhead = 128
-	// packHeldSlack is the memory a download may hold beyond twice its data, see packHeldLimit.
+	// packHeldSlack is the memory a download may hold beyond twice the data received, see packHeldLimit.
 	packHeldSlack = 1 << 20
 )
 
-// packHeldLimit returns how much memory a download may hold: twice the data received so far, and never more
-// than twice the size the server announced, plus packHeldSlack. The vanilla client has no such limit. It
-// writes to a file, while this keeps the pack in memory, so only a server sending many empty or misplaced
-// chunks reaches it.
+// packHeldLimit returns how much memory a download may hold: twice the data received so far plus
+// packHeldSlack. The vanilla client has no such limit, as it writes to a file while this keeps the pack in
+// memory. Only chunks that hold far less data than the memory they take reach it: many empty chunks waiting
+// for earlier ones, or offsets far past the data received.
 func packHeldLimit(pack *downloadingPack) uint64 {
-	return 2*min(pack.receivedBytes, pack.size) + packHeldSlack
+	return 2*pack.receivedBytes + packHeldSlack
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients

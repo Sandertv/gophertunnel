@@ -1274,6 +1274,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 			version: pack.cacheKey.Version,
 		})
 		conn.packMu.Unlock()
+		pack.complete = true
 		conn.packDownloaded(nil)
 		return nil
 	}
@@ -1364,7 +1365,7 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 
 // receivePackChunk places a chunk of a downloading pack like the vanilla client: chunks wait until every
 // earlier one arrived, and each run of chunks that can then be placed is written at its first chunk's
-// DataOffset. Repeated chunks and chunks outside the pack are skipped.
+// DataOffset. Repeated chunks and chunks outside the pack are skipped, where the vanilla client would stall.
 func (conn *Conn) receivePackChunk(pack *downloadingPack, pk *packet.ResourcePackChunkData) error {
 	index := pk.ChunkIndex
 	if index >= pack.chunkCount {
