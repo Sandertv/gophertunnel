@@ -169,6 +169,9 @@ type Conn struct {
 	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
 	packQueue                  *resourcePackQueue
+	// packChunkSlots holds one value for every resource pack chunk requested but not yet received, across all
+	// packs downloaded at the same time.
+	packChunkSlots chan struct{}
 	// downloadResourcePack is an optional function passed to a Dial() call. If set, each resource pack received
 	// from the server will call this function to see if it should be downloaded or not.
 	downloadResourcePack func(id uuid.UUID, version string, currentPack, totalPacks int) bool
@@ -222,6 +225,7 @@ func newConn(netConn net.Conn, key *ecdsa.PrivateKey, log *slog.Logger, proto Pr
 		readerLimits: limits,
 
 		resourcePackDelivery: defaultResourcePackDeliveryConfig(),
+		packChunkSlots:       make(chan struct{}, maxPackChunksInFlight),
 	}
 	if d, ok := netConn.(packet.EncryptionDisabler); ok {
 		conn.disableEncryption = d.DisableEncryption()
@@ -1263,25 +1267,19 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	pack.chunkSize = pk.DataChunkSize
 
 	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
-	// though there's data, and the client will still download normally.
-	chunkCount := uint32(pk.Size / uint64(pk.DataChunkSize))
-	if pk.Size%uint64(pk.DataChunkSize) != 0 {
-		chunkCount++
+	// though there's data, and the client will still download normally. A size or chunk size of zero, or more
+	// chunks than maxPackChunks, end the connection.
+	chunkCount, err := packChunkCount(pk.Size, pk.DataChunkSize)
+	if err != nil {
+		return fmt.Errorf("handle ResourcePackDataInfo: %w (UUID=%v)", err, id)
 	}
 	pack.chunkCount = chunkCount
 	pack.received = make([]bool, chunkCount)
 
-	idCopy := pk.UUID
+	idCopy, done := pk.UUID, make(chan struct{})
+	go conn.requestPackChunks(idCopy, chunkCount, done)
 	go func() {
-		// Request all chunks up front like the vanilla client: some servers only answer once later chunks were requested.
-		for i := uint32(0); i < chunkCount; i++ {
-			_ = conn.WritePacket(&packet.ResourcePackChunkRequest{
-				UUID:       idCopy,
-				ChunkIndex: int32(i),
-			})
-			// One batch per request keeps batches below the decoder's packet limit.
-			_ = conn.Flush()
-		}
+		defer close(done)
 		chunks := make([][]byte, chunkCount)
 		for next := uint32(0); next < chunkCount; {
 			select {
@@ -1324,6 +1322,35 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	return nil
 }
 
+// requestPackChunks requests the chunks of a resource pack in order until done is closed. Like the vanilla
+// client, it keeps many chunks requested at once, as some servers only send a chunk once later chunks were
+// requested. Their number is limited by packChunkSlots, so that servers limiting the packets a client may
+// send are not flooded with requests.
+func (conn *Conn) requestPackChunks(uuid string, chunkCount uint32, done <-chan struct{}) {
+	for i := uint32(0); i < chunkCount; i++ {
+		select {
+		case conn.packChunkSlots <- struct{}{}:
+		default:
+			// All slots are taken: Send the requests written so far and wait for chunks to arrive.
+			if err := conn.Flush(); err != nil {
+				return
+			}
+			select {
+			case conn.packChunkSlots <- struct{}{}:
+			case <-done:
+				return
+			case <-conn.ctx.Done():
+				return
+			}
+		}
+		pk := &packet.ResourcePackChunkRequest{UUID: uuid, ChunkIndex: int32(i)}
+		if err := conn.WritePacket(pk); err != nil {
+			return
+		}
+	}
+	_ = conn.Flush()
+}
+
 // handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
 // pack that is being downloaded.
 func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) error {
@@ -1337,15 +1364,23 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 	if pk.ChunkIndex >= pack.chunkCount {
 		return fmt.Errorf("chunk index %v out of range: the pack has %v chunks", pk.ChunkIndex, pack.chunkCount)
 	}
-	if lastData := pk.ChunkIndex == pack.chunkCount-1; !lastData && uint32(len(pk.Data)) != pack.chunkSize {
-		// The chunk data didn't have the full size and wasn't the last data to be sent for the resource pack,
-		// meaning we got too little data.
-		return fmt.Errorf("expected chunk size %v, got %v", pack.chunkSize, len(pk.Data))
+	// Every chunk but the last has the full chunk size, the last one holds the rest of the pack.
+	expected := uint64(pack.chunkSize)
+	if pk.ChunkIndex == pack.chunkCount-1 {
+		expected = pack.size - uint64(pk.ChunkIndex)*uint64(pack.chunkSize)
+	}
+	if uint64(len(pk.Data)) != expected {
+		return fmt.Errorf("expected chunk size %v for chunk %v, got %v", expected, pk.ChunkIndex, len(pk.Data))
 	}
 	if pack.received[pk.ChunkIndex] {
 		return nil
 	}
 	pack.received[pk.ChunkIndex] = true
+	// Free the slot of the request answered. A chunk sent without being requested has none to free.
+	select {
+	case <-conn.packChunkSlots:
+	default:
+	}
 	select {
 	case pack.newFrag <- packChunk{index: pk.ChunkIndex, data: pk.Data}:
 	case <-conn.ctx.Done():
