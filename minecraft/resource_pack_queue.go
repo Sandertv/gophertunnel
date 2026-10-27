@@ -26,18 +26,21 @@ type resourcePackQueue struct {
 type downloadingPack struct {
 	// uuid is the identifier of the pack as sent in ResourcePackDataInfo, used to request its chunks.
 	uuid string
-	// data holds the content of the pack, which every chunk is copied into at its offset.
-	data       []byte
+	// chunks holds every chunk received so far by its index. Memory grows only with the data that actually
+	// arrives, as the sizes in ResourcePacksInfo and ResourcePackDataInfo are only claims by the server.
+	chunks     map[uint32]packChunk
 	size       uint64
 	chunkCount uint32
 	// requested is the index of the next chunk to request.
-	requested uint32
-	// received holds for every chunk if it was received.
-	received       []bool
-	receivedChunks uint32
-	receivedBytes  uint64
-	contentKey     string
-	cacheKey       ResourcePackCacheKey
+	requested  uint32
+	contentKey string
+	cacheKey   ResourcePackCacheKey
+}
+
+// packChunk is one chunk of a downloading resource pack, placed at its offset.
+type packChunk struct {
+	offset uint64
+	data   []byte
 }
 
 // maxPackChunksInFlight is the maximum number of chunks of a resource pack requested but not yet received,

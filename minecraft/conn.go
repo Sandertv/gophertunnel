@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/ecdsa"
 	"crypto/rand"
@@ -1259,9 +1260,9 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	delete(conn.packQueue.downloadingPacks, id)
 	conn.packQueue.awaitingPacks[id] = &pack
 
-	if pk.Size == 0 {
-		// An empty pack has no chunks to download and no content to read, so it is treated like a pack that
-		// was not downloaded.
+	if pk.Size == 0 || pk.DataChunkSize == 0 {
+		// Like the vanilla client, a pack without a size or chunk size has no chunks to download and no
+		// content to read, so it is treated like a pack that was not downloaded.
 		conn.log.Debug("handle ResourcePackDataInfo: skipping empty resource pack", "UUID", id)
 		conn.packMu.Lock()
 		conn.ignoredResourcePacks = append(conn.ignoredResourcePacks, exemptedResourcePack{
@@ -1271,9 +1272,6 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		conn.packMu.Unlock()
 		conn.packDownloaded(nil)
 		return nil
-	}
-	if pk.DataChunkSize == 0 {
-		return fmt.Errorf("handle ResourcePackDataInfo: chunk size of 0 (UUID=%v)", id)
 	}
 	// The client calculates the chunk count by itself: You could in theory send a chunk count of 0 even
 	// though there's data, and the client will still download normally.
@@ -1285,7 +1283,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 		return fmt.Errorf("handle ResourcePackDataInfo: too many chunks: %v (UUID=%v)", chunkCount, id)
 	}
 	pack.uuid, pack.chunkCount = pk.UUID, uint32(chunkCount)
-	pack.data, pack.received = make([]byte, pk.Size), make([]bool, chunkCount)
+	pack.chunks = make(map[uint32]packChunk)
 
 	// Like the vanilla client, keep up to maxPackChunksInFlight chunks requested and request the next one
 	// every time a chunk arrives, placing every chunk by its offset: Some servers only send a chunk once
@@ -1296,17 +1294,14 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	return nil
 }
 
-// requestNextPackChunk requests the next chunk of a downloading resource pack that did not arrive yet, if
-// there is one.
+// requestNextPackChunk requests the next chunk of a downloading resource pack, if any are left. Like the
+// vanilla client, chunks are requested strictly in order, including ones a server already sent unasked.
 func (conn *Conn) requestNextPackChunk(pack *downloadingPack) {
-	for ; pack.requested < pack.chunkCount; pack.requested++ {
-		if !pack.received[pack.requested] {
-			pk := &packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)}
-			_ = conn.WritePacket(pk)
-			pack.requested++
-			return
-		}
+	if pack.requested >= pack.chunkCount {
+		return
 	}
+	_ = conn.WritePacket(&packet.ResourcePackChunkRequest{UUID: pack.uuid, ChunkIndex: int32(pack.requested)})
+	pack.requested++
 }
 
 // handleResourcePackChunkData handles a resource pack chunk data packet, which holds a fragment of a resource
@@ -1319,32 +1314,28 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		// download a resource pack.
 		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
 	}
-	if pk.ChunkIndex >= pack.chunkCount {
-		return fmt.Errorf("chunk index %v out of range (%v chunks)", pk.ChunkIndex, pack.chunkCount)
+	// Every chunk that arrives makes room for the next request, keeping the window full like the vanilla
+	// client does, even when a server resends or pushes chunks.
+	conn.requestNextPackChunk(pack)
+	if pk.ChunkIndex >= pack.chunkCount || pk.DataOffset >= pack.size {
+		// Odd but well-formed data outside the pack: skip it rather than ending the login.
+		conn.log.Debug("handle ResourcePackChunkData: ignoring chunk outside the pack", "UUID", pk.UUID,
+			"index", pk.ChunkIndex, "offset", pk.DataOffset)
+		return nil
 	}
-	if pack.received[pk.ChunkIndex] {
+	if _, ok := pack.chunks[pk.ChunkIndex]; ok {
 		// We already have this chunk.
 		return nil
 	}
-	if pk.DataOffset > pack.size || uint64(len(pk.Data)) > pack.size-pk.DataOffset {
-		return fmt.Errorf("chunk %v of %v bytes at offset %v exceeds the pack size %v",
-			pk.ChunkIndex, len(pk.Data), pk.DataOffset, pack.size)
-	}
-	copy(pack.data[pk.DataOffset:], pk.Data)
-	pack.received[pk.ChunkIndex] = true
-	pack.receivedChunks++
-	pack.receivedBytes += uint64(len(pk.Data))
-	conn.requestNextPackChunk(pack)
-
-	if pack.receivedChunks < pack.chunkCount {
+	pack.chunks[pk.ChunkIndex] = packChunk{offset: pk.DataOffset, data: bytes.Clone(pk.Data)}
+	if uint32(len(pack.chunks)) < pack.chunkCount {
 		return nil
 	}
-	if pack.receivedBytes != pack.size {
-		return fmt.Errorf("got %v bytes of resource pack %v, expected %v",
-			pack.receivedBytes, pk.UUID, pack.size)
+	data, err := assemblePack(pack.chunks, pack.size)
+	pack.chunks = nil
+	if err != nil {
+		return fmt.Errorf("resource pack %v: %w", pk.UUID, err)
 	}
-	data := pack.data
-	pack.data = nil
 	go func() {
 		// Parsing the pack may take a while, so it is done off the goroutine reading packets.
 		newPack, err := resource.Read(bytes.NewReader(data))
@@ -1357,6 +1348,31 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		conn.storeResourcePack(pack.cacheKey, newPack)
 	}()
 	return nil
+}
+
+// assemblePack places received chunks at their offsets. The chunks must cover every byte of the pack, so the
+// allocation never exceeds the data that actually arrived.
+func assemblePack(chunks map[uint32]packChunk, size uint64) ([]byte, error) {
+	ordered := make([]packChunk, 0, len(chunks))
+	for _, chunk := range chunks {
+		ordered = append(ordered, chunk)
+	}
+	slices.SortFunc(ordered, func(a, b packChunk) int { return cmp.Compare(a.offset, b.offset) })
+	var covered uint64
+	for _, chunk := range ordered {
+		if chunk.offset > covered {
+			return nil, fmt.Errorf("missing bytes %v to %v", covered, chunk.offset)
+		}
+		covered = max(covered, chunk.offset+uint64(len(chunk.data)))
+	}
+	if covered < size {
+		return nil, fmt.Errorf("got %v of %v bytes", covered, size)
+	}
+	data := make([]byte, size)
+	for _, chunk := range ordered {
+		copy(data[chunk.offset:], chunk.data)
+	}
+	return data, nil
 }
 
 // packDownloaded adds a downloaded resource pack, if not nil, and tells the server once all packs are
