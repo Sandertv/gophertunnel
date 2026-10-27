@@ -28,9 +28,11 @@ type downloadingPack struct {
 	uuid string
 	// chunks holds every chunk received so far by its index. Memory grows only with the data that actually
 	// arrives, as the sizes in ResourcePacksInfo and ResourcePackDataInfo are only claims by the server.
-	chunks     map[uint32][]byte
-	size       uint64
-	chunkCount uint32
+	chunks map[uint32][]byte
+	// receivedBytes is the total length of the chunks received, which may not exceed size.
+	receivedBytes uint64
+	size          uint64
+	chunkCount    uint32
 	// requested is the index of the next chunk to request.
 	requested  uint32
 	contentKey string

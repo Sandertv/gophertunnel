@@ -1285,7 +1285,7 @@ func (conn *Conn) handleResourcePackDataInfo(pk *packet.ResourcePackDataInfo) er
 	pack.chunks = make(map[uint32][]byte)
 
 	// Like the vanilla client, keep up to maxPackChunksInFlight chunks requested and request the next one
-	// every time a chunk arrives, placing every chunk by its offset: Some servers only send a chunk once
+	// every time a chunk arrives, placing every chunk by its index: Some servers only send a chunk once
 	// later ones were requested.
 	for range min(pack.chunkCount, maxPackChunksInFlight) {
 		conn.requestNextPackChunk(&pack)
@@ -1313,6 +1313,10 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		// download a resource pack.
 		return fmt.Errorf("chunk data for resource pack that was not being downloaded")
 	}
+	if pack.chunks == nil {
+		// The pack already finished downloading, so this is a repeated chunk.
+		return nil
+	}
 	// Every chunk that arrives makes room for the next request, keeping the window full like the vanilla
 	// client does, even when a server resends or pushes chunks.
 	conn.requestNextPackChunk(pack)
@@ -1326,25 +1330,29 @@ func (conn *Conn) handleResourcePackChunkData(pk *packet.ResourcePackChunkData) 
 		// We already have this chunk.
 		return nil
 	}
-	pack.chunks[pk.ChunkIndex] = bytes.Clone(pk.Data)
+	pack.receivedBytes += uint64(len(pk.Data))
+	if pack.receivedBytes > pack.size {
+		return fmt.Errorf("resource pack %v sent more than its size of %v bytes", pk.UUID, pack.size)
+	}
+	pack.chunks[pk.ChunkIndex] = pk.Data
 	if uint32(len(pack.chunks)) < pack.chunkCount {
 		return nil
 	}
-	// Join the chunks in order. The buffer only grows with data that arrived.
-	var buf bytes.Buffer
+	if pack.receivedBytes != pack.size {
+		return fmt.Errorf("got %v bytes of resource pack %v, expected %v", pack.receivedBytes, pk.UUID, pack.size)
+	}
+	// Every chunk arrived and their total is exactly the pack's size, so join them in one allocation.
+	data := make([]byte, 0, pack.size)
 	for i := range pack.chunkCount {
-		buf.Write(pack.chunks[i])
+		data = append(data, pack.chunks[i]...)
 	}
 	pack.chunks = nil
-	if uint64(buf.Len()) != pack.size {
-		return fmt.Errorf("got %v bytes of resource pack %v, expected %v", buf.Len(), pk.UUID, pack.size)
-	}
-	data := buf.Bytes()
+	uuid := pack.uuid
 	go func() {
 		// Parsing the pack may take a while, so it is done off the goroutine reading packets.
 		newPack, err := resource.Read(bytes.NewReader(data))
 		if err != nil {
-			conn.closeTransport(fmt.Errorf("download resource pack %v: %w", pk.UUID, err))
+			conn.closeTransport(fmt.Errorf("download resource pack %v: %w", uuid, err))
 			return
 		}
 		newPack = newPack.WithContentKey(pack.contentKey)
