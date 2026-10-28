@@ -49,18 +49,28 @@ func (n NetherNet) DialContext(ctx context.Context, address string) (net.Conn, e
 
 // DialContextIdentity establishes a connection with the remote NetherNet peer using the
 // JWT token issued by the auth service and the private key bound to the Minecraft connection.
-// If [nethernet.Dialer.Identity] is already set, that identity is used instead.
+// If [nethernet.Dialer.Identity] is already set, that identity is used instead. If the JWT token
+// passed is an empty string, DialContextIdentity will attempt to generate a self-signed identity.
 func (n NetherNet) DialContextIdentity(ctx context.Context, address string, token string, privateKey *ecdsa.PrivateKey) (net.Conn, error) {
 	if n.Dialer.Identity == nil {
-		env, err := authEnv(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("request authorization environment: %w", err)
-		}
-		n.Dialer.Identity = &nethernet.Identity{
-			PrivateKey: privateKey,
-			Token:      token,
-			// We need to append '/' on the URL if not present.
-			Domain: env.Issuer.JoinPath().String(),
+		if token == "" {
+			// Vanilla client uses a hard-coded domain as the issuer for the self-signed JWT token when offline.
+			var err error
+			n.Dialer.Identity, err = nethernet.SelfSignedIdentity(privateKey, "https://authorization.franchise.minecraft-services.net/")
+			if err != nil {
+				return nil, fmt.Errorf("generate self signed identity: %w", err)
+			}
+		} else {
+			env, err := authEnv(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("request authorization environment: %w", err)
+			}
+			n.Dialer.Identity = &nethernet.Identity{
+				PrivateKey: privateKey,
+				Token:      token,
+				// We need to append '/' on the URL if not present.
+				Domain: env.Issuer.JoinPath().String(),
+			}
 		}
 	}
 	return n.DialContext(ctx, address)
