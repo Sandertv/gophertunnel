@@ -81,3 +81,19 @@ func (b *offsetReader) readArrayBytes(count int32, width int, op string) ([]byte
 	}
 	return data, nil
 }
+
+// sliceCap bounds the capacity preallocated for count variable-width elements of at least minWidth bytes
+// each. A reader that reports its length rejects more elements than it can hold; otherwise the capacity
+// starts small and the slice grows with the elements actually read.
+func (b *offsetReader) sliceCap(count int32, minWidth int, op string) (int, error) {
+	if count < 0 {
+		return 0, BufferOverrunError{Op: op}
+	}
+	if remaining, ok := b.Reader.(interface{ Len() int }); ok {
+		if int64(count)*int64(minWidth) > int64(remaining.Len()) {
+			return 0, BufferOverrunError{Op: op}
+		}
+		return int(count), nil
+	}
+	return min(int(count), 256), nil
+}
