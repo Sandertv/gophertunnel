@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	PlayerVideoCaptureActionStop = iota
-	PlayerVideoCaptureActionStart
+	PlayerVideoCaptureActionStart = iota
+	PlayerVideoCaptureActionStop
 )
 
 // PlayerVideoCapture packet is sent by the server to start or stop video recording for a player. This packet
@@ -14,7 +14,7 @@ const (
 // individual frames to '/LocalCache/minecraftpe' in the format specified below.
 type PlayerVideoCapture struct {
 	// Action is the action to perform with the video capture. It is one of the constants above.
-	Action byte
+	Action uint32
 	// FrameRate is the frame rate at which the video should be recorded. It is only used when Action is
 	// PlayerVideoCaptureActionStart. A higher frame rate will cause more frames to be recorded, but also
 	// a noticeable increase in lag.
@@ -30,7 +30,7 @@ func (*PlayerVideoCapture) ID() uint32 {
 }
 
 func (pk *PlayerVideoCapture) Marshal(io protocol.IO) {
-	io.Uint8(&pk.Action)
+	io.Varuint32(&pk.Action)
 	if pk.Action == PlayerVideoCaptureActionStart {
 		io.Int32(&pk.FrameRate)
 		io.String(&pk.FilePrefix)
