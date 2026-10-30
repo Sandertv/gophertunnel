@@ -282,7 +282,16 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	}
 
 	if !d.DisablePortFollowing {
-		if pong, err := network.PingContext(ctx, address); err == nil {
+		// The pong is only read for a redirect port and the dial goes ahead without it, so the
+		// ping is bounded separately from the dial. A destination that drops it would otherwise
+		// spend the whole deadline here and leave nothing for the connection sequence, which
+		// does retransmit and would have coped with the loss.
+		const pingTimeout = time.Second * 3
+
+		pingCtx, cancel := context.WithTimeout(ctx, pingTimeout)
+		pong, err := network.PingContext(pingCtx, address)
+		cancel()
+		if err == nil {
 			address = addressWithPongPort(pong, address)
 		}
 	}
