@@ -586,6 +586,9 @@ const (
 	SoundEventConvertToFrostbite                 = "convert_to_frostbite"
 	SoundEventConvertToZombie                    = "convert_to_zombie"
 	SoundEventCrack                              = "crack"
+	SoundEventIceBallThrow                       = "ice_ball.throw"
+	SoundEventRecordFlurry                       = "record.flurry"
+	SoundEventImitateFrostbite                   = "imitate.frostbite"
 	SoundEventUndefined                          = "undefined"
 )
 

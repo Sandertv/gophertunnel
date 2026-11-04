@@ -90,3 +90,32 @@ func (x *ServerJoinInformation) Marshal(r IO) {
 	OptionalMarshaler(r, &x.PresenceInfo)
 	OptionalMarshaler(r, &x.ManagedChatJoinInfo)
 }
+
+// TransferUIOptions holds options for the loading screen shown when a player is transferred to another server.
+type TransferUIOptions struct {
+	// TitleText is the title shown on the loading screen.
+	TitleText Optional[string]
+	// BodyText is the body text shown on the loading screen.
+	BodyText Optional[string]
+	// TitleVisible specifies if the title is visible.
+	TitleVisible Optional[bool]
+	// BodyVisible specifies if the body text is visible.
+	BodyVisible Optional[bool]
+	// CancelButtonText is the text of the cancel button.
+	CancelButtonText Optional[string]
+	// CancelButtonVisible specifies if the cancel button is visible.
+	CancelButtonVisible Optional[bool]
+	// CancelButtonDelaySeconds is the delay, in seconds, before the cancel button is shown.
+	CancelButtonDelaySeconds Optional[float32]
+}
+
+// Marshal encodes/decodes a TransferUIOptions.
+func (x *TransferUIOptions) Marshal(r IO) {
+	OptionalFunc(r, &x.TitleText, r.String)
+	OptionalFunc(r, &x.BodyText, r.String)
+	OptionalFunc(r, &x.TitleVisible, r.Bool)
+	OptionalFunc(r, &x.BodyVisible, r.Bool)
+	OptionalFunc(r, &x.CancelButtonText, r.String)
+	OptionalFunc(r, &x.CancelButtonVisible, r.Bool)
+	OptionalFunc(r, &x.CancelButtonDelaySeconds, r.Float32)
+}

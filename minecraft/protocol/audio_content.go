@@ -1,8 +1,9 @@
 package protocol
 
 const (
-	AudioContentPlaybackTypeMusic = "Music"
-	AudioContentPlaybackTypeSound = "Sound"
+	AudioContentPlaybackTypeMusic           = "Music"
+	AudioContentPlaybackTypeSound           = "Sound"
+	AudioContentPlaybackTypeConcurrentMusic = "ConcurrentMusic"
 )
 
 // AudioContentRegistrationEntry is an entry sent by the client in the ServerboundRegisterAudioContent packet
@@ -24,4 +25,25 @@ func (x *AudioContentRegistrationEntry) Marshal(r IO) {
 	r.String(&x.SharedMetadata)
 	r.String(&x.ServerContent)
 	r.String(&x.PlaybackContent)
+}
+
+const (
+	MusicPlaybackStateLocal = iota
+	MusicPlaybackStateOnline
+	MusicPlaybackStateNotFound
+	MusicPlaybackStatePending
+)
+
+// MusicPlaybackFailureEntry describes a music disc that could not be played.
+type MusicPlaybackFailureEntry struct {
+	// State is the playback state of the disc. It is one of the MusicPlaybackState constants.
+	State uint8
+	// Description is the description of the song that failed to play.
+	Description string
+}
+
+// Marshal encodes/decodes a MusicPlaybackFailureEntry.
+func (x *MusicPlaybackFailureEntry) Marshal(r IO) {
+	r.Uint8(&x.State)
+	r.String(&x.Description)
 }

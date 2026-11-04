@@ -44,6 +44,9 @@ type Text struct {
 	// Parameters is a list of parameters that should be filled into the message. These parameters are only
 	// written if the type of the packet is TextTypeTranslation, TextTypeTip, TextTypePopup or TextTypeJukeboxPopup.
 	Parameters []string
+	// Queue is only written for TextTypeTranslation, TextTypePopup and TextTypeJukeboxPopup. For
+	// TextTypeJukeboxPopup, it queues the popup behind the one currently shown instead of replacing it.
+	Queue bool
 	// XUID is the XBOX Live user ID of the player that sent the message. It is only set for packets of
 	// TextTypeChat. When sent to a player, the player will only be shown the chat message if a player with
 	// this XUID is present in the player list and not muted, or if the XUID is empty.
@@ -91,6 +94,7 @@ func (pk *Text) Marshal(io protocol.IO) {
 		if len(pk.Parameters) > 4 {
 			io.InvalidValue(pk.Parameters, "parameters", "too many parameters")
 		}
+		io.Bool(&pk.Queue)
 	}
 
 	if len(pk.Message) == 0 {

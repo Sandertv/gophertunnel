@@ -68,10 +68,10 @@ const (
 	ContainerRecipeFood
 	ContainerRecipeBlocks
 	ContainerRecipeFurnaceItems
-	ContainerReservedA
-	ContainerReservedB
-	ContainerReservedC
-	ContainerReservedD
+	ContainerDiscPressBlock
+	ContainerDiscPressDye
+	ContainerDiscPressDisc
+	ContainerDiscPressResultPreview
 )
 
 const (
@@ -113,6 +113,7 @@ const (
 	ContainerTypeChestBoat
 	ContainerTypeDecoratedPot
 	ContainerTypeCrafter
+	ContainerTypeDiscPress = 38
 )
 
 // FullContainerName contains information required to identify a container in a StackRequestSlotInfo.

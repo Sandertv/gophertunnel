@@ -4,6 +4,11 @@ import (
 	"github.com/sandertv/gophertunnel/minecraft/protocol"
 )
 
+const (
+	EditorPackTypeCore = 1 << iota
+	EditorPackTypeAnnotation
+)
+
 // ResourcePackStack is sent by the server to send the order in which resource packs and behaviour packs
 // should be applied (and downloaded) by the client.
 type ResourcePackStack struct {
@@ -24,9 +29,9 @@ type ResourcePackStack struct {
 	// ExperimentsPreviouslyToggled specifies if any experiments were previously toggled in this world. It is
 	// probably used for some kind of metrics.
 	ExperimentsPreviouslyToggled bool
-	// IncludeEditorPacks specifies if vanilla editor packs should be included in the resource pack stack when
-	// connecting to an editor world.
-	IncludeEditorPacks bool
+	// EditorPackTypes is a bitset of the built-in editor packs that the client should add to its resource
+	// pack stack. It is a combination of the EditorPackType flags.
+	EditorPackTypes uint8
 }
 
 // ID ...
@@ -40,5 +45,5 @@ func (pk *ResourcePackStack) Marshal(io protocol.IO) {
 	io.String(&pk.BaseGameVersion)
 	protocol.SliceUint32Length(io, &pk.Experiments)
 	io.Bool(&pk.ExperimentsPreviouslyToggled)
-	io.Bool(&pk.IncludeEditorPacks)
+	io.Uint8(&pk.EditorPackTypes)
 }

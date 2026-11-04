@@ -31,6 +31,10 @@ type PlaySound struct {
 	// PlaybackPositionSeconds is an optional offset, in seconds, into the sound at which playback should
 	// start. If not set, the sound is played from the start.
 	PlaybackPositionSeconds protocol.Optional[float32]
+	// StartDelaySeconds is an optional delay, in seconds, before the playback timeline starts. If not set,
+	// playback starts when the audio is ready. If set, the timeline starts after the delay and audio that
+	// loads later seeks forward to catch up.
+	StartDelaySeconds protocol.Optional[float32]
 }
 
 // ID ...
@@ -47,4 +51,5 @@ func (pk *PlaySound) Marshal(io protocol.IO) {
 	io.Bool(&pk.BypassListenerRangeCheck)
 	protocol.OptionalFunc(io, &pk.Handle, io.Uint64)
 	protocol.OptionalFunc(io, &pk.PlaybackPositionSeconds, io.Float32)
+	protocol.OptionalFunc(io, &pk.StartDelaySeconds, io.Float32)
 }

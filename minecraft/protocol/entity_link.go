@@ -64,6 +64,8 @@ type PassengerOfBlockData struct {
 	// EmoteType is the pose the entity takes while riding the block. It is one of the PassengerOfBlockEmote
 	// constants above.
 	EmoteType uint8
+	// BlockType is the hashed serialized ID of the block that the entity is riding.
+	BlockType uint64
 }
 
 // Marshal encodes/decodes a PassengerOfBlockData.
@@ -73,4 +75,5 @@ func (x *PassengerOfBlockData) Marshal(r IO) {
 	r.Float32(&x.Rotation)
 	r.Float32(&x.RotationLimit)
 	r.Uint8(&x.EmoteType)
+	r.Uint64(&x.BlockType)
 }
