@@ -10,6 +10,7 @@ import (
 
 	"github.com/df-mc/go-nethernet"
 	"github.com/df-mc/go-nethernet/endpoint"
+	"github.com/sandertv/gophertunnel/minecraft/protocol"
 	"github.com/sandertv/gophertunnel/minecraft/protocol/packet"
 )
 
@@ -82,7 +83,13 @@ func (n NetherNet) DialContextIdentity(ctx context.Context, address string, toke
 // The address must be an HTTP/HTTPS URL with a port.
 func (n NetherNet) PingContext(ctx context.Context, address string) ([]byte, error) {
 	if n.Signaling == nil {
-		n.Signaling = endpoint.NewClient()
+		n.Signaling = endpoint.ClientConfig{
+			ClientInfo: endpoint.ClientInfo{
+				Version:  protocol.CurrentVersion,
+				Protocol: protocol.CurrentProtocol,
+				Platform: int(protocol.DeviceAndroid),
+			},
+		}.New()
 	}
 	if p, ok := n.Signaling.(pinger); ok {
 		return p.PingContext(ctx, address)
