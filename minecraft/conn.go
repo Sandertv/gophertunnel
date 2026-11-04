@@ -1641,7 +1641,12 @@ func (conn *Conn) expect(packetIDs ...uint32) {
 // treating the closed transport as an encoding failure.
 func (conn *Conn) closeTransport(cause error) {
 	conn.cancelFunc(cause)
-	_ = conn.conn.Close()
+	// Closing some transports, such as NetherNet, waits for the peer to acknowledge what was written.
+	if c, ok := conn.conn.(interface{ Abort() error }); ok {
+		_ = c.Abort()
+	} else {
+		_ = conn.conn.Close()
+	}
 	_ = conn.close(cause)
 }
 
