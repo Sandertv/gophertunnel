@@ -1,7 +1,6 @@
 package minecraft
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
 
@@ -25,13 +24,44 @@ type resourcePackQueue struct {
 
 // downloadingPack is a resource pack that is being downloaded by a client connection.
 type downloadingPack struct {
-	buf           *bytes.Buffer
-	chunkSize     uint32
-	size          uint64
-	expectedIndex uint32
-	newFrag       chan []byte
-	contentKey    string
-	cacheKey      ResourcePackCacheKey
+	// uuid is the identifier of the pack as sent in ResourcePackDataInfo, used to request its chunks.
+	uuid string
+	// data holds chunks [0, next), each run of them placed at its first chunk's DataOffset.
+	data []byte
+	// early holds chunks that arrived before an earlier one, by index.
+	early map[uint32][]byte
+	// receivedBytes is the total length of every new chunk received.
+	receivedBytes uint64
+	// heldBytes is the memory counted for data and early: their lengths plus packChunkOverhead per early chunk.
+	heldBytes  uint64
+	size       uint64
+	chunkCount uint32
+	// next is the index of the first chunk not yet placed into data.
+	next uint32
+	// requested is the index of the next chunk to request.
+	requested uint32
+	// complete is set once every chunk was placed and the pack was handed off for reading.
+	complete   bool
+	contentKey string
+	cacheKey   ResourcePackCacheKey
+}
+
+const (
+	// initialPackChunkRequests is how many chunks of a resource pack are requested up front, the same as the
+	// vanilla client. After that, one more is requested for every chunk packet received.
+	initialPackChunkRequests = 100
+	// packChunkOverhead is the memory counted for an early chunk on top of its data.
+	packChunkOverhead = 128
+	// packHeldSlack is the memory a download may hold beyond twice the data received, see packHeldLimit.
+	packHeldSlack = 1 << 20
+)
+
+// packHeldLimit returns how much counted memory a download may hold: twice the data received so far plus
+// packHeldSlack. The vanilla client has no such limit, as it writes to a file while this keeps the pack in
+// memory. Only chunks that hold far less data than the memory they take reach it: many empty chunks waiting
+// for earlier ones, or offsets far past the data received.
+func packHeldLimit(pack *downloadingPack) uint64 {
+	return 2*pack.receivedBytes + packHeldSlack
 }
 
 // Request 'requests' all resource packs passed, provided they all exist in the resourcePackQueue. Clients
