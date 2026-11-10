@@ -2,6 +2,7 @@ package minecraft
 
 import (
 	"bytes"
+	"cmp"
 	"context"
 	"crypto/ecdsa"
 	"crypto/elliptic"
@@ -111,8 +112,8 @@ type Dialer struct {
 	Protocol Protocol
 
 	// MaxDecompressedLen is the maximum length of a decompressed packet batch to prevent potential exploits.
-	// If 0, the default value is 16MB (16 * 1024 * 1024). Setting this to a negative integer disables the
-	// limit.
+	// If 0, the default value is 64MB (64 * 1024 * 1024), the vanilla client's limit. Setting this to a
+	// negative integer disables the limit.
 	MaxDecompressedLen int
 
 	// FlushRate is the rate at which packets sent are flushed. Packets are buffered for a duration up to
@@ -307,7 +308,7 @@ func (d Dialer) DialContextNetwork(ctx context.Context, network Network, address
 	conn.cacheEnabled = d.EnableClientCache
 	conn.disconnectOnInvalidPacket = d.DisconnectOnInvalidPackets
 	conn.disconnectOnUnknownPacket = d.DisconnectOnUnknownPackets
-	conn.maxDecompressedLen = d.MaxDecompressedLen
+	conn.maxDecompressedLen = cmp.Or(d.MaxDecompressedLen, packet.DefaultClientMaxDecompressedLen)
 
 	defaultIdentityData(&conn.identityData)
 	defaultClientData(address, conn.identityData.DisplayName, &conn.clientData)
