@@ -12,7 +12,7 @@ type CraftingData struct {
 	ShapedRecipes             []protocol.ShapedRecipe
 	ShapelessRecipes          []protocol.ShapelessRecipe
 	MultiRecipes              []protocol.MultiRecipe
-	ShulkerBoxRecipes         []protocol.ShulkerBoxRecipe
+	UserDataShapelessRecipes  []protocol.UserDataShapelessRecipe
 	ShapelessChemistryRecipes []protocol.ShapelessChemistryRecipe
 	ShapedChemistryRecipes    []protocol.ShapedChemistryRecipe
 	SmithingTransformRecipes  []protocol.SmithingTransformRecipe
@@ -39,7 +39,7 @@ func (pk *CraftingData) Marshal(io protocol.IO) {
 	protocol.Slice(io, &pk.ShapedRecipes)
 	protocol.Slice(io, &pk.ShapelessRecipes)
 	protocol.Slice(io, &pk.MultiRecipes)
-	protocol.Slice(io, &pk.ShulkerBoxRecipes)
+	protocol.Slice(io, &pk.UserDataShapelessRecipes)
 	protocol.Slice(io, &pk.ShapelessChemistryRecipes)
 	protocol.Slice(io, &pk.ShapedChemistryRecipes)
 	protocol.Slice(io, &pk.SmithingTransformRecipes)

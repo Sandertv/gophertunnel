@@ -28,6 +28,14 @@ type appendCompression interface {
 	MaxCompressedLen(decompressedLen int) int
 }
 
+// appendDecompression is implemented by Compression algorithms that can decompress into an existing
+// destination buffer instead of allocating a new one on every call.
+type appendDecompression interface {
+	// DecompressAppend appends the decompressed form of compressed to dst and returns the result. It
+	// returns an error if the decompressed size exceeds limit.
+	DecompressAppend(dst, compressed []byte, limit int) ([]byte, error)
+}
+
 var (
 	// NopCompression is an empty implementation that does not compress data.
 	NopCompression nopCompression
@@ -110,7 +118,34 @@ func (flateCompression) Compress(decompressed []byte) ([]byte, error) {
 }
 
 // Decompress ...
-func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
+func (c flateCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
+	pooled := getDecompressBuffer()
+	defer putDecompressBuffer(pooled)
+
+	data, err := c.DecompressAppend(*pooled, compressed, limit)
+	if err != nil {
+		return nil, err
+	}
+	*pooled = data
+	return append([]byte(nil), data...), nil
+}
+
+// DecompressAppend decompresses flate data into dst. Flate has no length prefix, so dst is grown to double
+// the compressed size up front and appendReader grows it further if needed.
+func (flateCompression) DecompressAppend(dst, compressed []byte, limit int) ([]byte, error) {
+	limit = max(limit, 0)
+	hint := len(compressed)
+	if hint > math.MaxInt/2 {
+		hint = math.MaxInt
+	} else {
+		hint *= 2
+	}
+	hint = max(hint, 32*1024)
+	if limit != math.MaxInt {
+		hint = min(hint, limit+1)
+	}
+	dst = slices.Grow(dst, hint)
+
 	r := flateDecompressPool.Get().(io.ReadCloser)
 	defer func() {
 		_ = r.Close()
@@ -120,40 +155,11 @@ func (flateCompression) Decompress(compressed []byte, limit int) ([]byte, error)
 	if err := r.(flate.Resetter).Reset(bytes.NewReader(compressed), nil); err != nil {
 		return nil, fmt.Errorf("reset flate: %w", err)
 	}
-
-	decompressed := internal.BufferPool.Get().(*bytes.Buffer)
-	defer func() {
-		// Only return reasonably sized buffers to the pool to avoid retaining very large arrays.
-		if decompressed.Cap() <= 1<<20 { // 1 MiB cap
-			decompressed.Reset()
-			internal.BufferPool.Put(decompressed)
-		}
-	}()
-
-	// Handle no limit
-	if limit == math.MaxInt {
-		if _, err := io.Copy(decompressed, r); err != nil {
-			return nil, fmt.Errorf("decompress flate: %w", err)
-		}
-		return append([]byte(nil), decompressed.Bytes()...), nil
-	}
-
-	// If the compressed data is less than half the limit, we can safely assume l*2, otherwise cap at limit.
-	capHint := limit
-	if l := len(compressed); l <= limit/2 {
-		capHint = l * 2
-	}
-	decompressed.Grow(capHint)
-
-	// Read limit+1 bytes to detect overflow
-	lr := &io.LimitedReader{R: r, N: int64(limit) + 1}
-	if _, err := io.Copy(decompressed, lr); err != nil {
+	decompressed, err := appendReader(dst, r, limit)
+	if err != nil {
 		return nil, fmt.Errorf("decompress flate: %w", err)
 	}
-	if lr.N <= 0 {
-		return nil, fmt.Errorf("decompress flate: size exceeds limit %d", limit)
-	}
-	return append([]byte(nil), decompressed.Bytes()...), nil
+	return decompressed, nil
 }
 
 // EncodeCompression ...
@@ -187,10 +193,13 @@ func (snappyCompression) MaxCompressedLen(decompressedLen int) int {
 }
 
 // Decompress ...
-func (snappyCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
-	// Snappy writes a decoded data length prefix, so it can allocate the
-	// perfect size right away and only needs to allocate once. No need to pool
-	// byte slices here either.
+func (c snappyCompression) Decompress(compressed []byte, limit int) ([]byte, error) {
+	return c.DecompressAppend(nil, compressed, limit)
+}
+
+// DecompressAppend decompresses snappy data into dst. Snappy writes a decoded data length prefix, so the
+// exact size can be checked against limit and reserved in dst before decompressing.
+func (snappyCompression) DecompressAppend(dst, compressed []byte, limit int) ([]byte, error) {
 	decodedLen, err := s2.DecodedLen(compressed)
 	if err != nil {
 		return nil, fmt.Errorf("snappy decoded length: %w", err)
@@ -198,11 +207,47 @@ func (snappyCompression) Decompress(compressed []byte, limit int) ([]byte, error
 	if decodedLen > limit {
 		return nil, fmt.Errorf("snappy decoded size %d exceeds limit %d", decodedLen, limit)
 	}
-	decompressed, err := s2.Decode(nil, compressed)
+	offset := len(dst)
+	dst = slices.Grow(dst, decodedLen)
+	decompressed, err := s2.Decode(dst[offset:offset:cap(dst)], compressed)
 	if err != nil {
 		return nil, fmt.Errorf("decompress snappy: %w", err)
 	}
-	return decompressed, nil
+	return append(dst[:offset], decompressed...), nil
+}
+
+// appendReader appends everything read from r to dst and returns the result. It returns an error if more
+// than limit bytes are read.
+func appendReader(dst []byte, r io.Reader, limit int) ([]byte, error) {
+	const chunkSize = 32 * 1024
+
+	// Reading limit+1 bytes detects overflow; cap the limit so the +1 cannot itself overflow.
+	limit = max(min(limit, math.MaxInt-1), 0)
+	start := len(dst)
+	for {
+		remaining := limit + 1 - (len(dst) - start)
+		if cap(dst) == len(dst) {
+			dst = slices.Grow(dst, min(chunkSize, remaining))
+		}
+		readLen := min(cap(dst)-len(dst), chunkSize, remaining)
+
+		n := len(dst)
+		dst = dst[:n+readLen]
+		read, err := r.Read(dst[n:])
+		dst = dst[:n+read]
+		if len(dst)-start > limit {
+			return nil, fmt.Errorf("size exceeds limit %d", limit)
+		}
+		if err == io.EOF {
+			return dst, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		if read == 0 {
+			return nil, io.ErrNoProgress
+		}
+	}
 }
 
 // init registers all valid compressions with the protocol.

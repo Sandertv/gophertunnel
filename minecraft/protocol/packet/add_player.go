@@ -56,6 +56,8 @@ type AddPlayer struct {
 	// way the player shows up when first spawned in terms of it shown as riding an entity. Setting these
 	// links is important for new viewers to see the player is riding another entity.
 	EntityLinks []protocol.EntityLink
+	// PassengerOfBlock holds the data of the block that the player is riding, if any.
+	PassengerOfBlock protocol.Optional[protocol.PassengerOfBlockData]
 	// DeviceID is the device ID set in one of the files found in the storage of the device of the player. It
 	// may be changed freely, so it should not be relied on for anything.
 	DeviceID string
@@ -85,6 +87,7 @@ func (pk *AddPlayer) Marshal(io protocol.IO) {
 	protocol.Single(io, &pk.EntityProperties)
 	protocol.Single(io, &pk.AbilityData)
 	protocol.Slice(io, &pk.EntityLinks)
+	protocol.OptionalMarshaler(io, &pk.PassengerOfBlock)
 	io.String(&pk.DeviceID)
 	io.Int32(&pk.BuildPlatform)
 }

@@ -1,12 +1,15 @@
 package protocol
 
+import (
+	"github.com/go-gl/mathgl/mgl32"
+)
+
 const (
 	MemoryCategoryUnknown = iota
 	MemoryCategoryInvalidSizeUnknown
 	MemoryCategoryActor
 	MemoryCategoryActorAnimation
 	MemoryCategoryActorRendering
-	MemoryCategoryBalancer
 	MemoryCategoryBlockTickingQueues
 	MemoryCategoryBiomeStorage
 	MemoryCategoryBlobs
@@ -45,6 +48,7 @@ const (
 	MemoryCategoryLevelChunk
 	MemoryCategoryLevelChunkGen
 	MemoryCategoryLevelChunkGenThreadLocal
+	MemoryCategoryLightVolumeManager
 	MemoryCategoryNetwork
 	MemoryCategoryMarketplace
 	MemoryCategoryMaterialDragonCompiledDefinition
@@ -59,7 +63,6 @@ const (
 	MemoryCategoryOreUIClient
 	MemoryCategoryPersonaPieces
 	MemoryCategoryPersonaAnimations
-	MemoryCategoryPersonaTextures
 	MemoryCategoryPersonaCharacters
 	MemoryCategoryPersonaSkinPacks
 	MemoryCategoryPersonaRepo
@@ -112,7 +115,7 @@ const (
 	MemoryCategoryGamefaceScriptEngine
 	MemoryCategoryGamefaceScript
 	MemoryCategoryGamefaceLayout
-	MemoryCategoryVR
+	MemoryCategoryExecutable
 )
 
 // MemoryCategoryCounter represents a memory usage counter for a specific category.
@@ -139,6 +142,10 @@ type EntityDiagnosticTimingInfo struct {
 	DurationNanos uint64
 	// PercentOfTotal is the percentage of time that this timing entry has used compared to others.
 	PercentOfTotal byte
+	// Position is the position of the entity that is being timed, if known.
+	Position Optional[mgl32.Vec3]
+	// Dimension is the name of the dimension that the entity being timed is in, if known.
+	Dimension Optional[string]
 }
 
 // Marshal encodes/decodes a EntityDiagnosticTimingInfo.
@@ -147,6 +154,8 @@ func (x *EntityDiagnosticTimingInfo) Marshal(r IO) {
 	r.String(&x.Entity)
 	r.Uint64(&x.DurationNanos)
 	r.Uint8(&x.PercentOfTotal)
+	OptionalFunc(r, &x.Position, r.Vec3)
+	OptionalFunc(r, &x.Dimension, r.String)
 }
 
 // SystemDiagnosticTimingInfo represents diagnostics for a specific system index.

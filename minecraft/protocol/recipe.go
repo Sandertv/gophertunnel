@@ -83,7 +83,7 @@ func (x *RecipeUnlockRequirement) Marshal(r IO) {
 }
 
 // ShapelessRecipe is a recipe that has no particular shape. Its functionality is shared with the
-// RecipeShulkerBox and RecipeShapelessChemistry types.
+// UserDataShapelessRecipe and ShapelessChemistryRecipe types.
 type ShapelessRecipe struct {
 	// RecipeID is a unique ID of the recipe. This ID must be unique amongst all other types of recipes too,
 	// but its functionality is not exactly known.
@@ -115,9 +115,10 @@ type ShapelessRecipe struct {
 	RecipeNetworkID uint32
 }
 
-// ShulkerBoxRecipe is a shapeless recipe made specifically for shulker box crafting, so that they don't lose
-// their user data when dyeing a shulker box.
-type ShulkerBoxRecipe struct {
+// UserDataShapelessRecipe is a shapeless recipe for crafting items that must retain their user data, such
+// as their contents or colour, when crafted. Vanilla uses these recipes for dyeing shulker boxes, bundles
+// and harnesses.
+type UserDataShapelessRecipe struct {
 	ShapelessRecipe
 }
 
@@ -225,7 +226,7 @@ func (recipe *ShapelessRecipe) Marshal(r IO) {
 }
 
 // Marshal ...
-func (recipe *ShulkerBoxRecipe) Marshal(r IO) {
+func (recipe *UserDataShapelessRecipe) Marshal(r IO) {
 	marshalShapeless(r, &recipe.ShapelessRecipe)
 }
 

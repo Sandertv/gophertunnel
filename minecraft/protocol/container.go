@@ -68,6 +68,10 @@ const (
 	ContainerRecipeFood
 	ContainerRecipeBlocks
 	ContainerRecipeFurnaceItems
+	ContainerReservedA
+	ContainerReservedB
+	ContainerReservedC
+	ContainerReservedD
 )
 
 const (

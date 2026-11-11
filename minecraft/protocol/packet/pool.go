@@ -285,6 +285,12 @@ func init() {
 		IDServerPresenceInfo:                 func() Packet { return &ServerPresenceInfo{} },
 		IDClientboundUpdateSoundData:         func() Packet { return &ClientboundUpdateSoundData{} },
 		IDSendPartyDestinationCookie:         func() Packet { return &SendPartyDestinationCookie{} },
+		IDSetPlayerFurnaceOptions:            func() Packet { return &SetPlayerFurnaceOptions{} },
+		IDRecordStarted:                      func() Packet { return &RecordStarted{} },
+		IDClientboundMatchmakingState:        func() Packet { return &ClientboundMatchmakingState{} },
+		IDClientboundStonecutterSetRecipe:    func() Packet { return &ClientboundStonecutterSetRecipe{} },
+		IDSetPassengerOfBlock:                func() Packet { return &SetPassengerOfBlock{} },
+		IDClientboundPlayAudioContent:        func() Packet { return &ClientboundPlayAudioContent{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -380,6 +386,11 @@ func init() {
 		IDPartyChanged:                      func() Packet { return &PartyChanged{} },
 		IDServerBoundDataDrivenScreenClosed: func() Packet { return &ServerBoundDataDrivenScreenClosed{} },
 		IDPartyDestinationCookieResponse:    func() Packet { return &PartyDestinationCookieResponse{} },
+		IDSetPlayerFurnaceOptions:           func() Packet { return &SetPlayerFurnaceOptions{} },
+		IDServerboundStonecutterSetRecipe:   func() Packet { return &ServerboundStonecutterSetRecipe{} },
+		IDServerboundMatchmakingCancel:      func() Packet { return &ServerboundMatchmakingCancel{} },
+		IDServerboundCursorItemDrag:         func() Packet { return &ServerboundCursorItemDrag{} },
+		IDServerboundRegisterAudioContent:   func() Packet { return &ServerboundRegisterAudioContent{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)

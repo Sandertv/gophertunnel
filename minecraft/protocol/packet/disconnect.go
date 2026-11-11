@@ -145,6 +145,17 @@ const (
 	DisconnectReasonNonceNotFound
 	DisconnectReasonNonceExpired
 	DisconnectReasonNonceNotValid
+	DisconnectReasonHostDisconnected
+	DisconnectReasonEditorJoinIntentPolicyFailure
+	DisconnectReasonNetherNetIdentityNotAllowed
+	DisconnectReasonInvalidName
+	DisconnectReasonExpiredToken
+	DisconnectReasonHostAcceptsNoTypeOfAuth
+	DisconnectReasonNotAuthenticatedFastFail
+	DisconnectReasonEditorNotAllowed
+	DisconnectReasonMissingStructureData
+	DisconnectReasonUnsupportedTransport
+	DisconnectReasonSubClientLoginNotBound
 )
 
 // Disconnect may be sent by the server to disconnect the client using an optional message to send as the

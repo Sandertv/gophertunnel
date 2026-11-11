@@ -19,6 +19,11 @@ Additionally, a MITM proxy is implemented in the [main.go file](https://github.c
 Gophertunnel supports only one version at a time (generally the latest official Minecraft release), but multiple protocols can be supported with the API. Generally, a new
 minor version is tagged when gophertunnel supports a new Minecraft version that was not previously supported.
 
+## Development
+
+Run `make lint` to check formatting and code quality with the pinned golangci-lint version.
+Run `go test -race ./...` and `go build ./...` to run the same test and build checks as CI.
+
 ## Contact
 [![Chat on Discord](https://img.shields.io/badge/Chat-On%20Discord-738BD7.svg?style=for-the-badge)](https://discord.com/invite/U4kFWHhTNR)
 

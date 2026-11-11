@@ -183,14 +183,13 @@ func (w *Writer) PlayerInventoryAction(x *UseItemTransactionData) {
 	OptionalFunc(w, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
 		Slice(w, slots)
 	})
-	DoubleOptionalFunc(w, &x.Actions, func(actions *[]InventoryAction) {
-		Slice(w, actions)
-	})
+	Slice(w, &x.Actions)
 	IntegerFunc(&x.ActionType, w.Varint32)
 	IntegerFunc(&x.TriggerType, w.Uint8)
 	w.BlockPos(&x.BlockPosition)
 	IntegerFunc(&x.BlockFace, w.Uint8)
 	w.Varint32(&x.HotBarSlot)
+	w.Uint8(&x.Hand)
 	w.ItemInstance(&x.HeldItem)
 	w.Vec3(&x.Position)
 	w.Vec3(&x.ClickedPosition)
@@ -299,8 +298,12 @@ func (w *Writer) ItemDescriptorCount(i *ItemDescriptorCount) {
 		w.Varint32(&aux)
 	} else {
 		w.String(&name)
-		i.Descriptor.Marshal(w)
-		if id == ItemDescriptorItemTag {
+		if molang, ok := i.Descriptor.(*MoLangItemDescriptor); ok {
+			w.String(&molang.Expression)
+		} else {
+			i.Descriptor.Marshal(w)
+		}
+		if id != ItemDescriptorDefault {
 			aux := int32(32767)
 			w.Varint32(&aux)
 		}
@@ -404,7 +407,7 @@ func (w *Writer) StackRequestAction(x *StackRequestAction) {
 
 // MaterialReducer writes a material reducer to the writer.
 func (w *Writer) MaterialReducer(m *MaterialReducer) {
-	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue)
+	mix := (m.InputItem.NetworkID << 16) | int32(m.InputItem.MetadataValue&0xffff)
 	w.Varint32(&mix)
 	Slice(w, &m.Outputs)
 }
@@ -494,6 +497,10 @@ func (w *Writer) PackSetting(x *PackSetting) {
 		id = PackSettingTypeString
 		w.Varuint32(&id)
 		w.String(&val)
+	case []string:
+		id = PackSettingTypeStringList
+		w.Varuint32(&id)
+		FuncSlice(w, &val, w.String)
 	default:
 		w.UnknownEnumOption(x.Value, "pack setting")
 	}

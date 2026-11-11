@@ -252,6 +252,12 @@ type ClientData struct {
 	PartyLeader bool `json:"IsPartyLeader"`
 	// ProfileHash is a client-generated hash of the equipped persona skin.
 	ProfileHash string `json:"ProfileHash"`
+	// Nonce is a randomly generated, hex-encoded string produced by the host. For peer-to-peer
+	// worlds, a client that wishes to connect must first join the host's Xbox Live multiplayer session
+	// and wait for the host to assign it a nonce, then include that same value here.
+	// This prevents unauthorized clients from connecting using only the host's connection details,
+	// such as its Player Messaging ID (PMID) or IP address.
+	Nonce string `json:",omitempty"`
 }
 
 // PersonaPiece represents a piece of a persona skin. All pieces are sent separately.
@@ -353,14 +359,21 @@ func (data ClientData) Validate() error {
 		return fmt.Errorf("SelfSignedID must be parseable as a valid UUID, but got %v", data.SelfSignedID)
 	}
 	if strings.Contains(data.ServerAddress, "://") {
-		// The server address for NetherNet connections has the following format:
+		// The server address for NetherNet connections has one of the following formats, the second being
+		// sent by 1.26.60 clients:
 		// https://<host>:<port>:<port>
-		ind := strings.LastIndex(data.ServerAddress, ":")
-		u, err := url.Parse(data.ServerAddress[:ind])
+		// https://<host>:<port>
+		addr := data.ServerAddress
+		if ind := strings.LastIndex(addr, ":"); ind > 0 {
+			if u, err := url.Parse(addr[:ind]); err == nil && u.Port() != "" && u.Port() == addr[ind+1:] {
+				addr = addr[:ind]
+			}
+		}
+		u, err := url.Parse(addr)
 		if err != nil {
 			return fmt.Errorf("ServerAddress must be a URL, but got %v", data.ServerAddress)
 		}
-		if u.Host == "" || u.Port() == "" || u.Port() != data.ServerAddress[ind+1:] ||
+		if _, _, err := net.SplitHostPort(u.Host); err != nil || u.Hostname() == "" ||
 			(u.Scheme != "https" && u.Scheme != "http") {
 			return fmt.Errorf("ServerAddress is invalid: %v", data.ServerAddress)
 		}

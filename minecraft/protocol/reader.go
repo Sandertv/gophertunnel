@@ -75,7 +75,7 @@ func (r *Reader) StringUTF(x *string) {
 	}
 	r.checkRemaining(l, "string")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = *(*string)(unsafe.Pointer(&data))
@@ -91,7 +91,7 @@ func (r *Reader) String(x *string) {
 	}
 	r.checkRemaining(l, "string")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = *(*string)(unsafe.Pointer(&data))
@@ -107,7 +107,7 @@ func (r *Reader) ByteSlice(x *[]byte) {
 	}
 	r.checkRemaining(l, "byte slice")
 	data := make([]byte, l)
-	if _, err := r.r.Read(data); err != nil {
+	if _, err := io.ReadFull(r.r, data); err != nil {
 		r.panic(err)
 	}
 	*x = data
@@ -245,14 +245,13 @@ func (r *Reader) PlayerInventoryAction(x *UseItemTransactionData) {
 	OptionalFunc(r, &x.LegacySetItemSlots, func(slots *[]LegacySetItemSlot) {
 		Slice(r, slots)
 	})
-	DoubleOptionalFunc(r, &x.Actions, func(actions *[]InventoryAction) {
-		Slice(r, actions)
-	})
+	Slice(r, &x.Actions)
 	IntegerFunc(&x.ActionType, r.Varint32)
 	IntegerFunc(&x.TriggerType, r.Uint8)
 	r.BlockPos(&x.BlockPosition)
 	IntegerFunc(&x.BlockFace, r.Uint8)
 	r.Varint32(&x.HotBarSlot)
+	r.Uint8(&x.Hand)
 	r.ItemInstance(&x.HeldItem)
 	r.Vec3(&x.Position)
 	r.Vec3(&x.ClickedPosition)
@@ -366,7 +365,7 @@ func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
 		switch name {
 		case "name":
 			id = ItemDescriptorDefault
-		case "molang":
+		case "tags":
 			id = ItemDescriptorMoLang
 		case "item_tag":
 			id = ItemDescriptorItemTag
@@ -375,8 +374,12 @@ func (r *Reader) ItemDescriptorCount(i *ItemDescriptorCount) {
 			return
 		}
 		i.Descriptor, _ = itemDescriptorFromType(id)
-		i.Descriptor.Marshal(r)
-		if id == ItemDescriptorItemTag {
+		if molang, ok := i.Descriptor.(*MoLangItemDescriptor); ok {
+			r.String(&molang.Expression)
+		} else {
+			i.Descriptor.Marshal(r)
+		}
+		if id != ItemDescriptorDefault {
 			var aux int32
 			r.Varint32(&aux)
 		}
@@ -501,7 +504,8 @@ func (r *Reader) StackRequestAction(x *StackRequestAction) {
 func (r *Reader) MaterialReducer(m *MaterialReducer) {
 	var mix int32
 	r.Varint32(&mix)
-	m.InputItem = ItemType{NetworkID: mix << 16, MetadataValue: uint32(mix & 0x7fff)}
+	// The key packs id << 16 | aux; the arithmetic shift keeps negative ids the writer packs.
+	m.InputItem = ItemType{NetworkID: mix >> 16, MetadataValue: uint32(mix & 0xffff)}
 	Slice(r, &m.Outputs)
 }
 
@@ -587,6 +591,10 @@ func (r *Reader) PackSetting(x *PackSetting) {
 	case PackSettingTypeString:
 		var v string
 		r.String(&v)
+		x.Value = v
+	case PackSettingTypeStringList:
+		var v []string
+		FuncSlice(r, &v, r.String)
 		x.Value = v
 	default:
 		r.UnknownEnumOption(t, "pack setting")

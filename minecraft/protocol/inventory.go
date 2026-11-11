@@ -43,8 +43,8 @@ type InventoryAction struct {
 // Marshal encodes/decodes an InventoryAction.
 func (x *InventoryAction) Marshal(r IO) {
 	r.Varuint32(&x.SourceType)
-	DoubleOptionalFunc(r, &x.WindowID, r.Int8)
-	DoubleOptionalFunc(r, &x.SourceFlags, r.Varuint32)
+	OptionalFunc(r, &x.WindowID, r.Int8)
+	OptionalFunc(r, &x.SourceFlags, r.Varuint32)
 	r.Varuint32(&x.InventorySlot)
 	r.ItemInstance(&x.OldItem)
 	r.ItemInstance(&x.NewItem)
@@ -133,6 +133,11 @@ const (
 	ClientCooldownStateOn
 )
 
+const (
+	HandSlotMainHand = iota
+	HandSlotOffHand
+)
+
 // UseItemTransactionData represents an inventory transaction data object sent when the client uses an item on
 // a block.
 type UseItemTransactionData struct {
@@ -151,7 +156,7 @@ type UseItemTransactionData struct {
 	// these actions hold one slot in which one item was changed to another. In general, the combination of
 	// all of these actions results in a balanced inventory transaction. This should be checked to ensure that
 	// no items are cheated into the inventory.
-	Actions Optional[[]InventoryAction]
+	Actions []InventoryAction
 	// ActionType is the type of the UseItem inventory transaction. It is one of the action types found above,
 	// and specifies the way the player interacted with the block.
 	ActionType uint32
@@ -169,6 +174,9 @@ type UseItemTransactionData struct {
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the block. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
+	// Hand is the hand that the player used to interact with the block. It is one of the HandSlot constants
+	// above.
+	Hand byte
 	// HeldItem is the item that was held to interact with the block. The server should check if this item
 	// is actually present in the HotBarSlot.
 	HeldItem ItemInstance
@@ -206,6 +214,9 @@ type UseItemOnEntityTransactionData struct {
 	// HotBarSlot is the hot bar slot that the player was holding while clicking the entity. It should be used
 	// to ensure that the hot bar slot and held item are correctly synchronised with the server.
 	HotBarSlot int32
+	// Hand is the hand that the player used to interact with the entity. It is one of the HandSlot constants
+	// above.
+	Hand byte
 	// HeldItem is the item that was held to interact with the entity. The server should check if this item
 	// is actually present in the HotBarSlot.
 	HeldItem ItemInstance
@@ -238,6 +249,8 @@ type ReleaseItemTransactionData struct {
 	// HeadPosition is the position of the player's head at the time of releasing the item. This is used
 	// mainly for purposes such as spawning eating particles at that position.
 	HeadPosition mgl32.Vec3
+	// Hand is the hand that holds the item being released. It is one of the HandSlot constants above.
+	Hand byte
 }
 
 // Marshal ...
@@ -247,6 +260,7 @@ func (data *UseItemTransactionData) Marshal(r IO) {
 	r.BlockPos(&data.BlockPosition)
 	IntegerFunc(&data.BlockFace, r.Uint8)
 	r.Varint32(&data.HotBarSlot)
+	r.Uint8(&data.Hand)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
@@ -260,6 +274,7 @@ func (data *UseItemOnEntityTransactionData) Marshal(r IO) {
 	r.ActorRuntimeID(&data.TargetEntityRuntimeID)
 	r.Varint32(&data.ActionType)
 	r.Varint32(&data.HotBarSlot)
+	r.Uint8(&data.Hand)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.Position)
 	r.Vec3(&data.ClickedPosition)
@@ -271,6 +286,7 @@ func (data *ReleaseItemTransactionData) Marshal(r IO) {
 	r.Varint32(&data.HotBarSlot)
 	r.ItemInstance(&data.HeldItem)
 	r.Vec3(&data.HeadPosition)
+	r.Uint8(&data.Hand)
 }
 
 // Marshal ...

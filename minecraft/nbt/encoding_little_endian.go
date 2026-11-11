@@ -143,12 +143,9 @@ func (e littleEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
-	if n < 0 {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
-	}
-	b := make([]byte, n*4)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
+	b, err := r.readArrayBytes(n, 4, "Int32Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int32{}, nil
@@ -162,12 +159,9 @@ func (e littleEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
-	if n < 0 {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
-	}
-	b := make([]byte, n*8)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
+	b, err := r.readArrayBytes(n, 8, "Int64Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int64{}, nil
@@ -191,7 +185,7 @@ func (bigEndian) WriteInt16(w *offsetWriter, x int16) error {
 func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, uint32(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt32", Off: w.off}
 	}
 	return nil
@@ -201,7 +195,7 @@ func (bigEndian) WriteInt32(w *offsetWriter, x int32) error {
 func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, uint64(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteInt64", Off: w.off}
 	}
 	return nil
@@ -211,7 +205,7 @@ func (bigEndian) WriteInt64(w *offsetWriter, x int64) error {
 func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 	b := w.buf[:4]
 	binary.BigEndian.PutUint32(b, math.Float32bits(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat32", Off: w.off}
 	}
 	return nil
@@ -221,7 +215,7 @@ func (bigEndian) WriteFloat32(w *offsetWriter, x float32) error {
 func (bigEndian) WriteFloat64(w *offsetWriter, x float64) error {
 	b := w.buf[:8]
 	binary.BigEndian.PutUint64(b, math.Float64bits(x))
-	if _, err := w.Write(b[:]); err != nil {
+	if _, err := w.Write(b); err != nil {
 		return FailedWriteError{Op: "WriteFloat64", Off: w.off}
 	}
 	return nil
@@ -307,15 +301,15 @@ func (e bigEndian) Int32Slice(r *offsetReader) ([]int32, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int32Slice"}
 	}
-	b := make([]byte, n*4)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int32Slice"}
+	b, err := r.readArrayBytes(n, 4, "Int32Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int32{}, nil
 	}
 	// Manually rotate the bytes, so we can just re-interpret this as a slice.
-	for i := int32(0); i < n; i++ {
+	for i := 0; i < int(n); i++ {
 		off := i * 4
 		b[off], b[off+3] = b[off+3], b[off]
 		b[off+1], b[off+2] = b[off+2], b[off+1]
@@ -329,15 +323,15 @@ func (e bigEndian) Int64Slice(r *offsetReader) ([]int64, error) {
 	if err != nil {
 		return nil, BufferOverrunError{Op: "Int64Slice"}
 	}
-	b := make([]byte, n*8)
-	if _, err := r.Read(b); err != nil {
-		return nil, BufferOverrunError{Op: "Int64Slice"}
+	b, err := r.readArrayBytes(n, 8, "Int64Slice")
+	if err != nil {
+		return nil, err
 	}
 	if n == 0 {
 		return []int64{}, nil
 	}
 	// Manually rotate the bytes, so we can just re-interpret this as a slice.
-	for i := int32(0); i < n; i++ {
+	for i := 0; i < int(n); i++ {
 		off := i * 8
 		b[off], b[off+7] = b[off+7], b[off]
 		b[off+1], b[off+6] = b[off+6], b[off+1]

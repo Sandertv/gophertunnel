@@ -251,4 +251,14 @@ const (
 	IDClientboundUpdateSoundData
 	IDSendPartyDestinationCookie
 	IDPartyDestinationCookieResponse
+	IDSetPlayerFurnaceOptions
+	IDRecordStarted
+	IDClientboundMatchmakingState
+	IDServerboundStonecutterSetRecipe
+	IDClientboundStonecutterSetRecipe
+	IDServerboundMatchmakingCancel
+	IDSetPassengerOfBlock
+	IDServerboundCursorItemDrag
+	IDClientboundPlayAudioContent
+	IDServerboundRegisterAudioContent
 )

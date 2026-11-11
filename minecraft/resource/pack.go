@@ -201,7 +201,7 @@ func (pack *Pack) Checksum() [32]byte {
 
 // Len returns the total length in bytes of the content of the archive that contained the resource pack.
 func (pack *Pack) Len() int {
-	return pack.content.Len()
+	return int(pack.content.Size())
 }
 
 // DataChunkCount returns the amount of chunks the data of the resource pack is split into if each chunk has
@@ -339,7 +339,7 @@ func createTempArchive(path string) (*os.File, error) {
 			return fmt.Errorf("find relative path: %w", err)
 		}
 		// Make sure to replace backslashes with forward slashes as Go zip only allows that.
-		relPath = strings.Replace(relPath, `\`, "/", -1)
+		relPath = strings.ReplaceAll(relPath, `\`, "/")
 		// Always ignore '.' as it is not a real file/folder.
 		if relPath == "." {
 			return nil
