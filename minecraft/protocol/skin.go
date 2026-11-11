@@ -3,7 +3,6 @@ package protocol
 import (
 	"fmt"
 	"image/color"
-	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -107,9 +106,12 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
-	trusted := "unset"
+	trusted := "Unset"
 	if t, ok := x.Trusted.Value(); ok {
-		trusted = strconv.FormatBool(t)
+		trusted = "False"
+		if t {
+			trusted = "True"
+		}
 	}
 	r.String(&trusted)
 	switch {
