@@ -3,6 +3,7 @@ package protocol
 import (
 	"fmt"
 	"image/color"
+	"strconv"
 	"strings"
 
 	"github.com/google/uuid"
@@ -68,8 +69,9 @@ type Skin struct {
 	// PieceTintColours is a list of specific tint colours for (some of) the persona pieces found in the list
 	// above.
 	PieceTintColours []PersonaPieceTintColour
-	// Trusted specifies if the skin is 'trusted'. No code should rely on this field, as any proxy or client
-	// can easily change it.
+	// Trusted specifies if the skin is 'trusted'. It is empty when the flag is unset. Servers should always
+	// set it: clients treat an unset skin as untrusted. No code should rely on this field, as any proxy or
+	// client can easily change it.
 	Trusted Optional[bool]
 	// OverrideAppearance specifies if the skin should override the player's skin that is equipped client-side.
 	// When false, the client will reject the skin and continue to use the skin that the player has equipped.
@@ -106,16 +108,19 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
 	trusted := "unset"
-	t, ok := x.Trusted.Value()
-	if ok {
-		trusted = "false"
-		if t {
-			trusted = "true"
-		}
+	if t, ok := x.Trusted.Value(); ok {
+		trusted = strconv.FormatBool(t)
 	}
 	r.String(&trusted)
-	if trusted != "unset" {
-		x.Trusted = Option(strings.EqualFold(trusted, "true"))
+	switch {
+	case strings.EqualFold(trusted, "unset"):
+		x.Trusted = Optional[bool]{}
+	case strings.EqualFold(trusted, "true"):
+		x.Trusted = Option(true)
+	case strings.EqualFold(trusted, "false"):
+		x.Trusted = Option(false)
+	default:
+		r.InvalidValue(trusted, "trusted", "must be unset, true or false")
 	}
 	r.String(&x.ProfileHash)
 }
