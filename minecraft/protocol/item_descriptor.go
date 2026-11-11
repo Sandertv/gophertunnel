@@ -50,7 +50,7 @@ func (x *DefaultItemDescriptor) Marshal(r IO) {
 type MoLangItemDescriptor struct {
 	// Expression represents the MoLang expression used to identify the item/it's associated tag.
 	Expression string
-	// Version represents the version of MoLang to use.
+	// Version represents the version of MoLang to use. Recipe ingredients do not carry it, so it decodes as zero there.
 	Version int16
 }
 
@@ -67,7 +67,7 @@ func itemDescriptorType(x ItemDescriptor) (uint8, string, bool) {
 	case *DefaultItemDescriptor:
 		return ItemDescriptorDefault, "name", true
 	case *MoLangItemDescriptor:
-		return ItemDescriptorMoLang, "molang", true
+		return ItemDescriptorMoLang, "tags", true
 	case *ItemTagItemDescriptor:
 		return ItemDescriptorItemTag, "item_tag", true
 	default:
