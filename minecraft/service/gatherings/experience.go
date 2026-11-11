@@ -138,12 +138,18 @@ func (a Address) String() string {
 	return net.JoinHostPort(a.IPv4Address, strconv.Itoa(int(a.Port)))
 }
 
-// Constants for [Address.NetworkProtocol] so that other transport layers
-// such as NetherNet can be added in the future.
 const (
-	// NetworkProtocolDefault indicates that the experience should be
-	// contacted using the default transport of the Bedrock Edition, RakNet.
+	// NetworkProtocolDefault indicates that clients should connect to
+	// the experience over RakNet, the current default protocol for
+	// Bedrock Edition.
 	NetworkProtocolDefault = "Default"
+	// NetworkProtocolNetherNet indicates that clients should connect to
+	// the experience over NetherNet using HTTP signaling. It is typically
+	// used by third-party servers.
+	NetworkProtocolNetherNet = "NetherNet"
+	// NetworkProtocolNetherNetJSONRPC indicates that clients should connect
+	// to the experience over NetherNet using JSON-RPC signaling.
+	NetworkProtocolNetherNetJSONRPC = "NetherNet_JsonRpc"
 )
 
 // DestinationInfo describes the destination selected by [Experience.Join].
