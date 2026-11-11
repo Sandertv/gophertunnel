@@ -106,25 +106,35 @@ func (x *Skin) Marshal(r IO) {
 	r.Bool(&x.PersonaCapeOnClassicSkin)
 	r.Bool(&x.PrimaryUser)
 	r.Bool(&x.OverrideAppearance)
-	trusted := "Unset"
-	if t, ok := x.Trusted.Value(); ok {
-		trusted = "False"
-		if t {
-			trusted = "True"
-		}
-	}
-	r.String(&trusted)
-	switch {
-	case strings.EqualFold(trusted, "unset"):
-		x.Trusted = Optional[bool]{}
-	case strings.EqualFold(trusted, "true"):
-		x.Trusted = Option(true)
-	case strings.EqualFold(trusted, "false"):
-		x.Trusted = Option(false)
-	default:
-		r.InvalidValue(trusted, "trusted", "must be unset, true or false")
-	}
+	trustedStr := trustedSkinToString(x.Trusted)
+	r.String(&trustedStr)
+	trustedSkinFromString(r, &x.Trusted, trustedStr)
 	r.String(&x.ProfileHash)
+}
+
+func trustedSkinToString(x Optional[bool]) string {
+	t, ok := x.Value()
+	switch {
+	case !ok:
+		return "Unset"
+	case t:
+		return "True"
+	default:
+		return "False"
+	}
+}
+
+func trustedSkinFromString(r IO, x *Optional[bool], s string) {
+	switch {
+	case strings.EqualFold(s, "unset"):
+		*x = Optional[bool]{}
+	case strings.EqualFold(s, "true"):
+		*x = Option(true)
+	case strings.EqualFold(s, "false"):
+		*x = Option(false)
+	default:
+		r.InvalidValue(s, "trusted", "unknown trusted skin flag")
+	}
 }
 
 // validate checks the skin and makes sure every one of its values are correct. It checks the image dimensions
