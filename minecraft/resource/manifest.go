@@ -3,6 +3,7 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -14,8 +15,8 @@ import (
 
 // Manifest contains all the basic information about the pack that Minecraft needs to identify it.
 type Manifest struct {
-	// FormatVersion defines the current version of the manifest. This is currently always 2.
-	FormatVersion int `json:"format_version"`
+	// FormatVersion defines the current version of the manifest, usually 1, 2 or 3.
+	FormatVersion FormatVersion `json:"format_version"`
 	// Header is the header of a resource pack. It contains information that applies to the entire resource
 	// pack, such as the name of the resource pack.
 	Header Header `json:"header"`
@@ -92,8 +93,61 @@ type Metadata struct {
 	URL string `json:"url,omitempty"`
 }
 
+// FormatVersion is a manifest's format version as major.minor. Vanilla reads it as a semantic version
+// written as a number, string or [major, minor, patch] array; an unreadable value decodes as 0 rather than
+// failing the whole manifest, since nothing here depends on it.
+type FormatVersion float64
+
+// UnmarshalJSON accepts numeric, string and array manifest format versions.
+func (f *FormatVersion) UnmarshalJSON(b []byte) error {
+	*f = 0
+	var number float64
+	if err := json.Unmarshal(b, &number); err == nil {
+		*f = FormatVersion(number)
+		return nil
+	}
+	var v Version
+	if err := v.UnmarshalJSON(b); err == nil {
+		if parsed, err := strconv.ParseFloat(strconv.Itoa(v[0])+"."+strconv.Itoa(v[1]), 64); err == nil {
+			*f = FormatVersion(parsed)
+		}
+	}
+	return nil
+}
+
 // Version may be present in the manifest as [1,0,0] or "1.0.0".
 type Version [3]int
+
+// semVersion is vanilla's version grammar: missing minor and patch parts are zero, and pre-release and
+// build suffixes follow a complete triple.
+var semVersion = regexp.MustCompile(`^(0|[1-9]\d{0,4})(?:\.(0|[1-9]\d{0,4})(?:\.(0|[1-9]\d{0,4})(?:-(?:(?:(?:0[0-9]*[A-Za-z-])|[1-9A-Za-z-])[0-9A-Za-z-]*|0)(?:\.(?:(?:(?:0[0-9]*[A-Za-z-])|[1-9A-Za-z-])[0-9A-Za-z-]*|0))*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?)?)?$`)
+
+// parseVersion reads a version string as vanilla does, also accepting the leading zeros older
+// gophertunnel releases accepted. Pre-release and build suffixes are not part of the result.
+func parseVersion(s string) (Version, bool) {
+	s = strings.TrimSpace(s)
+	var v Version
+	if match := semVersion.FindStringSubmatch(s); match != nil {
+		for i, part := range match[1:] {
+			if part != "" {
+				v[i], _ = strconv.Atoi(part)
+			}
+		}
+		return v, true
+	}
+	parts := strings.Split(s, ".")
+	if len(parts) != 3 {
+		return v, false
+	}
+	for i, part := range parts {
+		n, err := strconv.ParseUint(part, 10, 31)
+		if err != nil {
+			return v, false
+		}
+		v[i] = int(n)
+	}
+	return v, true
+}
 
 func (v *Version) UnmarshalJSON(b []byte) error {
 	// Parse common array format [1,0,0]
@@ -103,21 +157,13 @@ func (v *Version) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	// Parse semver format "1.0.0"
 	var s string
 	if err := json.Unmarshal(b, &s); err == nil {
-		s = strings.TrimSpace(s)
-		parts := strings.Split(s, ".")
-		if len(parts) != 3 {
-			return fmt.Errorf("invalid version %q (need x.y.z)", s)
+		parsed, ok := parseVersion(s)
+		if !ok {
+			return fmt.Errorf("invalid version %q", s)
 		}
-		for i := range 3 {
-			n, err := strconv.Atoi(parts[i])
-			if err != nil {
-				return fmt.Errorf("invalid version component %q in %q", parts[i], s)
-			}
-			v[i] = n
-		}
+		*v = parsed
 		return nil
 	}
 
