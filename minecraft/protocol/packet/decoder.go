@@ -110,6 +110,8 @@ const (
 	maxPooledDecompressBufferCap = 1 << 20
 	// DefaultMaxDecompressedLen is the default maximum decompressed batch size.
 	DefaultMaxDecompressedLen = 16 * 1024 * 1024
+	// DefaultClientMaxDecompressedLen is the largest decompressed batch the vanilla client accepts.
+	DefaultClientMaxDecompressedLen = 64 * 1024 * 1024
 )
 
 // decompressBufferPool holds byte slices that decompressed batches are read into, so that a new buffer does
