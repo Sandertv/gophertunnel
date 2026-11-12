@@ -222,8 +222,7 @@ type UseItemOnEntityTransactionData struct {
 	HeldItem ItemInstance
 	// Position is the position of the player at the time of clicking the entity.
 	Position mgl32.Vec3
-	// ClickedPosition is the position that was clicked relative to the entity's base coordinate. It can be
-	// used to find out exactly where a player clicked the entity.
+	// ClickedPosition is the world-space position on the entity that was clicked.
 	ClickedPosition mgl32.Vec3
 }
 
