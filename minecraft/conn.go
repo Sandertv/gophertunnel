@@ -634,12 +634,20 @@ func (conn *Conn) Context() context.Context {
 	return conn.ctx
 }
 
-// takeDeferredPacket locks the deferred packets lock and takes the next packet from the list of deferred
-// packets. If none was found, it returns false, and if one was found, the data and true is returned.
+// takeDeferredPacket locks the deferred packets lock and takes the next packet that was queued, first from
+// the packets channel and then from the list of deferred packets. If none was found, it returns false, and
+// if one was found, the data and true is returned. Every packet in the channel was queued before every
+// deferred packet once logged in, and queuePacket holds the same lock, so packets are taken in the order
+// they were received.
 func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
 	conn.deferredPacketMu.Lock()
 	defer conn.deferredPacketMu.Unlock()
 
+	select {
+	case data := <-conn.packets:
+		return data, true
+	default:
+	}
 	if len(conn.deferredPackets) == 0 {
 		return nil, false
 	}
@@ -650,6 +658,23 @@ func (conn *Conn) takeDeferredPacket() (*packetData, bool) {
 	conn.deferredPackets[0] = nil
 	conn.deferredPackets = conn.deferredPackets[1:]
 	return data, true
+}
+
+// queuePacket queues a packet received after logging in without blocking: it goes into the packets channel
+// while nothing is deferred and the channel has room, and behind the deferred packets otherwise, so that a
+// reader never takes a packet before one received earlier.
+func (conn *Conn) queuePacket(pk *packetData) {
+	conn.deferredPacketMu.Lock()
+	defer conn.deferredPacketMu.Unlock()
+
+	if len(conn.deferredPackets) == 0 {
+		select {
+		case conn.packets <- pk:
+			return
+		default:
+		}
+	}
+	conn.deferredPackets = append(conn.deferredPackets, pk)
 }
 
 // deferPacket defers a packet so that it is obtained in the next ReadPacket call
@@ -677,18 +702,7 @@ func (conn *Conn) receive(data []byte) error {
 		return nil
 	}
 	if conn.loggedIn && !conn.waitingForSpawn.Load() {
-		select {
-		case <-conn.ctx.Done():
-		case previous := <-conn.packets:
-			// There was already a packet in this channel, so take it out and defer it so that it is read
-			// next.
-			conn.deferPacket(previous)
-		default:
-		}
-		select {
-		case <-conn.ctx.Done():
-		case conn.packets <- pkData.ensureOwned():
-		}
+		conn.queuePacket(pkData.ensureOwned())
 		return nil
 	}
 	return conn.handle(pkData)
