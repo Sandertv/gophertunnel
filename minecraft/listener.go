@@ -435,9 +435,6 @@ func (listener *Listener) listen() {
 		}
 	}()
 	defer func() {
-		// listener.incoming is never closed: a connection that finishes logging in at this point may still be
-		// selecting on it in handleConn, and a send on a closed channel would panic. Accept watches
-		// listener.close instead.
 		close(listener.close)
 		_ = listener.Close()
 	}()
