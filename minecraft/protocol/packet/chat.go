@@ -9,6 +9,9 @@ import (
 type Chat struct {
 	// SignedChat is the signed chat message. It must be relayed unmodified by the server.
 	SignedChat protocol.SignedChat
+	// RoomID is the ID of the chat room that the message was intended for. It is absent for
+	// default chat.
+	RoomID protocol.Optional[string]
 	// Formatting is optional server decoration rendered around the name and the message. It is not covered
 	// by the signature.
 	Formatting protocol.Optional[protocol.ChatFormatting]
@@ -21,5 +24,6 @@ func (*Chat) ID() uint32 {
 
 func (pk *Chat) Marshal(io protocol.IO) {
 	protocol.Single(io, &pk.SignedChat)
+	protocol.OptionalFunc(io, &pk.RoomID, io.String)
 	protocol.OptionalMarshaler(io, &pk.Formatting)
 }
