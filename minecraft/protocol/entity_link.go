@@ -1,6 +1,9 @@
 package protocol
 
-import "github.com/go-gl/mathgl/mgl32"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"github.com/google/uuid"
+)
 
 const (
 	// EntityLinkRemove is set to remove the link between two entities.
@@ -66,6 +69,8 @@ type PassengerOfBlockData struct {
 	EmoteType uint8
 	// BlockType is the hashed serialized ID of the block that the entity is riding.
 	BlockType uint64
+	// PackUUID is the UUID of the behavior pack used to start riding on a block.
+	PackUUID uuid.UUID
 }
 
 // Marshal encodes/decodes a PassengerOfBlockData.
@@ -76,4 +81,5 @@ func (x *PassengerOfBlockData) Marshal(r IO) {
 	r.Float32(&x.RotationLimit)
 	r.Uint8(&x.EmoteType)
 	r.Uint64(&x.BlockType)
+	r.UUID(&x.PackUUID)
 }

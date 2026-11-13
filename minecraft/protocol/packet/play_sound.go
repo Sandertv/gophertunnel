@@ -35,6 +35,9 @@ type PlaySound struct {
 	// playback starts when the audio is ready. If set, the timeline starts after the delay and audio that
 	// loads later seeks forward to catch up.
 	StartDelaySeconds protocol.Optional[float32]
+	// SoundAttachOptions optionally specifies an entity to attach the sound to. If set, the
+	// sound follows the entity.
+	SoundAttachOptions protocol.Optional[protocol.SoundAttachOptions]
 }
 
 // ID ...
@@ -52,4 +55,5 @@ func (pk *PlaySound) Marshal(io protocol.IO) {
 	protocol.OptionalFunc(io, &pk.Handle, io.Uint64)
 	protocol.OptionalFunc(io, &pk.PlaybackPositionSeconds, io.Float32)
 	protocol.OptionalFunc(io, &pk.StartDelaySeconds, io.Float32)
+	protocol.OptionalMarshaler(io, &pk.SoundAttachOptions)
 }

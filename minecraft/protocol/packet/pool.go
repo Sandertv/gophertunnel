@@ -292,6 +292,8 @@ func init() {
 		IDChat:                                   func() Packet { return &Chat{} },
 		IDClientboundOnlineMusicPlaybackResponse: func() Packet { return &ClientboundOnlineMusicPlaybackResponse{} },
 		IDClientboundMusicPlaybackFailure:        func() Packet { return &ClientboundMusicPlaybackFailure{} },
+		IDVirtualContainerOpen:                   func() Packet { return &VirtualContainerOpen{} },
+		IDVirtualContainerClose:                  func() Packet { return &VirtualContainerClose{} },
 	}
 	for id, pk := range serverOriginating {
 		RegisterPacketFromServer(id, pk)
@@ -395,6 +397,7 @@ func init() {
 		IDChat:                                  func() Packet { return &Chat{} },
 		IDServerboundRequestOnlineMusicPlayback: func() Packet { return &ServerboundRequestOnlineMusicPlayback{} },
 		IDPlayerToggleArmorVisibilityRequest:    func() Packet { return &PlayerToggleArmorVisibilityRequest{} },
+		IDVirtualContainerClose:                 func() Packet { return &VirtualContainerClose{} },
 	}
 	for id, pk := range clientOriginating {
 		RegisterPacketFromClient(id, pk)
