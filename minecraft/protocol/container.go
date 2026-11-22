@@ -72,6 +72,7 @@ const (
 	ContainerDiscPressDye
 	ContainerDiscPressDisc
 	ContainerDiscPressResultPreview
+	ContainerVirtualContainer
 )
 
 const (
@@ -113,7 +114,9 @@ const (
 	ContainerTypeChestBoat
 	ContainerTypeDecoratedPot
 	ContainerTypeCrafter
-	ContainerTypeDiscPress = 38
+	_
+	ContainerTypeDiscPress
+	ContainerTypeVirtualContainer
 )
 
 // FullContainerName contains information required to identify a container in a StackRequestSlotInfo.
