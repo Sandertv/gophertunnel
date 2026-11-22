@@ -277,42 +277,49 @@ func (x *PersonaPieceTintColour) Marshal(r IO) {
 }
 
 // personaPieceTintWireType converts the persona_* names used in login data to the names used by the
-// v2168 skin codec. Most are the login name without "persona_"; personaPieceTintWireNames holds the rest.
+// v2168 skin codec. Most are the login name without "persona_".
 func personaPieceTintWireType(pieceType string) string {
-	if wire, ok := personaPieceTintWireNames[pieceType]; ok {
-		return wire
+	switch pieceType {
+	case "persona_hand":
+		return "hands"
+	case "persona_facial_hair":
+		return "facialhair"
+	case "persona_face_accessory":
+		return "faceaccessory"
+	case "persona_left_leg":
+		return "leftleg"
+	case "persona_right_leg":
+		return "rightleg"
+	case "persona_left_arm":
+		return "leftarm"
+	case "persona_right_arm":
+		return "rightarm"
+	case "persona_classic_skin":
+		return "classicskin"
 	}
 	return strings.TrimPrefix(pieceType, "persona_")
 }
 
-// personaPieceTintWireNames maps the login names whose wire name differs from the login name without
-// "persona_" to their wire name.
-var personaPieceTintWireNames = map[string]string{
-	"persona_hand":           "hands",
-	"persona_facial_hair":    "facialhair",
-	"persona_face_accessory": "faceaccessory",
-	"persona_left_leg":       "leftleg",
-	"persona_right_leg":      "rightleg",
-	"persona_left_arm":       "leftarm",
-	"persona_right_arm":      "rightarm",
-	"persona_classic_skin":   "classicskin",
-}
-
-// personaPieceTintLoginNames is the reverse of personaPieceTintWireNames.
-var personaPieceTintLoginNames = func() map[string]string {
-	m := make(map[string]string, len(personaPieceTintWireNames))
-	for login, wire := range personaPieceTintWireNames {
-		m[wire] = login
-	}
-	return m
-}()
-
 // personaPieceTintLoginType converts v2168 wire names back to the persona_* names used in login data.
 func personaPieceTintLoginType(pieceType string) string {
-	if login, ok := personaPieceTintLoginNames[pieceType]; ok {
-		return login
-	}
-	if pieceType == "unsupported" {
+	switch pieceType {
+	case "hands":
+		return "persona_hand"
+	case "facialhair":
+		return "persona_facial_hair"
+	case "faceaccessory":
+		return "persona_face_accessory"
+	case "leftleg":
+		return "persona_left_leg"
+	case "rightleg":
+		return "persona_right_leg"
+	case "leftarm":
+		return "persona_left_arm"
+	case "rightarm":
+		return "persona_right_arm"
+	case "classicskin":
+		return "persona_classic_skin"
+	case "unsupported":
 		return pieceType
 	}
 	return "persona_" + pieceType
