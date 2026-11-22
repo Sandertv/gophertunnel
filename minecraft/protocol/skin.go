@@ -276,21 +276,50 @@ func (x *PersonaPieceTintColour) Marshal(r IO) {
 	}
 }
 
-// personaPieceTintWireType converts the persona_* names used in login data to the shorter names used by the
-// v2168 skin codec. The hands type is singular in login data but plural on the wire.
+// personaPieceTintWireType converts the persona_* names used in login data to the names used by the
+// v2168 skin codec. Most are the login name without "persona_".
 func personaPieceTintWireType(pieceType string) string {
-	if pieceType == "persona_hand" {
+	switch pieceType {
+	case "persona_hand":
 		return "hands"
+	case "persona_facial_hair":
+		return "facialhair"
+	case "persona_face_accessory":
+		return "faceaccessory"
+	case "persona_left_leg":
+		return "leftleg"
+	case "persona_right_leg":
+		return "rightleg"
+	case "persona_left_arm":
+		return "leftarm"
+	case "persona_right_arm":
+		return "rightarm"
+	case "persona_classic_skin":
+		return "classicskin"
 	}
 	return strings.TrimPrefix(pieceType, "persona_")
 }
 
 // personaPieceTintLoginType converts v2168 wire names back to the persona_* names used in login data.
 func personaPieceTintLoginType(pieceType string) string {
-	if pieceType == "hands" {
+	switch pieceType {
+	case "hands":
 		return "persona_hand"
-	}
-	if pieceType == "unsupported" {
+	case "facialhair":
+		return "persona_facial_hair"
+	case "faceaccessory":
+		return "persona_face_accessory"
+	case "leftleg":
+		return "persona_left_leg"
+	case "rightleg":
+		return "persona_right_leg"
+	case "leftarm":
+		return "persona_left_arm"
+	case "rightarm":
+		return "persona_right_arm"
+	case "classicskin":
+		return "persona_classic_skin"
+	case "unsupported":
 		return pieceType
 	}
 	return "persona_" + pieceType
