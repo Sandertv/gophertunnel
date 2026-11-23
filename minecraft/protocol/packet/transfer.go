@@ -15,6 +15,9 @@ type Transfer struct {
 	ReloadWorld bool
 	// GatheringJoinInfo optionally identifies the gathering being joined on the target server.
 	GatheringJoinInfo protocol.Optional[protocol.GatheringJoinInfo]
+	// UIOptions optionally customises the loading screen shown while transferring to the destination server.
+	// It does not apply to world reloads.
+	UIOptions protocol.Optional[protocol.TransferUIOptions]
 }
 
 // ID ...
@@ -27,4 +30,5 @@ func (pk *Transfer) Marshal(io protocol.IO) {
 	io.Uint16(&pk.Port)
 	io.Bool(&pk.ReloadWorld)
 	protocol.OptionalMarshaler(io, &pk.GatheringJoinInfo)
+	protocol.OptionalMarshaler(io, &pk.UIOptions)
 }

@@ -44,3 +44,15 @@ func (x *SoundDataUpdate) Marshal(io IO) {
 		io.UnknownEnumOption(x.Type, "sound data update type")
 	}
 }
+
+// SoundAttachOptions holds the options to attach a sound to an entity.
+type SoundAttachOptions struct {
+	// EntityRuntimeID is the runtime ID of the entity to attach the sound to. The position
+	// of the sound follows the position of this entity.
+	EntityRuntimeID uint64
+}
+
+// Marshal encodes/decodes a SoundAttachOptions.
+func (x *SoundAttachOptions) Marshal(io IO) {
+	io.ActorRuntimeID(&x.EntityRuntimeID)
+}

@@ -12,16 +12,6 @@ const (
 	DataStoreControlString
 )
 
-const (
-	DataStorePropertyTypeNone   = 0
-	DataStorePropertyTypeBool   = 1
-	DataStorePropertyTypeInt64  = 2
-	DataStorePropertyTypeDouble = 3
-	DataStorePropertyTypeString = 4
-	DataStorePropertyTypeList   = 5
-	DataStorePropertyTypeMap    = 6
-)
-
 // DataStoreChangeEntry represents a single entry in the data store changes array.
 type DataStoreChangeEntry struct {
 	// ChangeType is the type of change. It is one of the DataStoreChangeType constants.
@@ -41,26 +31,17 @@ func (x *DataStoreChangeEntry) Marshal(r IO) {
 	case DataStoreChangeTypeUpdate:
 		Single(r, &x.Update)
 	case DataStoreChangeTypeChange:
-		r.String(&x.Change.DataStoreName)
-		r.String(&x.Change.Property)
-		r.Uint32(&x.Change.UpdateCount)
-		MarshalDataStorePropertyValue(r, &x.Change.NewValue)
+		Single(r, &x.Change)
 	case DataStoreChangeTypeRemoval:
-		r.String(&x.Removal.DataStoreName)
+		r.String(&x.Removal.VariableName)
 	default:
 		r.UnknownEnumOption(x.ChangeType, "data store change type")
 	}
 }
 
-// DataStoreUpdate represents an update to a data store property.
-type DataStoreUpdate struct {
-	// DataStoreName is the name of the data store.
-	DataStoreName string
-	// Property is the property being updated.
-	Property string
-	// Path is the path within the property.
-	Path string
-	// ControlType is the type of the data value. It is one of the DataStoreControl constants.
+// DataStoreValue is a primitive value of a data store variable.
+type DataStoreValue struct {
+	// ControlType is the type of the value. It is one of the DataStoreControl constants.
 	ControlType uint32
 	// DoubleValue is the value if ControlType is DataStoreControlDouble.
 	DoubleValue float64
@@ -68,17 +49,10 @@ type DataStoreUpdate struct {
 	BoolValue bool
 	// StringValue is the value if ControlType is DataStoreControlString.
 	StringValue string
-	// PropertyUpdateCount is the update count for the property.
-	PropertyUpdateCount uint32
-	// PathUpdateCount is the update count for the path.
-	PathUpdateCount uint32
 }
 
-// Marshal encodes/decodes a DataStoreUpdate.
-func (x *DataStoreUpdate) Marshal(r IO) {
-	r.String(&x.DataStoreName)
-	r.String(&x.Property)
-	r.String(&x.Path)
+// Marshal encodes/decodes a DataStoreValue.
+func (x *DataStoreValue) Marshal(r IO) {
 	r.Varuint32(&x.ControlType)
 	switch x.ControlType {
 	case DataStoreControlDouble:
@@ -90,78 +64,44 @@ func (x *DataStoreUpdate) Marshal(r IO) {
 	default:
 		r.UnknownEnumOption(x.ControlType, "data store control type")
 	}
-	r.Uint32(&x.PropertyUpdateCount)
-	r.Uint32(&x.PathUpdateCount)
 }
 
-// DataStorePropertyValue represents a typed property value in a data store.
-type DataStorePropertyValue struct {
-	// Type is the property value type. It is one of the DataStorePropertyType constants.
-	Type int32
-	// BoolValue is the value if Type is DataStorePropertyTypeBool.
-	BoolValue bool
-	// Int64Value is the value if Type is DataStorePropertyTypeInt64.
-	Int64Value int64
-	// DoubleValue is the value if Type is DataStorePropertyTypeDouble.
-	DoubleValue float64
-	// StringValue is the value if Type is DataStorePropertyTypeString.
-	StringValue string
-	// ListValue is the value if Type is DataStorePropertyTypeList.
-	ListValue []DataStorePropertyValue
-	// MapValue is the value if Type is DataStorePropertyTypeMap.
-	MapValue []DataStoreMapEntry
-}
-
-// DataStoreMapEntry represents a key-value pair in a data store map property.
-type DataStoreMapEntry struct {
-	// Key is the map key.
-	Key string
-	// Value is the map value.
-	Value DataStorePropertyValue
-}
-
-// MarshalDataStorePropertyValue encodes/decodes a DataStorePropertyValue.
-func MarshalDataStorePropertyValue(r IO, x *DataStorePropertyValue) {
-	r.Int32(&x.Type)
-	switch x.Type {
-	case DataStorePropertyTypeNone:
-		// No data.
-	case DataStorePropertyTypeBool:
-		r.Bool(&x.BoolValue)
-	case DataStorePropertyTypeInt64:
-		r.Int64(&x.Int64Value)
-	case DataStorePropertyTypeDouble:
-		r.Float64(&x.DoubleValue)
-	case DataStorePropertyTypeString:
-		r.String(&x.StringValue)
-	case DataStorePropertyTypeList:
-		FuncSlice(r, &x.ListValue, func(v *DataStorePropertyValue) {
-			MarshalDataStorePropertyValue(r, v)
-		})
-	case DataStorePropertyTypeMap:
-		FuncSlice(r, &x.MapValue, func(entry *DataStoreMapEntry) {
-			r.String(&entry.Key)
-			MarshalDataStorePropertyValue(r, &entry.Value)
-		})
-	default:
-		r.UnknownEnumOption(x.Type, "data store property type")
-	}
-}
-
-// DataStoreChange represents a change to a data store property value.
-type DataStoreChange struct {
-	// DataStoreName is the name of the data store.
-	DataStoreName string
-	// Property is the property that changed.
-	Property string
-	// UpdateCount is the update count.
+// DataStoreUpdate represents an update to a data store variable.
+type DataStoreUpdate struct {
+	// VariableName is the name of the variable being updated.
+	VariableName string
+	// Value is the new value of the variable.
+	Value DataStoreValue
+	// UpdateCount is the number of times the variable has been updated.
 	UpdateCount uint32
-	// NewValue is the new property value.
-	NewValue DataStorePropertyValue
 }
 
-// DataStoreRemoval represents a removal from a data store.
+// Marshal encodes/decodes a DataStoreUpdate.
+func (x *DataStoreUpdate) Marshal(r IO) {
+	r.String(&x.VariableName)
+	Single(r, &x.Value)
+	r.Uint32(&x.UpdateCount)
+}
+
+// DataStoreChange represents a change to the value of a data store variable.
+type DataStoreChange struct {
+	// VariableName is the name of the variable that changed.
+	VariableName string
+	// UpdateCount is the number of times the variable has been updated.
+	UpdateCount uint32
+	// Value is the new value of the variable.
+	Value DataStoreValue
+}
+
+// Marshal encodes/decodes a DataStoreChange.
+func (x *DataStoreChange) Marshal(r IO) {
+	r.String(&x.VariableName)
+	r.Uint32(&x.UpdateCount)
+	Single(r, &x.Value)
+}
+
+// DataStoreRemoval represents the removal of a data store variable.
 type DataStoreRemoval struct {
-	// DataStoreName is the name of the data store being removed.
-	DataStoreName string
+	// VariableName is the name of the variable being removed.
+	VariableName string
 }

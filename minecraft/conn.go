@@ -72,6 +72,10 @@ var exemptedPacks = []exemptedResourcePack{
 		uuid:    "0fba4063-dba1-4281-9b89-ff9390653530",
 		version: "1.0.0",
 	},
+	{
+		uuid:    "44244b83-63dd-44f1-8371-f3afdec4807f",
+		version: "0.0.1",
+	},
 }
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
@@ -166,6 +170,8 @@ type Conn struct {
 	// texturePacksRequired specifies if clients that join must accept the texture pack in order for them to
 	// be able to join the server. If they don't accept, they can only leave the server.
 	texturePacksRequired bool
+	// disableEducationPacks prevents built-in Education Edition packs from being appended to the resource pack stack.
+	disableEducationPacks bool
 	// forceDisableVibrantVisuals specifies whether the connection is forced to have vibrant visuals disabled.
 	forceDisableVibrantVisuals bool
 	packQueue                  *resourcePackQueue
@@ -1141,11 +1147,13 @@ func (conn *Conn) handleResourcePackClientResponse(pk *packet.ResourcePackClient
 			resourcePack := protocol.StackResourcePack{UUID: pack.UUID().String(), Version: pack.Version()}
 			pk.TexturePacks = append(pk.TexturePacks, resourcePack)
 		}
-		for _, exempted := range exemptedPacks {
-			pk.TexturePacks = append(pk.TexturePacks, protocol.StackResourcePack{
-				UUID:    exempted.uuid,
-				Version: exempted.version,
-			})
+		if !conn.disableEducationPacks {
+			for _, exempted := range exemptedPacks {
+				pk.TexturePacks = append(pk.TexturePacks, protocol.StackResourcePack{
+					UUID:    exempted.uuid,
+					Version: exempted.version,
+				})
+			}
 		}
 		if err := conn.WritePacket(pk); err != nil {
 			return fmt.Errorf("send ResourcePackStack: %w", err)

@@ -86,8 +86,8 @@ func lookupStackRequestActionType(x StackRequestAction, id *uint8) bool {
 		*id = StackRequestActionCraftGrindstone
 	case *CraftLoomRecipeStackRequestAction:
 		*id = StackRequestActionCraftLoom
-	case *CraftReservedStackRequestAction:
-		*id = StackRequestActionCraftReserved
+	case *CraftDiscPressStackRequestAction:
+		*id = StackRequestActionCraftDiscPress
 	case *CraftNonImplementedStackRequestAction:
 		*id = StackRequestActionCraftNonImplementedDeprecated
 	case *CraftResultsDeprecatedStackRequestAction:
@@ -133,8 +133,8 @@ func lookupStackRequestAction(id uint8, x *StackRequestAction) bool {
 		*x = &CraftGrindstoneRecipeStackRequestAction{}
 	case StackRequestActionCraftLoom:
 		*x = &CraftLoomRecipeStackRequestAction{}
-	case StackRequestActionCraftReserved:
-		*x = &CraftReservedStackRequestAction{}
+	case StackRequestActionCraftDiscPress:
+		*x = &CraftDiscPressStackRequestAction{}
 	case StackRequestActionCraftNonImplementedDeprecated:
 		*x = &CraftNonImplementedStackRequestAction{}
 	case StackRequestActionCraftResultsDeprecated:
@@ -330,7 +330,7 @@ const (
 	StackRequestActionCraftRecipeOptional
 	StackRequestActionCraftGrindstone
 	StackRequestActionCraftLoom
-	StackRequestActionCraftReserved
+	StackRequestActionCraftDiscPress
 	StackRequestActionCraftNonImplementedDeprecated
 	StackRequestActionCraftResultsDeprecated
 )
@@ -589,18 +589,18 @@ func (c *CraftLoomRecipeStackRequestAction) Marshal(r IO) {
 	r.Uint8(&c.TimesCrafted)
 }
 
-// CraftReservedStackRequestAction is a stack request action reserved for future use. It is currently
-// unknown what it is used for.
-type CraftReservedStackRequestAction struct {
-	// ReservedID is an identifier for the reserved action.
-	ReservedID string
+// CraftDiscPressStackRequestAction is sent by the client when it crafts a music disc using a disc press. The
+// block, dye and disc are read from the disc press containers.
+type CraftDiscPressStackRequestAction struct {
+	// TrackSoundEventID is the sound event ID of the track chosen to press onto the disc.
+	TrackSoundEventID string
 	// NumberOfCrafts is how many times the action was performed.
 	NumberOfCrafts byte
 }
 
 // Marshal ...
-func (c *CraftReservedStackRequestAction) Marshal(r IO) {
-	r.String(&c.ReservedID)
+func (c *CraftDiscPressStackRequestAction) Marshal(r IO) {
+	r.String(&c.TrackSoundEventID)
 	r.Uint8(&c.NumberOfCrafts)
 }
 

@@ -262,4 +262,10 @@ const (
 	IDClientboundPlayAudioContent
 	IDServerboundRegisterAudioContent
 	IDChat
+	IDServerboundRequestOnlineMusicPlayback
+	IDClientboundOnlineMusicPlaybackResponse
+	IDPlayerToggleArmorVisibilityRequest
+	IDClientboundMusicPlaybackFailure
+	IDVirtualContainerOpen
+	IDVirtualContainerClose
 )

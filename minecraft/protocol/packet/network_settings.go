@@ -10,6 +10,12 @@ const (
 	CompressionAlgorithmNone = 0xffff
 )
 
+const (
+	SCTPRecoveryProfileDefault = iota
+	SCTPRecoveryProfileFast
+	SCTPRecoveryProfileBalanced
+)
+
 // NetworkSettings is sent by the server to update a variety of network settings. These settings modify the
 // way packets are sent over the network stack.
 type NetworkSettings struct {
@@ -29,6 +35,9 @@ type NetworkSettings struct {
 	// ClientThrottleScalar is the scalar for client throttling. The scalar is the amount of players that are ticked
 	// when throttling is enabled.
 	ClientThrottleScalar float32
+
+	// SCTPRecoveryProfile specifies which recovery profile is used when retrying lost data.
+	SCTPRecoveryProfile uint8
 }
 
 // ID ...
@@ -42,4 +51,5 @@ func (pk *NetworkSettings) Marshal(io protocol.IO) {
 	io.Bool(&pk.ClientThrottle)
 	io.Uint8(&pk.ClientThrottleThreshold)
 	io.Float32(&pk.ClientThrottleScalar)
+	io.Uint8(&pk.SCTPRecoveryProfile)
 }

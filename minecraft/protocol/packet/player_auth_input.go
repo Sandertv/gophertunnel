@@ -71,7 +71,7 @@ const (
 	InputFlagSneakReleasedRaw
 	InputFlagSneakPressedRaw
 	InputFlagSneakCurrentRaw
-	InputFlagInternalUpdate
+	InputFlagSwapOffhand
 
 	// InputFlagCount is the number of supported PlayerAuthInput flags.
 	InputFlagCount
@@ -83,6 +83,7 @@ const (
 	InputModeTouch
 	InputModeGamePad
 	InputModeMotionController
+	InputModeGamePadAndMouse
 	InputModeCount
 )
 

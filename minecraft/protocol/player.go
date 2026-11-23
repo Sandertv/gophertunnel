@@ -50,7 +50,7 @@ const (
 	PlayerActionStopFlying
 	PlayerActionReceivedServerData
 	PlayerActionStartUsingItem
-	PlayerActionInternalUpdate
+	PlayerActionSwapOffhand
 	PlayerActionCount
 )
 
