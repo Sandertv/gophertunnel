@@ -25,7 +25,7 @@ import (
 // Callers can use errors.Is(err, ErrInvalidSignature) to check whether signature
 // verification failed.
 func (e *Environment) Verify(ctx context.Context, chat protocol.SignedChat) error {
-	if chat.RoomID == "" || chat.KeyID == "" || chat.Signature == "" {
+	if chat.KeyID == "" || chat.Signature == "" || chat.AuthorName == "" {
 		return errors.New("service/chat: payload is not signed")
 	}
 	signature, err := base64.StdEncoding.DecodeString(chat.Signature)
@@ -40,10 +40,10 @@ func (e *Environment) Verify(ctx context.Context, chat protocol.SignedChat) erro
 	h := key.hash()
 	writeString(h, chat.KeyID)
 	writeString(h, chat.SenderID)
-	writeString(h, chat.RoomID)
 	writeString(h, chat.MessageID)
 	writeString(h, chat.ScanText)
 	writeString(h, chat.RedactedText)
+	writeString(h, chat.AuthorName)
 
 	if !ecdsa.VerifyASN1(key.PublicKey, h.Sum(nil), signature) {
 		return ErrInvalidSignature

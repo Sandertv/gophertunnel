@@ -110,12 +110,14 @@ type SignResult struct {
 	Timestamp int `json:"timestamp"`
 	// RoutingResult is unknown. It is typically 'LocalBroadcast'.
 	RoutingResult string `json:"routingResult"`
+	// AuthorName is the display name of the sender resolved by the Chat service.
+	AuthorName string
 }
 
 // valid reports whether all fields required to convert the result
 // to a [protocol.SignedChat] are non-empty.
 func (r SignResult) valid() bool {
-	return !slices.ContainsFunc([]string{
+	return !slices.Contains([]string{
 		r.KeyID,
 		r.XUID,
 		r.RoomID,
@@ -123,9 +125,8 @@ func (r SignResult) valid() bool {
 		r.ScanText,
 		r.RedactedText,
 		r.Signature,
-	}, func(s string) bool {
-		return s == ""
-	})
+		r.AuthorName,
+	}, "")
 }
 
 // Protocol converts the result to a [protocol.SignedChat] that can be sent over a connection.
@@ -133,10 +134,10 @@ func (r SignResult) Protocol() protocol.SignedChat {
 	return protocol.SignedChat{
 		KeyID:        r.KeyID,
 		SenderID:     r.XUID,
-		RoomID:       r.RoomID,
 		MessageID:    r.MessageID,
 		ScanText:     r.ScanText,
 		RedactedText: r.RedactedText,
 		Signature:    r.Signature,
+		AuthorName:   r.AuthorName,
 	}
 }

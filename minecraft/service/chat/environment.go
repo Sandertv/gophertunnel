@@ -29,8 +29,9 @@ type Environment struct {
 	keysMu sync.RWMutex
 }
 
-// DefaultEnvironment is the default [Environment] used when callers do not
-// provide one explicitly. It may become outdated if Mojang changes the service endpoint.
+// DefaultEnvironment is an [Environment] pre-configured with known values that can be used to
+// make API calls to the Chat service without having to manually resolve an environment from the
+// discovery service.
 var DefaultEnvironment = &Environment{
 	ServiceEnvironment: internal.ServiceEnvironment{
 		ServiceURI: &url.URL{
