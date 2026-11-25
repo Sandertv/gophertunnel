@@ -30,9 +30,12 @@ func (*PlayerVideoCapture) ID() uint32 {
 }
 
 func (pk *PlayerVideoCapture) Marshal(io protocol.IO) {
-	io.Varuint32(&pk.Action)
-	if pk.Action == PlayerVideoCaptureActionStart {
-		io.Int32(&pk.FrameRate)
-		io.String(&pk.FilePrefix)
+	// The payload is written twice. The client uses the last copy.
+	for range 2 {
+		io.Varuint32(&pk.Action)
+		if pk.Action == PlayerVideoCaptureActionStart {
+			io.Int32(&pk.FrameRate)
+			io.String(&pk.FilePrefix)
+		}
 	}
 }
