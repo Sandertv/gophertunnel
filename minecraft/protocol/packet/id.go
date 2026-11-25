@@ -266,4 +266,6 @@ const (
 	IDClientboundOnlineMusicPlaybackResponse
 	IDPlayerToggleArmorVisibilityRequest
 	IDClientboundMusicPlaybackFailure
+	IDVirtualContainerOpen
+	IDVirtualContainerClose
 )

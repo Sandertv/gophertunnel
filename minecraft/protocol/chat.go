@@ -6,14 +6,14 @@ type SignedChat struct {
 	KeyID string
 	// SenderID is the identity the Chat Service signed against. It is empty when unsigned.
 	SenderID string
-	// RoomID is the room the signature was minted for. It is empty when unsigned.
-	RoomID string
 	// MessageID is the client generated ID of the message. It is empty when unsigned.
 	MessageID string
 	// ScanText is the message the Chat Service scanned and signed.
 	ScanText string
 	// RedactedText is the redacted form of the message. It is empty if nothing needed redacting.
 	RedactedText string
+	// AuthorName is the display name of the sender of the message.
+	AuthorName string
 	// Signature is the Chat Service signature over the fields above. It is empty when unsigned.
 	Signature string
 }
@@ -22,10 +22,10 @@ type SignedChat struct {
 func (x *SignedChat) Marshal(r IO) {
 	r.String(&x.KeyID)
 	r.String(&x.SenderID)
-	r.String(&x.RoomID)
 	r.String(&x.MessageID)
 	r.String(&x.ScanText)
 	r.String(&x.RedactedText)
+	r.String(&x.AuthorName)
 	r.String(&x.Signature)
 }
 

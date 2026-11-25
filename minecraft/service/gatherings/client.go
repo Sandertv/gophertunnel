@@ -20,8 +20,7 @@ import (
 
 // Environment represents an environment for gatherings service.
 type Environment struct {
-	// ServiceURI is the base endpoint URL for gatherings service.
-	ServiceURI *url.URL `json:"serviceUri"`
+	internal.ServiceEnvironment
 
 	// HTTPClient is the HTTP client used by Environment and Client
 	// to make requests to the endpoints provided by gatherings service.
@@ -32,9 +31,11 @@ type Environment struct {
 // DefaultEnvironment is the default [Environment] used when callers do not
 // provide one explicitly. It may become outdated if Mojang changes the service endpoint.
 var DefaultEnvironment = &Environment{
-	ServiceURI: &url.URL{
-		Scheme: "https",
-		Host:   "gatherings-secondary.franchise.minecraft-services.net",
+	ServiceEnvironment: internal.ServiceEnvironment{
+		ServiceURI: &url.URL{
+			Scheme: "https",
+			Host:   "gatherings-secondary.franchise.minecraft-services.net",
+		},
 	},
 }
 

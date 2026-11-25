@@ -72,6 +72,10 @@ var exemptedPacks = []exemptedResourcePack{
 		uuid:    "0fba4063-dba1-4281-9b89-ff9390653530",
 		version: "1.0.0",
 	},
+	{
+		uuid:    "44244b83-63dd-44f1-8371-f3afdec4807f",
+		version: "0.0.1",
+	},
 }
 
 // Conn represents a Minecraft (Bedrock Edition) connection over a specific net.Conn transport layer. Its
@@ -1207,6 +1211,7 @@ func (conn *Conn) startGame() {
 		MultiPlayerCorrelationID:     uuid.Must(uuid.NewRandom()).String(),
 		CommandsEnabled:              true,
 		WorldName:                    data.WorldName,
+		LevelID:                      data.LevelID,
 		LANBroadcastEnabled:          true,
 		PlayerMovementSettings:       data.PlayerMovementSettings,
 		WorldGameMode:                data.WorldGameMode,
@@ -1222,6 +1227,11 @@ func (conn *Conn) startGame() {
 		GameVersion:                  protocol.CurrentVersion,
 		UseBlockNetworkIDHashes:      data.UseBlockNetworkIDHashes,
 		PropertyData:                 data.PropertyData,
+		ServerJoinInformation: protocol.Option(protocol.ServerJoinInformation{
+			ManagedChatJoinInfo: protocol.Option(protocol.ManagedChatJoinInfo{
+				Enabled: data.ManagedChatEnabled,
+			}),
+		}),
 	})
 	_ = conn.WritePacket(&packet.ItemRegistry{Items: data.Items})
 	_ = conn.Flush()
@@ -1423,6 +1433,7 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		EntityRuntimeID:              pk.EntityRuntimeID,
 		PlayerGameMode:               pk.PlayerGameMode,
 		BaseGameVersion:              pk.BaseGameVersion,
+		LevelID:                      pk.LevelID,
 		PlayerPosition:               pk.PlayerPosition,
 		Pitch:                        pk.Pitch,
 		Yaw:                          pk.Yaw,
@@ -1452,6 +1463,11 @@ func (conn *Conn) handleStartGame(pk *packet.StartGame) error {
 		UseBlockNetworkIDHashes:      pk.UseBlockNetworkIDHashes,
 		PropertyData:                 pk.PropertyData,
 		Dimensions:                   conn.gameData.Dimensions,
+	}
+	if joinInfo, ok := pk.ServerJoinInformation.Value(); ok {
+		if managedChatInfo, ok := joinInfo.ManagedChatJoinInfo.Value(); ok {
+			conn.gameData.ManagedChatEnabled = managedChatInfo.Enabled
+		}
 	}
 	conn.expect(packet.IDItemRegistry)
 	return nil
