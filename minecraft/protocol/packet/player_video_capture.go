@@ -13,24 +13,6 @@ const (
 // only works on development builds and has no effect on retail builds. When recording, the client will save
 // individual frames to '/LocalCache/minecraftpe' in the format specified below.
 type PlayerVideoCapture struct {
-	// StartVideoCapture is the action to perform with the video capture.
-	StartVideoCapture PlayerVideoCaptureAction
-	// StopVideoCapture is a duplicate of StartVideoCapture.
-	StopVideoCapture PlayerVideoCaptureAction
-}
-
-// ID ...
-func (*PlayerVideoCapture) ID() uint32 {
-	return IDPlayerVideoCapture
-}
-
-func (pk *PlayerVideoCapture) Marshal(io protocol.IO) {
-	protocol.Single(io, &pk.StartVideoCapture)
-	protocol.Single(io, &pk.StopVideoCapture)
-}
-
-// PlayerVideoCaptureAction is an action to perform with the video capture of a player.
-type PlayerVideoCaptureAction struct {
 	// Action is the action to perform with the video capture. It is one of the constants above.
 	Action uint32
 	// FrameRate is the frame rate at which the video should be recorded. It is only used when Action is
@@ -42,10 +24,18 @@ type PlayerVideoCaptureAction struct {
 	FilePrefix string
 }
 
-func (x *PlayerVideoCaptureAction) Marshal(io protocol.IO) {
-	io.Varuint32(&x.Action)
-	if x.Action == PlayerVideoCaptureActionStart {
-		io.Int32(&x.FrameRate)
-		io.String(&x.FilePrefix)
+// ID ...
+func (*PlayerVideoCapture) ID() uint32 {
+	return IDPlayerVideoCapture
+}
+
+func (pk *PlayerVideoCapture) Marshal(io protocol.IO) {
+	// The payload is written twice. The client uses the last copy.
+	for range 2 {
+		io.Varuint32(&pk.Action)
+		if pk.Action == PlayerVideoCaptureActionStart {
+			io.Int32(&pk.FrameRate)
+			io.String(&pk.FilePrefix)
+		}
 	}
 }
