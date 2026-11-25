@@ -424,7 +424,7 @@ type CameraPresetAimAssist struct {
 	Preset Optional[string]
 	// TargetMode is the mode that the camera should use for detecting targets. This is one of the constants
 	// above.
-	TargetMode Optional[int32]
+	TargetMode Optional[byte]
 	// Angle is the maximum angle around the playes's cursor that the aim assist should check for a target,
 	// if TargetMode is set to protocol.AimAssistTargetModeAngle.
 	Angle Optional[mgl32.Vec2]
@@ -436,7 +436,7 @@ type CameraPresetAimAssist struct {
 // Marshal encodes/decodes a CameraPresetAimAssist.
 func (x *CameraPresetAimAssist) Marshal(r IO) {
 	OptionalFunc(r, &x.Preset, r.String)
-	OptionalFunc(r, &x.TargetMode, r.Int32)
+	OptionalFunc(r, &x.TargetMode, r.Uint8)
 	OptionalFunc(r, &x.Angle, r.Vec2)
 	OptionalFunc(r, &x.Distance, r.Float32)
 }
