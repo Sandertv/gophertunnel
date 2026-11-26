@@ -254,17 +254,11 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 		if err != nil {
 			return err
 		}
-		if err = d.checkRemaining(int(length), "ByteArray"); err != nil {
+		b, err := d.r.readArrayBytes(length, 1, "ByteArray")
+		if err != nil {
 			return err
 		}
-		if length < 0 {
-			return BufferOverrunError{Op: "ByteArray"}
-		}
-		b := make([]byte, length)
-		if _, err := d.r.Read(b); err != nil {
-			return BufferOverrunError{Op: "ByteArray"}
-		}
-		value := reflect.New(reflect.ArrayOf(int(length), byteType)).Elem()
+		value := reflect.New(reflect.ArrayOf(len(b), byteType)).Elem()
 		reflect.Copy(value, reflect.ValueOf(b))
 
 		switch {
@@ -348,12 +342,9 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 				val.Set(reflect.MakeSlice(sliceType, int(length), int(length)))
 				break
 			}
-			if err = d.checkRemaining(int(length), "ByteSlice"); err != nil {
+			b, err := d.r.readArrayBytes(length, 1, "ByteSlice")
+			if err != nil {
 				return err
-			}
-			b := make([]byte, length)
-			if _, err := d.r.Read(b); err != nil {
-				return BufferOverrunError{Op: "ByteSlice"}
 			}
 			switch {
 			case k == reflect.Slice && val.Type().Elem().Kind() == reflect.Uint8, isAny(val):
@@ -388,11 +379,18 @@ func (d *Decoder) unmarshalTag(val reflect.Value, t tagType, tagName string) err
 			if err != nil {
 				return err
 			}
-			if length < 0 {
-				return BufferOverrunError{Op: "Slice"}
+			c, err := d.r.sliceCap(length, 1, "Slice")
+			if err != nil {
+				return err
 			}
-			v := reflect.MakeSlice(sliceType, int(length), int(length))
+			// Addressable so the slice can grow in place when the capacity was bounded below length.
+			v := reflect.New(sliceType).Elem()
+			v.Set(reflect.MakeSlice(sliceType, 0, c))
 			for i := 0; i < int(length); i++ {
+				if i == v.Cap() {
+					v.Grow(min(int(length)-i, v.Cap()))
+				}
+				v.SetLen(i + 1)
 				if err := d.unmarshalTag(v.Index(i), listType, ""); err != nil {
 					// An error occurred during the decoding of one of the elements of the TAG_List, meaning it
 					// either had an invalid type or the NBT was invalid.
@@ -543,13 +541,6 @@ func (d *Decoder) tag() (t tagType, tagName string, err error) {
 		tagName, err = d.Encoding.String(d.r)
 	}
 	return t, tagName, err
-}
-
-func (d *Decoder) checkRemaining(length int, op string) error {
-	if remaining, ok := d.r.Reader.(interface{ Len() int }); ok && length > remaining.Len() {
-		return BufferOverrunError{Op: op}
-	}
-	return nil
 }
 
 // isAny checks if a reflect.Value has the type `any` or `interface{}`.
