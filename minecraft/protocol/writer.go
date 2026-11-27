@@ -162,6 +162,15 @@ func (w *Writer) RGBA(x *color.RGBA) {
 	w.Uint32(&val)
 }
 
+// Int32RGBA writes a color.RGBA x as four int32s to the underlying buffer.
+func (w *Writer) Int32RGBA(x *color.RGBA) {
+	red, green, blue, alpha := int32(x.R), int32(x.G), int32(x.B), int32(x.A)
+	w.Int32(&red)
+	w.Int32(&green)
+	w.Int32(&blue)
+	w.Int32(&alpha)
+}
+
 // BEARGB writes a color.RGBA x as a big endian int32 to the underlying buffer.
 func (w *Writer) BEARGB(x *color.RGBA) {
 	val := int32(x.A) | int32(x.R)<<8 | int32(x.G)<<16 | int32(x.B)<<24

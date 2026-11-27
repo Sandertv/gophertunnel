@@ -183,6 +183,21 @@ func (r *Reader) RGBA(x *color.RGBA) {
 	}
 }
 
+// Int32RGBA reads a color.RGBA x from four int32s.
+func (r *Reader) Int32RGBA(x *color.RGBA) {
+	var red, green, blue, alpha int32
+	r.Int32(&red)
+	r.Int32(&green)
+	r.Int32(&blue)
+	r.Int32(&alpha)
+	*x = color.RGBA{
+		R: byte(red),
+		G: byte(green),
+		B: byte(blue),
+		A: byte(alpha),
+	}
+}
+
 // BEARGB reads a color.ARGB x from a big endian int32.
 func (r *Reader) BEARGB(x *color.RGBA) {
 	var v int32

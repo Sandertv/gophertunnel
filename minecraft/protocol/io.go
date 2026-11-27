@@ -54,6 +54,7 @@ type IO interface {
 	RGB(x *color.RGBA)
 	RGBA(x *color.RGBA)
 	BEARGB(x *color.RGBA)
+	Int32RGBA(x *color.RGBA)
 	EntityMetadata(x *EntityMetadata)
 	Item(x *ItemStack)
 	ItemInstance(i *ItemInstance)
