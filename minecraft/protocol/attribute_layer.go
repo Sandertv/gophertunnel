@@ -1,5 +1,9 @@
 package protocol
 
+import (
+	"image/color"
+)
+
 const (
 	AttributeLayerPayloadTypeUpdateLayers = iota
 	AttributeLayerPayloadTypeUpdateSettings
@@ -48,20 +52,20 @@ type AttributeData struct {
 	Type uint32
 	// BoolValue is the boolean value if Type is AttributeDataTypeBool.
 	BoolValue bool
-	// BoolOperation is the optional operation for boolean attributes.
-	BoolOperation Optional[int32]
+	// BoolOperation is the operation for boolean attributes. It is one of the AttributeBoolOperation constants.
+	BoolOperation int32
 	// FloatValue is the float value if Type is AttributeDataTypeFloat.
 	FloatValue float32
-	// FloatOperation is the optional operation for float attributes.
-	FloatOperation Optional[int32]
+	// FloatOperation is the operation for float attributes. It is one of the AttributeFloatOperation constants.
+	FloatOperation int32
 	// FloatConstraintMin is the optional minimum constraint for float attributes.
 	FloatConstraintMin Optional[float32]
 	// FloatConstraintMax is the optional maximum constraint for float attributes.
 	FloatConstraintMax Optional[float32]
 	// ColourValue is the colour value if Type is AttributeDataTypeColour.
-	ColourValue int32
-	// ColourOperation is the optional operation for colour attributes.
-	ColourOperation Optional[int32]
+	ColourValue color.RGBA
+	// ColourOperation is the operation for colour attributes. It is one of the AttributeColourOperation constants.
+	ColourOperation int32
 }
 
 // Marshal encodes/decodes an AttributeData.
@@ -70,17 +74,151 @@ func (x *AttributeData) Marshal(r IO) {
 	switch x.Type {
 	case AttributeDataTypeBool:
 		r.Bool(&x.BoolValue)
-		OptionalFunc(r, &x.BoolOperation, r.Int32)
+		boolOperation := attributeBoolOperationToString(x.BoolOperation)
+		r.String(&boolOperation)
+		attributeBoolOperationFromString(r, &x.BoolOperation, boolOperation)
 	case AttributeDataTypeFloat:
 		r.Float32(&x.FloatValue)
-		OptionalFunc(r, &x.FloatOperation, r.Int32)
+		floatOperation := attributeFloatOperationToString(x.FloatOperation)
+		r.String(&floatOperation)
+		attributeFloatOperationFromString(r, &x.FloatOperation, floatOperation)
 		OptionalFunc(r, &x.FloatConstraintMin, r.Float32)
 		OptionalFunc(r, &x.FloatConstraintMax, r.Float32)
 	case AttributeDataTypeColour:
-		r.Int32(&x.ColourValue)
-		OptionalFunc(r, &x.ColourOperation, r.Int32)
+		r.Int32RGBA(&x.ColourValue)
+		colourOperation := attributeColourOperationToString(x.ColourOperation)
+		r.String(&colourOperation)
+		attributeColourOperationFromString(r, &x.ColourOperation, colourOperation)
 	default:
 		r.UnknownEnumOption(x.Type, "attribute data type")
+	}
+}
+
+// attributeBoolOperationFromString looks up a boolean attribute operation from a string and writes the result to x.
+func attributeBoolOperationFromString(io IO, x *int32, s string) {
+	switch s {
+	case "override":
+		*x = AttributeBoolOperationOverride
+	case "alpha_blend":
+		*x = AttributeBoolOperationAlphaBlend
+	case "and":
+		*x = AttributeBoolOperationAnd
+	case "nand":
+		*x = AttributeBoolOperationNand
+	case "or":
+		*x = AttributeBoolOperationOr
+	case "nor":
+		*x = AttributeBoolOperationNor
+	case "xor":
+		*x = AttributeBoolOperationXor
+	case "xnor":
+		*x = AttributeBoolOperationXnor
+	default:
+		io.InvalidValue(s, "bool attribute operation", "unknown operation")
+	}
+}
+
+// attributeBoolOperationToString looks up a boolean attribute operation constant and returns the string representation.
+func attributeBoolOperationToString(x int32) string {
+	switch x {
+	case AttributeBoolOperationOverride:
+		return "override"
+	case AttributeBoolOperationAlphaBlend:
+		return "alpha_blend"
+	case AttributeBoolOperationAnd:
+		return "and"
+	case AttributeBoolOperationNand:
+		return "nand"
+	case AttributeBoolOperationOr:
+		return "or"
+	case AttributeBoolOperationNor:
+		return "nor"
+	case AttributeBoolOperationXor:
+		return "xor"
+	case AttributeBoolOperationXnor:
+		return "xnor"
+	default:
+		return "unknown"
+	}
+}
+
+// attributeFloatOperationFromString looks up a float attribute operation from a string and writes the result to x.
+func attributeFloatOperationFromString(io IO, x *int32, s string) {
+	switch s {
+	case "override":
+		*x = AttributeFloatOperationOverride
+	case "alpha_blend":
+		*x = AttributeFloatOperationAlphaBlend
+	case "add":
+		*x = AttributeFloatOperationAdd
+	case "subtract":
+		*x = AttributeFloatOperationSubtract
+	case "multiply":
+		*x = AttributeFloatOperationMultiply
+	case "minimum":
+		*x = AttributeFloatOperationMinimum
+	case "maximum":
+		*x = AttributeFloatOperationMaximum
+	default:
+		io.InvalidValue(s, "float attribute operation", "unknown operation")
+	}
+}
+
+// attributeFloatOperationToString looks up a float attribute operation constant and returns the string representation.
+func attributeFloatOperationToString(x int32) string {
+	switch x {
+	case AttributeFloatOperationOverride:
+		return "override"
+	case AttributeFloatOperationAlphaBlend:
+		return "alpha_blend"
+	case AttributeFloatOperationAdd:
+		return "add"
+	case AttributeFloatOperationSubtract:
+		return "subtract"
+	case AttributeFloatOperationMultiply:
+		return "multiply"
+	case AttributeFloatOperationMinimum:
+		return "minimum"
+	case AttributeFloatOperationMaximum:
+		return "maximum"
+	default:
+		return "unknown"
+	}
+}
+
+// attributeColourOperationFromString looks up a colour attribute operation from a string and writes the result to x.
+func attributeColourOperationFromString(io IO, x *int32, s string) {
+	switch s {
+	case "override":
+		*x = AttributeColourOperationOverride
+	case "alpha_blend":
+		*x = AttributeColourOperationAlphaBlend
+	case "add":
+		*x = AttributeColourOperationAdd
+	case "subtract":
+		*x = AttributeColourOperationSubtract
+	case "multiply":
+		*x = AttributeColourOperationMultiply
+	default:
+		io.InvalidValue(s, "colour attribute operation", "unknown operation")
+	}
+}
+
+// attributeColourOperationToString looks up a colour attribute operation constant and returns the string representation.
+func attributeColourOperationToString(x int32) string {
+	switch x {
+	case AttributeColourOperationOverride:
+		return "override"
+	case AttributeColourOperationAlphaBlend:
+		return "alpha_blend"
+	case AttributeColourOperationAdd:
+		return "add"
+	case AttributeColourOperationSubtract:
+		return "subtract"
+	case AttributeColourOperationMultiply:
+		return "multiply"
+	default:
+		return "unknown"
 	}
 }
 
